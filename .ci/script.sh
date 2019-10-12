@@ -21,4 +21,4 @@ fi
 echo "public class HelloWorld { public static void main(String[] args) { System.out.println(\"Hello World\"); } }" > HelloWorld.java
 javac HelloWorld.java
 echo "Running SubstrateDispatcher..."
-java -cp build/libs/com.gluonhq.substrate-0.0.1-SNAPSHOT.jar -Dimagecp=. -Dgraalvm="$graalvmPath" -Dmainclass=HelloWorld com.gluonhq.substrate.SubstrateDispatcher
+java -cp build/libs/substrate-0.0.1-SNAPSHOT.jar -Dimagecp=. -Dgraalvm="$graalvmPath" -Dmainclass=HelloWorld com.gluonhq.substrate.SubstrateDispatcher
