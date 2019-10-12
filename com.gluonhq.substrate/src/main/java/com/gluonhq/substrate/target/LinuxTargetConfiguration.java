@@ -76,56 +76,13 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         checkLinker();
         return super.link(paths, projectConfiguration);
     }
-//        File javaStaticLibsDir = projectConfiguration.getJavaStaticLibsPath().toFile();
-//        if (!javaStaticLibsDir.exists()) {
-//            System.err.println("We can't link because the static Java libraries are missing. " +
-//                    "The path "+javaStaticLibsDir+" does not exist.");
-//            return false;
-//        }
-//        String appName = projectConfiguration.getAppName();
-//        String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
-//        Path gvmPath = paths.getGvmPath();
-//        Path objectFile = FileOps.findFile(gvmPath, objectFilename);
-//        if (objectFile == null) {
-//            throw new IllegalArgumentException("Linking failed, since there is no objectfile named "+objectFilename+" under "
-//                    +gvmPath.toString());
-//        }
-//        ProcessBuilder linkBuilder = new ProcessBuilder("gcc");
-//        Path linux = gvmPath.resolve(appName);
-//
-//        linkBuilder.command().add("-o");
-//        linkBuilder.command().add(paths.getAppPath().toString() + "/" + appName);
-//        linkBuilder.command().add(linux.toString() + "/launcher.o");
-//        linkBuilder.command().add(linux.toString() + "/thread.o");
-//        linkBuilder.command().add(objectFile.toString());
-//        linkBuilder.command().add("-L" + projectConfiguration.getJavaStaticLibsPath());
-//        linkBuilder.command().add("-L"+projectConfiguration.getGraalPath()+"/lib/svm/clibraries/linux-amd64");
-//        linkBuilder.command().add("-ljava");
-//        linkBuilder.command().add("-ljvm");
-//        linkBuilder.command().add("-llibchelper");
-//        linkBuilder.command().add("-lnio");
-//        linkBuilder.command().add("-lzip");
-//        linkBuilder.command().add("-lnet");
-//        linkBuilder.command().add("-lpthread");
-//        linkBuilder.command().add("-lz");
-//        linkBuilder.command().add("-ldl");
-//        linkBuilder.redirectErrorStream(true);
-//        Process compileProcess = linkBuilder.start();
-//        InputStream inputStream = compileProcess.getInputStream();
-//        int result = compileProcess.waitFor();
-//        if (result != 0 ) {
-//            System.err.println("Linking failed. Details from linking below:");
-//            printFromInputStream(inputStream);
-//            return false;
-//        }
-//        return true;
-//    }
 
     @Override
     List<String> getTargetSpecificLinkFlags() {
         LinkedList<String> answer = new LinkedList<>();
         return answer;
     }
+
     @Override
     public InputStream run(Path appPath, String appName) throws IOException, InterruptedException {
         ProcessBuilder runBuilder = new ProcessBuilder(appPath.toString() + "/" + appName);
