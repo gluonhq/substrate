@@ -34,10 +34,10 @@ import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileOps;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -47,14 +47,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
         Triplet target =  config.getTargetTriplet();
-        String jniPlatform = null;
-        if (target.getOs().equals(Constants.OS_LINUX)) {
-            jniPlatform="LINUX_AMD64";
-        } else if (target.getOs().equals(Constants.OS_DARWIN)) {
-            jniPlatform="DARWIN_AMD64";
-        } else {
-            throw new IllegalArgumentException("No support yet for "+target.getOs());
-        }
+        String jniPlatform = getJniPlatform(target.getOs());
         if (!compileAdditionalSources(paths, config) ) {
             return false;
         }
@@ -104,6 +97,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return !failure;
     }
 
+    public String getJniPlatform( String os ) {
+        switch (os) {
+            case Constants.OS_LINUX: return "LINUX_AMD64";
+            case Constants.OS_DARWIN: return "DARWIN_AMD64";
+            default: throw new IllegalArgumentException("No support yet for " + os);
+        }
+    }
+
 
     public abstract boolean compileAdditionalSources(ProcessPaths paths, ProjectConfiguration projectConfiguration)
             throws IOException, InterruptedException;
@@ -111,12 +112,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
-        File javaStaticLibsDir = projectConfiguration.getJavaStaticLibsPath().toFile();
-        if (!javaStaticLibsDir.exists()) {
+
+        if ( !Files.exists(projectConfiguration.getJavaStaticLibsPath())) {
             System.err.println("We can't link because the static Java libraries are missing. " +
-                    "The path "+javaStaticLibsDir+" does not exist.");
+                    "The path "+ projectConfiguration.getJavaStaticLibsPath() + " does not exist.");
             return false;
         }
+
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
         Triplet target = projectConfiguration.getTargetTriplet();
@@ -127,15 +129,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     +gvmPath.toString());
         }
         ProcessBuilder linkBuilder = new ProcessBuilder("gcc");
-        Path linux = gvmPath.resolve(appName);
+        Path linuxPath = gvmPath.resolve(appName);
 
         linkBuilder.command().add("-o");
-        linkBuilder.command().add(paths.getAppPath().toString() + "/" + appName);
-        linkBuilder.command().add(linux.toString() + "/launcher.o");
-        linkBuilder.command().add(linux.toString() + "/thread.o");
+        linkBuilder.command().add(paths.getAppPath().resolve(appName).toString());
+        linkBuilder.command().add(linuxPath.resolve("launcher.o").toString());
+        linkBuilder.command().add(linuxPath.resolve("thread.o").toString());
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().add("-L" + projectConfiguration.getJavaStaticLibsPath());
-        linkBuilder.command().add("-L"+projectConfiguration.getGraalPath()+"/lib/svm/clibraries/"+target.getOsArch2());// darwin-amd64");
+        linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(),"lib","svm","clibraries",target.getOsArch2()));// darwin-amd64");
         linkBuilder.command().add("-ljava");
         linkBuilder.command().add("-ljvm");
         linkBuilder.command().add("-llibchelper");

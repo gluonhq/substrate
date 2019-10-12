@@ -100,7 +100,7 @@ public class FileOps {
         if (is == null) {
             throw new IOException("Could not copy resource named "+resource+" as it doesn't exist");
         }
-        return copyStream(resourceAsStream(resource), destination);
+        return copyStream(is, destination);
     }
 
     public static Path copyStream(InputStream sourceStream, Path destination) throws IOException {

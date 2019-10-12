@@ -71,8 +71,8 @@ public class ProjectConfiguration {
         return this.graalPath;
     }
 
-    public void setGraalPath(String v) {
-        this.graalPath = v;
+    public void setGraalPath(String path) {
+        this.graalPath = path;
     }
 //    public String getGraalLibsVersion() {
 //        return graalLibsVersion;
