@@ -1,0 +1,36 @@
+plugins {
+    id 'application'
+    id 'maven-publish'
+}
+
+group = "com.gluonhq"
+version = "0.0.1-SNAPSHOT"
+application {
+    mainClassName = "$moduleName/com.gluonhq.substrate.Main"
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            groupId = project.group
+            artifactId = 'substrate'
+            version = project.version
+        }
+    }
+    repositories {
+        maven {
+           def repositoryUrl = project.findProperty('repositoryUrl') ?: 'https://nexus.gluonhq.com/nexus/content/repositories/public-snapshots/'
+           if (project.hasProperty('gluonNexusUsername') && project.hasProperty('gluonNexusPassword')) {
+               url repositoryUrl
+               credentials {
+                   username project.property('gluonNexusUsername')
+                   password project.property('gluonNexusPassword')
+               }
+           }
+      }
+  }
+}
+
+
+

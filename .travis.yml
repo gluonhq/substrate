@@ -1,0 +1,44 @@
+language: java
+sudo: false
+
+jdk: openjdk11
+
+addons:
+  apt:
+    package: &global_deps
+      - ksh
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+      dist: bionic
+      services:
+        - xvfb
+      addons:
+        apt:
+          packages:
+            - *global_deps
+      env: TEST_ENV=linux
+    - os: osx
+      osx_image: xcode9
+      # env: PRINT_CRASH_LOGS="true"
+      env: TEST_ENV=osx
+
+before_script:
+  - echo $JAVA_OPTS
+  - sh ./gradlew --version
+  # run on xvfb screen (for linux).
+  - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then export DISPLAY=:99.0 && sleep 3; fi
+
+install: true
+
+script: bash .ci/script.sh $TEST_ENV

@@ -1,0 +1,35 @@
+plugins {
+    id 'org.javamodularity.moduleplugin' version '1.5.0' apply false
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'org.javamodularity.moduleplugin'
+
+    repositories {
+        mavenCentral()
+    }
+
+    test {
+        useJUnitPlatform()
+
+        testLogging {
+            events 'PASSED', 'FAILED', 'SKIPPED'
+            stackTraceFilters = []
+        }
+    }
+
+    dependencies {
+        testImplementation "org.junit.jupiter:junit-jupiter-api:$jUnitVersion"
+        testImplementation "org.junit.jupiter:junit-jupiter-params:$jUnitVersion"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$jUnitVersion"
+    }
+
+    javadoc {
+        options.addStringOption("Xdoclint:none", "-quiet")
+        options.addBooleanOption('html5', true)
+        options.addBooleanOption('javafx', true)
+    }
+
+    build.dependsOn javadoc
+}
