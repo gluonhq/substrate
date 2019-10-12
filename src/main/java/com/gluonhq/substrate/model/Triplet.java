@@ -29,6 +29,8 @@ package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
 
+import java.util.Locale;
+
 import static com.gluonhq.substrate.Constants.*;
 
 public class Triplet {
@@ -36,6 +38,18 @@ public class Triplet {
     private String arch;
     private String vendor;
     private String os;
+
+    public static Triplet fromCurrentOS() {
+        String osName  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+
+        if (osName.contains("mac")) {
+           return new Triplet(Constants.Profile.MACOS);
+        } else if (osName.contains("nux")) {
+           return new Triplet(Constants.Profile.LINUX);
+        } else {
+           throw new RuntimeException("OS " + osName + " not supported");
+        }
+    }
 
     public Triplet(String arch, String vendor, String os) {
         this.arch = arch;

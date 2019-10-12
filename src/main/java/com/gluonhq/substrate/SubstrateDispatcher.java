@@ -56,16 +56,8 @@ public class SubstrateDispatcher {
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String expected  = System.getProperty("expected");
-        String osName    = System.getProperty("os.name").toLowerCase(Locale.ROOT);
 
-        Triplet targetTriplet;
-        if (osName.contains("mac")) {
-            targetTriplet  = new Triplet(Constants.Profile.MACOS);
-        } else if (osName.contains("nux")) {
-            targetTriplet = new Triplet(Constants.Profile.LINUX);
-        } else {
-            throw new RuntimeException("OS " + osName + " not supported");
-        }
+        Triplet targetTriplet = Triplet.fromCurrentOS();
 
         ProjectConfiguration config = new ProjectConfiguration();
         config.setGraalPath(graalVM);
