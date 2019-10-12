@@ -36,14 +36,13 @@ import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+ import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.Optional;
 
 public class SubstrateDispatcher {
 
@@ -51,27 +50,14 @@ public class SubstrateDispatcher {
     private static Path gvmPath;
 
     public static void main(String[] args) throws Exception {
-        String classPath = System.getProperty("imagecp");
-        String graalVM = System.getProperty("graalvm");
-        String mainClass = System.getProperty("mainclass");
-        String appName = System.getProperty("appname");
-        String expected = System.getProperty("expected");
-        if (classPath == null || classPath.isEmpty()) {
-            printUsage();
-            throw new IllegalArgumentException("No classpath specified. Use -Dimagecp=/path/to/classes");
-        }
-        if (graalVM == null || graalVM.isEmpty()) {
-            printUsage();
-            throw new IllegalArgumentException("No graalvm specified. Use -Dgraalvm=/path/to/graalvm");
-        }
-        if (mainClass == null || mainClass.isEmpty()) {
-            printUsage();
-            throw new IllegalArgumentException("No mainclass specified. Use -Dmainclass=main.class.name");
-        }
-        if (appName == null) {
-            appName = "anonymousApp";
-        }
-        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+
+        String classPath = requireArg( System.getProperty("imagecp"),"No classpath specified. Use -Dimagecp=/path/to/classes");
+        String graalVM   = requireArg( System.getProperty("graalvm"),"No graalvm specified. Use -Dgraalvm=/path/to/graalvm");
+        String mainClass = requireArg( System.getProperty("mainclass"), "No mainclass specified. Use -Dmainclass=main.class.name" );
+        String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
+        String expected  = System.getProperty("expected");
+        String osName    = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+
         Triplet targetTriplet;
         if (osName.contains("mac")) {
             targetTriplet  = new Triplet(Constants.Profile.MACOS);
@@ -87,6 +73,7 @@ public class SubstrateDispatcher {
         config.setAppName(appName);
         config.setJavaStaticSdkVersion(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
+
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot.toString(), targetTriplet.getArchOs());
@@ -114,7 +101,15 @@ public class SubstrateDispatcher {
         }
     }
 
-    static void printUsage() {
+    private static String requireArg(String arg, String errorMessage ) {
+        if (arg == null || arg.trim().isEmpty()) {
+            printUsage();
+            throw new IllegalArgumentException(errorMessage);
+        }
+        return arg;
+    }
+
+    private static void printUsage() {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
@@ -154,27 +149,23 @@ public class SubstrateDispatcher {
     }
 
     private static TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
-        if (Constants.OS_LINUX == targetTriplet.getOs()) {
-            return new LinuxTargetConfiguration();
+        switch( targetTriplet.getOs() ) {
+            case Constants.OS_LINUX: return new LinuxTargetConfiguration();
+            case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
+            default: return null;
         }
-        if (Constants.OS_DARWIN == targetTriplet.getOs()) {
-            return new DarwinTargetConfiguration();
-
-        }
-        return null;
     }
 
     private static String prepareDirs(String buildRoot) throws IOException {
-        String gvmDir = null;
+
         omegaPath = buildRoot != null && !buildRoot.isEmpty() ?
                 Paths.get(buildRoot) : Paths.get(System.getProperty("user.dir")).resolve("build").resolve("client");
         String rootDir = omegaPath.toAbsolutePath().toString();
 
         gvmPath = Paths.get(rootDir, "gvm");
         gvmPath = Files.createDirectories(gvmPath);
-        gvmDir = gvmPath.toAbsolutePath().toString();
+        return  gvmPath.toAbsolutePath().toString();
 
-        return gvmDir;
     }
 
 }
