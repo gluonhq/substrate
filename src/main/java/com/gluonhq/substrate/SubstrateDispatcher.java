@@ -51,9 +51,9 @@ public class SubstrateDispatcher {
 
     public static void main(String[] args) throws Exception {
 
-        String classPath = requireArg( System.getProperty("imagecp"),"No classpath specified. Use -Dimagecp=/path/to/classes");
-        String graalVM   = requireArg( System.getProperty("graalvm"),"No graalvm specified. Use -Dgraalvm=/path/to/graalvm");
-        String mainClass = requireArg( System.getProperty("mainclass"), "No mainclass specified. Use -Dmainclass=main.class.name" );
+        String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
+        String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
+        String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String expected  = System.getProperty("expected");
         String osName    = System.getProperty("os.name").toLowerCase(Locale.ROOT);
@@ -101,10 +101,11 @@ public class SubstrateDispatcher {
         }
     }
 
-    private static String requireArg(String arg, String errorMessage ) {
+    private static String requireArg(String argName, String errorMessage ) {
+        String arg = System.getProperty(argName);
         if (arg == null || arg.trim().isEmpty()) {
             printUsage();
-            throw new IllegalArgumentException(errorMessage);
+            throw new IllegalArgumentException( String.format("No '%s' specified. %s", argName, errorMessage));
         }
         return arg;
     }
