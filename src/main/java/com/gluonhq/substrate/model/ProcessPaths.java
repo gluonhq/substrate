@@ -27,7 +27,6 @@
  */
 package com.gluonhq.substrate.model;
 
-
 import com.gluonhq.substrate.Constants;
 
 import java.io.IOException;
