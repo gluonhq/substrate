@@ -36,7 +36,7 @@ import java.nio.file.Paths;
 
 public class ProcessPaths {
 
-    private String buildRoot;
+    private Path buildRoot;
     private Path clientPath;
     private Path appPath;
     private Path gvmPath;
@@ -61,11 +61,9 @@ public class ProcessPaths {
      *     |-- main
      */
 
-    public ProcessPaths(String buildRoot, String app) throws IOException {
+    public ProcessPaths(Path buildRoot, String app) throws IOException {
         this.buildRoot = buildRoot;
-        clientPath = buildRoot != null && !buildRoot.isEmpty() ?
-                Paths.get(buildRoot) : Paths.get(System.getProperty("user.dir"));
-
+        clientPath = buildRoot != null ? buildRoot : Paths.get(System.getProperty("user.dir"));
         appPath = Files.createDirectories(clientPath.resolve(app));
         gvmPath = Files.createDirectories(appPath.resolve(Constants.GVM_PATH));
         genPath = Files.createDirectories(appPath.resolve(Constants.GEN_PATH));
@@ -74,7 +72,7 @@ public class ProcessPaths {
         sourcePath = clientPath.getParent().getParent().resolve(Constants.SOURCE_PATH);
     }
 
-    public String getBuildRoot() {
+    public Path getBuildRoot() {
         return buildRoot;
     }
 

@@ -76,7 +76,7 @@ public class SubstrateDispatcher {
 
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
-        ProcessPaths paths = new ProcessPaths(buildRoot.toString(), targetTriplet.getArchOs());
+        ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         System.err.println("Config: " + config);
         System.err.println("Compiling...");
         boolean compile = targetConfiguration.compile(paths, config, classPath);
@@ -113,7 +113,7 @@ public class SubstrateDispatcher {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
-    public static void nativeCompile(String buildRoot, ProjectConfiguration config, String classPath) throws Exception {
+    public static void nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
@@ -130,7 +130,8 @@ public class SubstrateDispatcher {
             System.err.println("Compilation failed. The error should be printed above.");
         }
     }
-    public static void nativeLink(String buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
+
+    public static void nativeLink(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
@@ -141,7 +142,7 @@ public class SubstrateDispatcher {
         targetConfiguration.link(paths, config);
     }
 
-    public static void nativeRun(String buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
+    public static void nativeRun(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
@@ -150,16 +151,15 @@ public class SubstrateDispatcher {
 
     private static TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
         switch( targetTriplet.getOs() ) {
-            case Constants.OS_LINUX: return new LinuxTargetConfiguration();
+            case Constants.OS_LINUX : return new LinuxTargetConfiguration();
             case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
             default: return null;
         }
     }
 
-    private static String prepareDirs(String buildRoot) throws IOException {
+    private static String prepareDirs(Path buildRoot) throws IOException {
 
-        omegaPath = buildRoot != null && !buildRoot.isEmpty() ?
-                Paths.get(buildRoot) : Paths.get(System.getProperty("user.dir")).resolve("build").resolve("client");
+        omegaPath = buildRoot != null? buildRoot : Paths.get(System.getProperty("user.dir"),"build", "client");
         String rootDir = omegaPath.toAbsolutePath().toString();
 
         gvmPath = Paths.get(rootDir, "gvm");

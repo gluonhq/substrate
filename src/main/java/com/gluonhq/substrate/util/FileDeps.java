@@ -70,7 +70,7 @@ public class FileDeps {
     public static boolean setupDependencies(ProjectConfiguration configuration) throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
 
-        if (! Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
+        if (!Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
             Files.createDirectories(Constants.USER_SUBSTRATE_PATH);
         }
 
@@ -174,7 +174,7 @@ public class FileDeps {
     }
 
     private static String getChecksumFile(Path unpacked, String name, String osArch) {
-        String answer = unpacked.getParent().toString()+ File.separator + name+"-" + osArch + ".md5";
+        String answer = unpacked.getParent().resolve(name+"-" + osArch + ".md5").toString();
         return answer;
     }
 
