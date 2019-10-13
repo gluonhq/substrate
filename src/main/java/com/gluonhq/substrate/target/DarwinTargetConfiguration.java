@@ -27,16 +27,7 @@
  */
 package com.gluonhq.substrate.target;
 
-import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
-import com.gluonhq.substrate.util.FileOps;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 public class DarwinTargetConfiguration extends AbstractTargetConfiguration {

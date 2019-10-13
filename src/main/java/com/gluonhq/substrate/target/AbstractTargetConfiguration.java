@@ -39,11 +39,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
-    private static String[] C_RESOURCES = { "launcher.c",  "thread.c"};
+    private static String[] C_RESOURCES = { "launcher",  "thread"};
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
@@ -125,12 +126,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     +gvmPath.toString());
         }
         ProcessBuilder linkBuilder = new ProcessBuilder("gcc");
-        Path linuxPath = gvmPath.resolve(appName);
+        Path appPath = gvmPath.resolve(appName);
 
         linkBuilder.command().add("-o");
         linkBuilder.command().add(paths.getAppPath().resolve(appName).toString());
-        linkBuilder.command().add(linuxPath.resolve("launcher.o").toString());
-        linkBuilder.command().add(linuxPath.resolve("thread.o").toString());
+
+        Arrays.stream(C_RESOURCES)
+              .forEach( r -> linkBuilder.command().add(appPath.resolve(r + ".o").toString()));
+
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().add("-L" + projectConfiguration.getJavaStaticLibsPath());
         linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
@@ -203,8 +206,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
 
         for( String res: C_RESOURCES ) {
-            FileOps.copyResource("/native/linux/" + res, workDir.resolve(res));
-            processBuilder.command().add(res);
+            String fileName = res + ".c";
+            FileOps.copyResource("/native/linux/" + fileName, workDir.resolve(fileName));
+            processBuilder.command().add(fileName);
         }
 
         processBuilder.directory(workDir.toFile());
