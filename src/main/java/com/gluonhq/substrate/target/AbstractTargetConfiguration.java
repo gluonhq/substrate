@@ -97,7 +97,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return !failure;
     }
 
-    public String getJniPlatform( String os ) {
+    private String getJniPlatform( String os ) {
         switch (os) {
             case Constants.OS_LINUX: return "LINUX_AMD64";
             case Constants.OS_DARWIN: return "DARWIN_AMD64";
@@ -137,7 +137,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add(linuxPath.resolve("thread.o").toString());
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().add("-L" + projectConfiguration.getJavaStaticLibsPath());
-        linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(),"lib","svm","clibraries",target.getOsArch2()));// darwin-amd64");
+        linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
         linkBuilder.command().add("-ljava");
         linkBuilder.command().add("-ljvm");
         linkBuilder.command().add("-llibchelper");
@@ -162,16 +162,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     abstract List<String> getTargetSpecificLinkFlags();
 
-    void asynPrintFromInputStream (InputStream inputStream) throws IOException {
-        Thread t = new Thread() {
-            @Override public void run() {
-                try {
-                    printFromInputStream(inputStream);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+    void asynPrintFromInputStream (InputStream inputStream) {
+        Thread t = new Thread(() -> {
+            try {
+                printFromInputStream(inputStream);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        };
+        });
         t.start();
     }
 
@@ -184,7 +182,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
     }
 
-    static String getNativeImagePath (ProjectConfiguration configuration) {
+    private static String getNativeImagePath (ProjectConfiguration configuration) {
         String graalPath = configuration.getGraalPath();
         Path path = Path.of(graalPath, "bin", "native-image");
         return path.toString();
