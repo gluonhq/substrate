@@ -35,70 +35,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
 
-    public boolean compileAdditionalSources(ProcessPaths paths, ProjectConfiguration projectConfiguration)
-            throws IOException, InterruptedException {
-        String appName = projectConfiguration.getAppName();
-        Path workDir = paths.getGvmPath().resolve(appName);
-        Files.createDirectories(workDir);
-        FileOps.copyResource("/native/linux/launcher.c", workDir.resolve("launcher.c"));
-        FileOps.copyResource("/native/linux/thread.c", workDir.resolve("thread.c"));
-        ProcessBuilder processBuilder = new ProcessBuilder("gcc");
-        processBuilder.command().add("-c");
-        if (projectConfiguration.isVerbose()) {
-            processBuilder.command().add("-DGVM_VERBOSE");
-        }
-        processBuilder.command().add("launcher.c");
-        processBuilder.command().add("thread.c");
-        processBuilder.directory(workDir.toFile());
-        String cmds = String.join(" ", processBuilder.command());
-        processBuilder.redirectErrorStream(true);
-        Process p = processBuilder.start();
-        InputStream inputStream = p.getInputStream();
-        int result = p.waitFor();
-        if (result != 0) {
-            System.err.println("Compilation of additional sources failed with result = " + result);
-            printFromInputStream(inputStream);
-            return false;
-        } // we need more checks (e.g. do launcher.o and thread.o exist?)
-        return true;
-    }
-
     @Override
     List<String> getTargetSpecificLinkFlags() {
-        LinkedList<String> answer = new LinkedList<>();
-        answer.add("-Wl,-framework,Foundation");
-        return answer;
-    }
-
-
-    @Override
-    public InputStream run(Path appPath, String appName) throws IOException, InterruptedException {
-        ProcessBuilder runBuilder = new ProcessBuilder(appPath.toString() + "/" + appName);
-        runBuilder.redirectErrorStream(true);
-        Process runProcess = runBuilder.start();
-        InputStream is = runProcess.getInputStream();
-        return is;
-    }
-
-
-    @Override
-    public boolean runUntilEnd(Path appPath, String appName) throws IOException, InterruptedException {
-        ProcessBuilder runBuilder = new ProcessBuilder(appPath.toString() + "/" + appName);
-        runBuilder.redirectErrorStream(true);
-        Process runProcess = runBuilder.start();
-        InputStream is = runProcess.getInputStream();
-        asynPrintFromInputStream(is);
-        int result = runProcess.waitFor();
-        if (result != 0 ) {
-            printFromInputStream(is);
-            return false;
-        }
-        return true;
+        return Arrays.asList("-Wl,-framework,Foundation");
     }
 
 }

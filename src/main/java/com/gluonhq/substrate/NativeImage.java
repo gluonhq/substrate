@@ -71,9 +71,8 @@ public class NativeImage {
         }
     }
 
-    Path getNativeImageExecutable (String graalVMRoot) {
-        Path nativeImage = Path.of(graalVMRoot).resolve("bin").resolve("native-image");
-        return nativeImage;
+    private Path getNativeImageExecutable(String graalVMRoot) {
+        return Path.of(graalVMRoot, "bin", "native-image");
     }
 
 }

@@ -43,6 +43,7 @@ import java.util.List;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
+    private static String[] C_RESOURCES = { "launcher.c",  "thread.c"};
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
@@ -105,11 +106,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
     }
 
-
-    public abstract boolean compileAdditionalSources(ProcessPaths paths, ProjectConfiguration projectConfiguration)
-            throws IOException, InterruptedException;
-
-
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
 
@@ -150,11 +146,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().addAll(getTargetSpecificLinkFlags());
         linkBuilder.redirectErrorStream(true);
         Process compileProcess = linkBuilder.start();
-        InputStream inputStream = compileProcess.getInputStream();
         int result = compileProcess.waitFor();
         if (result != 0 ) {
             System.err.println("Linking failed. Details from linking below:");
-            printFromInputStream(inputStream);
+            printFromInputStream(compileProcess.getInputStream());
             return false;
         }
         return true;
@@ -162,7 +157,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     abstract List<String> getTargetSpecificLinkFlags();
 
-    void asynPrintFromInputStream (InputStream inputStream) {
+    private void asynPrintFromInputStream (InputStream inputStream) {
         Thread t = new Thread(() -> {
             try {
                 printFromInputStream(inputStream);
@@ -173,7 +168,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         t.start();
     }
 
-    void printFromInputStream(InputStream inputStream) throws IOException {
+    private void printFromInputStream(InputStream inputStream) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
         String l = br.readLine();
         while (l != null) {
@@ -187,4 +182,62 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path path = Path.of(graalPath, "bin", "native-image");
         return path.toString();
     }
+
+    private Process startAppProcess( Path appPath, String appName ) throws IOException {
+        ProcessBuilder runBuilder = new ProcessBuilder(appPath.resolve(appName).toString());
+        runBuilder.redirectErrorStream(true);
+        return runBuilder.start();
+    }
+
+    public boolean compileAdditionalSources(ProcessPaths paths, ProjectConfiguration projectConfiguration)
+            throws IOException, InterruptedException {
+
+        String appName = projectConfiguration.getAppName();
+        Path workDir = paths.getGvmPath().resolve(appName);
+        Files.createDirectories(workDir);
+
+        ProcessBuilder processBuilder = new ProcessBuilder("gcc");
+        processBuilder.command().add("-c");
+        if (projectConfiguration.isVerbose()) {
+            processBuilder.command().add("-DGVM_VERBOSE");
+        }
+
+        for( String res: C_RESOURCES ) {
+            FileOps.copyResource("/native/linux/" + res, workDir.resolve(res));
+            processBuilder.command().add(res);
+        }
+
+        processBuilder.directory(workDir.toFile());
+        String cmds = String.join(" ", processBuilder.command());
+        processBuilder.redirectErrorStream(true);
+        Process p = processBuilder.start();
+        int result = p.waitFor();
+        if (result != 0) {
+            System.err.println("Compilation of additional sources failed with result = " + result);
+            printFromInputStream(p.getInputStream());
+            return false;
+        } // we need more checks (e.g. do launcher.o and thread.o exist?)
+        return true;
+    }
+
+    @Override
+    public InputStream run(Path appPath, String appName) throws IOException {
+        Process runProcess = startAppProcess(appPath,appName);
+        return runProcess.getInputStream();
+    }
+
+
+    @Override
+    public boolean runUntilEnd(Path appPath, String appName) throws IOException, InterruptedException {
+        Process runProcess = startAppProcess(appPath,appName);
+        InputStream is = runProcess.getInputStream();
+        asynPrintFromInputStream(is);
+        int result = runProcess.waitFor();
+        if (result != 0 ) {
+            printFromInputStream(is);
+            return false;
+        }
+        return true;
+    }
+
 }
