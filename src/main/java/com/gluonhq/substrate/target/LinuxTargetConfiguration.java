@@ -32,7 +32,6 @@ import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,34 +42,6 @@ import java.util.List;
 
 public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
 
-    public boolean compileAdditionalSources(ProcessPaths paths, ProjectConfiguration projectConfiguration)
-            throws IOException, InterruptedException {
-        String appName = projectConfiguration.getAppName();
-        Path workDir = paths.getGvmPath().resolve(appName);
-        Files.createDirectories(workDir);
-        FileOps.copyResource("/native/linux/launcher.c", workDir.resolve("launcher.c"));
-        FileOps.copyResource("/native/linux/thread.c", workDir.resolve("thread.c"));
-        ProcessBuilder processBuilder = new ProcessBuilder("gcc");
-        processBuilder.command().add("-c");
-        if (projectConfiguration.isVerbose()) {
-            processBuilder.command().add("-DGVM_VERBOSE");
-        }
-        processBuilder.command().add("launcher.c");
-        processBuilder.command().add("thread.c");
-        processBuilder.directory(workDir.toFile());
-        String cmds = String.join(" ", processBuilder.command());
-        processBuilder.redirectErrorStream(true);
-        Process p = processBuilder.start();
-        InputStream inputStream = p.getInputStream();
-        int result = p.waitFor();
-        if (result != 0) {
-            System.err.println("Compilation of additional sources failed with result = " + result);
-            printFromInputStream(inputStream);
-            return false;
-        } // we need more checks (e.g. do launcher.o and thread.o exist?)
-        return true;
-    }
-
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
         checkLinker();
@@ -79,36 +50,12 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkFlags() {
-        LinkedList<String> answer = new LinkedList<>();
-        return answer;
-    }
-
-    @Override
-    public InputStream run(Path appPath, String appName) throws IOException, InterruptedException {
-        ProcessBuilder runBuilder = new ProcessBuilder(appPath.toString() + "/" + appName);
-        runBuilder.redirectErrorStream(true);
-        Process runProcess = runBuilder.start();
-        InputStream is = runProcess.getInputStream();
-        return is;
+        return List.of();
     }
 
 
-    @Override
-    public boolean runUntilEnd(Path appPath, String appName) throws IOException, InterruptedException {
-        ProcessBuilder runBuilder = new ProcessBuilder(appPath.toString() + "/" + appName);
-        runBuilder.redirectErrorStream(true);
-        Process runProcess = runBuilder.start();
-        InputStream is = runProcess.getInputStream();
-        asynPrintFromInputStream(is);
-        int result = runProcess.waitFor();
-        if (result != 0 ) {
-            printFromInputStream(is);
-            return false;
-        }
-        return true;
-    }
 
-    boolean checkLinker() throws IOException, InterruptedException {
+    private boolean checkLinker() throws IOException, InterruptedException {
         ProcessBuilder linker = new ProcessBuilder("gcc");
         linker.command().add("--version");
         linker.redirectErrorStream(true);

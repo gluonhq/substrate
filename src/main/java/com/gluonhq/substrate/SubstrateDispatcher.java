@@ -36,14 +36,13 @@ import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+ import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.Optional;
 
 public class SubstrateDispatcher {
 
@@ -51,35 +50,14 @@ public class SubstrateDispatcher {
     private static Path gvmPath;
 
     public static void main(String[] args) throws Exception {
-        String classPath = System.getProperty("imagecp");
-        String graalVM = System.getProperty("graalvm");
-        String mainClass = System.getProperty("mainclass");
-        String appName = System.getProperty("appname");
-        String expected = System.getProperty("expected");
-        if (classPath == null || classPath.isEmpty()) {
-            printUsage();
-            throw new IllegalArgumentException("No classpath specified. Use -Dimagecp=/path/to/classes");
-        }
-        if (graalVM == null || graalVM.isEmpty()) {
-            printUsage();
-            throw new IllegalArgumentException("No graalvm specified. Use -Dgraalvm=/path/to/graalvm");
-        }
-        if (mainClass == null || mainClass.isEmpty()) {
-            printUsage();
-            throw new IllegalArgumentException("No mainclass specified. Use -Dmainclass=main.class.name");
-        }
-        if (appName == null) {
-            appName = "anonymousApp";
-        }
-        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-        Triplet targetTriplet;
-        if (osName.contains("mac")) {
-            targetTriplet  = new Triplet(Constants.Profile.MACOS);
-        } else if (osName.contains("nux")) {
-            targetTriplet = new Triplet(Constants.Profile.LINUX);
-        } else {
-            throw new RuntimeException("OS " + osName + " not supported");
-        }
+
+        String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
+        String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
+        String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
+        String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
+        String expected  = System.getProperty("expected");
+
+        Triplet targetTriplet = Triplet.fromCurrentOS();
 
         ProjectConfiguration config = new ProjectConfiguration();
         config.setGraalPath(graalVM);
@@ -87,9 +65,10 @@ public class SubstrateDispatcher {
         config.setAppName(appName);
         config.setJavaStaticSdkVersion(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
+
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
-        ProcessPaths paths = new ProcessPaths(buildRoot.toString(), targetTriplet.getArchOs());
+        ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         System.err.println("Config: " + config);
         System.err.println("Compiling...");
         boolean compile = targetConfiguration.compile(paths, config, classPath);
@@ -114,11 +93,20 @@ public class SubstrateDispatcher {
         }
     }
 
-    static void printUsage() {
+    private static String requireArg(String argName, String errorMessage ) {
+        String arg = System.getProperty(argName);
+        if (arg == null || arg.trim().isEmpty()) {
+            printUsage();
+            throw new IllegalArgumentException( String.format("No '%s' specified. %s", argName, errorMessage));
+        }
+        return arg;
+    }
+
+    private static void printUsage() {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
-    public static void nativeCompile(String buildRoot, ProjectConfiguration config, String classPath) throws Exception {
+    public static void nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
@@ -135,7 +123,8 @@ public class SubstrateDispatcher {
             System.err.println("Compilation failed. The error should be printed above.");
         }
     }
-    public static void nativeLink(String buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
+
+    public static void nativeLink(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
@@ -146,7 +135,7 @@ public class SubstrateDispatcher {
         targetConfiguration.link(paths, config);
     }
 
-    public static void nativeRun(String buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
+    public static void nativeRun(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
@@ -154,27 +143,22 @@ public class SubstrateDispatcher {
     }
 
     private static TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
-        if (Constants.OS_LINUX == targetTriplet.getOs()) {
-            return new LinuxTargetConfiguration();
+        switch( targetTriplet.getOs() ) {
+            case Constants.OS_LINUX : return new LinuxTargetConfiguration();
+            case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
+            default: return null;
         }
-        if (Constants.OS_DARWIN == targetTriplet.getOs()) {
-            return new DarwinTargetConfiguration();
-
-        }
-        return null;
     }
 
-    private static String prepareDirs(String buildRoot) throws IOException {
-        String gvmDir = null;
-        omegaPath = buildRoot != null && !buildRoot.isEmpty() ?
-                Paths.get(buildRoot) : Paths.get(System.getProperty("user.dir")).resolve("build").resolve("client");
+    private static String prepareDirs(Path buildRoot) throws IOException {
+
+        omegaPath = buildRoot != null? buildRoot : Paths.get(System.getProperty("user.dir"),"build", "client");
         String rootDir = omegaPath.toAbsolutePath().toString();
 
         gvmPath = Paths.get(rootDir, "gvm");
         gvmPath = Files.createDirectories(gvmPath);
-        gvmDir = gvmPath.toAbsolutePath().toString();
+        return  gvmPath.toAbsolutePath().toString();
 
-        return gvmDir;
     }
 
 }

@@ -34,27 +34,22 @@ import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileOps;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
+    private static String[] C_RESOURCES = { "launcher",  "thread"};
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
         Triplet target =  config.getTargetTriplet();
-        String jniPlatform = null;
-        if (target.getOs().equals(Constants.OS_LINUX)) {
-            jniPlatform="LINUX_AMD64";
-        } else if (target.getOs().equals(Constants.OS_DARWIN)) {
-            jniPlatform="DARWIN_AMD64";
-        } else {
-            throw new IllegalArgumentException("No support yet for "+target.getOs());
-        }
+        String jniPlatform = getJniPlatform(target.getOs());
         if (!compileAdditionalSources(paths, config) ) {
             return false;
         }
@@ -104,19 +99,23 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return !failure;
     }
 
-
-    public abstract boolean compileAdditionalSources(ProcessPaths paths, ProjectConfiguration projectConfiguration)
-            throws IOException, InterruptedException;
-
+    private String getJniPlatform( String os ) {
+        switch (os) {
+            case Constants.OS_LINUX: return "LINUX_AMD64";
+            case Constants.OS_DARWIN: return "DARWIN_AMD64";
+            default: throw new IllegalArgumentException("No support yet for " + os);
+        }
+    }
 
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
-        File javaStaticLibsDir = projectConfiguration.getJavaStaticLibsPath().toFile();
-        if (!javaStaticLibsDir.exists()) {
+
+        if ( !Files.exists(projectConfiguration.getJavaStaticLibsPath())) {
             System.err.println("We can't link because the static Java libraries are missing. " +
-                    "The path "+javaStaticLibsDir+" does not exist.");
+                    "The path "+ projectConfiguration.getJavaStaticLibsPath() + " does not exist.");
             return false;
         }
+
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
         Triplet target = projectConfiguration.getTargetTriplet();
@@ -127,15 +126,17 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     +gvmPath.toString());
         }
         ProcessBuilder linkBuilder = new ProcessBuilder("gcc");
-        Path linux = gvmPath.resolve(appName);
+        Path appPath = gvmPath.resolve(appName);
 
         linkBuilder.command().add("-o");
-        linkBuilder.command().add(paths.getAppPath().toString() + "/" + appName);
-        linkBuilder.command().add(linux.toString() + "/launcher.o");
-        linkBuilder.command().add(linux.toString() + "/thread.o");
+        linkBuilder.command().add(paths.getAppPath().resolve(appName).toString());
+
+        Arrays.stream(C_RESOURCES)
+              .forEach( r -> linkBuilder.command().add(appPath.resolve(r + ".o").toString()));
+
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().add("-L" + projectConfiguration.getJavaStaticLibsPath());
-        linkBuilder.command().add("-L"+projectConfiguration.getGraalPath()+"/lib/svm/clibraries/"+target.getOsArch2());// darwin-amd64");
+        linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
         linkBuilder.command().add("-ljava");
         linkBuilder.command().add("-ljvm");
         linkBuilder.command().add("-llibchelper");
@@ -148,11 +149,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().addAll(getTargetSpecificLinkFlags());
         linkBuilder.redirectErrorStream(true);
         Process compileProcess = linkBuilder.start();
-        InputStream inputStream = compileProcess.getInputStream();
         int result = compileProcess.waitFor();
         if (result != 0 ) {
             System.err.println("Linking failed. Details from linking below:");
-            printFromInputStream(inputStream);
+            printFromInputStream(compileProcess.getInputStream());
             return false;
         }
         return true;
@@ -160,20 +160,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     abstract List<String> getTargetSpecificLinkFlags();
 
-    void asynPrintFromInputStream (InputStream inputStream) throws IOException {
-        Thread t = new Thread() {
-            @Override public void run() {
-                try {
-                    printFromInputStream(inputStream);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+    private void asynPrintFromInputStream (InputStream inputStream) {
+        Thread t = new Thread(() -> {
+            try {
+                printFromInputStream(inputStream);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        };
+        });
         t.start();
     }
 
-    void printFromInputStream(InputStream inputStream) throws IOException {
+    private void printFromInputStream(InputStream inputStream) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
         String l = br.readLine();
         while (l != null) {
@@ -182,9 +180,68 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
     }
 
-    static String getNativeImagePath (ProjectConfiguration configuration) {
+    private static String getNativeImagePath (ProjectConfiguration configuration) {
         String graalPath = configuration.getGraalPath();
         Path path = Path.of(graalPath, "bin", "native-image");
         return path.toString();
     }
+
+    private Process startAppProcess( Path appPath, String appName ) throws IOException {
+        ProcessBuilder runBuilder = new ProcessBuilder(appPath.resolve(appName).toString());
+        runBuilder.redirectErrorStream(true);
+        return runBuilder.start();
+    }
+
+    public boolean compileAdditionalSources(ProcessPaths paths, ProjectConfiguration projectConfiguration)
+            throws IOException, InterruptedException {
+
+        String appName = projectConfiguration.getAppName();
+        Path workDir = paths.getGvmPath().resolve(appName);
+        Files.createDirectories(workDir);
+
+        ProcessBuilder processBuilder = new ProcessBuilder("gcc");
+        processBuilder.command().add("-c");
+        if (projectConfiguration.isVerbose()) {
+            processBuilder.command().add("-DGVM_VERBOSE");
+        }
+
+        for( String res: C_RESOURCES ) {
+            String fileName = res + ".c";
+            FileOps.copyResource("/native/linux/" + fileName, workDir.resolve(fileName));
+            processBuilder.command().add(fileName);
+        }
+
+        processBuilder.directory(workDir.toFile());
+        String cmds = String.join(" ", processBuilder.command());
+        processBuilder.redirectErrorStream(true);
+        Process p = processBuilder.start();
+        int result = p.waitFor();
+        if (result != 0) {
+            System.err.println("Compilation of additional sources failed with result = " + result);
+            printFromInputStream(p.getInputStream());
+            return false;
+        } // we need more checks (e.g. do launcher.o and thread.o exist?)
+        return true;
+    }
+
+    @Override
+    public InputStream run(Path appPath, String appName) throws IOException {
+        Process runProcess = startAppProcess(appPath,appName);
+        return runProcess.getInputStream();
+    }
+
+
+    @Override
+    public boolean runUntilEnd(Path appPath, String appName) throws IOException, InterruptedException {
+        Process runProcess = startAppProcess(appPath,appName);
+        InputStream is = runProcess.getInputStream();
+        asynPrintFromInputStream(is);
+        int result = runProcess.waitFor();
+        if (result != 0 ) {
+            printFromInputStream(is);
+            return false;
+        }
+        return true;
+    }
+
 }

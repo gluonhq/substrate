@@ -51,8 +51,10 @@ public class AttachResolver {
     public static List<String> attachServices(List<Path> paths) {
         List<String> list = new ArrayList<>();
         paths.stream()
-                .filter(s -> s.toString().contains(DEPENDENCY_GROUP) ||
-                        s.toString().contains(DEPENDENCY_M2_GROUP))
+                .filter(p -> {
+                    String s = p.toString();
+                    return s.contains(DEPENDENCY_GROUP) || s.contains(DEPENDENCY_M2_GROUP);
+                 })
                 .forEach(jar -> {
                     try {
                         ZipFile zf = new ZipFile(jar.toFile());

@@ -70,7 +70,7 @@ public class FileDeps {
     public static boolean setupDependencies(ProjectConfiguration configuration) throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
 
-        if (! Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
+        if (!Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
             Files.createDirectories(Constants.USER_SUBSTRATE_PATH);
         }
 
@@ -169,13 +169,14 @@ public class FileDeps {
         try (FileInputStream fis = new FileInputStream(new File(nameFile));
              ObjectInputStream ois = new ObjectInputStream(fis)) {
             hashes = (Map<String, String>) ois.readObject();
-        } catch (ClassNotFoundException | IOException e) {}
+        } catch (ClassNotFoundException | IOException e) {
+            e.printStackTrace();
+        }
         return hashes;
     }
 
     private static String getChecksumFile(Path unpacked, String name, String osArch) {
-        String answer = unpacked.getParent().toString()+ File.separator + name+"-" + osArch + ".md5";
-        return answer;
+        return unpacked.getParent().resolve( String.format("%s-%s.md5", name, osArch) ).toString();
     }
 
     private static void downloadJavaZip(String target, Path omegaPath, ProjectConfiguration configuration) throws IOException {
@@ -258,17 +259,18 @@ public class FileDeps {
     private static String calculateCheckSum(File file) {
         try {
             // not looking for security, just a checksum. MD5 should be faster than SHA
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
             try (final InputStream stream = new FileInputStream(file);
-                 final DigestInputStream dis = new DigestInputStream(stream, MessageDigest.getInstance("MD5"))) {
-                dis.getMessageDigest().reset();
+                 final DigestInputStream dis = new DigestInputStream(stream, md5)) {
+                md5.reset();
                 byte[] buffer = new byte[4096];
                 while (dis.read(buffer) != -1) { /* empty loop body is intentional */ }
-                return Arrays.toString(dis.getMessageDigest().digest());
+                return Arrays.toString(md5.digest());
             }
 
         } catch (IllegalArgumentException | NoSuchAlgorithmException | IOException | SecurityException e) {
+            return "";
         }
-        return Arrays.toString(new byte[0]);
     }
 
 }
