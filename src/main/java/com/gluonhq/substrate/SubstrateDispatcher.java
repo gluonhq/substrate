@@ -71,17 +71,12 @@ public class SubstrateDispatcher {
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         System.err.println("Config: " + config);
         System.err.println("Compiling...");
-        boolean compile = nativeCompile(buildRoot, config, classPath);
-       // boolean compile = targetConfiguration.compile(paths, config, classPath);
-        if (!compile) {
+        if (!nativeCompile(buildRoot, config, classPath)) {
             System.err.println("COMPILE FAILED");
             return;
         }
-       // FileDeps.setupDependencies(config);
         System.err.println("Linking...");
-        boolean link = nativeLink(buildRoot, config);
-       // boolean link = targetConfiguration.link(paths, config);
-        if (!link) {
+        if (!nativeLink(buildRoot, config)) {
             System.err.println("Linking failed");
             System.exit(1);
         }
@@ -91,7 +86,6 @@ public class SubstrateDispatcher {
             // TODO: compare expected and actual output
 
         } else {
-         //   targetConfiguration.runUntilEnd(paths.getAppPath(), appName);
             nativeRun(buildRoot, config);
         }
     }
