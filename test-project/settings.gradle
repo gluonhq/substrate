@@ -1,0 +1,3 @@
+rootProject.name = 'substrateTests'
+
+include 'helloWorld'

@@ -1,0 +1,15 @@
+plugins {
+    id "com.google.osdetector" version "1.6.2" apply false
+}
+
+subprojects {
+    apply plugin: 'com.google.osdetector'
+    apply plugin: 'application'
+
+    ext.platform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
+
+    sourceCompatibility = 11
+    targetCompatibility = 11
+}
+
+
