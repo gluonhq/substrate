@@ -31,6 +31,7 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.target.DarwinTargetConfiguration;
+import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
@@ -55,9 +56,11 @@ public class SubstrateDispatcher {
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
+        String targetProfile = System.getProperty("targetProfile");
         String expected  = System.getProperty("expected");
 
-        Triplet targetTriplet = Triplet.fromCurrentOS();
+        Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
+                :Triplet.fromCurrentOS();
 
         ProjectConfiguration config = new ProjectConfiguration();
         config.setGraalPath(graalVM);
@@ -145,6 +148,7 @@ public class SubstrateDispatcher {
         switch( targetTriplet.getOs() ) {
             case Constants.OS_LINUX : return new LinuxTargetConfiguration();
             case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
+            case Constants.OS_IOS: return new IosTargetConfiguration();
             default: return null;
         }
     }

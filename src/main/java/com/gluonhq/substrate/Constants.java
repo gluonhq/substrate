@@ -58,7 +58,8 @@ public class Constants {
      */
     public enum Profile {
         LINUX, // (x86_64-linux-linux)
-        MACOS; // (x86_64-apple-darwin)
+        MACOS, // (x86_64-apple-darwin)
+        IOS;   // (aarch64-apple-ios)
     };
 
     /**
