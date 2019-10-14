@@ -41,4 +41,4 @@ before_script:
 
 install: true
 
-script: bash .ci/script.sh $TEST_ENV
+script: ./gradlew build

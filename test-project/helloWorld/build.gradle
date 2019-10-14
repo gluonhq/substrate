@@ -1,0 +1,47 @@
+
+mainClassName = "com.gluonhq.substrate.test.Main"
+
+def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
+
+def graal_path
+
+task setupDependencies() {
+    if ("$platform" != "mac" && "$platform" != "linux") {
+        throw new GradleException("Platfrom $platform not supported")
+    }
+
+    def graalVM = new File("${System.properties['user.home']}/.gluon/substrate/graalvm")
+    if (!graalVM.exists()) {
+        graalVM.mkdirs()
+    }
+    def graalFolder = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev")
+    def name = "mac" == "$platform" ? "darwin" : "linux"
+    def graalZip = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev-gvm-1-$name-amd64.zip")
+    if (!graalZip.exists()) {
+        println "Downloading graalZip..."
+        new URL("https://download2.gluonhq.com/substrate/graalvm/graalvm-unknown-java11-19.3.0-dev-gvm-1-$name-amd64.zip")
+                .withInputStream { i -> graalZip.withOutputStream { it << i } }
+        copy {
+            from zipTree(graalZip)
+            into graalVM
+        }
+    }
+    graal_path = "mac" == "$platform" ? "$graalFolder/Contents/Home" : "$graalFolder"
+}
+
+task runScript(type: Exec) {
+    dependsOn 'clean'
+    dependsOn 'build'
+    dependsOn 'setupDependencies'
+
+    if (java_home == null) {
+        throw new RuntimeException("java_home is not defined.")
+    }
+
+    def rootFile = new File(rootDir.getParent().concat("/build/"))
+    def substratePath = rootFile.toString().concat("/classes/java/main") + ":" + rootFile.toString().concat("/resources/main")
+
+    commandLine "${java_home}/bin/java", '-cp', substratePath,
+            '-Dimagecp=build/classes/java/main/', "-Dgraalvm=$graal_path",
+            "-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher'
+}
