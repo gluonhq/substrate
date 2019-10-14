@@ -1,7 +1,7 @@
 language: java
 sudo: false
 
-jdk: openjdk11
+# jdk: openjdk11
 
 addons:
   apt:
@@ -28,11 +28,12 @@ matrix:
           packages:
             - *global_deps
     - os: osx
-      osx_image: xcode9
+      osx_image: xcode11
       # env: PRINT_CRASH_LOGS="true"
 
 before_script:
   - echo $JAVA_OPTS
+  - java -version
   - sh ./gradlew --version
   # run on xvfb screen (for linux).
   - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then export DISPLAY=:99.0 && sleep 3; fi
