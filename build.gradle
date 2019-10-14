@@ -92,5 +92,6 @@ publishing {
 }
 
 signing {
+    required = { gradle.taskGraph.hasTask(publish) && !version.endsWith("SNAPSHOT") }
     sign publishing.publications.maven
 }
