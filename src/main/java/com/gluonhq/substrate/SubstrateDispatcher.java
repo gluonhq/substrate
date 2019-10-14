@@ -71,15 +71,17 @@ public class SubstrateDispatcher {
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         System.err.println("Config: " + config);
         System.err.println("Compiling...");
-        boolean compile = targetConfiguration.compile(paths, config, classPath);
+        boolean compile = nativeCompile(buildRoot, config, classPath);
+       // boolean compile = targetConfiguration.compile(paths, config, classPath);
         if (!compile) {
             System.err.println("COMPILE FAILED");
             return;
         }
-        FileDeps.setupDependencies(config);
+       // FileDeps.setupDependencies(config);
         System.err.println("Linking...");
-        boolean linked = targetConfiguration.link(paths, config);
-        if (!linked) {
+        boolean link = nativeLink(buildRoot, config);
+       // boolean link = targetConfiguration.link(paths, config);
+        if (!link) {
             System.err.println("Linking failed");
             System.exit(1);
         }
@@ -89,7 +91,8 @@ public class SubstrateDispatcher {
             // TODO: compare expected and actual output
 
         } else {
-            targetConfiguration.runUntilEnd(paths.getAppPath(), appName);
+         //   targetConfiguration.runUntilEnd(paths.getAppPath(), appName);
+            nativeRun(buildRoot, config);
         }
     }
 
@@ -106,7 +109,7 @@ public class SubstrateDispatcher {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
-    public static void nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
+    public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
@@ -122,9 +125,10 @@ public class SubstrateDispatcher {
         } else {
             System.err.println("Compilation failed. The error should be printed above.");
         }
+        return compile;
     }
 
-    public static void nativeLink(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
+    public static boolean nativeLink(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
@@ -132,7 +136,8 @@ public class SubstrateDispatcher {
         }
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         FileDeps.setupDependencies(config);
-        targetConfiguration.link(paths, config);
+        boolean link = targetConfiguration.link(paths, config);
+        return link;
     }
 
     public static void nativeRun(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
