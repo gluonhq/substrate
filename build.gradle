@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'signing'
 }
 
 group = "com.gluonhq"
@@ -34,25 +35,62 @@ javadoc {
 
 build.dependsOn javadoc
 
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier = 'sources'
+}
+
+task javadocJar(type: Jar) {
+    from javadoc
+    archiveClassifier = 'javadoc'
+}
+
 publishing {
     publications {
         maven(MavenPublication) {
-            from components.java
-            groupId = project.group
             artifactId = 'substrate'
-            version = project.version
-        }
-    }
-    repositories {
-        maven {
-            def repositoryUrl = project.findProperty('repositoryUrl') ?: 'https://nexus.gluonhq.com/nexus/content/repositories/public-snapshots/'
-            if (project.hasProperty('gluonNexusUsername') && project.hasProperty('gluonNexusPassword')) {
-                url repositoryUrl
-                credentials {
-                    username project.property('gluonNexusUsername')
-                    password project.property('gluonNexusPassword')
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            pom {
+                name = 'Gluon Substrate'
+                description = 'Create native Java(FX) apps for desktop, mobile and embedded'
+                url = 'https://github.com/gluonhq/substrate'
+                licenses {
+                    license {
+                        name = 'GNU General Public License v2.0'
+                        url = 'https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html'
+                    }
+                }
+                developers {
+                    developer {
+                        name = 'Johan Vos'
+                        email = 'johan.vos@gluonhq.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com:gluonhq/substrate.git'
+                    developerConnection = 'scm:git:ssh://github.com:gluonhq/substrate.git'
+                    url = 'https://github.com/gluonhq/substrate'
                 }
             }
         }
     }
+    repositories {
+        maven {
+            def releasesRepoUrl  = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
+                credentials {
+                    username project.property('sonatypeUsername')
+                    password project.property('sonatypePassword')
+                }
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.maven
 }
