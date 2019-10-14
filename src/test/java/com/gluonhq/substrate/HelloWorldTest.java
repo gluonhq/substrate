@@ -15,7 +15,7 @@ public class HelloWorldTest {
     void helloWorldTest() {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
-                .withGradleVersion("5.0")
+                .withGradleVersion("5.3")
                 .withArguments("clean", "build", "run", "runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
