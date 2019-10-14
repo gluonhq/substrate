@@ -48,6 +48,7 @@ deploy:
     skip_cleanup: true
     on:
       branch: master
+      condition: $TRAVIS_OS_NAME = linux
 
   # Deploy releases on every tag push
   - provider: script
@@ -55,3 +56,4 @@ deploy:
     skip_cleanup: true
     on:
       tags: true
+      condition: $TRAVIS_OS_NAME = linux
