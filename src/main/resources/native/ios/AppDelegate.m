@@ -59,6 +59,14 @@ extern void *IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece4
 
 @end
 
+int main(int argc, char * argv[]) {
+    @autoreleasepool {
+        return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate
+ class]));
+    }
+}
+
+
 @implementation AppDelegate
 
 -(void)startVM:(id)selector {

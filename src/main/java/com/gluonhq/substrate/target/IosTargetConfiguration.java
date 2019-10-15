@@ -27,6 +27,9 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.util.FileOps;
+
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -70,6 +73,13 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     List<String> getAdditionalSourceFiles() {
         return Arrays.asList("AppDelegate.m");
     }
+
+    List<String> getTargetSpecificObjectFiles() throws IOException {
+        Path gvmPath = paths.getGvmPath();
+        Path objectFile = FileOps.findFile(gvmPath, "llvm.o");
+        return Arrays.asList(objectFile.toAbsolutePath().toString());
+    }
+
 
     @Override
     public String getCompiler() {

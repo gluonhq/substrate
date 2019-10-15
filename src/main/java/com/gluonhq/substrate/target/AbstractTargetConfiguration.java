@@ -47,6 +47,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
   //  static String[] C_RESOURCES = { "launcher.c",  "thread.c"};
     ProjectConfiguration projectConfiguration;
+    ProcessPaths paths;
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
@@ -122,6 +123,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             return false;
         }
 
+        this.paths = paths;
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
         Triplet target = projectConfiguration.getTargetTriplet();
@@ -143,6 +145,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
 
         linkBuilder.command().add(objectFile.toString());
+        linkBuilder.command().addAll(getTargetSpecificObjectFiles());
         linkBuilder.command().add("-L" + projectConfiguration.getJavaStaticLibsPath());
         linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
         linkBuilder.command().add("-ljava");
@@ -157,9 +160,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().addAll(getTargetSpecificLinkFlags());
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
-
+        System.err.println("cmd = "+cmds);
         Process compileProcess = linkBuilder.start();
+        System.err.println("started linking");
         int result = compileProcess.waitFor();
+        System.err.println("done linking");
         if (result != 0 ) {
             System.err.println("Linking failed. Details from linking below:");
             System.err.println("Command was: "+cmds);
@@ -281,6 +286,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     List<String> getTargetSpecificAOTCompileFlags() {
+        return new LinkedList<>();
+    }
+
+    List<String> getTargetSpecificObjectFiles() throws IOException {
         return new LinkedList<>();
     }
 

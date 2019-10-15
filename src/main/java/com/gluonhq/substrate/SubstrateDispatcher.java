@@ -78,10 +78,14 @@ public class SubstrateDispatcher {
             System.err.println("COMPILE FAILED");
             return;
         }
-        System.err.println("Linking...");
-        if (!nativeLink(buildRoot, config)) {
-            System.err.println("Linking failed");
-            System.exit(1);
+        try {
+            System.err.println("Linking...");
+            if (!nativeLink(buildRoot, config)) {
+                System.err.println("Linking failed");
+                System.exit(1);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
         System.err.println("Running...");
         if (expected != null) {
