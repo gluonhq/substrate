@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.ios.NSDictionary;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -38,6 +39,14 @@ import java.util.List;
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     private String sysroot = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.0.sdk";
+    private List<String> iosAdditionalSourceFiles = Arrays.asList("AppDelegate.m");
+
+    @Override
+    public boolean runUntilEnd(Path workDir, String appName) throws IOException, InterruptedException {
+        NSDictionary dict;
+        return false;
+    }
+
     @Override
     List<String> getTargetSpecificLinkFlags() {
         return Arrays.asList("-arch", "arm64",
@@ -69,9 +78,10 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return "/native/ios/";
     }
 
+
     @Override
     List<String> getAdditionalSourceFiles() {
-        return Arrays.asList("AppDelegate.m");
+        return iosAdditionalSourceFiles;
     }
 
     List<String> getTargetSpecificObjectFiles() throws IOException {
@@ -79,7 +89,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         Path objectFile = FileOps.findFile(gvmPath, "llvm.o");
         return Arrays.asList(objectFile.toAbsolutePath().toString());
     }
-
 
     @Override
     public String getCompiler() {

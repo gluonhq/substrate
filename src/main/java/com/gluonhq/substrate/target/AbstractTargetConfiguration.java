@@ -40,6 +40,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -48,6 +49,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
   //  static String[] C_RESOURCES = { "launcher.c",  "thread.c"};
     ProjectConfiguration projectConfiguration;
     ProcessPaths paths;
+
+    private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c", "thread.c");
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
@@ -265,8 +268,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "/native/linux/";
     }
 
+
     List<String> getAdditionalSourceFiles() {
-        return Arrays.asList("launcher.c","thread.c");
+        return defaultAdditionalSourceFiles;
     }
 
     String getCompiler() {
@@ -278,19 +282,19 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     List<String> getTargetSpecificLinkFlags() {
-        return new LinkedList<>();
+        return Collections.emptyList();
     }
 
     List<String> getTargetSpecificCCompileFlags() {
-        return new LinkedList<>();
+        return Collections.emptyList();
     }
 
     List<String> getTargetSpecificAOTCompileFlags() {
-        return new LinkedList<>();
+        return Collections.emptyList();
     }
 
     List<String> getTargetSpecificObjectFiles() throws IOException {
-        return new LinkedList<>();
+        return Collections.emptyList();
     }
 
 }
