@@ -28,7 +28,6 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.util.FileOps;
-import com.gluonhq.substrate.util.ios.NSDictionary;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,7 +42,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     public boolean runUntilEnd(Path workDir, String appName) throws IOException, InterruptedException {
-        NSDictionary dict;
         return false;
     }
 
