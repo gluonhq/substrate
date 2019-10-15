@@ -40,14 +40,21 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
-    private static String[] C_RESOURCES = { "launcher",  "thread"};
+  //  static String[] C_RESOURCES = { "launcher.c",  "thread.c"};
+    ProjectConfiguration projectConfiguration;
+    ProcessPaths paths;
+
+    private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c", "thread.c");
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
+        this.projectConfiguration = config;
         Triplet target =  config.getTargetTriplet();
         String jniPlatform = getJniPlatform(target.getOs());
         if (!compileAdditionalSources(paths, config) ) {
@@ -68,6 +75,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-H:+ExitAfterRelocatableImageWrite");
         compileBuilder.command().add("-H:TempDirectory="+tmpDir);
         compileBuilder.command().add("-H:+SharedLibrary");
+        compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
         compileBuilder.command().add(cp);
@@ -75,6 +83,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.redirectErrorStream(true);
         Process compileProcess = compileBuilder.start();
         InputStream inputStream = compileProcess.getInputStream();
+        asynPrintFromInputStream(inputStream);
         int result = compileProcess.waitFor();
         // we will print the output of the process only if we don't have the resulting objectfile
 
@@ -102,6 +111,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private String getJniPlatform( String os ) {
         switch (os) {
             case Constants.OS_LINUX: return "LINUX_AMD64";
+            case Constants.OS_IOS:return "DARWIN_AARCH64";
             case Constants.OS_DARWIN: return "DARWIN_AMD64";
             default: throw new IllegalArgumentException("No support yet for " + os);
         }
@@ -116,6 +126,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             return false;
         }
 
+        this.paths = paths;
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
         Triplet target = projectConfiguration.getTargetTriplet();
@@ -125,16 +136,19 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             throw new IllegalArgumentException("Linking failed, since there is no objectfile named "+objectFilename+" under "
                     +gvmPath.toString());
         }
-        ProcessBuilder linkBuilder = new ProcessBuilder("gcc");
+        ProcessBuilder linkBuilder = new ProcessBuilder(getLinker());
         Path appPath = gvmPath.resolve(appName);
 
         linkBuilder.command().add("-o");
         linkBuilder.command().add(paths.getAppPath().resolve(appName).toString());
 
-        Arrays.stream(C_RESOURCES)
-              .forEach( r -> linkBuilder.command().add(appPath.resolve(r + ".o").toString()));
+        getAdditionalSourceFiles()
+              .forEach( r -> linkBuilder.command().add(
+                      appPath.resolve(r.replaceAll("\\..*", ".o")).toString()));
+
 
         linkBuilder.command().add(objectFile.toString());
+        linkBuilder.command().addAll(getTargetSpecificObjectFiles());
         linkBuilder.command().add("-L" + projectConfiguration.getJavaStaticLibsPath());
         linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
         linkBuilder.command().add("-ljava");
@@ -148,17 +162,21 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add("-ldl");
         linkBuilder.command().addAll(getTargetSpecificLinkFlags());
         linkBuilder.redirectErrorStream(true);
+        String cmds = String.join(" ", linkBuilder.command());
+        System.err.println("cmd = "+cmds);
         Process compileProcess = linkBuilder.start();
+        System.err.println("started linking");
         int result = compileProcess.waitFor();
+        System.err.println("done linking");
         if (result != 0 ) {
             System.err.println("Linking failed. Details from linking below:");
+            System.err.println("Command was: "+cmds);
             printFromInputStream(compileProcess.getInputStream());
             return false;
         }
         return true;
     }
 
-    abstract List<String> getTargetSpecificLinkFlags();
 
     private void asynPrintFromInputStream (InputStream inputStream) {
         Thread t = new Thread(() -> {
@@ -199,18 +217,17 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path workDir = paths.getGvmPath().resolve(appName);
         Files.createDirectories(workDir);
 
-        ProcessBuilder processBuilder = new ProcessBuilder("gcc");
+        ProcessBuilder processBuilder = new ProcessBuilder(getCompiler());
         processBuilder.command().add("-c");
         if (projectConfiguration.isVerbose()) {
             processBuilder.command().add("-DGVM_VERBOSE");
         }
-
-        for( String res: C_RESOURCES ) {
-            String fileName = res + ".c";
-            FileOps.copyResource("/native/linux/" + fileName, workDir.resolve(fileName));
+        processBuilder.command().addAll(getTargetSpecificCCompileFlags());
+        for( String fileName: getAdditionalSourceFiles() ) {
+            FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
             processBuilder.command().add(fileName);
         }
-
+        processBuilder.command().addAll(getTargetSpecificCCompileFlags());
         processBuilder.directory(workDir.toFile());
         String cmds = String.join(" ", processBuilder.command());
         processBuilder.redirectErrorStream(true);
@@ -218,6 +235,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         int result = p.waitFor();
         if (result != 0) {
             System.err.println("Compilation of additional sources failed with result = " + result);
+            System.err.println("Original command was "+cmds);
             printFromInputStream(p.getInputStream());
             return false;
         } // we need more checks (e.g. do launcher.o and thread.o exist?)
@@ -242,6 +260,41 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             return false;
         }
         return true;
+    }
+
+    // Default settings below, can be overridden by subclasses
+
+    String getAdditionalSourceFileLocation() {
+        return "/native/linux/";
+    }
+
+
+    List<String> getAdditionalSourceFiles() {
+        return defaultAdditionalSourceFiles;
+    }
+
+    String getCompiler() {
+        return "gcc";
+    }
+
+    String getLinker() {
+        return "gcc";
+    }
+
+    List<String> getTargetSpecificLinkFlags() {
+        return Collections.emptyList();
+    }
+
+    List<String> getTargetSpecificCCompileFlags() {
+        return Collections.emptyList();
+    }
+
+    List<String> getTargetSpecificAOTCompileFlags() {
+        return Collections.emptyList();
+    }
+
+    List<String> getTargetSpecificObjectFiles() throws IOException {
+        return Collections.emptyList();
     }
 
 }
