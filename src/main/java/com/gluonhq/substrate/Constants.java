@@ -58,7 +58,8 @@ public class Constants {
      */
     public enum Profile {
         LINUX, // (x86_64-linux-linux)
-        MACOS; // (x86_64-apple-darwin)
+        MACOS, // (x86_64-apple-darwin)
+        IOS;   // (aarch64-apple-ios)
     };
 
     /**
@@ -78,7 +79,7 @@ public class Constants {
     public static final String TARGET_IOS = "ios";
     public static final String TARGET_IOS_SIM = "ios-sim";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+7";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+8";
 
 //    /**
 //     * Supported target app folders
