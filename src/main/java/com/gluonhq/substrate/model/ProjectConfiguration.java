@@ -116,6 +116,24 @@ public class ProjectConfiguration {
         return getJavaStaticPath().resolve("lib").resolve("static");
     }
 
+
+    /**
+     * Return the path where the static JavaFX SDK is installed for the os-arch combination of this configuration, and for
+     * the version in <code>javafxStaticSdkVersion</code>
+     * @return the path to the JavaFX SDK (including at least the libs)
+     */
+    public Path getJavafxStaticPath() {
+        Path answer = Constants.USER_SUBSTRATE_PATH
+                .resolve("javafxStaticSdk")
+                .resolve(getJavafxStaticSdkVersion())
+                .resolve(targetTriplet.getOsArch());
+        return answer;
+    }
+
+    public Path getJavafxStaticLibsPath() {
+        return getJavafxStaticPath().resolve("lib");
+    }
+
     public String getJavafxStaticSdkVersion() {
         return javafxStaticSdkVersion;
     }

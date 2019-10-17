@@ -49,7 +49,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags() {
+    List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
         return List.of();
     }
 
