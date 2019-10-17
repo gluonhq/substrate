@@ -321,7 +321,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             for (String javaClass : getJNIClassList(this.projectConfiguration.isUseJavaFX())) {
                 // TODO: create list of exclusions
                 writeEntry(bw, javaClass,
-                        suffix.equals("mac") && javaClass.equals("java.lang.Thread"));
+                        "mac".equals(suffix) && javaClass.equals("java.lang.Thread"));
             }
             bw.write("]");
         }
