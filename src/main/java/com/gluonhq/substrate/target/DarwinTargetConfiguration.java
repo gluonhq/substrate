@@ -36,11 +36,11 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
         if (!usejavafx) return Arrays.asList("-Wl,-framework,Foundation");
-        List<String> answer = new LinkedList<>();
-        answer.add("-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libprism_es2.a");
-        answer.add("-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libglass.a");
-        answer.add("-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libjavafx_font.a");
-        answer.add("-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libjavafx_iio.a");
+        List<String> answer = Arrays.asList(
+        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libprism_es2.a",
+        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libglass.a",
+        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libjavafx_font.a",
+        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libjavafx_iio.a");
         answer.addAll(macoslibs);
         return answer;
     }
