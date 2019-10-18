@@ -74,25 +74,17 @@ public class SubstrateDispatcher {
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-        System.err.println("Config: " + config);
-        System.err.println("Compiling...");
-        System.err.println("ClassPath for compilation = "+classPath);
         if (!nativeCompile(buildRoot, config, classPath)) {
-            System.err.println("COMPILE FAILED");
             return;
         }
         try {
-            System.err.println("Linking...");
             if (!nativeLink(buildRoot, config)) {
-                System.err.println("Linking failed");
                 System.exit(1);
             }
         } catch (Throwable t) {
-            System.err.println("Linking failed with an exception");
             t.printStackTrace();
             System.exit(1);
         }
-        System.err.println("Running...");
         if (expected != null) {
             InputStream is = targetConfiguration.run(paths.getAppPath(), appName);
             // TODO: compare expected and actual output
@@ -124,13 +116,7 @@ public class SubstrateDispatcher {
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         Logger.logInit(paths.getLogPath().toString(), "==================== COMPILE TASK ====================",
                 config.isVerbose());
-        System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
         boolean compile = targetConfiguration.compile(paths, config, classPath);
-        if (compile) {
-            System.err.println("Compilation succeeded.");
-        } else {
-            System.err.println("Compilation failed. The error should be printed above.");
-        }
         return compile;
     }
 

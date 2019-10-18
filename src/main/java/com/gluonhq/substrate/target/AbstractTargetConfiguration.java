@@ -89,6 +89,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-cp");
         compileBuilder.command().add(cp);
         compileBuilder.command().add(mainClassName);
+        compileBuilder.command().add(mainClassName);
         compileBuilder.redirectErrorStream(true);
         Process compileProcess = compileBuilder.start();
         InputStream inputStream = compileProcess.getInputStream();
@@ -177,11 +178,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX()));
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
-        System.err.println("cmd = "+cmds);
         Process compileProcess = linkBuilder.start();
-        System.err.println("started linking");
         int result = compileProcess.waitFor();
-        System.err.println("done linking");
         if (result != 0 ) {
             System.err.println("Linking failed. Details from linking below:");
             System.err.println("Command was: "+cmds);
