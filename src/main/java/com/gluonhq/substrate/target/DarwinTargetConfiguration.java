@@ -52,6 +52,7 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");
 
+    @Override
     List<String> getJavaFXReflectionClassList() {
         List<String> answer = super.getJavaFXReflectionClassList();
         answer.addAll(javafxReflectionMacClassList);

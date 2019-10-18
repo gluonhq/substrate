@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -47,10 +48,29 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         checkLinker();
         return super.link(paths, projectConfiguration);
     }
+    private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
+                "-lprism_es2", "-Wl,--no-whole-archive","-lGL", "-lX11");
+
+    private static final List<String> javafxReflectionLinuxClassList = Arrays.asList(
+            "com.sun.glass.ui.gtk.GtkPlatformFactory",
+            "com.sun.prism.es2.ES2Pipeline",
+            "com.sun.prism.es2.ES2ResourceFactory",
+            "com.sun.prism.es2.ES2Shader",
+            "com.sun.prism.es2.X11GLFactory",
+            "com.sun.scenario.effect.impl.es2.ES2ShaderSource",
+            "com.sun.javafx.font.freetype.FTFactory");
+
+    @Override
+    List<String> getJavaFXReflectionClassList() {
+        List<String> answer = super.getJavaFXReflectionClassList();
+        answer.addAll(javafxReflectionLinuxClassList);
+        return answer;
+    }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
-        return List.of();
+        if (!usejavafx) return List.of();
+        return linuxfxlibs;
     }
 
 
