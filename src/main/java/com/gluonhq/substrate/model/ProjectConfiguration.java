@@ -30,6 +30,8 @@ package com.gluonhq.substrate.model;
 import com.gluonhq.substrate.Constants;
 
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -55,7 +57,7 @@ public class ProjectConfiguration {
     private Triplet hostTriplet;
     private String backend;
     private List<String> bundlesList;
-    private List<String> resourcesList;
+    private List<String> resourcesList = Collections.emptyList();
     private List<String> reflectionList;
     private List<String> jniList;
     private List<String> delayInitList;
