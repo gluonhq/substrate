@@ -81,6 +81,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         String nativeImage = getNativeImagePath(config);
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
         compileBuilder.command().add("--report-unsupported-elements-at-runtime");
+        compileBuilder.command().add("-Djdk.internal.lambda.eagerlyInitialize=false");
         compileBuilder.command().add("-H:+ExitAfterRelocatableImageWrite");
         compileBuilder.command().add("-H:TempDirectory="+tmpDir);
         compileBuilder.command().add("-H:+SharedLibrary");
