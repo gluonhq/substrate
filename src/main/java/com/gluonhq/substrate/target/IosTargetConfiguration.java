@@ -27,17 +27,23 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.XcodeUtils;
+import com.gluonhq.substrate.util.ios.CodeSigning;
+import com.gluonhq.substrate.util.ios.InfoPlist;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
-    private String sysroot = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.0.sdk";
     private List<String> iosAdditionalSourceFiles = Arrays.asList("AppDelegate.m");
 
     @Override
@@ -68,14 +74,13 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return Arrays.asList("-H:CompilerBackend=llvm",
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=arm64",
-                "-H:CustomLLC="+llcPath.toAbsolutePath().toString());
+                "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
 
     @Override
     public String getAdditionalSourceFileLocation() {
         return "/native/ios/";
     }
-
 
     @Override
     List<String> getAdditionalSourceFiles() {
@@ -89,11 +94,49 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+        boolean result = super.link(paths, projectConfiguration);
+
+        if (result) {
+            createInfoPlist(paths, projectConfiguration);
+
+            if (! isSimulator()) {
+                CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
+                if (! codeSigning.signApp()) {
+                    Logger.logSevere("Error signing the app");
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
     public String getCompiler() {
         return "clang";
     }
 
     private String getSysroot() {
-        return sysroot;
+        // TODO: Sim?
+        return XcodeUtils.SDKS.IPHONEOS.getSDKPath();
+    }
+
+    private boolean isSimulator() {
+        // TODO
+        return false; // Constants.ARCH_AMD64.equals(arch);
+    }
+
+    private void createInfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration) {
+        try {
+            InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
+                    XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
+            Path plist = infoPlist.processInfoPlist();
+            if (plist != null) {
+                Logger.logDebug("Plist at " + plist.toString());
+                FileOps.copyStream(new FileInputStream(plist.toFile()),
+                        paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
+            }
+        } catch (IOException e) {
+            Logger.logSevere("Error creating info.plist");
+        }
     }
 }
