@@ -57,6 +57,7 @@ public class SubstrateDispatcher {
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String targetProfile = System.getProperty("targetProfile");
         boolean useJavaFX = Boolean.parseBoolean(System.getProperty("javafx", "false"));
+        boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         String expected  = System.getProperty("expected");
 
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))

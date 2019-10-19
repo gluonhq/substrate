@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
@@ -79,12 +80,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         String nativeImage = getNativeImagePath(config);
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
+        compileBuilder.command().add("--report-unsupported-elements-at-runtime");
+        compileBuilder.command().add("-Djdk.internal.lambda.eagerlyInitialize=false");
         compileBuilder.command().add("-H:+ExitAfterRelocatableImageWrite");
         compileBuilder.command().add("-H:TempDirectory="+tmpDir);
         compileBuilder.command().add("-H:+SharedLibrary");
         compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
         compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
+        compileBuilder.command().addAll(getResources());
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
+        if (!getBundlesList().isEmpty()) {
+            compileBuilder.command().add("-H:IncludeResourceBundles=" + String.join(",", getBundlesList()));
+        }
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
         compileBuilder.command().add(cp);
@@ -286,6 +293,37 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         answer.addAll(javaJNIClassList);
         answer.addAll(javafxJNIClassList);
         return answer;
+    }
+
+
+    private static final List<String> resourcesList = Arrays.asList(
+            "frag", "fxml", "css", "gls", "ttf",
+            "png", "jpg", "jpeg", "gif", "bmp",
+            "license", "json");
+
+    private  List<String> getResources() {
+        List<String> resources = new ArrayList<>(resourcesList);
+        resources.addAll(projectConfiguration.getResourcesList());
+
+        List<String> list = resources.stream()
+                .map(s -> "-H:IncludeResources=.*/.*" + s + "$")
+                .collect(Collectors.toList());
+        list.addAll(resources.stream()
+                .map(s -> "-H:IncludeResources=.*" + s + "$")
+                .collect(Collectors.toList()));
+        return list;
+    }
+
+    private static final List<String> bundlesList = new ArrayList<>(Arrays.asList(
+            "com/sun/javafx/scene/control/skin/resources/controls",
+            "com.sun.javafx.tk.quantum.QuantumMessagesBundle"
+    ));
+
+    private List<String> getBundlesList() {
+        if (projectConfiguration.isUseJavaFX()) {
+            return bundlesList;
+        }
+        return Collections.emptyList();
     }
 
     private Path createReflectionConfig(String suffix) throws IOException {
