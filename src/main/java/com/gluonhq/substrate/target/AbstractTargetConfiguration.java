@@ -34,11 +34,16 @@ import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileOps;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -55,7 +60,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
         this.projectConfiguration = config;
+        this.paths = paths;
         Triplet target =  config.getTargetTriplet();
+        String suffix = target.getArchOs();
         String jniPlatform = getJniPlatform(target.getOs());
         if (!compileAdditionalSources(paths, config) ) {
             return false;
@@ -75,6 +82,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-H:+ExitAfterRelocatableImageWrite");
         compileBuilder.command().add("-H:TempDirectory="+tmpDir);
         compileBuilder.command().add("-H:+SharedLibrary");
+        compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
+        compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
@@ -127,6 +136,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
 
         this.paths = paths;
+        this.projectConfiguration = projectConfiguration;
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
         Triplet target = projectConfiguration.getTargetTriplet();
@@ -150,6 +160,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
         linkBuilder.command().add("-L" + projectConfiguration.getJavaStaticLibsPath());
+        if (projectConfiguration.isUseJavaFX()) {
+            linkBuilder.command().add("-L" + projectConfiguration.getJavafxStaticLibsPath());
+        }
         linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
         linkBuilder.command().add("-ljava");
         linkBuilder.command().add("-ljvm");
@@ -157,10 +170,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add("-lnio");
         linkBuilder.command().add("-lzip");
         linkBuilder.command().add("-lnet");
+        linkBuilder.command().add("-lstrictmath");
         linkBuilder.command().add("-lpthread");
         linkBuilder.command().add("-lz");
         linkBuilder.command().add("-ldl");
-        linkBuilder.command().addAll(getTargetSpecificLinkFlags());
+        linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX()));
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
         System.err.println("cmd = "+cmds);
@@ -262,6 +276,314 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return true;
     }
 
+    List<String> getJavaFXReflectionClassList() {
+        return javafxReflectionClassList;
+    }
+
+    List<String> getJNIClassList (boolean usejavafx) {
+        if (!usejavafx) return Collections.emptyList();
+        List<String> answer = new LinkedList<>();
+        answer.addAll(javaJNIClassList);
+        answer.addAll(javafxJNIClassList);
+        return answer;
+    }
+
+    private Path createReflectionConfig(String suffix) throws IOException {
+        Path gvmPath = paths.getGvmPath();
+        Path reflectionPath = gvmPath.resolve("reflectionconfig-" + suffix + ".json");
+        File f = reflectionPath.toFile();
+        if (f.exists()) {
+            f.delete();
+        }
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
+            bw.write("[\n");
+            writeSingleEntry(bw, projectConfiguration.getMainClassName(), false);
+            if (projectConfiguration.isUseJavaFX()) {
+                for (String javafxClass : getJavaFXReflectionClassList()) {
+                    writeEntry(bw, javafxClass);
+                }
+            }
+            bw.write("]");
+        }
+        return reflectionPath;
+    }
+
+    private Path createJNIConfig(String suffix) throws IOException {
+        Path gvmPath = paths.getGvmPath();
+        Path jniPath = gvmPath.resolve("jniconfig-" + suffix + ".json");
+        File f = jniPath.toFile();
+        if (f.exists()) {
+            f.delete();
+        }
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
+            bw.write("[\n");
+            bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
+            for (String javaClass : getJNIClassList(this.projectConfiguration.isUseJavaFX())) {
+                // TODO: create list of exclusions
+                writeEntry(bw, javaClass,
+                        "mac".equals(suffix) && javaClass.equals("java.lang.Thread"));
+            }
+            bw.write("]");
+        }
+        return jniPath;
+    }
+
+
+
+    private static void writeEntry(BufferedWriter bw, String javaClass) throws IOException {
+        writeEntry(bw, javaClass, false);
+    }
+
+    private static void writeEntry(BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
+        bw.write(",\n");
+        writeSingleEntry(bw, javaClass, exclude);
+    }
+
+    private static void writeSingleEntry (BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
+        bw.write("  {\n");
+        bw.write("    \"name\" : \"" + javaClass + "\"");
+        if (! exclude) {
+            bw.write(",\n");
+            bw.write("    \"allDeclaredConstructors\" : true,\n");
+            bw.write("    \"allPublicConstructors\" : true,\n");
+            bw.write("    \"allDeclaredFields\" : true,\n");
+            bw.write("    \"allPublicFields\" : true,\n");
+            bw.write("    \"allDeclaredMethods\" : true,\n");
+            bw.write("    \"allPublicMethods\" : true\n");
+        } else {
+            bw.write("\n");
+        }
+        bw.write("  }\n");
+    }
+
+    private static final List<String> javafxReflectionClassList = new ArrayList<>(Arrays.asList(
+            "java.lang.Runnable",
+            "java.net.InetAddress",
+            "java.nio.ByteBuffer",
+            "java.nio.ByteOrder",
+            "javafx.geometry.Pos",
+            "javafx.geometry.HPos",
+            "javafx.geometry.Insets",
+            "javafx.geometry.VPos",
+            "javafx.scene.control.Control",
+            "javafx.scene.layout.AnchorPane",
+            "javafx.scene.layout.BorderPane",
+            "javafx.scene.layout.ColumnConstraints",
+            "javafx.scene.layout.FlowPane",
+            "javafx.scene.layout.GridPane",
+            "javafx.scene.layout.HBox",
+            "javafx.scene.layout.Pane",
+            "javafx.scene.layout.Priority",
+            "javafx.scene.layout.Region",
+            "javafx.scene.layout.RowConstraints",
+            "javafx.scene.layout.StackPane",
+            "javafx.scene.layout.TilePane",
+            "javafx.scene.layout.VBox",
+            "javafx.scene.Camera",
+            "javafx.scene.Group",
+            "javafx.scene.Node",
+            "javafx.scene.Parent",
+            "javafx.scene.Scene",
+            "javafx.scene.ParallelCamera",
+            "javafx.scene.text.Font",
+            "javafx.scene.text.Text",
+            "javafx.scene.text.TextFlow",
+            "javafx.stage.PopupWindow",
+            "javafx.stage.Stage",
+            "javafx.stage.Window",
+            "javafx.scene.effect.Effect",
+            "javafx.scene.image.Image",
+            "javafx.scene.image.ImageView",
+            "javafx.scene.input.TouchPoint",
+            "javafx.scene.paint.Color",
+            "javafx.scene.paint.Paint",
+            "javafx.scene.shape.Arc",
+            "javafx.scene.shape.ArcTo",
+            "javafx.scene.shape.Circle",
+            "javafx.scene.shape.ClosePath",
+            "javafx.scene.shape.CubicCurve",
+            "javafx.scene.shape.CubicCurveTo",
+            "javafx.scene.shape.HLineTo",
+            "javafx.scene.shape.Line",
+            "javafx.scene.shape.LineTo",
+            "javafx.scene.shape.MoveTo",
+            "javafx.scene.shape.Path",
+            "javafx.scene.shape.PathElement",
+            "javafx.scene.shape.Polygon",
+            "javafx.scene.shape.Rectangle",
+            "javafx.scene.shape.QuadCurve",
+            "javafx.scene.shape.QuadCurveTo",
+            "javafx.scene.shape.Shape",
+            "javafx.scene.shape.StrokeType",
+            "javafx.scene.shape.SVGPath",
+            "javafx.scene.shape.VLineTo",
+            "javafx.scene.transform.Transform",
+            "javafx.animation.KeyFrame",
+            "javafx.animation.KeyValue",
+            "com.sun.javafx.reflect.Trampoline",
+            "com.sun.javafx.scene.control.skin.Utils",
+            "com.sun.javafx.tk.quantum.QuantumToolkit",
+            "com.sun.prism.shader.AlphaOne_Color_Loader",
+            "com.sun.prism.shader.AlphaOne_ImagePattern_Loader",
+            "com.sun.prism.shader.AlphaOne_LinearGradient_Loader",
+            "com.sun.prism.shader.AlphaOne_RadialGradient_Loader",
+            "com.sun.prism.shader.AlphaTextureDifference_Color_Loader",
+            "com.sun.prism.shader.AlphaTextureDifference_ImagePattern_Loader",
+            "com.sun.prism.shader.AlphaTextureDifference_LinearGradient_Loader",
+            "com.sun.prism.shader.AlphaTextureDifference_RadialGradient_Loader",
+            "com.sun.prism.shader.AlphaTexture_Color_Loader",
+            "com.sun.prism.shader.AlphaTexture_ImagePattern_Loader",
+            "com.sun.prism.shader.AlphaTexture_LinearGradient_Loader",
+            "com.sun.prism.shader.AlphaTexture_RadialGradient_Loader",
+            "com.sun.prism.shader.DrawCircle_Color_Loader",
+            "com.sun.prism.shader.DrawCircle_ImagePattern_Loader",
+            "com.sun.prism.shader.DrawCircle_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawCircle_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawCircle_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.DrawCircle_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawCircle_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawCircle_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.DrawEllipse_Color_Loader",
+            "com.sun.prism.shader.DrawEllipse_ImagePattern_Loader",
+            "com.sun.prism.shader.DrawEllipse_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawEllipse_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawEllipse_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.DrawEllipse_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawEllipse_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawEllipse_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.DrawPgram_Color_Loader",
+            "com.sun.prism.shader.DrawPgram_ImagePattern_Loader",
+            "com.sun.prism.shader.DrawPgram_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawPgram_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawPgram_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.DrawPgram_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawPgram_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawPgram_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.DrawRoundRect_Color_Loader",
+            "com.sun.prism.shader.DrawRoundRect_ImagePattern_Loader",
+            "com.sun.prism.shader.DrawRoundRect_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawRoundRect_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawRoundRect_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.DrawRoundRect_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawRoundRect_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawRoundRect_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.DrawSemiRoundRect_Color_Loader",
+            "com.sun.prism.shader.DrawSemiRoundRect_ImagePattern_Loader",
+            "com.sun.prism.shader.DrawSemiRoundRect_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawSemiRoundRect_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawSemiRoundRect_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.DrawSemiRoundRect_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.DrawSemiRoundRect_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.DrawSemiRoundRect_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.FillCircle_Color_Loader",
+            "com.sun.prism.shader.FillCircle_ImagePattern_Loader",
+            "com.sun.prism.shader.FillCircle_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.FillCircle_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.FillCircle_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.FillCircle_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.FillCircle_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.FillCircle_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.FillEllipse_Color_Loader",
+            "com.sun.prism.shader.FillEllipse_ImagePattern_Loader",
+            "com.sun.prism.shader.FillEllipse_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.FillEllipse_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.FillEllipse_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.FillEllipse_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.FillEllipse_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.FillEllipse_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.FillPgram_Color_Loader",
+            "com.sun.prism.shader.FillPgram_ImagePattern_Loader",
+            "com.sun.prism.shader.FillPgram_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.FillPgram_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.FillPgram_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.FillPgram_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.FillPgram_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.FillPgram_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.FillRoundRect_Color_Loader",
+            "com.sun.prism.shader.FillRoundRect_ImagePattern_Loader",
+            "com.sun.prism.shader.FillRoundRect_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.FillRoundRect_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.FillRoundRect_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.FillRoundRect_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.FillRoundRect_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.FillRoundRect_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.Mask_TextureRGB_Loader",
+            "com.sun.prism.shader.Mask_TextureSuper_Loader",
+            "com.sun.prism.shader.Solid_Color_Loader",
+            "com.sun.prism.shader.Solid_ImagePattern_Loader",
+            "com.sun.prism.shader.Solid_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.Solid_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.Solid_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.Solid_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.Solid_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.Solid_RadialGradient_REPEAT_Loader",
+            "com.sun.prism.shader.Solid_TextureFirstPassLCD_Loader",
+            "com.sun.prism.shader.Solid_TextureRGB_Loader",
+            "com.sun.prism.shader.Solid_TextureSecondPassLCD_Loader",
+            "com.sun.prism.shader.Solid_TextureYV12_Loader",
+            "com.sun.prism.shader.Texture_Color_Loader",
+            "com.sun.prism.shader.Texture_ImagePattern_Loader",
+            "com.sun.prism.shader.Texture_LinearGradient_PAD_Loader",
+            "com.sun.prism.shader.Texture_LinearGradient_REFLECT_Loader",
+            "com.sun.prism.shader.Texture_LinearGradient_REPEAT_Loader",
+            "com.sun.prism.shader.Texture_RadialGradient_PAD_Loader",
+            "com.sun.prism.shader.Texture_RadialGradient_REFLECT_Loader",
+            "com.sun.prism.shader.Texture_RadialGradient_REPEAT_Loader",
+            "com.sun.scenario.effect.impl.prism.PrRenderer",
+            "com.sun.scenario.effect.impl.prism.ps.PPSRenderer",
+            "com.sun.scenario.effect.impl.prism.ps.PPSBlend_SRC_INPeer",
+            "com.sun.scenario.effect.impl.prism.ps.PPSLinearConvolvePeer",
+            "com.sun.scenario.effect.impl.prism.ps.PPSLinearConvolveShadowPeer",
+            "com.sun.xml.internal.stream.XMLInputFactoryImpl",
+            "com.sun.glass.ui.EventLoop",
+            "com.sun.glass.ui.Application",
+            "com.sun.glass.ui.Menu",
+            "com.sun.glass.ui.MenuItem$Callback",
+            "com.sun.glass.ui.View",
+            "com.sun.glass.ui.Size",
+            "com.sun.glass.ui.CommonDialogs$ExtensionFilter",
+            "com.sun.glass.ui.CommonDialogs$FileChooserResult"
+    ));
+
+    private static final List<String> javaJNIClassList = Arrays.asList(
+            "java.io.File",
+            "java.io.FileNotFoundException",
+            "java.io.InputStream",
+            "java.lang.Boolean",
+            "java.lang.Class",
+            "java.lang.ClassNotFoundException",
+            "java.lang.Integer",
+            "java.lang.Iterable",
+            "java.lang.Long",
+            "java.lang.Runnable",
+            "java.lang.String",
+            "java.lang.Thread",
+            "java.net.SocketTimeoutException",
+            "java.nio.ByteBuffer",
+            "java.nio.charset.Charset",
+            "java.util.ArrayList",
+            "java.util.HashMap",
+            "java.util.HashSet",
+            "java.util.Iterator",
+            "java.util.List",
+            "java.util.Map",
+            "java.util.Set");
+
+    private static final List<String> javafxJNIClassList = Arrays.asList(
+            "com.sun.glass.ui.Application",
+            "com.sun.glass.ui.Clipboard",
+            "com.sun.glass.ui.Cursor",
+            "com.sun.glass.ui.Menu",
+            "com.sun.glass.ui.MenuItem$Callback",
+            "com.sun.glass.ui.Pixels",
+            "com.sun.glass.ui.Screen",
+            "com.sun.glass.ui.Size",
+            "com.sun.glass.ui.View",
+            "com.sun.glass.ui.Window",
+            "com.sun.javafx.geom.Path2D",
+            "com.sun.glass.ui.CommonDialogs$ExtensionFilter",
+            "com.sun.glass.ui.CommonDialogs$FileChooserResult");
+
     // Default settings below, can be overridden by subclasses
 
     String getAdditionalSourceFileLocation() {
@@ -281,7 +603,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "gcc";
     }
 
-    List<String> getTargetSpecificLinkFlags() {
+    List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
         return Collections.emptyList();
     }
 

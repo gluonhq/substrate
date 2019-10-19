@@ -42,7 +42,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Locale;
 import java.util.Optional;
 
 public class SubstrateDispatcher {
@@ -57,6 +56,7 @@ public class SubstrateDispatcher {
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String targetProfile = System.getProperty("targetProfile");
+        boolean useJavaFX = Boolean.parseBoolean(System.getProperty("javafx", "false"));
         String expected  = System.getProperty("expected");
 
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
@@ -67,13 +67,16 @@ public class SubstrateDispatcher {
         config.setMainClassName(mainClass);
         config.setAppName(appName);
         config.setJavaStaticSdkVersion(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
+        config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
+        config.setUseJavaFX(useJavaFX);
 
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         System.err.println("Config: " + config);
         System.err.println("Compiling...");
+        System.err.println("ClassPath for compilation = "+classPath);
         if (!nativeCompile(buildRoot, config, classPath)) {
             System.err.println("COMPILE FAILED");
             return;
@@ -85,7 +88,9 @@ public class SubstrateDispatcher {
                 System.exit(1);
             }
         } catch (Throwable t) {
+            System.err.println("Linking failed with an exception");
             t.printStackTrace();
+            System.exit(1);
         }
         System.err.println("Running...");
         if (expected != null) {

@@ -28,13 +28,76 @@
 package com.gluonhq.substrate.target;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
-    List<String> getTargetSpecificLinkFlags() {
-        return Arrays.asList("-Wl,-framework,Foundation");
+    List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
+        if (!usejavafx) return Arrays.asList("-Wl,-framework,Foundation");
+        List<String> answer = Arrays.asList(
+        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libprism_es2.a",
+        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libglass.a",
+        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libjavafx_font.a",
+        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libjavafx_iio.a");
+        answer.addAll(macoslibs);
+        return answer;
     }
+
+    private static final List<String> macoslibs = Arrays.asList("-lffi",
+            "-lpthread", "-lz", "-ldl", "-lstrictmath", "-llibchelper",
+            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lobjc",
+            "-Wl,-framework,Foundation", "-Wl,-framework,AppKit",
+            "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
+            "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");
+
+    List<String> getJavaFXReflectionClassList() {
+        List<String> answer = super.getJavaFXReflectionClassList();
+        answer.addAll(javafxReflectionMacClassList);
+        return answer;
+    }
+
+    @Override
+    List<String> getJNIClassList (boolean usejavafx) {
+        List<String> answer = super.getJNIClassList(usejavafx);
+        if (usejavafx) answer.addAll(javafxJNIMacClassList);
+        return answer;
+    }
+
+        private static final List<String> javafxReflectionMacClassList = Arrays.asList(
+            "com.sun.prism.es2.ES2Pipeline",
+            "com.sun.prism.es2.ES2ResourceFactory",
+            "com.sun.prism.es2.ES2Shader",
+            "com.sun.prism.es2.MacGLFactory",
+            "com.sun.scenario.effect.impl.es2.ES2ShaderSource",
+            "com.sun.glass.ui.mac.MacApplication",
+            "com.sun.glass.ui.mac.MacView",
+            "com.sun.glass.ui.mac.MacPlatformFactory",
+            "com.sun.glass.ui.mac.MacGestureSupport",
+            "com.sun.glass.ui.mac.MacMenuBarDelegate",
+            "com.sun.glass.ui.mac.MacCommonDialogs",
+            "com.sun.glass.ui.mac.MacFileNSURL",
+            "com.sun.javafx.font.coretext.CTFactory"
+    );
+
+
+    private static final List<String>javafxJNIMacClassList = Arrays.asList(
+            "com.sun.glass.ui.mac.MacApplication",
+            "com.sun.glass.ui.mac.MacCommonDialogs",
+            "com.sun.glass.ui.mac.MacCursor",
+            "com.sun.glass.ui.mac.MacGestureSupport",
+            "com.sun.glass.ui.mac.MacMenuBarDelegate",
+            "com.sun.glass.ui.mac.MacMenuDelegate",
+            "com.sun.glass.ui.mac.MacView",
+            "com.sun.glass.ui.mac.MacWindow",
+            "com.sun.javafx.font.coretext.CGAffineTransform",
+            "com.sun.javafx.font.coretext.CGPoint",
+            "com.sun.javafx.font.coretext.CGRect",
+            "com.sun.javafx.font.coretext.CGSize",
+            "com.sun.javafx.font.FontConfigManager$FcCompFont",
+            "com.sun.javafx.font.FontConfigManager$FontConfigFont",
+            "com.sun.glass.ui.EventLoop"
+    );
 
 }
