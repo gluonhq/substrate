@@ -49,7 +49,14 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return super.link(paths, projectConfiguration);
     }
     private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
-                "-lprism_es2", "-Wl,--no-whole-archive","-lGL", "-lX11");
+                "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
+            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
+            "-Wl,--no-whole-archive","-lGL", "-lX11","-lgtk-3", "-lgdk-3",
+            "-lpangocairo-1.0", "-lpango-1.0", "-latk-1.0",
+            "-lcairo-gobject", "-lcairo", "-lgdk_pixbuf-2.0",
+            "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype", "-lpangoft2-1.0",
+            "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst"
+            );
 
     private static final List<String> javafxReflectionLinuxClassList = Arrays.asList(
             "com.sun.glass.ui.gtk.GtkPlatformFactory",
@@ -67,10 +74,31 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return answer;
     }
 
+
+    private static final List<String>javafxJNILinuxClassList = Arrays.asList("com.sun.glass.ui.gtk.GtkApplication",
+            "com.sun.glass.ui.gtk.GtkPixels",
+            "com.sun.glass.ui.gtk.GtkView",
+            "com.sun.glass.ui.gtk.GtkWindow",
+            "com.sun.javafx.font.FontConfigManager$FcCompFont",
+            "com.sun.javafx.font.FontConfigManager$FontConfigFont",
+            "com.sun.javafx.font.freetype.FT_Bitmap",
+            "com.sun.javafx.font.freetype.FT_GlyphSlotRec",
+            "com.sun.javafx.font.freetype.FT_Glyph_Metrics");
+
+    @Override
+    List<String> getJNIClassList (boolean usejavafx) {
+        List<String> answer = super.getJNIClassList(usejavafx);
+        if (usejavafx) answer.addAll(javafxJNILinuxClassList);
+        return answer;
+    }
+
     @Override
     List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
-        if (!usejavafx) return List.of();
-        return linuxfxlibs;
+        List<String> answer = new LinkedList<>();
+        answer.add("-rdynamic");
+        if (!usejavafx) return answer;
+        answer.addAll(linuxfxlibs);
+        return answer;
     }
 
 
