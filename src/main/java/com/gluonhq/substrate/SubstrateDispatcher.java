@@ -90,7 +90,7 @@ public class SubstrateDispatcher {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                Logger.logDebug("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
+                System.err.println("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
             }
         });
         timer.setDaemon(true);
