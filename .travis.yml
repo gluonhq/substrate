@@ -26,6 +26,9 @@ matrix:
           packages:
             - *global_deps
             - at-spi2-core
+            - build-essential
+            - libgtk-3-dev
+            - libxtst-dev
     - os: osx
       osx_image: xcode10.1
       # env: PRINT_CRASH_LOGS="true"
