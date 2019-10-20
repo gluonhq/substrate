@@ -27,6 +27,9 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.Constants;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,13 +37,24 @@ import java.util.List;
 public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
+    String getAdditionalSourceFileLocation() {
+        return "/native/macosx/";
+    }
+
+    @Override
+    List<String> getAdditionalSourceFiles() {
+        return Arrays.asList("AppDelegate.m", "launcher.c", "thread.c");
+    }
+
+    @Override
     List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
-        if (!usejavafx) return Arrays.asList("-Wl,-framework,Foundation");
-        List<String> answer = Arrays.asList(
-        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libprism_es2.a",
-        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libglass.a",
-        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libjavafx_font.a",
-        "-Wl,-force_load,"+projectConfiguration.getJavafxStaticPath()+"/lib/libjavafx_iio.a");
+        if (!usejavafx) {
+            return Arrays.asList("-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
+        }
+        String libPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
+        List<String> answer = new ArrayList<>(Arrays.asList(
+                libPath + "libprism_es2.a", libPath + "libglass.a",
+                libPath + "libjavafx_font.a", libPath + "libjavafx_iio.a"));
         answer.addAll(macoslibs);
         return answer;
     }
