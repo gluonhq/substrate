@@ -27,11 +27,8 @@
  */
 package com.gluonhq.substrate.target;
 
-import com.gluonhq.substrate.Constants;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
@@ -47,8 +44,8 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
-        if (!usejavafx) {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
+        if (!useJavaFX) {
             return Arrays.asList("-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
         }
         String libPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
@@ -56,6 +53,9 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
                 libPath + "libprism_es2.a", libPath + "libglass.a",
                 libPath + "libjavafx_font.a", libPath + "libjavafx_iio.a"));
         answer.addAll(macoslibs);
+        if (usePrismSW) {
+            answer.add(libPath + "libprism_sw.a");
+        }
         return answer;
     }
 
@@ -74,13 +74,13 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getJNIClassList (boolean usejavafx) {
-        List<String> answer = super.getJNIClassList(usejavafx);
-        if (usejavafx) answer.addAll(javafxJNIMacClassList);
+    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
+        List<String> answer = super.getJNIClassList(useJavaFX, usePrismSW);
+        if (useJavaFX) answer.addAll(javafxJNIMacClassList);
         return answer;
     }
 
-        private static final List<String> javafxReflectionMacClassList = Arrays.asList(
+    private static final List<String> javafxReflectionMacClassList = Arrays.asList(
             "com.sun.prism.es2.ES2Pipeline",
             "com.sun.prism.es2.ES2ResourceFactory",
             "com.sun.prism.es2.ES2Shader",
@@ -95,7 +95,6 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
             "com.sun.glass.ui.mac.MacFileNSURL",
             "com.sun.javafx.font.coretext.CTFactory"
     );
-
 
     private static final List<String>javafxJNIMacClassList = Arrays.asList(
             "com.sun.glass.ui.mac.MacApplication",

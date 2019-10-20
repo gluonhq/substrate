@@ -57,6 +57,7 @@ public class SubstrateDispatcher {
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String targetProfile = System.getProperty("targetProfile");
         boolean useJavaFX = Boolean.parseBoolean(System.getProperty("javafx", "false"));
+        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         String expected  = System.getProperty("expected");
 
@@ -71,6 +72,7 @@ public class SubstrateDispatcher {
         config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
         config.setUseJavaFX(useJavaFX);
+        config.setUsePrismSW(usePrismSW);
 
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");

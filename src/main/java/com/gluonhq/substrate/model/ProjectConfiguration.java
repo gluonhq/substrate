@@ -50,7 +50,8 @@ public class ProjectConfiguration {
     private String StaticRoot;
     private boolean useJNI = true;
     private boolean useJavaFX = false;
-    private boolean enableCheckHash = true;
+    private boolean usePrismSW = false;
+    private boolean enableCheckHash = false;
     private boolean verbose = false;
 
     private Triplet targetTriplet;
@@ -235,6 +236,14 @@ public class ProjectConfiguration {
         this.useJavaFX = useJavaFX;
     }
 
+    public boolean isUsePrismSW() {
+        return usePrismSW;
+    }
+
+    public void setUsePrismSW(boolean usePrismSW) {
+        this.usePrismSW = usePrismSW;
+    }
+
     public boolean isEnableCheckHash() {
         return enableCheckHash;
     }
@@ -405,6 +414,7 @@ public class ProjectConfiguration {
                 ", StaticRoot='" + StaticRoot + '\'' +
                 ", useJNI=" + useJNI +
                 ", useJavaFX=" + useJavaFX +
+                ", usePrismSW=" + usePrismSW +
                 ", enableCheckHash=" + enableCheckHash +
                 ", verbose=" + verbose +
                 ", targetTriplet=" + targetTriplet +

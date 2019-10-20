@@ -181,7 +181,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add("-lpthread");
         linkBuilder.command().add("-lz");
         linkBuilder.command().add("-ldl");
-        linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX()));
+        linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
         System.err.println("cmd = "+cmds);
@@ -287,11 +287,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return javafxReflectionClassList;
     }
 
-    List<String> getJNIClassList (boolean usejavafx) {
-        if (!usejavafx) return Collections.emptyList();
+    List<String> getJavaFXSWReflectionClassList() {
+        return javafxSWReflectionClassList;
+    }
+
+    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
+        if (!useJavaFX) return Collections.emptyList();
         List<String> answer = new LinkedList<>();
         answer.addAll(javaJNIClassList);
         answer.addAll(javafxJNIClassList);
+        if (usePrismSW) {
+            answer.addAll(javafxSWJNIClassList);
+        }
         return answer;
     }
 
@@ -340,6 +347,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 for (String javafxClass : getJavaFXReflectionClassList()) {
                     writeEntry(bw, javafxClass);
                 }
+                if (projectConfiguration.isUsePrismSW()) {
+                    for (String javafxClass : getJavaFXSWReflectionClassList()) {
+                        writeEntry(bw, javafxClass);
+                    }
+                }
             }
             bw.write("]");
         }
@@ -356,7 +368,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
             bw.write("[\n");
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
-            for (String javaClass : getJNIClassList(this.projectConfiguration.isUseJavaFX())) {
+            for (String javaClass : getJNIClassList(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 // TODO: create list of exclusions
                 writeEntry(bw, javaClass,
                         "mac".equals(suffix) && javaClass.equals("java.lang.Thread"));
@@ -583,6 +595,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "com.sun.glass.ui.CommonDialogs$FileChooserResult"
     ));
 
+    private static final List<String> javafxSWReflectionClassList = Arrays.asList(
+            "com.sun.prism.sw.SWPipeline",
+            "com.sun.prism.sw.SWResourceFactory");
+
     private static final List<String> javaJNIClassList = Arrays.asList(
             "java.io.File",
             "java.io.FileNotFoundException",
@@ -590,6 +606,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "java.lang.Boolean",
             "java.lang.Class",
             "java.lang.ClassNotFoundException",
+            "java.lang.IllegalStateException",
             "java.lang.Integer",
             "java.lang.Iterable",
             "java.lang.Long",
@@ -622,6 +639,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "com.sun.glass.ui.CommonDialogs$ExtensionFilter",
             "com.sun.glass.ui.CommonDialogs$FileChooserResult");
 
+    private static final List<String> javafxSWJNIClassList = Arrays.asList(
+            "com.sun.pisces.AbstractSurface",
+            "com.sun.pisces.JavaSurface",
+            "com.sun.pisces.PiscesRenderer",
+            "com.sun.pisces.Transform6");
+
     // Default settings below, can be overridden by subclasses
 
     String getAdditionalSourceFileLocation() {
@@ -641,7 +664,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "gcc";
     }
 
-    List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         return Collections.emptyList();
     }
 

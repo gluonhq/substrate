@@ -29,15 +29,12 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
-import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,7 +47,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return super.link(paths, projectConfiguration);
     }
     private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
-                "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
+            "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
             "-Wl,--no-whole-archive", "-lGL", "-lX11","-lgtk-3", "-lgdk-3",
             "-lpangocairo-1.0", "-lpango-1.0", "-latk-1.0",
@@ -87,17 +84,17 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
             "com.sun.javafx.font.freetype.FT_Glyph_Metrics");
 
     @Override
-    List<String> getJNIClassList (boolean usejavafx) {
-        List<String> answer = super.getJNIClassList(usejavafx);
-        if (usejavafx) answer.addAll(javafxJNILinuxClassList);
+    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
+        List<String> answer = super.getJNIClassList(useJavaFX, usePrismSW);
+        if (useJavaFX) answer.addAll(javafxJNILinuxClassList);
         return answer;
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add("-rdynamic");
-        if (!usejavafx) return answer;
+        if (!useJavaFX) return answer;
 
         ProcessBuilder process = new ProcessBuilder("pkg-config", "--libs", "gtk+-3.0", "gthread-2.0", "xtst");
         process.redirectErrorStream(true);
@@ -115,6 +112,9 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         }
 
         answer.addAll(linuxfxlibs);
+        if (usePrismSW) {
+            answer.add("-lprism_sw");
+        }
         return answer;
     }
 
