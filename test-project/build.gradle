@@ -2,6 +2,30 @@ plugins {
     id "com.google.osdetector" version "1.6.2" apply false
 }
 
+def setupDependencies(String platform) {
+    if ("$platform" != "mac" && "$platform" != "linux") {
+        throw new GradleException("Platfrom $platform not supported")
+    }
+
+    def graalVM = new File("${System.properties['user.home']}/.gluon/substrate/graalvm")
+    if (!graalVM.exists()) {
+        graalVM.mkdirs()
+    }
+    def graalFolder = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev")
+    def name = "mac" == "$platform" ? "darwin-amd64" : "linux-x86_64"
+    def graalZip = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev-gvm-3-${name}.zip")
+    if (!graalZip.exists()) {
+        println "Downloading graalZip..."
+        new URL("https://download2.gluonhq.com/substrate/graalvm/graalvm-unknown-java11-19.3.0-dev-gvm-3-${name}.zip")
+                .withInputStream { i -> graalZip.withOutputStream { it << i } }
+        copy {
+            from zipTree(graalZip)
+            into graalVM
+        }
+    }
+    return "mac" == "$platform" ? "$graalFolder/Contents/Home" : "$graalFolder"
+}
+
 subprojects {
     apply plugin: 'com.google.osdetector'
     apply plugin: 'application'

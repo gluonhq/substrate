@@ -1,3 +1,15 @@
+plugins {
+    id 'org.openjfx.javafxplugin' version '0.0.8'
+}
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    version = "13"
+    modules = [ "javafx.controls" ]
+}
 
 mainClassName = "com.gluonhq.substrate.test.Main"
 
@@ -17,6 +29,7 @@ task runScript(type: Exec) {
     def substratePath = rootFile.toString().concat("/classes/java/main") + ":" + rootFile.toString().concat("/resources/main")
 
     commandLine "${java_home}/bin/java", '-cp', substratePath,
-            '-Dimagecp=build/classes/java/main/', "-Dgraalvm=$graal_path",
+            "-Dimagecp=${project.sourceSets.main.runtimeClasspath.asPath}",
+            "-Dgraalvm=$graal_path", "-Djavafx=true",
             "-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher'
 }
