@@ -11,10 +11,6 @@ javafx {
     modules = [ "javafx.controls" ]
 }
 
-run {
-    jvmArgs = ["-Dprism.verbose=true", "-Dprism.order=sw"]
-}
-
 mainClassName = "com.gluonhq.substrate.test.Main"
 
 def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')

@@ -30,6 +30,7 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
                 "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
-            "-Wl,--no-whole-archive","-lGL", "-lX11","-lgtk-3", "-lgdk-3",
+            "-Wl,--no-whole-archive", "-lGL", "-lX11","-lgtk-3", "-lgdk-3",
             "-lpangocairo-1.0", "-lpango-1.0", "-latk-1.0",
             "-lcairo-gobject", "-lcairo", "-lgdk_pixbuf-2.0",
             "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype", "-lpangoft2-1.0",
@@ -97,6 +98,22 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         List<String> answer = new LinkedList<>();
         answer.add("-rdynamic");
         if (!usejavafx) return answer;
+
+        ProcessBuilder process = new ProcessBuilder("pkg-config", "--libs", "gtk+-3.0", "gthread-2.0", "xtst");
+        process.redirectErrorStream(true);
+        try {
+            Process start = process.start();
+            InputStream is = start.getInputStream();
+            start.waitFor();
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line = br.readLine()) != null) {
+                Logger.logInfo("[SUB] " + line);
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
         answer.addAll(linuxfxlibs);
         return answer;
     }
