@@ -108,9 +108,9 @@ public class Constants {
 //     * String used to download dependencies for supported targets
 //     *
 //     */
-//    public static final String DEPS_TARGET_MAC = "macosx";
-//    public static final String DEPS_TARGET_LINUX = "linux";
-//    public static final String DEPS_TARGET_IOS = "ios";
+    public static final String DEPS_TARGET_MAC = "macosx";
+    public static final String DEPS_TARGET_LINUX = "linux";
+    public static final String DEPS_TARGET_IOS = "ios";
 
 
     /**

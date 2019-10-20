@@ -46,7 +46,7 @@ public class ProjectConfiguration {
 //    private String graalLibsRoot;
 //    private String graalLibsUserPath;
     private String llcPath;
-    private String JavaFXRoot;
+//    private String JavaFXRoot;
     private String StaticRoot;
     private boolean useJNI = true;
     private boolean useJavaFX = false;
@@ -125,10 +125,19 @@ public class ProjectConfiguration {
      * @return the path to the JavaFX SDK (including at least the libs)
      */
     public Path getJavafxStaticPath() {
+        String depsTarget;
+        switch (targetTriplet.getOs()) {
+            case Constants.OS_LINUX: depsTarget = Constants.DEPS_TARGET_LINUX; break;
+            case Constants.OS_DARWIN: depsTarget = Constants.DEPS_TARGET_MAC; break;
+            case Constants.OS_IOS: depsTarget = Constants.DEPS_TARGET_IOS; break;
+            default: throw new RuntimeException("OS for target " + targetTriplet + " not supported");
+        }
+
         Path answer = Constants.USER_SUBSTRATE_PATH
                 .resolve("javafxStaticSdk")
                 .resolve(getJavafxStaticSdkVersion())
-                .resolve(targetTriplet.getOsArch());
+                .resolve(targetTriplet.getOsArch())
+                .resolve(depsTarget + "-sdk");
         return answer;
     }
 
@@ -186,17 +195,17 @@ public class ProjectConfiguration {
         this.llcPath = llcPath;
     }
 
-    public String getJavaFXRoot() {
-        return JavaFXRoot;
-    }
+//    public String getJavaFXRoot() {
+//        return JavaFXRoot;
+//    }
 
-    /**
-     * Sets the JavaFX SDK directory
-     * @param javaFXRoot the JavaFX SDK directory
-     */
-    public void setJavaFXRoot(String javaFXRoot) {
-        JavaFXRoot = javaFXRoot;
-    }
+//    /**
+//     * Sets the JavaFX SDK directory
+//     * @param javaFXRoot the JavaFX SDK directory
+//     */
+//    public void setJavaFXRoot(String javaFXRoot) {
+//        JavaFXRoot = javaFXRoot;
+//    }
 
     public String getStaticRoot() {
         return StaticRoot;
@@ -393,7 +402,6 @@ public class ProjectConfiguration {
                 ", javaStaticSdkVersion='" + javaStaticSdkVersion + '\'' +
                 ", javafxStaticSdkVersion='" + javafxStaticSdkVersion + '\'' +
                 ", llcPath='" + llcPath + '\'' +
-                ", JavaFXRoot='" + JavaFXRoot + '\'' +
                 ", StaticRoot='" + StaticRoot + '\'' +
                 ", useJNI=" + useJNI +
                 ", useJavaFX=" + useJavaFX +
