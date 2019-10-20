@@ -16,10 +16,10 @@ task setupDependencies() {
     }
     def graalFolder = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev")
     def name = "mac" == "$platform" ? "darwin-amd64" : "linux-x86_64"
-    def graalZip = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev-gvm-1-${name}.zip")
+    def graalZip = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev-gvm-3-${name}.zip")
     if (!graalZip.exists()) {
         println "Downloading graalZip..."
-        new URL("https://download2.gluonhq.com/substrate/graalvm/graalvm-unknown-java11-19.3.0-dev-gvm-1-${name}.zip")
+        new URL("https://download2.gluonhq.com/substrate/graalvm/graalvm-unknown-java11-19.3.0-dev-gvm-3-${name}.zip")
                 .withInputStream { i -> graalZip.withOutputStream { it << i } }
         copy {
             from zipTree(graalZip)
