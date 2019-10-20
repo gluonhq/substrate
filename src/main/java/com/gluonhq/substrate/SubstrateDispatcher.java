@@ -49,6 +49,8 @@ public class SubstrateDispatcher {
     private static Path omegaPath;
     private static Path gvmPath;
 
+    private static volatile boolean run = true;
+
     public static void main(String[] args) throws Exception {
 
         String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
@@ -80,7 +82,22 @@ public class SubstrateDispatcher {
         System.err.println("Config: " + config);
         System.err.println("Compiling...");
         System.err.println("ClassPath for compilation = "+classPath);
-        if (!nativeCompile(buildRoot, config, classPath)) {
+        Thread timer = new Thread(() -> {
+            int counter = 1;
+            while (run) {
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Logger.logDebug("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
+            }
+        });
+        timer.setDaemon(true);
+        timer.start();
+        boolean result = nativeCompile(buildRoot, config, classPath);
+        run = false;
+        if (!result) {
             System.err.println("COMPILE FAILED");
             return;
         }
