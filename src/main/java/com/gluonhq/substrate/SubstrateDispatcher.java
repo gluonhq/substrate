@@ -37,18 +37,19 @@ import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
- import java.io.IOException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Locale;
 import java.util.Optional;
 
 public class SubstrateDispatcher {
 
     private static Path omegaPath;
     private static Path gvmPath;
+
+    private static volatile boolean run = true;
 
     public static void main(String[] args) throws Exception {
 
@@ -57,6 +58,9 @@ public class SubstrateDispatcher {
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String targetProfile = System.getProperty("targetProfile");
+        boolean useJavaFX = Boolean.parseBoolean(System.getProperty("javafx", "false"));
+        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
+        boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         String expected  = System.getProperty("expected");
 
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
@@ -67,14 +71,33 @@ public class SubstrateDispatcher {
         config.setMainClassName(mainClass);
         config.setAppName(appName);
         config.setJavaStaticSdkVersion(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
+        config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
+        config.setUseJavaFX(useJavaFX);
+        config.setUsePrismSW(usePrismSW);
 
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         System.err.println("Config: " + config);
         System.err.println("Compiling...");
-        if (!nativeCompile(buildRoot, config, classPath)) {
+        System.err.println("ClassPath for compilation = "+classPath);
+        Thread timer = new Thread(() -> {
+            int counter = 1;
+            while (run) {
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.err.println("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
+            }
+        });
+        timer.setDaemon(true);
+        timer.start();
+        boolean result = nativeCompile(buildRoot, config, classPath);
+        run = false;
+        if (!result) {
             System.err.println("COMPILE FAILED");
             return;
         }
@@ -85,7 +108,9 @@ public class SubstrateDispatcher {
                 System.exit(1);
             }
         } catch (Throwable t) {
+            System.err.println("Linking failed with an exception");
             t.printStackTrace();
+            System.exit(1);
         }
         System.err.println("Running...");
         if (expected != null) {

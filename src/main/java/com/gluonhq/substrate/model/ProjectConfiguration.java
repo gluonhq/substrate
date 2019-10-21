@@ -30,6 +30,8 @@ package com.gluonhq.substrate.model;
 import com.gluonhq.substrate.Constants;
 
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -44,10 +46,11 @@ public class ProjectConfiguration {
 //    private String graalLibsRoot;
 //    private String graalLibsUserPath;
     private String llcPath;
-    private String JavaFXRoot;
+//    private String JavaFXRoot;
     private String StaticRoot;
     private boolean useJNI = true;
     private boolean useJavaFX = false;
+    private boolean usePrismSW = false;
     private boolean enableCheckHash = true;
     private boolean verbose = false;
 
@@ -55,7 +58,7 @@ public class ProjectConfiguration {
     private Triplet hostTriplet;
     private String backend;
     private List<String> bundlesList;
-    private List<String> resourcesList;
+    private List<String> resourcesList = Collections.emptyList();
     private List<String> reflectionList;
     private List<String> jniList;
     private List<String> delayInitList;
@@ -116,6 +119,25 @@ public class ProjectConfiguration {
         return getJavaStaticPath().resolve("lib").resolve("static");
     }
 
+
+    /**
+     * Return the path where the static JavaFX SDK is installed for the os-arch combination of this configuration, and for
+     * the version in <code>javafxStaticSdkVersion</code>
+     * @return the path to the JavaFX SDK
+     */
+    public Path getJavafxStaticPath() {
+        Path answer = Constants.USER_SUBSTRATE_PATH
+                .resolve("javafxStaticSdk")
+                .resolve(getJavafxStaticSdkVersion())
+                .resolve(targetTriplet.getOsArch())
+                .resolve("sdk");
+        return answer;
+    }
+
+    public Path getJavafxStaticLibsPath() {
+        return getJavafxStaticPath().resolve("lib");
+    }
+
     public String getJavafxStaticSdkVersion() {
         return javafxStaticSdkVersion;
     }
@@ -166,17 +188,17 @@ public class ProjectConfiguration {
         this.llcPath = llcPath;
     }
 
-    public String getJavaFXRoot() {
-        return JavaFXRoot;
-    }
+//    public String getJavaFXRoot() {
+//        return JavaFXRoot;
+//    }
 
-    /**
-     * Sets the JavaFX SDK directory
-     * @param javaFXRoot the JavaFX SDK directory
-     */
-    public void setJavaFXRoot(String javaFXRoot) {
-        JavaFXRoot = javaFXRoot;
-    }
+//    /**
+//     * Sets the JavaFX SDK directory
+//     * @param javaFXRoot the JavaFX SDK directory
+//     */
+//    public void setJavaFXRoot(String javaFXRoot) {
+//        JavaFXRoot = javaFXRoot;
+//    }
 
     public String getStaticRoot() {
         return StaticRoot;
@@ -204,6 +226,14 @@ public class ProjectConfiguration {
 
     public void setUseJavaFX(boolean useJavaFX) {
         this.useJavaFX = useJavaFX;
+    }
+
+    public boolean isUsePrismSW() {
+        return usePrismSW;
+    }
+
+    public void setUsePrismSW(boolean usePrismSW) {
+        this.usePrismSW = usePrismSW;
     }
 
     public boolean isEnableCheckHash() {
@@ -373,10 +403,10 @@ public class ProjectConfiguration {
                 ", javaStaticSdkVersion='" + javaStaticSdkVersion + '\'' +
                 ", javafxStaticSdkVersion='" + javafxStaticSdkVersion + '\'' +
                 ", llcPath='" + llcPath + '\'' +
-                ", JavaFXRoot='" + JavaFXRoot + '\'' +
                 ", StaticRoot='" + StaticRoot + '\'' +
                 ", useJNI=" + useJNI +
                 ", useJavaFX=" + useJavaFX +
+                ", usePrismSW=" + usePrismSW +
                 ", enableCheckHash=" + enableCheckHash +
                 ", verbose=" + verbose +
                 ", targetTriplet=" + targetTriplet +

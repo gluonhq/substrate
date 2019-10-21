@@ -52,7 +52,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags() {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         return Arrays.asList("-arch", "arm64",
                 "-mios-version-min=11.0",
                 "-isysroot", getSysroot(),

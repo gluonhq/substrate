@@ -16,12 +16,25 @@ public class HelloWorldTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
-                .withArguments("clean", "build", "run", "runScript", "--stacktrace")
+                .withArguments(":helloWorld:clean", ":helloWorld:build", ":helloWorld:run", ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:run").getOutcome(), "Failed build!");
         assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:runScript").getOutcome(), "Failed build!");
+    }
+
+    @Test
+    void helloFXTest() {
+        BuildResult result = GradleRunner.create()
+                .withProjectDir(new File("test-project"))
+                .withGradleVersion("5.3")
+                .withArguments(":helloFX:clean", ":helloFX:build", ":helloFX:run", ":helloFX:runScript", "--stacktrace")
+                .forwardOutput()
+                .build();
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:run").getOutcome(), "Failed build!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:runScript").getOutcome(), "Failed build!");
     }
 
 }

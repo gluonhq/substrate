@@ -41,6 +41,7 @@ import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -55,7 +56,7 @@ public class FileDeps {
 
     private static final String URL_GRAAL_LIBS = "http://download2.gluonhq.com/omega/graallibs/graalvm-svm-${host}-${version}.zip";
     private static final String URL_JAVA_STATIC_SDK = "http://download2.gluonhq.com/substrate/staticjdk/labs-staticjdk-${target}-gvm-${version}.zip";
-    private static final String URL_JAVAFX_STATIC_SDK = "http://download2.gluonhq.com/omega/javafxstaticsdk/${target}-libsfx-${version}.zip";
+    private static final String URL_JAVAFX_STATIC_SDK = "http://download2.gluonhq.com/substrate/javafxstaticsdk/${target}-libsfx-${version}.zip";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
             "libjava.a", "libnet.a", "libnio.a", "libzip.a"
@@ -115,11 +116,11 @@ public class FileDeps {
 
         // JavaFX Static
         if (configuration.isUseJavaFX()) {
-            Path javafxStatic = Path.of(configuration.getJavaFXRoot()).resolve("lib");
+            Path javafxStatic = configuration.getJavafxStaticLibsPath();
             Logger.logDebug("Processing JavaFXStatic dependencies at " + javafxStatic.toString());
 
             if (! Files.isDirectory(javafxStatic)) {
-                Logger.logDebug("javafxStaticSdk/" + configuration.getJavafxStaticSdkVersion() + "/" + target + "-sdk/lib folder not found");
+         //       Logger.logDebug("javafxStaticSdk/" + configuration.getJavafxStaticSdkVersion() + "/" + target + "-sdk/lib folder not found");
                 downloadJavaFXStatic = true;
             } else {
                 String path = javafxStatic.toString();
@@ -130,7 +131,7 @@ public class FileDeps {
                     downloadJavaFXStatic = true;
                 } else if (configuration.isEnableCheckHash()) {
                     Logger.logDebug("Checking javafx static sdk hashes");
-                    String md5File = getChecksumFile(javafxStatic, "javafxStaticSdk", target);
+                    String md5File = getChecksumFile(javafxStatic.getParent(), "javafxStaticSdk", target);
                     Map<String, String> hashes = getHashMap(md5File);
                     if (hashes == null) {
                         Logger.logDebug(md5File + " md5 not found");
@@ -219,8 +220,7 @@ public class FileDeps {
                 buffer = new byte[8192];
             }
         }
-        // Path zipDir = zipPath.getParent().resolve(folder).resolve(version).resolve(target);
-        Path zipDir = configuration.getJavaStaticPath().getParent();
+        Path zipDir = zipPath.getParent().resolve(folder).resolve(version).resolve(osArch);
         if (! zipPath.toFile().isDirectory()) {
             Files.createDirectories(zipDir);
         }
