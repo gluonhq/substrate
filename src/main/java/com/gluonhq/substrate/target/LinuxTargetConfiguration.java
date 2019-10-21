@@ -56,6 +56,9 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
             "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst"
             );
 
+    private static final List<String> linuxfxSWlibs = Arrays.asList(
+            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
+
     private static final List<String> javafxReflectionLinuxClassList = Arrays.asList(
             "com.sun.glass.ui.gtk.GtkPlatformFactory",
             "com.sun.prism.es2.ES2Pipeline",
@@ -72,8 +75,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return answer;
     }
 
-
-    private static final List<String>javafxJNILinuxClassList = Arrays.asList("com.sun.glass.ui.gtk.GtkApplication",
+    private static final List<String> javafxJNILinuxClassList = Arrays.asList("com.sun.glass.ui.gtk.GtkApplication",
             "com.sun.glass.ui.gtk.GtkPixels",
             "com.sun.glass.ui.gtk.GtkView",
             "com.sun.glass.ui.gtk.GtkWindow",
@@ -113,7 +115,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
 
         answer.addAll(linuxfxlibs);
         if (usePrismSW) {
-            answer.add("-lprism_sw");
+            answer.addAll(linuxfxSWlibs);
         }
         return answer;
     }

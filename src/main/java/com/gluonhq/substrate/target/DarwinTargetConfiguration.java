@@ -52,10 +52,10 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
         List<String> answer = new ArrayList<>(Arrays.asList(
                 libPath + "libprism_es2.a", libPath + "libglass.a",
                 libPath + "libjavafx_font.a", libPath + "libjavafx_iio.a"));
-        answer.addAll(macoslibs);
         if (usePrismSW) {
             answer.add(libPath + "libprism_sw.a");
         }
+        answer.addAll(macoslibs);
         return answer;
     }
 
