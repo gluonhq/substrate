@@ -37,7 +37,7 @@ import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
- import java.io.IOException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -196,25 +196,14 @@ public class SubstrateDispatcher {
     }
 
     private static void printStacks() {
-        Thread t = new Thread(() -> {
-            while (true) {
-                Map<Thread, StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
-                for (Thread key : liveThreads.keySet()) {
-                    System.err.println("Thread " + key.getName());
-                    StackTraceElement[] trace = liveThreads.get(key);
-                    for (StackTraceElement stackTraceElement : trace) {
-                        System.err.println("\tat " + stackTraceElement);
-                    }
-                }
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
+        Map<Thread, StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
+        for (Thread key : liveThreads.keySet()) {
+            System.err.println("Thread " + key.getName());
+            StackTraceElement[] trace = liveThreads.get(key);
+            for (StackTraceElement stackTraceElement : trace) {
+                System.err.println("\tat " + stackTraceElement);
             }
-        });
-        t.setDaemon(true);
-        t.start();
+        }
     }
 
 }
