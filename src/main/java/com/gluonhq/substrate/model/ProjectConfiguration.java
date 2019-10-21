@@ -51,7 +51,7 @@ public class ProjectConfiguration {
     private boolean useJNI = true;
     private boolean useJavaFX = false;
     private boolean usePrismSW = false;
-    private boolean enableCheckHash = false;
+    private boolean enableCheckHash = true;
     private boolean verbose = false;
 
     private Triplet targetTriplet;
@@ -123,22 +123,14 @@ public class ProjectConfiguration {
     /**
      * Return the path where the static JavaFX SDK is installed for the os-arch combination of this configuration, and for
      * the version in <code>javafxStaticSdkVersion</code>
-     * @return the path to the JavaFX SDK (including at least the libs)
+     * @return the path to the JavaFX SDK
      */
     public Path getJavafxStaticPath() {
-        String depsTarget;
-        switch (targetTriplet.getOs()) {
-            case Constants.OS_LINUX: depsTarget = Constants.DEPS_TARGET_LINUX; break;
-            case Constants.OS_DARWIN: depsTarget = Constants.DEPS_TARGET_MAC; break;
-            case Constants.OS_IOS: depsTarget = Constants.DEPS_TARGET_IOS; break;
-            default: throw new RuntimeException("OS for target " + targetTriplet + " not supported");
-        }
-
         Path answer = Constants.USER_SUBSTRATE_PATH
                 .resolve("javafxStaticSdk")
                 .resolve(getJavafxStaticSdkVersion())
                 .resolve(targetTriplet.getOsArch())
-                .resolve(depsTarget + "-sdk");
+                .resolve("sdk");
         return answer;
     }
 
