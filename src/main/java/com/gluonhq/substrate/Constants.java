@@ -80,7 +80,7 @@ public class Constants {
     public static final String TARGET_IOS_SIM = "ios-sim";
 
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+8";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "13-ea+7";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "14-ea+1";
 
 //    /**
 //     * Supported target app folders
@@ -104,15 +104,6 @@ public class Constants {
 //    public static final String DEPS_HOST_MAC = "darwin";
 //    public static final String DEPS_HOST_LINUX = "linux";
 //
-//    /**
-//     * String used to download dependencies for supported targets
-//     *
-//     */
-//    public static final String DEPS_TARGET_MAC = "macosx";
-//    public static final String DEPS_TARGET_LINUX = "linux";
-//    public static final String DEPS_TARGET_IOS = "ios";
-
-
     /**
      * Paths
      */

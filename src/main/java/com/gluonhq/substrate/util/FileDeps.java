@@ -116,12 +116,7 @@ public class FileDeps {
 
         // JavaFX Static
         if (configuration.isUseJavaFX()) {
-            String javafxRoot = configuration.getJavaFXRoot();
-            if (configuration.getJavaFXRoot() == null) {
-                Path javaFXRootPath = Constants.USER_SUBSTRATE_PATH.resolve("javafxStaticSdk");
-                javafxRoot = javaFXRootPath.toString();
-            }
-            Path javafxStatic = Path.of(javafxRoot).resolve("lib");
+            Path javafxStatic = configuration.getJavafxStaticLibsPath();
             Logger.logDebug("Processing JavaFXStatic dependencies at " + javafxStatic.toString());
 
             if (! Files.isDirectory(javafxStatic)) {
@@ -136,7 +131,7 @@ public class FileDeps {
                     downloadJavaFXStatic = true;
                 } else if (configuration.isEnableCheckHash()) {
                     Logger.logDebug("Checking javafx static sdk hashes");
-                    String md5File = getChecksumFile(javafxStatic, "javafxStaticSdk", target);
+                    String md5File = getChecksumFile(javafxStatic.getParent(), "javafxStaticSdk", target);
                     Map<String, String> hashes = getHashMap(md5File);
                     if (hashes == null) {
                         Logger.logDebug(md5File + " md5 not found");
@@ -225,8 +220,7 @@ public class FileDeps {
                 buffer = new byte[8192];
             }
         }
-        // Path zipDir = zipPath.getParent().resolve(folder).resolve(version).resolve(target);
-        Path zipDir = configuration.getJavaStaticPath().getParent();
+        Path zipDir = zipPath.getParent().resolve(folder).resolve(version).resolve(osArch);
         if (! zipPath.toFile().isDirectory()) {
             Files.createDirectories(zipDir);
         }

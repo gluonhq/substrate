@@ -37,7 +37,7 @@ import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
- import java.io.IOException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,6 +49,8 @@ public class SubstrateDispatcher {
     private static Path omegaPath;
     private static Path gvmPath;
 
+    private static volatile boolean run = true;
+
     public static void main(String[] args) throws Exception {
 
         String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
@@ -57,6 +59,7 @@ public class SubstrateDispatcher {
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String targetProfile = System.getProperty("targetProfile");
         boolean useJavaFX = Boolean.parseBoolean(System.getProperty("javafx", "false"));
+        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         String expected  = System.getProperty("expected");
 
@@ -71,6 +74,7 @@ public class SubstrateDispatcher {
         config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
         config.setUseJavaFX(useJavaFX);
+        config.setUsePrismSW(usePrismSW);
 
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
@@ -78,7 +82,22 @@ public class SubstrateDispatcher {
         System.err.println("Config: " + config);
         System.err.println("Compiling...");
         System.err.println("ClassPath for compilation = "+classPath);
-        if (!nativeCompile(buildRoot, config, classPath)) {
+        Thread timer = new Thread(() -> {
+            int counter = 1;
+            while (run) {
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.err.println("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
+            }
+        });
+        timer.setDaemon(true);
+        timer.start();
+        boolean result = nativeCompile(buildRoot, config, classPath);
+        run = false;
+        if (!result) {
             System.err.println("COMPILE FAILED");
             return;
         }

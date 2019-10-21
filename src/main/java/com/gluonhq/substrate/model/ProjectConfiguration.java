@@ -46,10 +46,11 @@ public class ProjectConfiguration {
 //    private String graalLibsRoot;
 //    private String graalLibsUserPath;
     private String llcPath;
-    private String JavaFXRoot;
+//    private String JavaFXRoot;
     private String StaticRoot;
     private boolean useJNI = true;
     private boolean useJavaFX = false;
+    private boolean usePrismSW = false;
     private boolean enableCheckHash = true;
     private boolean verbose = false;
 
@@ -122,13 +123,14 @@ public class ProjectConfiguration {
     /**
      * Return the path where the static JavaFX SDK is installed for the os-arch combination of this configuration, and for
      * the version in <code>javafxStaticSdkVersion</code>
-     * @return the path to the JavaFX SDK (including at least the libs)
+     * @return the path to the JavaFX SDK
      */
     public Path getJavafxStaticPath() {
         Path answer = Constants.USER_SUBSTRATE_PATH
                 .resolve("javafxStaticSdk")
                 .resolve(getJavafxStaticSdkVersion())
-                .resolve(targetTriplet.getOsArch());
+                .resolve(targetTriplet.getOsArch())
+                .resolve("sdk");
         return answer;
     }
 
@@ -186,17 +188,17 @@ public class ProjectConfiguration {
         this.llcPath = llcPath;
     }
 
-    public String getJavaFXRoot() {
-        return JavaFXRoot;
-    }
+//    public String getJavaFXRoot() {
+//        return JavaFXRoot;
+//    }
 
-    /**
-     * Sets the JavaFX SDK directory
-     * @param javaFXRoot the JavaFX SDK directory
-     */
-    public void setJavaFXRoot(String javaFXRoot) {
-        JavaFXRoot = javaFXRoot;
-    }
+//    /**
+//     * Sets the JavaFX SDK directory
+//     * @param javaFXRoot the JavaFX SDK directory
+//     */
+//    public void setJavaFXRoot(String javaFXRoot) {
+//        JavaFXRoot = javaFXRoot;
+//    }
 
     public String getStaticRoot() {
         return StaticRoot;
@@ -224,6 +226,14 @@ public class ProjectConfiguration {
 
     public void setUseJavaFX(boolean useJavaFX) {
         this.useJavaFX = useJavaFX;
+    }
+
+    public boolean isUsePrismSW() {
+        return usePrismSW;
+    }
+
+    public void setUsePrismSW(boolean usePrismSW) {
+        this.usePrismSW = usePrismSW;
     }
 
     public boolean isEnableCheckHash() {
@@ -393,10 +403,10 @@ public class ProjectConfiguration {
                 ", javaStaticSdkVersion='" + javaStaticSdkVersion + '\'' +
                 ", javafxStaticSdkVersion='" + javafxStaticSdkVersion + '\'' +
                 ", llcPath='" + llcPath + '\'' +
-                ", JavaFXRoot='" + JavaFXRoot + '\'' +
                 ", StaticRoot='" + StaticRoot + '\'' +
                 ", useJNI=" + useJNI +
                 ", useJavaFX=" + useJavaFX +
+                ", usePrismSW=" + usePrismSW +
                 ", enableCheckHash=" + enableCheckHash +
                 ", verbose=" + verbose +
                 ", targetTriplet=" + targetTriplet +

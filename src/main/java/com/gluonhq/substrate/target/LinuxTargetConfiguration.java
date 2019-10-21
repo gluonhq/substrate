@@ -29,14 +29,12 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
-import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,14 +47,17 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return super.link(paths, projectConfiguration);
     }
     private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
-                "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
+            "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
-            "-Wl,--no-whole-archive","-lGL", "-lX11","-lgtk-3", "-lgdk-3",
+            "-Wl,--no-whole-archive", "-lGL", "-lX11","-lgtk-3", "-lgdk-3",
             "-lpangocairo-1.0", "-lpango-1.0", "-latk-1.0",
             "-lcairo-gobject", "-lcairo", "-lgdk_pixbuf-2.0",
             "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype", "-lpangoft2-1.0",
             "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst"
             );
+
+    private static final List<String> linuxfxSWlibs = Arrays.asList(
+            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
 
     private static final List<String> javafxReflectionLinuxClassList = Arrays.asList(
             "com.sun.glass.ui.gtk.GtkPlatformFactory",
@@ -74,8 +75,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return answer;
     }
 
-
-    private static final List<String>javafxJNILinuxClassList = Arrays.asList("com.sun.glass.ui.gtk.GtkApplication",
+    private static final List<String> javafxJNILinuxClassList = Arrays.asList("com.sun.glass.ui.gtk.GtkApplication",
             "com.sun.glass.ui.gtk.GtkPixels",
             "com.sun.glass.ui.gtk.GtkView",
             "com.sun.glass.ui.gtk.GtkWindow",
@@ -86,18 +86,37 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
             "com.sun.javafx.font.freetype.FT_Glyph_Metrics");
 
     @Override
-    List<String> getJNIClassList (boolean usejavafx) {
-        List<String> answer = super.getJNIClassList(usejavafx);
-        if (usejavafx) answer.addAll(javafxJNILinuxClassList);
+    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
+        List<String> answer = super.getJNIClassList(useJavaFX, usePrismSW);
+        if (useJavaFX) answer.addAll(javafxJNILinuxClassList);
         return answer;
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags(boolean usejavafx) {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add("-rdynamic");
-        if (!usejavafx) return answer;
+        if (!useJavaFX) return answer;
+
+        ProcessBuilder process = new ProcessBuilder("pkg-config", "--libs", "gtk+-3.0", "gthread-2.0", "xtst");
+        process.redirectErrorStream(true);
+        try {
+            Process start = process.start();
+            InputStream is = start.getInputStream();
+            start.waitFor();
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line = br.readLine()) != null) {
+                Logger.logInfo("[SUB] " + line);
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
         answer.addAll(linuxfxlibs);
+        if (usePrismSW) {
+            answer.addAll(linuxfxSWlibs);
+        }
         return answer;
     }
 
