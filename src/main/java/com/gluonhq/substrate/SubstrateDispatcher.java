@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Optional;
 
 public class SubstrateDispatcher {
@@ -91,6 +92,7 @@ public class SubstrateDispatcher {
                     e.printStackTrace();
                 }
                 System.err.println("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
+                printStacks();
             }
         });
         timer.setDaemon(true);
@@ -191,6 +193,28 @@ public class SubstrateDispatcher {
         gvmPath = Files.createDirectories(gvmPath);
         return  gvmPath.toAbsolutePath().toString();
 
+    }
+
+    private static void printStacks() {
+        Thread t = new Thread(() -> {
+            while (true) {
+                Map<Thread, StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
+                for (Thread key : liveThreads.keySet()) {
+                    System.err.println("Thread " + key.getName());
+                    StackTraceElement[] trace = liveThreads.get(key);
+                    for (StackTraceElement stackTraceElement : trace) {
+                        System.err.println("\tat " + stackTraceElement);
+                    }
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        t.setDaemon(true);
+        t.start();
     }
 
 }
