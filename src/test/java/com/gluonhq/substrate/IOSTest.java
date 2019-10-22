@@ -24,10 +24,10 @@ class IOSTest {
 
     @BeforeEach
     void notForTravis() {
+        assumeTrue(System.getenv("TRAVIS") == null);
+        assumeTrue(System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac"));
         String[] devices = Deploy.connectedDevices();
-        assumeTrue((devices != null && devices.length > 0) &&
-                System.getenv("TRAVIS") == null &&
-                System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac"));
+        assumeTrue((devices != null && devices.length > 0));
     }
 
     @Test
