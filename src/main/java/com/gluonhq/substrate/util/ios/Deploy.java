@@ -66,9 +66,8 @@ public class Deploy {
     }
 
     public static String[] connectedDevices() {
-        if (bridge == null || bridge.isReady()) {
+        if (bridge == null) {
             bridge = MobileDeviceBridge.instance;
-            bridge.init();
         }
 
         return bridge.getDeviceIds();

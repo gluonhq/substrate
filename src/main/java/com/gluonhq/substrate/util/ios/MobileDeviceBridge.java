@@ -67,7 +67,7 @@ public class MobileDeviceBridge {
         Logger.logDebug("MobileDeviceBridge :: Create bridge");
     }
 
-    public void init() {
+    private void init() {
         Logger.logDebug("MobileDeviceBridge Prepare device");
 
         Path lib = null;
@@ -81,14 +81,13 @@ public class MobileDeviceBridge {
         runtime = jnr.ffi.Runtime.getRuntime(device);
     }
 
-    public boolean isReady() {
+    private boolean isReady() {
         return device != null;
     }
 
     public String[] getDeviceIds() {
         if (!isReady()) {
-            Logger.logSevere("Error: No device was found");
-            return null;
+            init();
         }
         Logger.logDebug("MobileDeviceBridge :: get deviceIds");
 
