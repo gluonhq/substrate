@@ -35,6 +35,8 @@ import java.nio.file.Path;
 
 public class Deploy {
 
+    private static MobileDeviceBridge bridge;
+
     public static Path getIOSDeployPath() {
         // Check for Homebrew installed
         String response = ProcessRunner.runProcessForSingleOutput("check brew","which", "brew");
@@ -70,16 +72,19 @@ public class Deploy {
         return Path.of(response);
     }
 
-    public static boolean install(Path app) {
-        // TODO:
-        // export PATH = /usr/bin/:$PATH
+    public static String[] connectedDevices() {
+        if (bridge == null || bridge.isReady()) {
+            bridge = MobileDeviceBridge.instance;
+            bridge.init();
+        }
 
+        return bridge.getDeviceIds();
+    }
+
+    public static boolean install(String app) {
         Path deploy = getIOSDeployPath();
         if (deploy != null) {
-            MobileDeviceBridge bridge = MobileDeviceBridge.instance;
-            bridge.init();
-
-            String[] devices = bridge.getDeviceIds();
+            String[] devices = Deploy.connectedDevices();
             if (devices.length == 0) {
                 Logger.logSevere("No iOS devices connected to this system. Exit install procedure");
                 return false;
@@ -90,7 +95,8 @@ public class Deploy {
             String deviceId = devices[0];
 
             ProcessRunner runner = new ProcessRunner(deploy.toString(),
-                    "--id", deviceId, "--bundle", app.toString(), "--no-wifi", "--debug");
+                    "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
+            runner.addToEnv("PATH", "/usr/bin/:$PATH");
             runner.setInfo(true);
             try {
                 boolean result = runner.runTimedProcess("run", 60);

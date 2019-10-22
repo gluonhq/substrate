@@ -204,7 +204,7 @@ public class InfoPlist {
     private String getExecutableName(String appName, String sourceName) {
         Path plist = getPlistPath(paths, sourceName);
         if (plist == null) {
-            return appName + (Constants.SOURCE_IOS.equals(sourceName) ? "App" : "");
+            return appName; // + (Constants.SOURCE_IOS.equals(sourceName) ? "App" : "");
         }
 
         try {

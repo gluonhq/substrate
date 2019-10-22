@@ -81,7 +81,7 @@ public class MobileDeviceBridge {
         runtime = jnr.ffi.Runtime.getRuntime(device);
     }
 
-    private boolean isReady() {
+    public boolean isReady() {
         return device != null;
     }
 

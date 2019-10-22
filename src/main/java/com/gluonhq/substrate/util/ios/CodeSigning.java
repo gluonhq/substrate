@@ -103,7 +103,9 @@ public class CodeSigning {
         Path provisioningProfilePath = mobileProvision.getProvisioningPath();
         Path embeddedPath = appPath.resolve(EMBEDDED_PROVISIONING_PROFILE);
         Files.copy(provisioningProfilePath, embeddedPath, REPLACE_EXISTING);
-        return sign(getEntitlementsPath(bundleId, true), appPath);
+        Path entitlementsPath = getEntitlementsPath(bundleId, true);
+        Logger.logDebug("Signing with entitlements path: " + entitlementsPath);
+        return sign(entitlementsPath, appPath);
     }
 
     private MobileProvision getProvisioningProfile() throws IOException {
@@ -157,8 +159,12 @@ public class CodeSigning {
                             int newLength = tokens[length].equals("*") ? length - 1 : length;
                             String newBundleId = Stream.of(tokens)
                                     .limit(newLength)
-                                    .collect(Collectors.joining("."))
-                                    .concat(".*");
+                                    .collect(Collectors.joining("."));
+                            if (newBundleId.isEmpty()) {
+                                newBundleId = newBundleId.concat(".*");
+                            } else {
+                                newBundleId = "*";
+                            }
                             return findMobileProvision(identity, newBundleId, initialBundleId);
                         } else {
                             return findMobileProvision(identity, "*", initialBundleId);
@@ -249,7 +255,7 @@ public class CodeSigning {
         getProvisioningProfile();
         Path entitlementsPath = tmpPath.resolve("Entitlements.plist");
 
-        try (InputStream is = FileOps.resourceAsStream("/Entitlements.plist")) {
+        try (InputStream is = FileOps.resourceAsStream("/native/ios/Entitlements.plist")) {
             dictionary = new NSDictionaryEx(is);
         } catch (Exception ex) {
             ex.printStackTrace();

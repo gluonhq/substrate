@@ -103,6 +103,6 @@ public class XcodeUtils {
     }
 
     public static String getCommandForSdk(String command, String sdk) throws IOException {
-        return ProcessRunner.runProcessForSingleOutput("xcrun", "-sdk", sdk, "-f", command);
+        return ProcessRunner.runProcessForSingleOutput("xcrun", "xcrun", "-sdk", sdk, "-f", command);
     }
 }
