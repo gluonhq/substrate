@@ -1,4 +1,14 @@
 
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.googlecode.plist:dd-plist:1.22'
+    implementation 'com.github.jnr:jnr-ffi:2.1.10'
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
+}
+
 mainClassName = "com.gluonhq.substrate.test.Main"
 
 def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
@@ -13,10 +23,19 @@ task runScript(type: Exec) {
         throw new RuntimeException("java_home is not defined.")
     }
 
-    def rootFile = new File(rootDir.getParent().concat("/build/"))
-    def substratePath = rootFile.toString().concat("/classes/java/main") + ":" + rootFile.toString().concat("/resources/main")
+    def target = System.getProperty("substrate.target")
 
-    commandLine "${java_home}/bin/java", '-cp', substratePath,
-            '-Dimagecp=build/classes/java/main/', "-Dgraalvm=$graal_path",
-            "-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher'
+    def rootFile = new File(rootDir.getParent().concat("/build/"))
+    def substratePath = rootFile.toString().concat("/classes/java/main") + ":" +
+            rootFile.toString().concat("/resources/main") + ":" +
+            "${project.sourceSets.main.runtimeClasspath.asPath}"
+
+    def argsList = ["${java_home}/bin/java", '-cp', substratePath,
+                   "-Dimagecp=${project.sourceSets.main.runtimeClasspath.asPath}",
+                   "-Dgraalvm=$graal_path"]
+    if (target != null) {
+        argsList += ["-DtargetProfile=$target"]
+    }
+    argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
+    commandLine argsList
 }
