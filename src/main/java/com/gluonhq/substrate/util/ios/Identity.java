@@ -1,7 +1,3 @@
-package com.gluonhq.substrate.util.ios;
-
-import java.util.regex.Pattern;
-
 /*
  * Copyright (c) 2019, Gluon
  *
@@ -29,6 +25,10 @@ import java.util.regex.Pattern;
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package com.gluonhq.substrate.util.ios;
+
+import java.util.regex.Pattern;
+
 public class Identity {
 
     static final Pattern IDENTITY_PATTERN = Pattern.compile("^\\d+\\)\\s+([0-9A-F]+)\\s+\"([^\"]*)\"\\s*(.*)");
