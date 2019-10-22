@@ -154,15 +154,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     +gvmPath.toString());
         }
         ProcessBuilder linkBuilder = new ProcessBuilder(getLinker());
-        Path appPath = gvmPath.resolve(appName);
 
         linkBuilder.command().add("-o");
-        linkBuilder.command().add(paths.getAppPath().resolve(appName).toString());
+        linkBuilder.command().add(getAppPath(appName));
 
+        Path gvmAppPath = gvmPath.resolve(appName);
         getAdditionalSourceFiles()
               .forEach( r -> linkBuilder.command().add(
-                      appPath.resolve(r.replaceAll("\\..*", ".o")).toString()));
-
+                      gvmAppPath.resolve(r.replaceAll("\\..*", ".o")).toString()));
 
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
@@ -197,7 +196,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         return true;
     }
-
 
     private void asynPrintFromInputStream (InputStream inputStream) {
         Thread t = new Thread(() -> {
@@ -271,8 +269,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
 
     @Override
-    public boolean runUntilEnd(Path appPath, String appName) throws IOException, InterruptedException {
-        Process runProcess = startAppProcess(appPath,appName);
+    public boolean runUntilEnd(ProcessPaths paths, String appName) throws IOException, InterruptedException {
+        Process runProcess = startAppProcess(paths.getAppPath(), appName);
         InputStream is = runProcess.getInputStream();
         asynPrintFromInputStream(is);
         int result = runProcess.waitFor();
@@ -662,6 +660,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     String getLinker() {
         return "gcc";
+    }
+
+    String getAppPath(String appName) {
+        return paths.getAppPath().resolve(appName).toString();
     }
 
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {

@@ -34,46 +34,53 @@ import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.ios.CodeSigning;
+import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
-    private List<String> iosAdditionalSourceFiles = Arrays.asList("AppDelegate.m");
+    private List<String> iosAdditionalSourceFiles = Arrays.asList("AppDelegate.m"); // , "thread.m");
 
     @Override
-    public boolean runUntilEnd(Path workDir, String appName) throws IOException, InterruptedException {
-        return false;
+    public boolean runUntilEnd(ProcessPaths paths, String appName) throws IOException, InterruptedException {
+        return Deploy.install(paths.getAppPath().resolve(appName + ".app").toString());
     }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        return Arrays.asList("-arch", "arm64",
+        return Arrays.asList("-w", "-fPIC",
+                "-arch", Constants.ARCH_ARM64,
                 "-mios-version-min=11.0",
                 "-isysroot", getSysroot(),
                 "-Wl,-framework,Foundation",
-                "-Wl,-framework,UIKit");
+                "-Wl,-framework,UIKit",
+                "-Wl,-framework,CoreGraphics",
+                "-Wl,-framework,CoreText",
+                "-Wl,-framework,OpenGLES",
+                "-Wl,-framework,MobileCoreServices");
     }
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
         return Arrays.asList("-xobjective-c",
-                "-arch", "arm64",
-                "-Dsvn.targetArch=arm64",
+                "-arch", getArch(),
+                "-Dsvn.targetArch=" + getArch(),
                 "-isysroot", getSysroot());
     }
 
     @Override
     List<String> getTargetSpecificAOTCompileFlags() {
         Path llcPath = Path.of(projectConfiguration.getGraalPath(),"bin", "llc");
-        return Arrays.asList("-H:CompilerBackend=llvm",
+        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
-                "-Dsvm.targetArch=arm64",
+                "-Dsvm.targetArch=" + getArch(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
 
@@ -115,9 +122,26 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return "clang";
     }
 
+    @Override
+    String getAppPath(String appName) {
+        Path appPath = paths.getAppPath().resolve(appName + ".app");
+        if (!Files.exists(appPath)) {
+            try {
+                Files.createDirectories(appPath);
+            } catch (IOException e) {
+                Logger.logSevere("Error creating path " + appPath + ": " + e.getMessage());
+            }
+        }
+        return appPath.toString() + "/" + appName;
+    }
+
+    private String getArch() {
+        return isSimulator() ? Constants.ARCH_AMD64 : Constants.ARCH_ARM64;
+    }
+
     private String getSysroot() {
-        // TODO: Sim?
-        return XcodeUtils.SDKS.IPHONEOS.getSDKPath();
+        return isSimulator() ? XcodeUtils.SDKS.IPHONESIMULATOR.getSDKPath() :
+                XcodeUtils.SDKS.IPHONEOS.getSDKPath();
     }
 
     private boolean isSimulator() {
