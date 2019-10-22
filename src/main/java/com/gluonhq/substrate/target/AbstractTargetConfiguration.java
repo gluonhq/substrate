@@ -662,6 +662,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "gcc";
     }
 
+    /**
+     * Returns a string with the application path.
+     * The required folders will be created in case these don't exist
+     *
+     * @param appName the application name
+     * @return a string with the path of the application
+     */
     String getAppPath(String appName) {
         return paths.getAppPath().resolve(appName).toString();
     }

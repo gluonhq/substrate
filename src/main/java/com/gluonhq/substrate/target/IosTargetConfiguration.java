@@ -50,17 +50,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
 
     @Override
-    public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
-        this.projectConfiguration = projectConfiguration;
-        String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
-        if (isSimulator()) {
-            // TODO: launchOnSimulator(appPath);
-            return false;
-        }
-        return Deploy.install(appPath);
-    }
-
-    @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         return Arrays.asList("-w", "-fPIC",
                 "-arch", Constants.ARCH_ARM64,
@@ -114,14 +103,25 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         if (result) {
             createInfoPlist(paths, projectConfiguration);
 
-            if (! isSimulator()) {
+            if (!isSimulator()) {
                 CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
-                if (! codeSigning.signApp()) {
-                    Logger.logSevere("Error signing the app");
+                if (!codeSigning.signApp()) {
+                    throw new RuntimeException("Error signing the app");
                 }
             }
         }
         return result;
+    }
+
+    @Override
+    public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+        this.projectConfiguration = projectConfiguration;
+        String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
+        if (isSimulator()) {
+            // TODO: launchOnSimulator(appPath);
+            return false;
+        }
+        return Deploy.install(appPath);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             try {
                 Files.createDirectories(appPath);
             } catch (IOException e) {
-                Logger.logSevere("Error creating path " + appPath + ": " + e.getMessage());
+                Logger.logSevere(e, "Error creating path " + appPath);
             }
         }
         return appPath.toString() + "/" + appName;
@@ -152,7 +152,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     private boolean isSimulator() {
-        return projectConfiguration.getTargetTriplet().getProfile().equals(Constants.Profile.IOS_SIM);
+        return projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AMD64);
     }
 
     private void createInfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration) {
@@ -166,7 +166,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
                         paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
             }
         } catch (IOException e) {
-            Logger.logSevere("Error creating info.plist");
+            Logger.logSevere(e, "Error creating info.plist");
         }
     }
 }

@@ -120,12 +120,12 @@ public class FileOps {
         return destination;
     }
 
-    public static InputStream resourceAsStream(String res) {
+    public static InputStream resourceAsStream(String res) throws IOException {
         String actualResource = Objects.requireNonNull(res).startsWith(File.separator) ? res : File.separator + res;
         Logger.logDebug("Looking for resource: " + res);
         InputStream answer = SubstrateDispatcher.class.getResourceAsStream(actualResource);
         if (answer == null) {
-            Logger.logSevere("Resource " + res + " not found");
+            throw new IOException("Resource " + res + " not found");
         }
         return answer;
     }
@@ -143,7 +143,7 @@ public class FileOps {
             Files.copy(source, destination,  REPLACE_EXISTING);
             Logger.logDebug("Copied resource " + source + " to " + destination);
         } catch (IOException ex) {
-            Logger.logSevere("Failed copying " + source + " to " + destination + ": " + ex);
+            Logger.logSevere(ex, "Failed copying " + source + " to " + destination + ": " + ex);
         }
         return destination;
     }

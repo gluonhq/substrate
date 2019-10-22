@@ -72,6 +72,7 @@ public class InfoPlist {
     private final XcodeUtils.SDKS sdk;
     private final ProjectConfiguration projectConfiguration;
     private final ProcessPaths paths;
+    private final String sourceOS;
     private final XcodeUtils xcodeUtil;
 
     private final Path appPath;
@@ -85,22 +86,23 @@ public class InfoPlist {
     public InfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration, XcodeUtils.SDKS sdk) throws IOException {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
+        this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
         this.sdk = sdk;
         this.xcodeUtil = new XcodeUtils(sdk);
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
-        rootPath = paths.getSourcePath().resolve(Constants.SOURCE_IOS);
+        rootPath = paths.getSourcePath().resolve(sourceOS);
         tmpPath = paths.getTmpPath();
     }
 
     public Path processInfoPlist() throws IOException {
         Path workDir = appPath;
-        String executableName = getExecutableName(projectConfiguration.getAppName(), Constants.SOURCE_IOS);
-        String bundleIdName = getBundleId(getPlistPath(paths, Constants.SOURCE_IOS), projectConfiguration.getMainClassName());
+        String executableName = getExecutableName(projectConfiguration.getAppName(), sourceOS);
+        String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getMainClassName());
 
         Path userPlist = rootPath.resolve(Constants.PLIST_FILE);
         boolean inited = true;
         if (! userPlist.toFile().exists()) {
-            Path iosPath = paths.getGenPath().resolve(Constants.SOURCE_IOS);
+            Path iosPath = paths.getGenPath().resolve(sourceOS);
             Path genPlist = iosPath.resolve(Constants.PLIST_FILE);
             Path iosAssets = iosPath.resolve("assets");
             Logger.logDebug("Copy " + Constants.PLIST_FILE + " to " + genPlist.toString());
@@ -109,7 +111,7 @@ public class InfoPlist {
                 try {
                     FileOps.copyResource("/native/ios/assets/" + a, iosAssets.resolve(a));
                 } catch (IOException e) {
-                    Logger.logSevere("Error copying resource " + a + ": " + e.getMessage());
+                    Logger.logSevere(e, "Error copying resource " + a + ": " + e.getMessage());
                 }
             });
             iconAssets.forEach(a -> {
@@ -117,7 +119,7 @@ public class InfoPlist {
                     FileOps.copyResource("/native/ios/assets/Assets.xcassets/AppIcon.appiconset/" + a,
                             iosAssets.resolve("Assets.xcassets").resolve("AppIcon.appiconset").resolve(a));
                 } catch (IOException e) {
-                    Logger.logSevere("Error copying resource " + a + ": " + e.getMessage());
+                    Logger.logSevere(e, "Error copying resource " + a + ": " + e.getMessage());
                 }
             });
             FileOps.copyResource("/native/ios/assets/Assets.xcassets/Contents.json",
@@ -130,7 +132,7 @@ public class InfoPlist {
             copyVerifyAssets(rootPath.resolve("assets"));
         }
 
-        Path plist = getPlistPath(paths, Constants.SOURCE_IOS);
+        Path plist = getPlistPath(paths, sourceOS);
         if (plist == null) {
             throw new RuntimeException("Error: plist not found");
         }

@@ -91,12 +91,12 @@ public class Constants {
 //    public static final String APP_LINUX = "linux";
 //    public static final String APP_IOS = "ios";
 //
-    /**
-     * Supported target source folders
-     *
-     */
-    public static final String SOURCE_MAC = "mac";
-    public static final String SOURCE_IOS = "ios";
+//    /**
+//     * Supported target source folders
+//     *
+//     */
+//    public static final String SOURCE_MAC = "mac";
+//    public static final String SOURCE_IOS = "ios";
 
 //    /**
 //     * String used to download dependencies for supported hosts

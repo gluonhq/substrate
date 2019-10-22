@@ -81,6 +81,7 @@ public class CodeSigning {
     private String bundleId;
     private final ProcessPaths paths;
     private final ProjectConfiguration projectConfiguration;
+    private final String sourceOS;
 
     private final Path appPath;
     private final Path tmpPath;
@@ -88,7 +89,8 @@ public class CodeSigning {
     public CodeSigning(ProcessPaths paths, ProjectConfiguration projectConfiguration) {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
-        this.bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, Constants.SOURCE_IOS), Constants.SOURCE_IOS);
+        this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
+        this.bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
 
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
         tmpPath = paths.getTmpPath();
@@ -110,7 +112,7 @@ public class CodeSigning {
 
     private MobileProvision getProvisioningProfile() throws IOException {
         if (bundleId == null) {
-            bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, Constants.SOURCE_IOS), Constants.SOURCE_IOS);
+            bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
         }
 
         if (mobileProvision == null) {
@@ -214,6 +216,9 @@ public class CodeSigning {
             getProvisioningProfile();
         }
         Identity identity = CodeSigning.identity;
+        if (identity == null) {
+            throw new RuntimeException("Error signing app: signing identity was null");
+        }
         Logger.logDebug("Signing app with identity: " + identity);
         ProcessRunner runner = new ProcessRunner("codesign", "--force", "--sign", identity.getSha1());
         if (entitlementsPath != null) {
@@ -226,6 +231,7 @@ public class CodeSigning {
         String codesignAllocate = XcodeUtils.getCommandForSdk("codesign_allocate", "iphoneos");
         runner.addToEnv(CODESIGN_ALLOCATE_ENV, codesignAllocate);
         if (!runner.runTimedProcess("codesign", 10)) {
+            Logger.logSevere("Codesign process failed");
             return false;
         }
 
