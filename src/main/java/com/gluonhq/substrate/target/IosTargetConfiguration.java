@@ -50,7 +50,12 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     public boolean runUntilEnd(ProcessPaths paths, String appName) throws IOException, InterruptedException {
-        return Deploy.install(paths.getAppPath().resolve(appName + ".app").toString());
+        String appPath = paths.getAppPath().resolve(appName + ".app").toString();
+        if (isSimulator()) {
+            // TODO: launchOnSimulator(appPath);
+            return false;
+        }
+        return Deploy.install(appPath);
     }
 
     @Override
@@ -136,7 +141,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     private String getArch() {
-        return isSimulator() ? Constants.ARCH_AMD64 : Constants.ARCH_ARM64;
+        return projectConfiguration.getTargetTriplet().getArch();
     }
 
     private String getSysroot() {
@@ -145,8 +150,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     private boolean isSimulator() {
-        // TODO
-        return false; // Constants.ARCH_AMD64.equals(arch);
+        return projectConfiguration.getTargetTriplet().getProfile().equals(Constants.Profile.IOS_SIM);
     }
 
     private void createInfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration) {

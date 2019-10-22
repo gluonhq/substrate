@@ -35,6 +35,7 @@ import static com.gluonhq.substrate.Constants.*;
 
 public class Triplet {
 
+    private final Profile profile;
     private String arch;
     private String vendor;
     private String os;
@@ -51,13 +52,8 @@ public class Triplet {
         }
     }
 
-    public Triplet(String arch, String vendor, String os) {
-        this.arch = arch;
-        this.vendor = vendor;
-        this.os = os;
-    }
-
     public Triplet(Constants.Profile profile) {
+        this.profile = profile;
         switch (profile) {
             case LINUX:
                 this.arch = ARCH_AMD64;
@@ -74,9 +70,18 @@ public class Triplet {
                 this.vendor = VENDOR_APPLE;
                 this.os = OS_IOS;
                 break;
+            case IOS_SIM:
+                this.arch = ARCH_AMD64;
+                this.vendor = VENDOR_APPLE;
+                this.os = OS_IOS;
+                break;
             default:
                 throw new IllegalArgumentException("Triplet for profile "+profile+" is not supported yet");
         }
+    }
+
+    public Profile getProfile() {
+        return profile;
     }
 
     public String getArch() {
