@@ -42,6 +42,9 @@ javadoc {
     options.addStringOption("Xdoclint:none", "-quiet")
     options.addBooleanOption('html5', true)
     options.addBooleanOption('javafx', true)
+    doFirst {
+        options.addStringOption('-module-path', classpath.asPath)
+    }
 }
 
 build.dependsOn javadoc
