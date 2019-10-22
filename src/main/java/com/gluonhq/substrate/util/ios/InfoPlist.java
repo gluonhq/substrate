@@ -85,9 +85,6 @@ public class InfoPlist {
     private String minOSVersion = "11.0";
 
     public InfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration, XcodeUtils.SDKS sdk) throws IOException {
-        if (paths == null || projectConfiguration == null) {
-            throw new IllegalArgumentException("Error, argument can't be null");
-        }
         this.paths = Objects.requireNonNull(paths);
         this.projectConfiguration = Objects.requireNonNull(projectConfiguration);
         this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
@@ -196,10 +193,8 @@ public class InfoPlist {
     }
 
     static Path getPlistPath(ProcessPaths paths, String sourceName) {
-        if (paths == null || sourceName == null) {
-            throw new IllegalArgumentException("Error, argument can't be null");
-        }
-        Path userPlist = paths.getSourcePath().resolve(sourceName).resolve(Constants.PLIST_FILE);
+        Path userPlist = Objects.requireNonNull(paths).getSourcePath()
+                .resolve(Objects.requireNonNull(sourceName)).resolve(Constants.PLIST_FILE);
         if (Files.exists(userPlist)) {
             return userPlist;
         }
