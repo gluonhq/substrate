@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class InfoPlist {
 
@@ -84,8 +85,11 @@ public class InfoPlist {
     private String minOSVersion = "11.0";
 
     public InfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration, XcodeUtils.SDKS sdk) throws IOException {
-        this.paths = paths;
-        this.projectConfiguration = projectConfiguration;
+        if (paths == null || projectConfiguration == null) {
+            throw new IllegalArgumentException("Error, argument can't be null");
+        }
+        this.paths = Objects.requireNonNull(paths);
+        this.projectConfiguration = Objects.requireNonNull(projectConfiguration);
         this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
         this.sdk = sdk;
         this.xcodeUtil = new XcodeUtils(sdk);
@@ -111,7 +115,7 @@ public class InfoPlist {
                 try {
                     FileOps.copyResource("/native/ios/assets/" + a, iosAssets.resolve(a));
                 } catch (IOException e) {
-                    Logger.logSevere(e, "Error copying resource " + a + ": " + e.getMessage());
+                    Logger.logFatal(e, "Error copying resource " + a + ": " + e.getMessage());
                 }
             });
             iconAssets.forEach(a -> {
@@ -119,7 +123,7 @@ public class InfoPlist {
                     FileOps.copyResource("/native/ios/assets/Assets.xcassets/AppIcon.appiconset/" + a,
                             iosAssets.resolve("Assets.xcassets").resolve("AppIcon.appiconset").resolve(a));
                 } catch (IOException e) {
-                    Logger.logSevere(e, "Error copying resource " + a + ": " + e.getMessage());
+                    Logger.logFatal(e, "Error copying resource " + a + ": " + e.getMessage());
                 }
             });
             FileOps.copyResource("/native/ios/assets/Assets.xcassets/Contents.json",
@@ -167,7 +171,7 @@ public class InfoPlist {
                                 NSDictionary d = (NSDictionary) PropertyListParser.parse(f.toFile());
                                 d.keySet().forEach(k -> orderedDict.put(k, d.get(k)));
                             } catch (Exception e) {
-                                Logger.logSevere(e, "Error reading plist");
+                                Logger.logFatal(e, "Error reading plist");
                             }
                         });
             }
@@ -177,7 +181,7 @@ public class InfoPlist {
             orderedDict.saveAsBinary(workDir.resolve("Info.plist"));
             orderedDict.saveAsXML(tmpPath.resolve("Info.plist"));
             orderedDict.getEntrySet().forEach(e -> {
-                        if (e.getKey().equals("CFBundleIdentifier")) {
+                        if ("CFBundleIdentifier".equals(e.getKey())) {
                             Logger.logDebug("Bundle ID = "+e.getValue().toString());
                             bundleId = e.getValue().toString();
                         }
@@ -186,18 +190,21 @@ public class InfoPlist {
             );
             return plist;
         } catch (Exception ex) {
-            Logger.logSevere(ex, "Could not process property list");
+            Logger.logFatal(ex, "Could not process property list");
         }
         return null;
     }
 
     static Path getPlistPath(ProcessPaths paths, String sourceName) {
+        if (paths == null || sourceName == null) {
+            throw new IllegalArgumentException("Error, argument can't be null");
+        }
         Path userPlist = paths.getSourcePath().resolve(sourceName).resolve(Constants.PLIST_FILE);
-        if (userPlist.toFile().exists()) {
+        if (Files.exists(userPlist)) {
             return userPlist;
         }
         Path genPlist = paths.getGenPath().resolve(sourceName).resolve(Constants.PLIST_FILE);
-        if (genPlist.toFile().exists()) {
+        if (Files.exists(genPlist)) {
             return genPlist;
         }
         return null;
@@ -212,7 +219,7 @@ public class InfoPlist {
         try {
             NSDictionaryEx dict = new NSDictionaryEx(plist.toFile());
             return dict.getEntrySet().stream()
-                    .filter(e -> e.getKey().equals("CFBundleExecutable"))
+                    .filter(e -> "CFBundleExecutable".equals(e.getKey()))
                     .findFirst()
                     .map(e -> {
                         Logger.logDebug("Executable Name = " + e.getValue().toString());
@@ -220,7 +227,7 @@ public class InfoPlist {
                     })
                     .orElseThrow(() -> new RuntimeException("CFBundleExecutable key was not found in plist file " + plist.toString()));
         } catch (Exception ex) {
-            Logger.logSevere(ex, "Could not process CFBundleExecutable");
+            Logger.logFatal(ex, "Could not process CFBundleExecutable");
         }
 
         Logger.logSevere("Error: ExecutableName was found");
@@ -248,7 +255,7 @@ public class InfoPlist {
                     })
                     .orElseThrow(() -> new RuntimeException("CFBundleIdentifier key was not found in plist file " + plist.toString()));
         } catch (Exception ex) {
-            Logger.logSevere(ex, "Could not process CFBundleIdentifier");
+            Logger.logFatal(ex, "Could not process CFBundleIdentifier");
         }
 
         Logger.logSevere("Error: no bundleId was found");
@@ -257,8 +264,8 @@ public class InfoPlist {
     }
 
     private void copyVerifyAssets(Path resourcePath) throws IOException {
-        if (! resourcePath.toFile().exists()) {
-            return;
+        if (resourcePath == null || !Files.exists(resourcePath)) {
+            throw new RuntimeException("Error: invalid path " + resourcePath);
         }
         if (minOSVersion == null) {
             minOSVersion = "11.0";
@@ -272,7 +279,7 @@ public class InfoPlist {
                                 minOSVersion,
                                 Arrays.asList("iphone", "ipad"), "");
                     } catch (Exception ex) {
-                        Logger.logSevere(ex, "Failed creating directory " + p);
+                        Logger.logFatal(ex, "Failed creating directory " + p);
                     }
                 }
             } else {

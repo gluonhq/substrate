@@ -29,7 +29,12 @@ public class XcodeUtils {
         }
 
         private String getSdkDir(String name) {
-            return ProcessRunner.runProcessForSingleOutput("sdk", "xcrun", "--sdk", name, "--show-sdk-path");
+            try {
+                return ProcessRunner.runProcessForSingleOutput("sdk", "xcrun", "--sdk", name, "--show-sdk-path");
+            } catch (IOException | InterruptedException e) {
+                Logger.logFatal(e, "Error retrieving sdk for " + name + ":" + e.getMessage());
+            }
+            return null;
         }
     }
 
@@ -69,7 +74,7 @@ public class XcodeUtils {
             this.dtxcodeBuild    = xcodeInfoDict.getString("DTXcodeBuild");
             this.sdkName         = sdkSettingsDict.getString( "CanonicalName");
         } catch (Exception ex) {
-            Logger.logSevere(ex,"Error processing plist file");
+            Logger.logFatal(ex, "Error processing plist file");
         }
 
     }
@@ -102,7 +107,7 @@ public class XcodeUtils {
         return sdkName;
     }
 
-    public static String getCommandForSdk(String command, String sdk) throws IOException {
+    public static String getCommandForSdk(String command, String sdk) throws IOException, InterruptedException {
         return ProcessRunner.runProcessForSingleOutput("xcrun", "xcrun", "-sdk", sdk, "-f", command);
     }
 }

@@ -57,10 +57,15 @@ public class Logger {
                 "And please check https://docs.gluonhq.com/client/ for more information.");
     }
 
-    public static void logSevere(Throwable ex, String s) {
+    /**
+     * Fails with Runtime Exception
+     * @param ex Exception that caused the failure
+     * @param s Message to be logged
+     */
+    public static void logFatal(Throwable ex, String s) {
         logSevere(s);
         ex.printStackTrace();
-        throw new RuntimeException ("Severe Error " + ex);
+        throw new RuntimeException ("Fatal Error: " + ex);
     }
 
 

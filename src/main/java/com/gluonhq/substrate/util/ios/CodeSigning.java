@@ -27,7 +27,6 @@
  */
 package com.gluonhq.substrate.util.ios;
 
-import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
@@ -53,10 +52,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.gluonhq.substrate.util.ios.Identity.IDENTITY_NAME_REGEX;
-import static com.gluonhq.substrate.util.ios.MobileProvision.MOBILE_PROVISION_EXTENSION;
+import static com.gluonhq.substrate.util.ios.Identity.IDENTITY_NAME_PATTERN;
 import static com.gluonhq.substrate.util.ios.Identity.IDENTITY_ERROR_FLAG;
 import static com.gluonhq.substrate.util.ios.Identity.IDENTITY_PATTERN;
+import static com.gluonhq.substrate.util.ios.MobileProvision.MOBILE_PROVISION_EXTENSION;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class CodeSigning {
@@ -96,7 +95,7 @@ public class CodeSigning {
         tmpPath = paths.getTmpPath();
     }
 
-    public boolean signApp() throws IOException {
+    public boolean signApp() throws IOException, InterruptedException {
         MobileProvision mobileProvision = getProvisioningProfile();
         if (mobileProvision == null) {
             throw new RuntimeException("Provisioning profile not found.\n" +
@@ -136,47 +135,50 @@ public class CodeSigning {
     private MobileProvision findMobileProvision(Identity identity, String bundleId, String initialBundleId) {
         Logger.logDebug("Mobile provision asked with bundleId = " + bundleId + " (initial bundleId: " + initialBundleId + ")");
         return retrieveValidMobileProvisions().stream()
-                .filter(provision -> {
-                    Logger.logDebug("Checking mobile provision " + provision.getAppIdName());
-                    return provision.getAppIdentifier().equals(provision.getAppIdentifierPrefix() + "." + bundleId);
-                })
-                .filter(provision ->
-                        provision.getDeveloperCertificates().stream()
-                                .filter(certificate -> certificate.equals(identity.getSha1()))
-                                .findFirst()
-                                .map(c -> {
-                                    Logger.logDebug(provision.getName() + " matches " + identity);
-                                    return true;
-                                })
-                                .orElseGet(() -> {
-                                    Logger.logDebug("App identifiers match, but there are not fingerprint matches");
-                                    return false;
-                                }))
+                .filter(provision -> filterByIdentifier(provision, bundleId))
+                .filter(provision -> filterByCertificate(provision, identity))
                 .findFirst()
-                .orElseGet(() -> {
-                    if (!bundleId.equals("*")) {
-                        if (bundleId.contains(".")) {
-                            String[] tokens = bundleId.split("\\.");
-                            int length = tokens.length - 1;
-                            int newLength = tokens[length].equals("*") ? length - 1 : length;
-                            String newBundleId = Stream.of(tokens)
-                                    .limit(newLength)
-                                    .collect(Collectors.joining("."));
-                            if (newBundleId.isEmpty()) {
-                                newBundleId = newBundleId.concat(".*");
-                            } else {
-                                newBundleId = "*";
-                            }
-                            return findMobileProvision(identity, newBundleId, initialBundleId);
-                        } else {
-                            return findMobileProvision(identity, "*", initialBundleId);
-                        }
-                    }
+                .orElseGet(() -> tryModifiedBundleId(identity, bundleId, initialBundleId));
+    }
 
-                    Logger.logInfo("No mobile provision was found matching signing identity '" + identity.getCommonName() +
-                            "' and app bundle ID '" + initialBundleId + "'");
-                    return null;
+    private boolean filterByIdentifier(MobileProvision provision, String bundleId) {
+        Logger.logDebug("Checking mobile provision " + provision.getAppIdName());
+        return provision.getAppIdentifier().equals(provision.getAppIdentifierPrefix() + "." + bundleId);
+    }
+
+    private Boolean filterByCertificate(MobileProvision provision, Identity identity) {
+        return provision.getDeveloperCertificates().stream()
+                .filter(certificate -> certificate.equals(identity.getSha1()))
+                .findFirst()
+                .map(c -> {
+                    Logger.logDebug(provision.getName() + " matches " + identity);
+                    return true;
+                })
+                .orElseGet(() -> {
+                    Logger.logDebug("App identifiers match, but there are not fingerprint matches");
+                    return false;
                 });
+    }
+
+    private MobileProvision tryModifiedBundleId(Identity identity, String bundleId, String initialBundleId) {
+        if (!bundleId.equals("*")) {
+            if (bundleId.contains(".")) {
+                String[] tokens = bundleId.split("\\.");
+                int length = tokens.length - 1;
+                int newLength = tokens[length].equals("*") ? length - 1 : length;
+                String newBundleId = Stream.of(tokens)
+                        .limit(newLength)
+                        .collect(Collectors.joining("."));
+                newBundleId = newBundleId.isEmpty() ? "*" : newBundleId.concat(".*");
+                return findMobileProvision(identity, newBundleId, initialBundleId);
+            } else {
+                return findMobileProvision(identity, "*", initialBundleId);
+            }
+        }
+
+        Logger.logInfo("No mobile provision was found matching signing identity '" + identity.getCommonName() +
+                "' and app bundle ID '" + initialBundleId + "'");
+        return null;
     }
 
     private static List<MobileProvision> retrieveValidMobileProvisions() {
@@ -211,7 +213,7 @@ public class CodeSigning {
         return Collections.emptyList();
     }
 
-    private boolean sign(Path entitlementsPath, Path appPath) throws IOException {
+    private boolean sign(Path entitlementsPath, Path appPath) throws IOException, InterruptedException {
         if (identity == null) {
             getProvisioningProfile();
         }
@@ -244,7 +246,7 @@ public class CodeSigning {
         return true;
     }
 
-    private boolean verifyCodesign(Path target) throws IOException {
+    private boolean verifyCodesign(Path target) throws IOException, InterruptedException {
         Logger.logDebug("Validating codesign...");
         ProcessRunner runner = new ProcessRunner("codesign", "--verify", "-vvvv", target.toAbsolutePath().toString());
         if (runner.runTimedProcess("verify", 5)) {
@@ -290,6 +292,9 @@ public class CodeSigning {
     }
 
     private static List<Identity> findIdentityByName(String name) {
+        if (name == null) {
+            return Collections.emptyList();
+        }
         if (identities == null) {
             identities = retrieveAllIdentities();
         }
@@ -302,9 +307,8 @@ public class CodeSigning {
         if (identities == null) {
             identities = retrieveAllIdentities();
         }
-        Pattern pattern = Pattern.compile(IDENTITY_NAME_REGEX);
         return identities.stream()
-                .filter(identity -> pattern.matcher(identity.getCommonName()).find())
+                .filter(identity -> IDENTITY_NAME_PATTERN.matcher(identity.getCommonName()).find())
                 .collect(Collectors.toList());
     }
 
@@ -326,8 +330,8 @@ public class CodeSigning {
                         .sorted(Comparator.comparing(identity -> identity.getCommonName().toLowerCase(Locale.ROOT)))
                         .collect(Collectors.toList());
             }
-        } catch (IOException e) {
-            Logger.logSevere("There was an error retrieving identities for codesigning: " + e.getMessage());
+        } catch (IOException | InterruptedException e) {
+            Logger.logFatal(e, "There was an error retrieving identities for codesigning: " + e.getMessage());
         }
         return new ArrayList<>();
     }

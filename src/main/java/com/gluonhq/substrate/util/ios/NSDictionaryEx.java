@@ -199,7 +199,7 @@ public class NSDictionaryEx {
             byte[] content = (byte[]) signedData.getSignedContent().getContent();
             dictionary = new NSDictionaryEx(content);
         } catch (Exception e) {
-            Logger.logSevere(e,"Error creating NSDictionaryEx for path " + provisioningPath);
+            Logger.logFatal(e, "Error creating NSDictionaryEx for path " + provisioningPath);
         }
         return dictionary;
     }

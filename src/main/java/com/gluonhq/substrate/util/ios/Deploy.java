@@ -37,33 +37,26 @@ public class Deploy {
 
     private static MobileDeviceBridge bridge;
 
-    public static Path getIOSDeployPath() {
+    public static Path getIOSDeployPath() throws IOException, InterruptedException {
         // Check for Homebrew installed
         String response = ProcessRunner.runProcessForSingleOutput("check brew","which", "brew");
         if (response == null || response.isEmpty()) {
             Logger.logSevere("Homebrew not found");
-            Logger.logSevere("Open a terminal and run the following command to install Homebrew: \n\n" +
+            throw new RuntimeException("Open a terminal and run the following command to install Homebrew: \n\n" +
                     "ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"");
-            return null;
-        } else {
-            Logger.logDebug("Brew found at " + response);
         }
+        Logger.logDebug("Brew found at " + response);
 
         // Check for ios-deploy installed
         response = ProcessRunner.runProcessForSingleOutput("check ios-deploy","which", "ios-deploy");
         if (response == null || response.isEmpty()) {
             Logger.logSevere("ios-deploy not found. It will be installed now");
             ProcessRunner runner = new ProcessRunner("brew", "install", "ios-deploy");
-            try {
-                if (runner.runProcess("ios-deploy") == 0) {
-                    Logger.logDebug("ios-deploy installed");
-                    return getIOSDeployPath();
-                } else {
-                    Logger.logDebug("Error installing ios-deploy");
-                    return null;
-                }
-            } catch (IOException e) {
-                Logger.logSevere("Error installing ios-deploy: " + e.getMessage());
+            if (runner.runProcess("ios-deploy") == 0) {
+                Logger.logDebug("ios-deploy installed");
+                return getIOSDeployPath();
+            } else {
+                Logger.logDebug("Error installing ios-deploy");
                 return null;
             }
         } else {
@@ -81,11 +74,11 @@ public class Deploy {
         return bridge.getDeviceIds();
     }
 
-    public static boolean install(String app) {
+    public static boolean install(String app) throws IOException, InterruptedException {
         Path deploy = getIOSDeployPath();
         if (deploy != null) {
             String[] devices = Deploy.connectedDevices();
-            if (devices.length == 0) {
+            if (devices == null || devices.length == 0) {
                 Logger.logSevere("No iOS devices connected to this system. Exit install procedure");
                 return false;
             }
@@ -98,13 +91,9 @@ public class Deploy {
                     "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
             runner.addToEnv("PATH", "/usr/bin/:$PATH");
             runner.setInfo(true);
-            try {
-                boolean result = runner.runTimedProcess("run", 60);
-                Logger.logInfo("result = " + result);
-                return result;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            boolean result = runner.runTimedProcess("run", 60);
+            Logger.logInfo("result = " + result);
+            return result;
         }
         return false;
     }

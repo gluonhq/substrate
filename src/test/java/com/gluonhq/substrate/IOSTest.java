@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
@@ -32,7 +33,11 @@ class IOSTest {
 
     @Test
     void iosDeployTest() {
-        assertNotNull(Deploy.getIOSDeployPath());
+        try {
+            assertNotNull(Deploy.getIOSDeployPath());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test

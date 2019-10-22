@@ -136,7 +136,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             try {
                 Files.createDirectories(appPath);
             } catch (IOException e) {
-                Logger.logSevere(e, "Error creating path " + appPath);
+                Logger.logFatal(e, "Error creating path " + appPath);
             }
         }
         return appPath.toString() + "/" + appName;
@@ -152,7 +152,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     private boolean isSimulator() {
-        return projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AMD64);
+        return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
     private void createInfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration) {
@@ -166,7 +166,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
                         paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
             }
         } catch (IOException e) {
-            Logger.logSevere(e, "Error creating info.plist");
+            Logger.logFatal(e, "Error creating info.plist");
         }
     }
 }

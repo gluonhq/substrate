@@ -143,7 +143,7 @@ public class FileOps {
             Files.copy(source, destination,  REPLACE_EXISTING);
             Logger.logDebug("Copied resource " + source + " to " + destination);
         } catch (IOException ex) {
-            Logger.logSevere(ex, "Failed copying " + source + " to " + destination + ": " + ex);
+            Logger.logFatal(ex, "Failed copying " + source + " to " + destination + ": " + ex);
         }
         return destination;
     }

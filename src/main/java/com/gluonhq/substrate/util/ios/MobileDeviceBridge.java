@@ -74,7 +74,7 @@ public class MobileDeviceBridge {
         try {
             lib = FileOps.copyResourceToTmp("/thirdparty/libimobiledevice.dylib");
         } catch (IOException e) {
-            Logger.logSevere(e, "Error copying libimobiledevice.dylib");
+            Logger.logFatal(e, "Error copying libimobiledevice.dylib");
         }
         device = LibraryLoader.create(Device.class).load(lib.toString());
         device.idevice_set_debug_level(10);

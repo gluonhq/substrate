@@ -77,40 +77,30 @@ public class ProcessRunner {
         map.put(key, value);
     }
 
-    public int runProcess(String processName) throws IOException {
+    public int runProcess(String processName) throws IOException, InterruptedException {
         return runProcess(processName, null);
     }
 
-    public int runProcess(String processName, File directory) throws IOException {
+    public int runProcess(String processName, File directory) throws IOException, InterruptedException {
         Process p = setupProcess(processName, directory);
         Thread logThread = mergeProcessOutput(p.getInputStream(), answer);
-        try {
-            int res = p.waitFor();
-            logThread.join();
-            Logger.logDebug("Result for " + processName + ": " + res);
-            return res;
-        } catch (InterruptedException ex) {
-            Logger.logSevere("Error processing " + processName + ": " + ex.getMessage());
-            return -1;
-        }
+        int res = p.waitFor();
+        logThread.join();
+        Logger.logDebug("Result for " + processName + ": " + res);
+        return res;
     }
 
-    public boolean runTimedProcess(String processName, long timeout) throws IOException {
+    public boolean runTimedProcess(String processName, long timeout) throws IOException, InterruptedException {
         return runTimedProcess(processName, null, timeout);
     }
 
-    public boolean runTimedProcess(String processName, File directory, long timeout) throws IOException {
+    public boolean runTimedProcess(String processName, File directory, long timeout) throws IOException, InterruptedException {
         Process p = setupProcess(processName, directory);
         Thread logThread = mergeProcessOutput(p.getInputStream(), answer);
-        try {
-            boolean res = p.waitFor(timeout, TimeUnit.SECONDS);
-            logThread.join();
-            Logger.logDebug("Result for " + processName + ": " + res);
-            return res;
-        } catch (InterruptedException ex) {
-            Logger.logSevere("Error processing " + processName + ": " + ex.getMessage());
-            return false;
-        }
+        boolean res = p.waitFor(timeout, TimeUnit.SECONDS);
+        logThread.join();
+        Logger.logDebug("Result for " + processName + ": " + res);
+        return res;
     }
 
     public String getResponse() {
@@ -121,21 +111,15 @@ public class ProcessRunner {
     }
 
     public List<String> getResponses() {
-        if (answer != null) {
-            return Arrays.asList(answer.toString().split("\n"));
-        }
-        return null;
+        return answer == null ? null :
+                Arrays.asList(answer.toString().split("\n"));
     }
 
-    public static String runProcessForSingleOutput(String name, String... args) {
+    public static String runProcessForSingleOutput(String name, String... args) throws IOException, InterruptedException {
         ProcessRunner process = new ProcessRunner(args);
-        try {
-            int result = process.runProcess(name);
-            if (result == 0) {
-                return process.getResponse();
-            }
-        } catch (IOException e) {
-            Logger.logSevere("Error: " + e.getMessage());
+        int result = process.runProcess(name);
+        if (result == 0) {
+            return process.getResponse();
         }
         return null;
     }
