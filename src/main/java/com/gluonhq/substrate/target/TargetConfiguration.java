@@ -48,7 +48,7 @@ public interface TargetConfiguration {
 
     boolean link(ProcessPaths paths, ProjectConfiguration config) throws IOException, InterruptedException;
 
-    boolean runUntilEnd(ProcessPaths paths, String appName) throws IOException, InterruptedException;
+    boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException;
 
     InputStream run(Path workDir, String appName) throws IOException, InterruptedException;
 }

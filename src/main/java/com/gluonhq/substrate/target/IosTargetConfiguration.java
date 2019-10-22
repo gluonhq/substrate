@@ -42,15 +42,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
-    private List<String> iosAdditionalSourceFiles = Arrays.asList("AppDelegate.m"); // , "thread.m");
+    private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
 
     @Override
-    public boolean runUntilEnd(ProcessPaths paths, String appName) throws IOException, InterruptedException {
-        String appPath = paths.getAppPath().resolve(appName + ".app").toString();
+    public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+        this.projectConfiguration = projectConfiguration;
+        String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
         if (isSimulator()) {
             // TODO: launchOnSimulator(appPath);
             return false;

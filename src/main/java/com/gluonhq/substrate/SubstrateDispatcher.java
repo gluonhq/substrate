@@ -170,7 +170,7 @@ public class SubstrateDispatcher {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-        targetConfiguration.runUntilEnd(paths, config.getAppName());
+        targetConfiguration.runUntilEnd(paths, config);
     }
 
     private static TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {

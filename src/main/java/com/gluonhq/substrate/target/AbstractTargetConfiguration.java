@@ -269,8 +269,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
 
     @Override
-    public boolean runUntilEnd(ProcessPaths paths, String appName) throws IOException, InterruptedException {
-        Process runProcess = startAppProcess(paths.getAppPath(), appName);
+    public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+        Process runProcess = startAppProcess(paths.getAppPath(), projectConfiguration.getAppName());
         InputStream is = runProcess.getInputStream();
         asynPrintFromInputStream(is);
         int result = runProcess.waitFor();
