@@ -36,6 +36,7 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
@@ -81,7 +82,6 @@ public class FileOps {
         return answers.get(0);
     }
 
-
     /**
      * Recursively delete the directory specified by path, if it exists (otherwise ignore)
      * @param path
@@ -98,7 +98,7 @@ public class FileOps {
     public static Path copyResource(String resource, Path destination) throws IOException {
         InputStream is = resourceAsStream(resource);
         if (is == null) {
-            throw new IOException("Could not copy resource named "+resource+" as it doesn't exist");
+            throw new IOException("Could not copy resource named " + resource + ", as it doesn't exist");
         }
         return copyStream(is, destination);
     }
@@ -120,9 +120,31 @@ public class FileOps {
         return destination;
     }
 
-    public static InputStream resourceAsStream(String res) {
+    public static InputStream resourceAsStream(String res) throws IOException {
         String actualResource = Objects.requireNonNull(res).startsWith(File.separator) ? res : File.separator + res;
+        Logger.logDebug("Looking for resource: " + res);
         InputStream answer = SubstrateDispatcher.class.getResourceAsStream(actualResource);
+        if (answer == null) {
+            throw new IOException("Resource " + res + " not found");
+        }
         return answer;
+    }
+
+    public static Path copyResourceToTmp(String resource) throws IOException {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        Path target = Paths.get(tmpDir,resource);
+        return copyResource(resource, target);
+    }
+
+    // Copies source to destination, ensuring that destination exists
+    public static Path copyFile(Path source, Path destination)  {
+        try {
+            Files.createDirectories(destination.getParent());
+            Files.copy(source, destination,  REPLACE_EXISTING);
+            Logger.logDebug("Copied resource " + source + " to " + destination);
+        } catch (IOException ex) {
+            Logger.logFatal(ex, "Failed copying " + source + " to " + destination + ": " + ex);
+        }
+        return destination;
     }
 }

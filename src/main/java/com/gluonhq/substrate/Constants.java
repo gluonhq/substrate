@@ -59,7 +59,8 @@ public class Constants {
     public enum Profile {
         LINUX, // (x86_64-linux-linux)
         MACOS, // (x86_64-apple-darwin)
-        IOS;   // (aarch64-apple-ios)
+        IOS,   // (aarch64-apple-ios)
+        IOS_SIM;   // (x86_64-apple-ios)
     };
 
     /**
@@ -126,5 +127,5 @@ public class Constants {
     /**
      * Supported files
      */
-    // public static final String PLIST_FILE = "Default-Info.plist";
+     public static final String PLIST_FILE = "Default-Info.plist";
 }

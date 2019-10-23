@@ -1,6 +1,8 @@
 language: java
 sudo: false
 
+jdk: openjdk11
+
 addons:
   apt:
     package: &global_deps
@@ -30,11 +32,10 @@ matrix:
             - libgtk-3-dev
             - libxtst-dev
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       # env: PRINT_CRASH_LOGS="true"
 
 before_script:
-  - export JAVA_OPTS=-Xmx8192m
   - echo $JAVA_OPTS
   - sh ./gradlew --version
   # set java_home (for Mac)

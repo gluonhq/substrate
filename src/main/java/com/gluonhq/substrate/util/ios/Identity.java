@@ -25,30 +25,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.target;
+package com.gluonhq.substrate.util.ios;
 
-import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import java.util.regex.Pattern;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
+public class Identity {
 
-public interface TargetConfiguration {
+    static final Pattern IDENTITY_PATTERN = Pattern.compile("^\\d+\\)\\s+([0-9A-F]+)\\s+\"([^\"]*)\"\\s*(.*)");
+    static final Pattern IDENTITY_NAME_PATTERN = Pattern.compile("(?i)iPhone Developer|iOS Development|iPhone Distribution");
+    static final String IDENTITY_ERROR_FLAG = "CSSMERR";
 
-    /**
-     * Compiles the classes to objectcode for this TargetConfiguration.
-     * @param paths
-     * @param config
-     * @param classPath
-     * @return true if compilation succeeded, false if it failed
-     * @throws Exception
-     */
-    boolean compile(ProcessPaths paths, ProjectConfiguration config, String classPath) throws Exception;
+    private final String commonName;
+    private final String sha1;
 
-    boolean link(ProcessPaths paths, ProjectConfiguration config) throws IOException, InterruptedException;
+    public Identity(String sha1, String commonName) {
+        this.sha1 = sha1;
+        this.commonName = commonName;
+    }
 
-    boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException;
+    public String getCommonName() {
+        return commonName;
+    }
 
-    InputStream run(Path workDir, String appName) throws IOException, InterruptedException;
+    public String getSha1() {
+        return sha1;
+    }
+
+    @Override
+    public String toString() {
+        return "SigningIdentity{" +
+                "name='" + commonName + '\'' +
+                ", sha1='" + sha1 + '\'' +
+                '}';
+    }
 }

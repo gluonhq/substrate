@@ -1,0 +1,116 @@
+{
+    "images" : [
+        {
+        "idiom" : "iphone",
+        "size" : "20x20",
+        "filename" : "Gluon-iphone-notification-icon-20@2x.png",
+        "scale" : "2x"
+        },
+        {
+        "idiom" : "iphone",
+        "size" : "20x20",
+        "filename" : "Gluon-iphone-notification-icon-20@3x.png",
+        "scale" : "3x"
+        },
+        {
+        "idiom" : "iphone",
+        "size" : "29x29",
+        "filename" : "Gluon-iphone-spotlight-settings-icon-29@2x.png",
+        "scale" : "2x"
+        },
+        {
+        "idiom" : "iphone",
+        "size" : "29x29",
+        "filename" : "Gluon-iphone-spotlight-settings-icon-29@3x.png",
+        "scale" : "3x"
+        },
+        {
+        "idiom" : "iphone",
+        "size" : "40x40",
+        "filename" : "Gluon-iphone-spotlight-icon-40@2x.png",
+        "scale" : "2x"
+        },
+        {
+        "idiom" : "iphone",
+        "size" : "40x40",
+        "filename" : "Gluon-iphone-spotlight-icon-40@3x.png",
+        "scale" : "3x"
+        },
+        {
+        "idiom" : "iphone",
+        "size" : "60x60",
+        "filename" : "Gluon-iphone-app-icon-60@2x.png",
+        "scale" : "2x"
+        },
+        {
+        "idiom" : "iphone",
+        "size" : "60x60",
+        "filename" : "Gluon-iphone-app-icon-60@3x.png",
+        "scale" : "3x"
+        },
+        {
+        "idiom" : "ipad",
+        "size" : "20x20",
+        "filename" : "Gluon-ipad-notifications-icon-20@1x.png",
+        "scale" : "1x"
+        },
+        {
+        "idiom" : "ipad",
+        "size" : "20x20",
+        "filename" : "Gluon-ipad-notifications-icon-20@2x.png",
+        "scale" : "2x"
+        },
+        {
+        "idiom" : "ipad",
+        "size" : "29x29",
+        "filename" : "Gluon-ipad-settings-icon-29@1x.png",
+        "scale" : "1x"
+        },
+        {
+        "idiom" : "ipad",
+        "size" : "29x29",
+        "filename" : "Gluon-ipad-settings-icon-29@2x.png",
+        "scale" : "2x"
+        },
+        {
+        "idiom" : "ipad",
+        "size" : "40x40",
+        "filename" : "Gluon-ipad-spotlight-icon-40@1x.png",
+        "scale" : "1x"
+        },
+        {
+        "idiom" : "ipad",
+        "size" : "40x40",
+        "filename" : "Gluon-ipad-spotlight-icon-40@2x.png",
+        "scale" : "2x"
+        },
+        {
+        "idiom" : "ipad",
+        "size" : "76x76",
+        "filename" : "Gluon-ipad-app-icon-76@1x.png",
+        "scale" : "1x"
+        },
+        {
+        "idiom" : "ipad",
+        "size" : "76x76",
+        "filename" : "Gluon-ipad-app-icon-76@2x.png",
+        "scale" : "2x"
+        },
+        {
+        "idiom" : "ipad",
+        "size" : "83.5x83.5",
+        "filename" : "Gluon-ipad-pro-app-icon-83.5@2x.png",
+        "scale" : "2x"
+        },
+        {
+        "idiom" : "ios-marketing",
+        "size" : "1024x1024",
+        "filename" : "Gluon-app-store-icon-1024@1x.png",
+        "scale" : "1x"
+        }
+    ],
+    "info" : {
+        "version" : 1,
+        "author" : "xcode"
+    }
+}
