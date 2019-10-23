@@ -27,10 +27,13 @@
  */
 package com.gluonhq.substrate;
 
+import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SubstrateTest {
 
@@ -45,5 +48,27 @@ class SubstrateTest {
         assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
         assertEquals(triplet.getVendor(), Constants.VENDOR_APPLE);
         assertEquals(triplet.getOs(), Constants.OS_DARWIN);
+    }
+
+    @Test
+    void testIOSTriplet() {
+        Triplet triplet = new Triplet(Constants.Profile.IOS);
+        Triplet me = Triplet.fromCurrentOS();
+        ProjectConfiguration config = new ProjectConfiguration();
+        config.setTarget(triplet);
+        // when on linux, nativeCompile should throw an illegalArgumentException
+        if (me.getOs().indexOf("nux") > 0) {
+            boolean illegal = false;
+            boolean anyex = false;
+            try {
+                SubstrateDispatcher.nativeCompile(null, config, null);
+            } catch (IllegalArgumentException iae) {
+                illegal = true;
+            } catch (Exception e) {
+                anyex = true;
+            }
+            assertTrue(illegal);
+            assertFalse(anyex);
+        }
     }
 }

@@ -135,8 +135,23 @@ public class SubstrateDispatcher {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
+    /**
+     * This method will start native compilation for the specified configuration. The classpath and the buildroot need
+     * to be provided separately.
+     * The result of compilation is a at least one native file (2 files in case LLVM backend is used).
+     * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails
+     * @param buildRoot the root, relative to which the compilation step can create objectfiles and temporary files
+     * @param config the Projectconfiguration, including the target triplet
+     * @param classPath the classpath needed to compile the application (this is not the classpath for native-image)
+     * @return true if compilation succeeded, false if it fails
+     * @throws Exception
+     * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
+     */
     public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
         Triplet targetTriplet  = config.getTargetTriplet();
+        if (! isMatchingConfiguration(config.getHostTriplet(), config.getTargetTriplet())) {
+            throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
+        }
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
             throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
@@ -180,6 +195,20 @@ public class SubstrateDispatcher {
             case Constants.OS_IOS: return new IosTargetConfiguration();
             default: return null;
         }
+    }
+
+    /*
+     * check if this host can be used to provide binaries for this target.
+     * host and target should not be null.
+     */
+    private static boolean isMatchingConfiguration (Triplet host, Triplet target) {
+        // if the host os and target os are the same, always return true
+        if (host.getOs().equals(target.getOs())) return true;
+        // if host is linux and target is ios, fail
+        if (Constants.OS_LINUX == host.getOs()) {
+            if (Constants.OS_IOS == target.getOs()) return false;
+        }
+        return true;
     }
 
     private static String prepareDirs(Path buildRoot) throws IOException {

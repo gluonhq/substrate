@@ -268,7 +268,16 @@ public class ProjectConfiguration {
         this.targetTriplet = targetTriplet;
     }
 
-    public Triplet getHostTriplet() {
+    /**
+     * Retrieve the host triplet for this configuration.
+     * The host triplet is always the triplet for the current runtime, e.g. it should not be set (apart for testing)
+     * @return the Triplet for the current executing host
+     * @throws IllegalArgumentException in case the current operating system is not supported
+     */
+    public Triplet getHostTriplet() throws IllegalArgumentException {
+        if (hostTriplet == null) {
+            hostTriplet = Triplet.fromCurrentOS();
+        }
         return hostTriplet;
     }
 
