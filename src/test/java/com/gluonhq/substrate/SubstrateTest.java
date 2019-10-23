@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SubstrateTest {
@@ -58,17 +59,9 @@ class SubstrateTest {
         config.setTarget(triplet);
         // when on linux, nativeCompile should throw an illegalArgumentException
         if (me.getOs().indexOf("nux") > 0) {
-            boolean illegal = false;
-            boolean anyex = false;
-            try {
+            assertThrows(IllegalArgumentException.class, () -> {
                 SubstrateDispatcher.nativeCompile(null, config, null);
-            } catch (IllegalArgumentException iae) {
-                illegal = true;
-            } catch (Exception e) {
-                anyex = true;
-            }
-            assertTrue(illegal);
-            assertFalse(anyex);
+            });
         }
     }
 }

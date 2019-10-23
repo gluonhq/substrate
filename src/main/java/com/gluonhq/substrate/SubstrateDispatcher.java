@@ -149,7 +149,7 @@ public class SubstrateDispatcher {
      */
     public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
         Triplet targetTriplet  = config.getTargetTriplet();
-        if (! isMatchingConfiguration(config.getHostTriplet(), config.getTargetTriplet())) {
+        if (! canCompileTo(config.getHostTriplet(), config.getTargetTriplet())) {
             throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
         }
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
@@ -201,7 +201,7 @@ public class SubstrateDispatcher {
      * check if this host can be used to provide binaries for this target.
      * host and target should not be null.
      */
-    private static boolean isMatchingConfiguration (Triplet host, Triplet target) {
+    private static boolean canCompileTo(Triplet host, Triplet target) {
         // if the host os and target os are the same, always return true
         if (host.getOs().equals(target.getOs())) return true;
         // if host is linux and target is ios, fail
