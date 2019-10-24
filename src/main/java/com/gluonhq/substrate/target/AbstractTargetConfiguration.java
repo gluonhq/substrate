@@ -64,7 +64,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         this.paths = paths;
         Triplet target =  config.getTargetTriplet();
         String suffix = target.getArchOs();
-        String jniPlatform = getJniPlatform(target.getOs());
+        String jniPlatform = getJniPlatform(target);
         if (!compileAdditionalSources(paths, config) ) {
             return false;
         }
@@ -124,12 +124,24 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return !failure;
     }
 
-    private String getJniPlatform( String os ) {
+    /**
+     * Returns the JNI Platform name that has to be provided to GraalVM native-image
+     * @param triplet the Triplet describing the platform
+     * @return the best matching JNI Platform name
+     */
+    static String getJniPlatform( Triplet triplet ) {
+        String os = triplet.getOs();
+        String arch = triplet.getArch();
         switch (os) {
-            case Constants.OS_LINUX: return "LINUX_AMD64";
+            case Constants.OS_LINUX:
+                switch (arch) {
+                    case Constants.ARCH_ARM64: return "LINUX_AARCH64";
+                    case Constants.ARCH_AMD64: return "LINUX_AMD64";
+                    default: throw new IllegalArgumentException("No support for architecture "+arch);
+                }
             case Constants.OS_IOS:return "DARWIN_AARCH64";
             case Constants.OS_DARWIN: return "DARWIN_AMD64";
-            default: throw new IllegalArgumentException("No support yet for " + os);
+            default: throw new IllegalArgumentException("No support for os " + os);
         }
     }
 

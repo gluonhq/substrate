@@ -25,44 +25,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate;
+package com.gluonhq.substrate.target;
 
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.Triplet;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class SubstrateTest {
+public class TargetConfigurationTest {
 
     @Test
-    void testTriplets() {
-        Triplet triplet = new Triplet(Constants.Profile.LINUX);
-        assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
-        assertEquals(triplet.getVendor(), Constants.VENDOR_LINUX);
-        assertEquals(triplet.getOs(), Constants.OS_LINUX);
-
-        triplet = new Triplet(Constants.Profile.MACOS);
-        assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
-        assertEquals(triplet.getVendor(), Constants.VENDOR_APPLE);
-        assertEquals(triplet.getOs(), Constants.OS_DARWIN);
+    public void testJniPlatform() {
+        Triplet ios = new Triplet(Constants.Profile.IOS);
+        String jniPlatform = AbstractTargetConfiguration.getJniPlatform(ios);
+        assertEquals("DARWIN_AARCH64", jniPlatform);
     }
-
-    @Test
-    void testIOSTriplet() {
-        Triplet triplet = new Triplet(Constants.Profile.IOS);
-        Triplet me = Triplet.fromCurrentOS();
-        ProjectConfiguration config = new ProjectConfiguration();
-        config.setTarget(triplet);
-        // when on linux, nativeCompile should throw an illegalArgumentException
-        if (me.getOs().indexOf("nux") > 0) {
-            assertThrows(IllegalArgumentException.class, () -> {
-                SubstrateDispatcher.nativeCompile(null, config, null);
-            });
-        }
-    }
-
 }
