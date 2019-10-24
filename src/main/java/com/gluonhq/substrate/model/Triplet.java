@@ -39,7 +39,12 @@ public class Triplet {
     private String vendor;
     private String os;
 
-    public static Triplet fromCurrentOS() {
+    /**
+     * Creates a new triplet for the current runtime
+     * @return the triplet for the current runtime
+     * @throws IllegalArgumentException in case the current operating system is not supported
+     */
+    public static Triplet fromCurrentOS() throws IllegalArgumentException {
         String osName  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
 
         if (osName.contains("mac")) {
@@ -47,7 +52,7 @@ public class Triplet {
         } else if (osName.contains("nux")) {
            return new Triplet(Constants.Profile.LINUX);
         } else {
-           throw new RuntimeException("OS " + osName + " not supported");
+           throw new IllegalArgumentException("OS " + osName + " not supported");
         }
     }
 
