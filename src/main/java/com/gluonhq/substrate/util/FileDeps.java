@@ -68,6 +68,15 @@ public class FileDeps {
             "libglass.a"
     );
 
+    /**
+     * Verifies if Java static SDK and JavaFX static SDK (when using JavaFX) are present at
+     * the default location, and contain an unmodified set of files.
+     * If this is not the case, the correct SDK is downloaded and unzipped.
+     *
+     * @param configuration Project configuration with the paths of the static SDKs
+     * @return true if the processed ended succesfully, false otherwise
+     * @throws IOException in case default path for Substrate dependencies can't be created
+     */
     public static boolean setupDependencies(ProjectConfiguration configuration) throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
 
@@ -162,6 +171,15 @@ public class FileDeps {
             throw new RuntimeException("Error downloading zips: " + e.getMessage());
         }
         Logger.logDebug("Setup dependencies done");
+
+        if (!Files.exists(javaStaticSdk)) {
+            Logger.logSevere("Error: path " + javaStaticSdk + " doesn't exist");
+            return false;
+        }
+        if (configuration.isUseJavaFX() && !Files.exists(configuration.getJavafxStaticLibsPath())) {
+            Logger.logSevere("Error: path " + configuration.getJavafxStaticLibsPath() + " doesn't exist");
+            return false;
+        }
         return true;
     }
 

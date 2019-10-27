@@ -85,7 +85,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-lz", "-lstrictmath", "-llibchelper",
-            "-ljava", "-ljvm", "-lnio", "-lzip", "-lnet");
+            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm");
 
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
@@ -114,7 +114,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     List<String> getTargetSpecificCCompileFlags() {
         return Arrays.asList("-xobjective-c",
                 "-arch", getArch(),
-                "-Dsvm.targetArch=" + getArch(),
                 "-isysroot", getSysroot());
     }
 
@@ -123,7 +122,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         Path llcPath = Path.of(projectConfiguration.getGraalPath(),"bin", "llc");
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
-                "-Dtargetos.name=iOS",
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getArch(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());

@@ -176,9 +176,10 @@ public class SubstrateDispatcher {
             throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
         }
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-        FileDeps.setupDependencies(config);
-        boolean link = targetConfiguration.link(paths, config);
-        return link;
+        if (!FileDeps.setupDependencies(config)) {
+            throw new RuntimeException("Error while setting up dependencies: nativeLink can't be performed");
+        }
+        return targetConfiguration.link(paths, config);
     }
 
     public static void nativeRun(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {

@@ -47,6 +47,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -151,7 +152,16 @@ public class FileOps {
         return destination;
     }
 
+    /**
+     * Deletes recursively a directory and all its content
+     * @param start the top level directory to be removed
+     * @throws IOException if a file or directory can't be deleted
+     */
     public static void deleteDirectory(Path start) throws IOException {
+        if (start == null || !Files.exists(start)) {
+            throw new RuntimeException("Error: path " + start + " doesn't exist");
+        }
+
         Files.walkFileTree(start, new HashSet(), Integer.MAX_VALUE, new FileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -179,16 +189,20 @@ public class FileOps {
         });
     }
 
-    public static void copyDirectory(Path source, Path destination) {
+    /**
+     * Copies recursively a directory and all its content
+     * @param source path of the directory to be copied
+     * @param destination path where the directory will be copied
+     * @throws IOException if an exception happens when listing the content
+     */
+    public static void copyDirectory(Path source, Path destination) throws IOException {
         copyFile(source, destination);
         if (Files.isDirectory(source)) {
-            try {
-                Files.list(source)
-                        .map(Path::getFileName)
-                        .forEach(fileName ->
-                            copyDirectory(source.resolve(fileName), destination.resolve(fileName)));
-            } catch (IOException e) {
-                Logger.logSevere("Error copying " + source.toString() + ": " + e.getMessage());
+            List<Path> fileNames = Files.list(source)
+                    .map(Path::getFileName)
+                    .collect(Collectors.toList());
+            for (Path fileName : fileNames) {
+                copyDirectory(source.resolve(fileName), destination.resolve(fileName));
             }
         }
     }

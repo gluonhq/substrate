@@ -36,7 +36,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.gluonhq.substrate.util.XcodeUtils.XCODE_PRODUCTS_PATH;
 
@@ -123,17 +125,14 @@ public class Deploy {
 
     private static void copyAppToProducts(Path debugSymbolsPath, Path executablePath, String appName) throws IOException {
         if (Files.exists(XCODE_PRODUCTS_PATH)) {
-            Files.walk(XCODE_PRODUCTS_PATH, 1)
+            List<Path> oldAppsPaths = Files.walk(XCODE_PRODUCTS_PATH, 1)
                     .filter(Objects::nonNull)
                     .filter(path -> path.getFileName().toString().startsWith(appName))
-                    .forEach(path -> {
-                        try {
-                            Logger.logDebug("Removing older version: " + path.getFileName().toString());
-                            FileOps.deleteDirectory(path);
-                        } catch (IOException e) {
-                            Logger.logSevere("Error removing directory at " + path + ": " + e.getMessage());
-                        }
-                    });
+                    .collect(Collectors.toList());
+            for (Path path : oldAppsPaths) {
+                Logger.logDebug("Removing older version: " + path.getFileName().toString());
+                FileOps.deleteDirectory(path);
+            }
         }
 
         String now = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
