@@ -27,11 +27,18 @@
  */
 package com.gluonhq.substrate.util.ios;
 
+import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Objects;
+
+import static com.gluonhq.substrate.util.XcodeUtils.XCODE_PRODUCTS_PATH;
 
 public class Deploy {
 
@@ -95,5 +102,50 @@ public class Deploy {
             return result;
         }
         return false;
+    }
+
+    public static void addDebugSymbolInfo(Path appPath, String appName) throws IOException, InterruptedException {
+        Path applicationPath = appPath.resolve(appName + ".app");
+        Path debugSymbolsPath = Path.of(applicationPath.toString() + ".dSYM");
+        if (Files.exists(debugSymbolsPath)) {
+            FileOps.deleteDirectory(debugSymbolsPath);
+        }
+        Path executablePath = applicationPath.resolve(appName);
+
+        Logger.logDebug("Generating debug symbol files...");
+        ProcessRunner runner = new ProcessRunner("xcrun", "dsymutil", "-o", debugSymbolsPath.toString(), executablePath.toString());
+        if (runner.runProcess("dsymutil") == 0) {
+            copyAppToProducts(debugSymbolsPath, executablePath, appName);
+        } else {
+            throw new RuntimeException("Error generating debug symbol files");
+        }
+    }
+
+    private static void copyAppToProducts(Path debugSymbolsPath, Path executablePath, String appName) throws IOException {
+        if (Files.exists(XCODE_PRODUCTS_PATH)) {
+            Files.walk(XCODE_PRODUCTS_PATH, 1)
+                    .filter(Objects::nonNull)
+                    .filter(path -> path.getFileName().toString().startsWith(appName))
+                    .forEach(path -> {
+                        try {
+                            Logger.logDebug("Removing older version: " + path.getFileName().toString());
+                            FileOps.deleteDirectory(path);
+                        } catch (IOException e) {
+                            Logger.logSevere("Error removing directory at " + path + ": " + e.getMessage());
+                        }
+                    });
+        }
+
+        String now = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
+        Path productAppPath = XCODE_PRODUCTS_PATH.resolve(appName + "_" + now);
+        Files.createDirectories(productAppPath);
+
+        Path productExecAppPath = productAppPath.resolve(appName + ".app");
+        Files.createDirectories(productExecAppPath);
+        Files.copy(executablePath, productExecAppPath.resolve(executablePath.getFileName()));
+
+        Path productDebugSymbolsPath = productAppPath.resolve(debugSymbolsPath.getFileName());
+        Files.createDirectories(productDebugSymbolsPath);
+        FileOps.copyDirectory(debugSymbolsPath, productDebugSymbolsPath);
     }
 }

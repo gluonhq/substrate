@@ -38,6 +38,9 @@ public class XcodeUtils {
         }
     }
 
+    public static final Path XCODE_PRODUCTS_PATH = Paths.get(System.getProperty("user.home")).
+            resolve("Library/Developer/Xcode/DerivedData/GluonSubstrate/Build/Products/");
+
     private final SDKS sdk;
 
     private String platformBuild;

@@ -3,10 +3,14 @@ repositories {
     mavenCentral()
 }
 
+def target = System.getProperty("substrate.target")
+
 dependencies {
-    implementation 'com.googlecode.plist:dd-plist:1.22'
-    implementation 'com.github.jnr:jnr-ffi:2.1.10'
-    implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
+    if ("ios" == target) {
+        implementation 'com.googlecode.plist:dd-plist:1.22'
+        implementation 'com.github.jnr:jnr-ffi:2.1.10'
+        implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
+    }
 }
 
 mainClassName = "com.gluonhq.substrate.test.Main"
@@ -17,13 +21,11 @@ task runScript(type: Exec) {
     dependsOn 'clean'
     dependsOn 'build'
 
-    def graal_path = setupDependencies(platform)
+    def graal_path = setupGraalDependencies(platform)
 
     if (java_home == null) {
         throw new RuntimeException("java_home is not defined.")
     }
-
-    def target = System.getProperty("substrate.target")
 
     def rootFile = new File(rootDir.getParent().concat("/build/"))
     def substratePath = rootFile.toString().concat("/classes/java/main") + ":" +

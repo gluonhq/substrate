@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,10 +42,12 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -146,5 +149,47 @@ public class FileOps {
             Logger.logFatal(ex, "Failed copying " + source + " to " + destination + ": " + ex);
         }
         return destination;
+    }
+
+    public static void deleteDirectory(Path start) throws IOException {
+        Files.walkFileTree(start, new HashSet(), Integer.MAX_VALUE, new FileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                return FileVisitResult.TERMINATE;
+
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    public static void copyDirectory(Path source, Path destination) {
+        copyFile(source, destination);
+        if (Files.isDirectory(source)) {
+            try {
+                Files.list(source)
+                        .map(Path::getFileName)
+                        .forEach(fileName ->
+                            copyDirectory(source.resolve(fileName), destination.resolve(fileName)));
+            } catch (IOException e) {
+                Logger.logSevere("Error copying " + source.toString() + ": " + e.getMessage());
+            }
+        }
     }
 }

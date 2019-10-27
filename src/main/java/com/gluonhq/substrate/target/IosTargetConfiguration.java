@@ -41,33 +41,80 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
-    private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
+    private List<String> iosAdditionalSourceFiles = Arrays.asList("AppDelegate.m", "thread.m");
+
+    private static final List<String> javafxReflectionIosClassList = Arrays.asList(
+            "com.sun.prism.es2.ES2Pipeline",
+            "com.sun.prism.es2.IOSGLFactory",
+            "com.sun.javafx.font.coretext.CTFactory",
+            "com.sun.scenario.effect.impl.es2.ES2ShaderSource",
+            "com.sun.glass.ui.ios.IosApplication",
+            "com.sun.glass.ui.ios.IosCursor",
+            "com.sun.glass.ui.ios.IosGestureSupport",
+            "com.sun.glass.ui.ios.IosMenuBarDelegate",
+            "com.sun.glass.ui.ios.IosPlatformFactory",
+            "com.sun.glass.ui.ios.IosPixels",
+            "com.sun.glass.ui.ios.IosView",
+            "com.sun.glass.ui.ios.IosWindow"
+    );
+
+    private static final List<String>javafxJNIIosClassList = Arrays.asList(
+            "com.sun.glass.ui.ios.IosApplication",
+            "com.sun.glass.ui.ios.IosCursor",
+            "com.sun.glass.ui.ios.IosGestureSupport",
+            "com.sun.glass.ui.ios.IosMenuBarDelegate",
+            "com.sun.glass.ui.ios.IosPixels",
+            "com.sun.glass.ui.ios.IosView",
+            "com.sun.glass.ui.ios.IosWindow",
+            "java.util.Vector",
+            "com.sun.javafx.font.coretext.CGAffineTransform",
+            "com.sun.javafx.font.coretext.CGPoint",
+            "com.sun.javafx.font.coretext.CGRect",
+            "com.sun.javafx.font.coretext.CGSize",
+            "com.sun.javafx.font.FontConfigManager$FcCompFont",
+            "com.sun.javafx.font.FontConfigManager$FontConfigFont",
+            "com.sun.javafx.iio.ios.IosImageLoader"
+    );
+
+    private static final List<String> ioslibs = Arrays.asList(
+            "-lpthread", "-lz", "-lstrictmath", "-llibchelper",
+            "-ljava", "-ljvm", "-lnio", "-lzip", "-lnet");
+
+    private static final List<String> javafxLibs = Arrays.asList(
+            "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        return Arrays.asList("-w", "-fPIC",
+        List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
                 "-arch", Constants.ARCH_ARM64,
                 "-mios-version-min=11.0",
-                "-isysroot", getSysroot(),
-                "-Wl,-framework,Foundation",
-                "-Wl,-framework,UIKit",
-                "-Wl,-framework,CoreGraphics",
-                "-Wl,-framework,CoreText",
-                "-Wl,-framework,OpenGLES",
-                "-Wl,-framework,MobileCoreServices");
+                "-isysroot", getSysroot()));
+        if (useJavaFX) {
+            String javafxSDK = projectConfiguration.getJavafxStaticLibsPath().toString();
+            javafxLibs.forEach(name ->
+                    linkFlags.add("-Wl,-force_load," + javafxSDK + "/lib" + name + ".a"));
+        }
+        linkFlags.addAll(ioslibs);
+        linkFlags.addAll(Arrays.asList(
+                "-Wl,-framework,Foundation", "-Wl,-framework,UIKit",
+                "-Wl,-framework,CoreGraphics", "-Wl,-framework,MobileCoreServices",
+                "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
+                "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO"));
+        return linkFlags;
     }
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
         return Arrays.asList("-xobjective-c",
                 "-arch", getArch(),
-                "-Dsvn.targetArch=" + getArch(),
+                "-Dsvm.targetArch=" + getArch(),
                 "-isysroot", getSysroot());
     }
 
@@ -76,6 +123,8 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         Path llcPath = Path.of(projectConfiguration.getGraalPath(),"bin", "llc");
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
+                "-Dtargetos.name=iOS",
+                "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getArch(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
@@ -90,10 +139,30 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return iosAdditionalSourceFiles;
     }
 
+    @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
         Path gvmPath = paths.getGvmPath();
         Path objectFile = FileOps.findFile(gvmPath, "llvm.o");
-        return Arrays.asList(objectFile.toAbsolutePath().toString());
+        return Collections.singletonList(objectFile.toAbsolutePath().toString());
+    }
+
+    @Override
+    List<String> getJavaFXReflectionClassList() {
+        List<String> answer = super.getJavaFXReflectionClassList();
+        answer.addAll(javafxReflectionIosClassList);
+        return answer;
+    }
+
+    @Override
+    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
+        List<String> answer = super.getJNIClassList(useJavaFX, usePrismSW);
+        if (useJavaFX) answer.addAll(javafxJNIIosClassList);
+        return answer;
+    }
+
+    @Override
+    String getLinker() {
+        return "clang";
     }
 
     @Override
@@ -115,7 +184,9 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+        this.paths = paths;
         this.projectConfiguration = projectConfiguration;
+        Deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
         String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
         if (isSimulator()) {
             // TODO: launchOnSimulator(appPath);
