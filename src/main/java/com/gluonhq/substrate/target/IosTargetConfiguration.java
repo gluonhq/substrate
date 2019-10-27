@@ -90,6 +90,12 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
 
+    private static final List<String> iosFrameworks = Arrays.asList(
+            "-Wl,-framework,Foundation", "-Wl,-framework,UIKit",
+            "-Wl,-framework,CoreGraphics", "-Wl,-framework,MobileCoreServices",
+            "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
+            "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
+
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
@@ -102,11 +108,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
                     linkFlags.add("-Wl,-force_load," + javafxSDK + "/lib" + name + ".a"));
         }
         linkFlags.addAll(ioslibs);
-        linkFlags.addAll(Arrays.asList(
-                "-Wl,-framework,Foundation", "-Wl,-framework,UIKit",
-                "-Wl,-framework,CoreGraphics", "-Wl,-framework,MobileCoreServices",
-                "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
-                "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO"));
+        linkFlags.addAll(iosFrameworks);
         return linkFlags;
     }
 

@@ -44,6 +44,7 @@ import static com.gluonhq.substrate.util.XcodeUtils.XCODE_PRODUCTS_PATH;
 
 public class Deploy {
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static MobileDeviceBridge bridge;
 
     public static Path getIOSDeployPath() throws IOException, InterruptedException {
@@ -135,7 +136,7 @@ public class Deploy {
             }
         }
 
-        String now = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
+        String now = DATE_TIME_FORMATTER.format(LocalDateTime.now());
         Path productAppPath = XCODE_PRODUCTS_PATH.resolve(appName + "_" + now);
         Files.createDirectories(productAppPath);
 
