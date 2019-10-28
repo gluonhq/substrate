@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Optional;
 
 public class SubstrateDispatcher {
@@ -57,6 +58,8 @@ public class SubstrateDispatcher {
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
+        String reflectionList = System.getProperty("reflectionlist");
+        String jniList = System.getProperty("jnilist");
         String targetProfile = System.getProperty("targetProfile");
         boolean useJavaFX = Boolean.parseBoolean(System.getProperty("javafx", "false"));
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
@@ -75,7 +78,12 @@ public class SubstrateDispatcher {
         config.setTarget(targetTriplet);
         config.setUseJavaFX(useJavaFX);
         config.setUsePrismSW(usePrismSW);
-
+        if (reflectionList != null && !reflectionList.trim().isEmpty()) {
+            config.setReflectionList(Arrays.asList(reflectionList.split(",")));
+        }
+        if (jniList != null && !jniList.trim().isEmpty()) {
+            config.setJniList(Arrays.asList(jniList.split(",")));
+        }
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());

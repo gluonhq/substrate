@@ -59,8 +59,8 @@ public class ProjectConfiguration {
     private String backend;
     private List<String> bundlesList;
     private List<String> resourcesList = Collections.emptyList();
-    private List<String> reflectionList;
-    private List<String> jniList;
+    private List<String> reflectionList = Collections.emptyList();
+    private List<String> jniList = Collections.emptyList();
     private List<String> delayInitList;
     private List<String> runtimeArgsList;
     private List<String> releaseSymbolsList;

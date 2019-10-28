@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.attach.AttachResolver;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
@@ -57,6 +58,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     ProcessPaths paths;
 
     private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c", "thread.c");
+    private List<String> attachList = Collections.emptyList();
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
@@ -78,6 +80,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (cp == null || cp.isEmpty()) {
             throw new IllegalArgumentException("No classpath specified. Cannot compile");
         }
+        attachList = AttachResolver.attachServices(cp);
         String nativeImage = getNativeImagePath(config);
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
         compileBuilder.command().add("--report-unsupported-elements-at-runtime");
@@ -350,6 +353,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                         writeEntry(bw, javafxClass);
                     }
                 }
+                for (String attachClass : attachList) {
+                    writeEntry(bw, attachClass);
+                }
+            }
+            for (String javaClass : projectConfiguration.getReflectionList()) {
+                writeEntry(bw, javaClass);
             }
             bw.write("]");
         }
@@ -370,6 +379,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 // TODO: create list of exclusions
                 writeEntry(bw, javaClass,
                         "mac".equals(suffix) && javaClass.equals("java.lang.Thread"));
+            }
+            if (projectConfiguration.isUseJavaFX()) {
+                for (String attachClass : attachList) {
+                    writeEntry(bw, attachClass);
+                }
+            }
+            for (String javaClass : projectConfiguration.getJniList()) {
+                writeEntry(bw, javaClass);
             }
             bw.write("]");
         }
