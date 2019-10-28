@@ -148,14 +148,14 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getJavaFXReflectionClassList() {
-        List<String> answer = super.getJavaFXReflectionClassList();
+        List<String> answer = new ArrayList<>(super.getJavaFXReflectionClassList());
         answer.addAll(javafxReflectionIosClassList);
         return answer;
     }
 
     @Override
     List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
-        List<String> answer = super.getJNIClassList(useJavaFX, usePrismSW);
+        List<String> answer = new ArrayList<>(super.getJNIClassList(useJavaFX, usePrismSW));
         if (useJavaFX) answer.addAll(javafxJNIIosClassList);
         return answer;
     }
