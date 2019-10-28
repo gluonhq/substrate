@@ -30,6 +30,8 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.Version;
+import com.gluonhq.substrate.util.VersionParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -41,8 +43,12 @@ import java.util.List;
 
 public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
 
+    private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
+    private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
+
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+        checkCompiler();
         checkLinker();
         return super.link(paths, projectConfiguration);
     }
@@ -120,38 +126,42 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return answer;
     }
 
-
-
-    private boolean checkLinker() throws IOException, InterruptedException {
-        ProcessBuilder linker = new ProcessBuilder("gcc");
-        linker.command().add("--version");
-        linker.redirectErrorStream(true);
-        Process start = linker.start();
-        InputStream is = start.getInputStream();
-        start.waitFor();
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String l = br.readLine();
-        int ar = l.lastIndexOf(")");
-        if ((ar < 0) || (ar > l.length() - 2)) {
-            // can't parse... let's try but warn
-            System.err.println("WARNING: your gcc compiler has version " + l + " which might not work");
-            return true;
-        }
-        String versionString = l.substring(ar + 1).trim();
-        String v = versionString.substring(0, 1);
-        try {
-            int version = Integer.parseInt(v);
-            if (version < 6) {
-                System.err.println("Wrong GCC version: " + l + ". We need at least gcc 6. // todo where to get it?");
-                throw new IllegalArgumentException("gcc version outdated");
-            } else {
-                return true;
-            }
-        } catch (NumberFormatException e ) {
-            System.err.println("WARNING: your gcc compiler has version " + l + " which we could not parse so it might not work");
-        }
-        return true;
-
+    private void checkCompiler() throws IOException, InterruptedException {
+        validateVersion(new String[] { "gcc", "--version" }, "compiler", COMPILER_MINIMAL_VERSION);
     }
 
+    private void checkLinker() throws InterruptedException, IOException {
+        validateVersion(new String[] { "ld", "--version" }, "linker", LINKER_MINIMAL_VERSION);
+    }
+
+    private void validateVersion(String[] processCommand, String processName, Version minimalVersion) throws InterruptedException, IOException {
+        String versionLine = getFirstLineFromProcess(processCommand);
+        if (versionLine == null) {
+            System.err.println("WARNING: we were unable to parse the version of your " + processName + ".\n" +
+                    "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is " + minimalVersion + ".");
+        } else {
+            VersionParser versionParser = new VersionParser();
+            Version version = versionParser.parseVersion(versionLine);
+            if (version == null) {
+                System.err.println("WARNING: we were unable to parse the version of your " + processName + ": \"" + versionLine + "\".\n" +
+                        "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is \"" + minimalVersion + "\".");
+            } else if (version.compareTo(minimalVersion) < 0) {
+                System.err.println("ERROR: The version of your " + processName + ": \"" + version + "\", does not match the minimal required version: \"" + minimalVersion + "\".");
+                throw new IllegalArgumentException(processCommand[0] + " version too old");
+            }
+        }
+    }
+
+    private String getFirstLineFromProcess(String...command) throws InterruptedException, IOException {
+        ProcessBuilder compiler = new ProcessBuilder(command);
+        compiler.redirectErrorStream(true);
+
+        Process compilerProcess = compiler.start();
+        InputStream processInputStream = compilerProcess.getInputStream();
+        compilerProcess.waitFor();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(processInputStream))) {
+            return reader.readLine();
+        }
+    }
 }
