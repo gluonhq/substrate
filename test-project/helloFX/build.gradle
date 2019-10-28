@@ -23,7 +23,7 @@ task runScript(type: Exec) {
     dependsOn 'clean'
     dependsOn 'build'
 
-    def graal_path = setupDependencies(platform)
+    def graal_path = setupGraalDependencies(platform)
 
     if (java_home == null) {
         throw new RuntimeException("java_home is not defined.")

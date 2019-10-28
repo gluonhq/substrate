@@ -2,9 +2,9 @@ plugins {
     id "com.google.osdetector" version "1.6.2" apply false
 }
 
-def setupDependencies(String platform) {
+def setupGraalDependencies(String platform) {
     if ("$platform" != "mac" && "$platform" != "linux") {
-        throw new GradleException("Platfrom $platform not supported")
+        throw new GradleException("Platform $platform not supported")
     }
 
     def graalVM = new File("${System.properties['user.home']}/.gluon/substrate/graalvm")
@@ -24,6 +24,43 @@ def setupDependencies(String platform) {
         }
     }
     return "mac" == "$platform" ? "$graalFolder/Contents/Home" : "$graalFolder"
+}
+
+def setupJavaFXDependencies(String platform, String target) {
+    def javafxSdk = new File("${System.properties['user.home']}/.gluon/substrate/javafxStaticSdk")
+    if (!javafxSdk.exists()) {
+        javafxSdk.mkdirs()
+    }
+    def version = "14-ea+1"
+    def name
+    if ("linux" == "$platform") {
+        name = "linux-x86_64"
+    } else if ("mac" == "$platform") {
+        if ("ios" == "$target") {
+            name = "ios-arm64"
+        } else {
+            name = "darwin-x86_64"
+        }
+    } else {
+        throw new GradleException("Platform $platform or Target $target not supported")
+    }
+    def javafxFolder = new File("$javafxSdk/$version/$name")
+    def nameZip = "$name-libsfx-${version}.zip"
+    def javafxZip = new File("$javafxSdk/$nameZip")
+    if (!javafxFolder.exists()) {
+        javafxFolder.mkdirs()
+    }
+
+    if (!javafxZip.exists()) {
+        println "Downloading javafxZip..."
+        new URL("https://download2.gluonhq.com/substrate/javafxstaticsdk/$nameZip")
+                .withInputStream { i -> javafxZip.withOutputStream { it << i } }
+        copy {
+            from zipTree(javafxZip)
+            into javafxFolder
+        }
+    }
+    return "$javafxFolder" + "/sdk/lib"
 }
 
 subprojects {

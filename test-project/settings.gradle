@@ -2,3 +2,4 @@ rootProject.name = 'substrateTests'
 
 include 'helloWorld'
 include 'helloFX'
+include 'helloGluon'

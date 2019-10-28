@@ -1,0 +1,4 @@
+.label {
+    -fx-font-size: 2em;
+    -fx-text-fill: -primary-swatch-700;
+}
