@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
-  //  static String[] C_RESOURCES = { "launcher.c",  "thread.c"};
     ProjectConfiguration projectConfiguration;
     ProcessPaths paths;
 
@@ -65,7 +64,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Triplet target =  config.getTargetTriplet();
         String suffix = target.getArchOs();
         String jniPlatform = getJniPlatform(target.getOs());
-        if (!compileAdditionalSources(paths, config) ) {
+        if (!compileAdditionalSources()) {
             return false;
         }
         Path gvmPath = paths.getGvmPath();
@@ -96,6 +95,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-cp");
         compileBuilder.command().add(cp);
         compileBuilder.command().add(mainClassName);
+        Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
+        compileBuilder.directory(workDir.toFile());
         compileBuilder.redirectErrorStream(true);
         Process compileProcess = compileBuilder.start();
         InputStream inputStream = compileProcess.getInputStream();
@@ -136,7 +137,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
 
-        if ( !Files.exists(projectConfiguration.getJavaStaticLibsPath())) {
+        if (!Files.exists(projectConfiguration.getJavaStaticLibsPath())) {
             System.err.println("We can't link because the static Java libraries are missing. " +
                     "The path "+ projectConfiguration.getJavaStaticLibsPath() + " does not exist.");
             return false;
@@ -229,7 +230,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return runBuilder.start();
     }
 
-    public boolean compileAdditionalSources(ProcessPaths paths, ProjectConfiguration projectConfiguration)
+    public boolean compileAdditionalSources()
             throws IOException, InterruptedException {
 
         String appName = projectConfiguration.getAppName();
