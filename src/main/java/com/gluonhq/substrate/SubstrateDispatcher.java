@@ -37,12 +37,14 @@ import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class SubstrateDispatcher {
 
@@ -58,7 +60,8 @@ public class SubstrateDispatcher {
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String targetProfile = System.getProperty("targetProfile");
-        boolean useJavaFX = Boolean.parseBoolean(System.getProperty("javafx", "false"));
+        boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
+                .anyMatch(s -> s.contains("javafx"));
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         String expected  = System.getProperty("expected");
