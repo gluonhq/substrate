@@ -27,6 +27,8 @@
  */
 package com.gluonhq.substrate;
 
+import java.util.Locale;
+
 class TestUtils {
 
     /**
@@ -35,5 +37,37 @@ class TestUtils {
      */
     static boolean isTravis() {
         return System.getenv("TRAVIS") != null;
+    }
+
+    /**
+     * Checks if the test is running on Mac OS, but not on Travis
+     * @return true if runs on a local Mac OS
+     */
+    static boolean isLocalMacOS() {
+        return !isTravis() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
+    }
+
+    /**
+     * Checks if the test is running on Linux, but not on Travis
+     * @return true if runs on a local Linux
+     */
+    boolean isLocalLinux() {
+        return !isTravis() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("nux");
+    }
+
+    /**
+     * Checks if the test is running on Mac OS over Travis CI
+     * @return true if runs on Mac OS over Travis CI
+     */
+    static boolean isCIMacOS() {
+        return isTravis() && "osx".equalsIgnoreCase(System.getenv("TRAVIS_OS_NAME"));
+    }
+
+    /**
+     * Checks if the test is running on Linux over Travis CI
+     * @return true if runs on Linux over Travis CI
+     */
+    static boolean isCILinux() {
+        return isTravis() && "linux".equalsIgnoreCase(System.getenv("TRAVIS_OS_NAME"));
     }
 }

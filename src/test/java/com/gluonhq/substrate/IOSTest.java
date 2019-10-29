@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import static com.gluonhq.substrate.TestUtils.isCIMacOS;
+import static com.gluonhq.substrate.TestUtils.isLocalMacOS;
 import static com.gluonhq.substrate.TestUtils.isTravis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -53,13 +55,12 @@ class IOSTest {
 
     @BeforeEach
     void notForTravis() {
-        String name = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         if (!isTravis()) {
-            assumeTrue(name.contains("mac"));
+            assumeTrue(isLocalMacOS());
             String[] devices = Deploy.connectedDevices();
             assumeTrue((devices != null && devices.length > 0));
         } else {
-            assumeTrue(name.contains("osx"));
+            assumeTrue(isCIMacOS());
         }
     }
 
