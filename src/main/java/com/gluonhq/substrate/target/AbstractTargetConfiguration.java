@@ -610,7 +610,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "java.lang.Long",
             "java.lang.Runnable",
             "java.lang.String",
-            "java.lang.Thread",
             "java.net.SocketTimeoutException",
             "java.nio.ByteBuffer",
             "java.nio.charset.Charset",
