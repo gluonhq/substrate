@@ -28,7 +28,7 @@
 package com.gluonhq.substrate;
 
 class TestUtils {
-    
+
     /**
      * Checks if the test is running on Travis CI
      * @return true if on Travis CI
