@@ -37,7 +37,7 @@ matrix:
         - mkdir -p $HOME/llvm && cd $HOME/llvm
         - wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
         - tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd ..
-        - export PATH=$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
+        - export PATH="$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
         - export JAVA_HOME=$(/usr/libexec/java_home)
 
 before_script:
