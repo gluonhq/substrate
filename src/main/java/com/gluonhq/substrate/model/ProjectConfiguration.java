@@ -68,6 +68,8 @@ public class ProjectConfiguration {
     private String appName;
     private String mainClassName;
 
+    private IosConfiguration iosConfiguration = new IosConfiguration();
+
     public ProjectConfiguration() {}
 
     public String getGraalPath() {
@@ -405,6 +407,18 @@ public class ProjectConfiguration {
         this.mainClassName = mainClassName;
     }
 
+    public IosConfiguration getIosConfiguration() {
+        return iosConfiguration;
+    }
+
+    /**
+     * Sets some iOS specific parameters
+     * @param iosConfiguration iOS configuration
+     */
+    public void setIosConfiguration(IosConfiguration iosConfiguration) {
+        this.iosConfiguration = iosConfiguration;
+    }
+
     @Override
     public String toString() {
         return "ProjectConfiguration{" +
@@ -429,6 +443,7 @@ public class ProjectConfiguration {
                 ", runtimeArgsList=" + runtimeArgsList +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + appName + '\'' +
+                ", iosConfiguration='" + iosConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
                 '}';
     }

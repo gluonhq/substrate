@@ -103,7 +103,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         if (result) {
             createInfoPlist(paths, projectConfiguration);
 
-            if (!isSimulator()) {
+            if (!isSimulator() && !projectConfiguration.getIosConfiguration().isSkipSigning()) {
                 CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
                 if (!codeSigning.signApp()) {
                     throw new RuntimeException("Error signing the app");
@@ -120,8 +120,10 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         if (isSimulator()) {
             // TODO: launchOnSimulator(appPath);
             return false;
+        } else if (!projectConfiguration.getIosConfiguration().isSkipSigning()) {
+            return Deploy.install(appPath);
         }
-        return Deploy.install(appPath);
+        return true;
     }
 
     @Override
