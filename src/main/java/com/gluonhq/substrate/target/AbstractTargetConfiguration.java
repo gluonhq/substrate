@@ -55,7 +55,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     ProjectConfiguration projectConfiguration;
     ProcessPaths paths;
 
-    private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c", "thread.c");
+    private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c");
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
@@ -611,7 +611,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "java.lang.Long",
             "java.lang.Runnable",
             "java.lang.String",
-            "java.lang.Thread",
             "java.net.SocketTimeoutException",
             "java.nio.ByteBuffer",
             "java.nio.charset.Charset",

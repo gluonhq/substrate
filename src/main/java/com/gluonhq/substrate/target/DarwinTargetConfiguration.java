@@ -40,7 +40,7 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        return Arrays.asList("AppDelegate.m", "launcher.c", "thread.c");
+        return Arrays.asList("AppDelegate.m", "launcher.c");
     }
 
     @Override
