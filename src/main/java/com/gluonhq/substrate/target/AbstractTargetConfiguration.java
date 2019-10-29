@@ -56,7 +56,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     ProjectConfiguration projectConfiguration;
     ProcessPaths paths;
 
-    private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c", "thread.c");
+    private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c");
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
