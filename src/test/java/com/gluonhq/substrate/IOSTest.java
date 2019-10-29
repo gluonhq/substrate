@@ -53,10 +53,13 @@ class IOSTest {
 
     @BeforeEach
     void notForTravis() {
-        assumeTrue(System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac"));
+        String name = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         if (!isTravis()) {
+            assumeTrue(name.contains("mac"));
             String[] devices = Deploy.connectedDevices();
             assumeTrue((devices != null && devices.length > 0));
+        } else {
+            assumeTrue(name.contains("osx"));
         }
     }
 
