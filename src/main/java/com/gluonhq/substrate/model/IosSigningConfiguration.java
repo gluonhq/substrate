@@ -27,18 +27,14 @@
  */
 package com.gluonhq.substrate.model;
 
-import java.util.List;
-
-public class IosConfiguration {
+public class IosSigningConfiguration {
 
     private boolean skipSigning = false;
     private String providedSigningIdentity;
     private String providedProvisioningProfile;
     private String simulatorDevice;
-    private List<String> frameworks;
-    private List<String> frameworksPaths;
 
-    public IosConfiguration() {}
+    public IosSigningConfiguration() {}
 
     public boolean isSkipSigning() {
         return skipSigning;
@@ -72,22 +68,6 @@ public class IosConfiguration {
         return simulatorDevice;
     }
 
-    public List<String> getFrameworks() {
-        return frameworks;
-    }
-
-    public void setFrameworks(List<String> frameworks) {
-        this.frameworks = frameworks;
-    }
-
-    public List<String> getFrameworksPaths() {
-        return frameworksPaths;
-    }
-
-    public void setFrameworksPaths(List<String> frameworksPaths) {
-        this.frameworksPaths = frameworksPaths;
-    }
-
     @Override
     public String toString() {
         return "IosConfiguration{" +
@@ -95,8 +75,6 @@ public class IosConfiguration {
                 ", providedSigningIdentity='" + providedSigningIdentity + '\'' +
                 ", providedProvisioningProfile='" + providedProvisioningProfile + '\'' +
                 ", simulatorDevice='" + simulatorDevice + '\'' +
-                ", frameworks=" + frameworks +
-                ", frameworksPaths=" + frameworksPaths +
                 '}';
     }
 }

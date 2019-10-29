@@ -76,7 +76,7 @@ public class SubstrateDispatcher {
         config.setTarget(targetTriplet);
         config.setUseJavaFX(useJavaFX);
         config.setUsePrismSW(usePrismSW);
-        config.getIosConfiguration().setSkipSigning(skipSigning);
+        config.getIosSigningConfiguration().setSkipSigning(skipSigning);
 
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");

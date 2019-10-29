@@ -30,7 +30,6 @@ package com.gluonhq.substrate.model;
 import com.gluonhq.substrate.Constants;
 
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -68,7 +67,7 @@ public class ProjectConfiguration {
     private String appName;
     private String mainClassName;
 
-    private IosConfiguration iosConfiguration = new IosConfiguration();
+    private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
 
     public ProjectConfiguration() {}
 
@@ -407,16 +406,16 @@ public class ProjectConfiguration {
         this.mainClassName = mainClassName;
     }
 
-    public IosConfiguration getIosConfiguration() {
-        return iosConfiguration;
+    public IosSigningConfiguration getIosSigningConfiguration() {
+        return iosSigningConfiguration;
     }
 
     /**
      * Sets some iOS specific parameters
-     * @param iosConfiguration iOS configuration
+     * @param iosSigningConfiguration iOS configuration
      */
-    public void setIosConfiguration(IosConfiguration iosConfiguration) {
-        this.iosConfiguration = iosConfiguration;
+    public void setIosSigningConfiguration(IosSigningConfiguration iosSigningConfiguration) {
+        this.iosSigningConfiguration = iosSigningConfiguration;
     }
 
     @Override
@@ -443,7 +442,7 @@ public class ProjectConfiguration {
                 ", runtimeArgsList=" + runtimeArgsList +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + appName + '\'' +
-                ", iosConfiguration='" + iosConfiguration + '\'' +
+                ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
                 '}';
     }
