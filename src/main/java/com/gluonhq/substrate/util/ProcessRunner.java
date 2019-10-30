@@ -115,6 +115,14 @@ public class ProcessRunner {
                 Arrays.asList(answer.toString().split("\n"));
     }
 
+    public String getLastResponse() {
+        if (answer == null) {
+            return null;
+        }
+        String[] answers = answer.toString().split("\n");
+        return answers.length > 0 ? answers[answers.length - 1] : "";
+    }
+
     public static String runProcessForSingleOutput(String name, String... args) throws IOException, InterruptedException {
         ProcessRunner process = new ProcessRunner(args);
         int result = process.runProcess(name);

@@ -25,6 +25,7 @@ task runScript(type: Exec) {
 
     def target = System.getProperty("substrate.target")
     def skipsigning = System.getProperty("skipsigning")
+    def expected = System.getProperty("expected")
 
     def rootFile = new File(rootDir.getParent().concat("/build/"))
     def substratePath = rootFile.toString().concat("/classes/java/main") + ":" +
@@ -39,6 +40,9 @@ task runScript(type: Exec) {
     }
     if (skipsigning != null) {
         argsList += ["-Dskipsigning=$skipsigning"]
+    }
+    if (expected != null) {
+        argsList += ["-Dexpected=$expected"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList

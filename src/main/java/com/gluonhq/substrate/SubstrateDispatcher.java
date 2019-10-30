@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.Optional;
 
 public class SubstrateDispatcher {
@@ -78,7 +79,8 @@ public class SubstrateDispatcher {
         config.setUsePrismSW(usePrismSW);
         config.getIosSigningConfiguration().setSkipSigning(skipSigning);
 
-        TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
+        TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
+                "Error: Target Configuration was null");
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         System.err.println("Config: " + config);
@@ -116,9 +118,13 @@ public class SubstrateDispatcher {
         }
         System.err.println("Running...");
         if (expected != null) {
-            InputStream is = targetConfiguration.run(paths.getAppPath(), appName);
-            // TODO: compare expected and actual output
-
+            String response = targetConfiguration.run(paths.getAppPath(), appName);
+            if (expected.equals(response)) {
+                System.err.println("Run ended successfully, the output: " + expected + " matched the expected result.");
+            } else {
+                System.err.println("Run failed, expected output: " + expected + ", output: " + response);
+                System.exit(1);
+            }
         } else {
             nativeRun(buildRoot, config);
         }
@@ -175,7 +181,7 @@ public class SubstrateDispatcher {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
-            throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
+            throw new IllegalArgumentException("We don't have a configuration to link " + targetTriplet);
         }
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         FileDeps.setupDependencies(config);
@@ -185,13 +191,13 @@ public class SubstrateDispatcher {
 
     public static void nativeRun(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
-        TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
+        TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet), "Target Configuration was null");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         targetConfiguration.runUntilEnd(paths, config);
     }
 
     private static TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
-        switch( targetTriplet.getOs() ) {
+        switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX : return new LinuxTargetConfiguration();
             case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
             case Constants.OS_IOS: return new IosTargetConfiguration();

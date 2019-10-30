@@ -32,6 +32,7 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -48,6 +49,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
@@ -189,7 +191,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         System.err.println("started linking");
         int result = compileProcess.waitFor();
         System.err.println("done linking");
-        if (result != 0 ) {
+        if (result != 0) {
             System.err.println("Linking failed. Details from linking below:");
             System.err.println("Command was: "+cmds);
             printFromInputStream(compileProcess.getInputStream());
@@ -263,11 +265,21 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     @Override
-    public InputStream run(Path appPath, String appName) throws IOException {
-        Process runProcess = startAppProcess(appPath,appName);
-        return runProcess.getInputStream();
+    public String run(Path appPath, String appName) throws IOException, InterruptedException {
+        Path app = Objects.requireNonNull(appPath, "Application path can't be null")
+                .resolve(Objects.requireNonNull(appName, "Application name can't be null"));
+        if (!Files.exists(app)) {
+            throw new IOException("Application not found at path " + app.toString());
+        }
+        ProcessRunner runner = new ProcessRunner(app.toString());
+        if (runner.runProcess("run " + appName) == 0) {
+            return runner.getLastResponse();
+        } else {
+            System.err.println("Run process failed. Command line was: " + runner.getCmd() + "\nOutput was:");
+            runner.getResponses().forEach(System.err::println);
+        }
+        return null;
     }
-
 
     @Override
     public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
@@ -275,7 +287,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         InputStream is = runProcess.getInputStream();
         asynPrintFromInputStream(is);
         int result = runProcess.waitFor();
-        if (result != 0 ) {
+        if (result != 0) {
             printFromInputStream(is);
             return false;
         }
