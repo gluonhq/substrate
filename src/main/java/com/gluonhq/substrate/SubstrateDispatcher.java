@@ -64,6 +64,7 @@ public class SubstrateDispatcher {
                 .anyMatch(s -> s.contains("javafx"));
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
+        boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
         String expected  = System.getProperty("expected");
 
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
@@ -78,6 +79,7 @@ public class SubstrateDispatcher {
         config.setTarget(targetTriplet);
         config.setUseJavaFX(useJavaFX);
         config.setUsePrismSW(usePrismSW);
+        config.getIosSigningConfiguration().setSkipSigning(skipSigning);
 
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
