@@ -60,8 +60,6 @@ public class SubstrateDispatcher {
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String targetProfile = System.getProperty("targetProfile");
-        boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
-                .anyMatch(s -> s.contains("javafx"));
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
@@ -77,7 +75,6 @@ public class SubstrateDispatcher {
         config.setJavaStaticSdkVersion(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
         config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
-        config.setUseJavaFX(useJavaFX);
         config.setUsePrismSW(usePrismSW);
         config.getIosSigningConfiguration().setSkipSigning(skipSigning);
 
@@ -146,13 +143,17 @@ public class SubstrateDispatcher {
      * The result of compilation is a at least one native file (2 files in case LLVM backend is used).
      * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails
      * @param buildRoot the root, relative to which the compilation step can create objectfiles and temporary files
-     * @param config the Projectconfiguration, including the target triplet
+     * @param config the ProjectConfiguration, including the target triplet
      * @param classPath the classpath needed to compile the application (this is not the classpath for native-image)
      * @return true if compilation succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
+        boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
+                .anyMatch(s -> s.contains("javafx"));
+        config.setUseJavaFX(useJavaFX);
+
         Triplet targetTriplet  = config.getTargetTriplet();
         if (! canCompileTo(config.getHostTriplet(), config.getTargetTriplet())) {
             throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
