@@ -43,6 +43,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -150,9 +151,12 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
-        boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
-                .anyMatch(s -> s.contains("javafx"));
-        config.setUseJavaFX(useJavaFX);
+        Objects.requireNonNull(config,  "Project configuration can't be null");
+        if (classPath != null) {
+            boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
+                    .anyMatch(s -> s.contains("javafx"));
+            config.setUseJavaFX(useJavaFX);
+        }
 
         Triplet targetTriplet  = config.getTargetTriplet();
         if (! canCompileTo(config.getHostTriplet(), config.getTargetTriplet())) {
@@ -176,6 +180,7 @@ public class SubstrateDispatcher {
     }
 
     public static boolean nativeLink(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
+        Objects.requireNonNull(config,  "Project configuration can't be null");
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
@@ -188,6 +193,7 @@ public class SubstrateDispatcher {
     }
 
     public static void nativeRun(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
+        Objects.requireNonNull(config,  "Project configuration can't be null");
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
