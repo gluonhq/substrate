@@ -24,6 +24,7 @@ task runScript(type: Exec) {
     }
 
     def target = System.getProperty("substrate.target")
+    def skipsigning = System.getProperty("skipsigning")
 
     def rootFile = new File(rootDir.getParent().concat("/build/"))
     def substratePath = rootFile.toString().concat("/classes/java/main") + ":" +
@@ -35,6 +36,9 @@ task runScript(type: Exec) {
                    "-Dgraalvm=$graal_path"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
+    }
+    if (skipsigning != null) {
+        argsList += ["-Dskipsigning=$skipsigning"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList
