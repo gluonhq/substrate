@@ -102,17 +102,19 @@ class IOSTest {
     void helloWorldTest() {
         boolean skipSigning = isTravis();
 
+        String expected = "Hello World";
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
                 .withArguments(":helloWorld:clean", ":helloWorld:build",
                         "-Dsubstrate.target=ios", "-Dskipsigning=" + skipSigning,
+                        "-Dexpected=" + expected,
                         ":helloWorld:run", ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
 
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:run").getOutcome(), "Failed build!");
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:runScript").getOutcome(), "Failed build!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:run").getOutcome(), "Run failed!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:runScript").getOutcome(), "RunScript failed!");
     }
 
 }
