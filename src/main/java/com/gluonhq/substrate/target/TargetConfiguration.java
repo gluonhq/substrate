@@ -31,7 +31,6 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 
 public interface TargetConfiguration {
@@ -50,5 +49,14 @@ public interface TargetConfiguration {
 
     boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException;
 
-    InputStream run(Path workDir, String appName) throws IOException, InterruptedException;
+    /**
+     * Runs the application at the given path, and if successful, returns the last line
+     * printed by the process
+     * @param appPath Path to the application
+     * @param appName application name
+     * @return A string (it can be empty) or null if the process failed
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    String run(Path appPath, String appName) throws IOException, InterruptedException;
 }

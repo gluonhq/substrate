@@ -31,9 +31,14 @@ task runScript(type: Exec) {
 
     def rootFile = new File(rootDir.getParent().concat("/build/"))
     def substratePath = rootFile.toString().concat("/classes/java/main") + ":" + rootFile.toString().concat("/resources/main")
+    def expected = System.getProperty("expected")
 
-    commandLine "${java_home}/bin/java", '-cp', substratePath,
-            "-Dimagecp=${project.sourceSets.main.runtimeClasspath.asPath}",
-            "-Dgraalvm=$graal_path", "-Djavafx=true", "-Dprism.sw=true",
-            "-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher'
+    def argsList = ["${java_home}/bin/java", '-cp', substratePath,
+                     "-Dimagecp=${project.sourceSets.main.runtimeClasspath.asPath}",
+                     "-Dgraalvm=$graal_path", "-Djavafx=true", "-Dprism.sw=true"]
+    if (expected != null) {
+        argsList += ["-Dexpected=$expected"]
+    }
+    argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
+    commandLine argsList
 }

@@ -111,8 +111,8 @@ class IOSTest {
                 .forwardOutput()
                 .build();
 
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:run").getOutcome(), "Failed build!");
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:runScript").getOutcome(), "Failed build!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:run").getOutcome(), "Run failed!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:runScript").getOutcome(), "RunScript failed!");
     }
 
 }

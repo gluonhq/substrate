@@ -48,15 +48,18 @@ class HelloFXTest {
 
     @Test
     void helloFXTest() {
+        String expected = "QuantumRenderer: shutdown";
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
-                .withArguments(":helloFX:clean", ":helloFX:build", ":helloFX:run", ":helloFX:runScript", "--stacktrace")
+                .withArguments(":helloFX:clean", ":helloFX:build",
+                        "-Dexpected=" + expected,
+                        ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
 
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:run").getOutcome(), "Failed build!");
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:runScript").getOutcome(), "Failed build!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:run").getOutcome(), "Run failed!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:runScript").getOutcome(), "RunScript failed!");
     }
 
 }
