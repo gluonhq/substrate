@@ -31,6 +31,7 @@ import java.nio.file.Path;
 
 public class Constants {
 
+    public static final String GLUON_SUBSTRATE = "GluonSubstrate";
     public static final Path USER_SUBSTRATE_PATH = Path.of(System.getProperty("user.home"))
             .resolve(".gluon").resolve("substrate");
 
