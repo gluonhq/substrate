@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,41 +25,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate;
+package com.gluonhq.substrate.util;
 
-import org.gradle.testkit.runner.BuildResult;
-import org.gradle.testkit.runner.GradleRunner;
-import org.gradle.testkit.runner.TaskOutcome;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import java.io.File;
+public class VersionParser {
 
-import static com.gluonhq.substrate.TestUtils.isTravis;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+    private static final Pattern versionPattern = Pattern.compile("((\\d+\\.*)+)[\\D\\-]*.*");
 
-class HelloFXTest {
-
-    @BeforeEach
-    void notForTravis() {
-        assumeTrue(!isTravis());
+    public Version parseVersion(String input) {
+        Matcher matcher = versionPattern.matcher(input);
+        if (matcher.find() && matcher.groupCount() >= 1) {
+            return new Version(matcher.group(1));
+        }
+        return null;
     }
-
-    @Test
-    void helloFXTest() {
-        String expected = "QuantumRenderer: shutdown";
-        BuildResult result = GradleRunner.create()
-                .withProjectDir(new File("test-project"))
-                .withGradleVersion("5.3")
-                .withArguments(":helloFX:clean", ":helloFX:build",
-                        "-Dexpected=" + expected,
-                        ":helloFX:run", ":helloFX:runScript", "--stacktrace")
-                .forwardOutput()
-                .build();
-
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:run").getOutcome(), "Run failed!");
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:runScript").getOutcome(), "RunScript failed!");
-    }
-
 }

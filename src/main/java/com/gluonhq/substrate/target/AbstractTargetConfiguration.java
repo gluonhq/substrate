@@ -32,6 +32,7 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -48,15 +49,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
-  //  static String[] C_RESOURCES = { "launcher.c",  "thread.c"};
     ProjectConfiguration projectConfiguration;
     ProcessPaths paths;
 
-    private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c", "thread.c");
+    private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c");
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
@@ -65,7 +66,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Triplet target =  config.getTargetTriplet();
         String suffix = target.getArchOs();
         String jniPlatform = getJniPlatform(target.getOs());
-        if (!compileAdditionalSources(paths, config) ) {
+        if (!compileAdditionalSources()) {
             return false;
         }
         Path gvmPath = paths.getGvmPath();
@@ -96,6 +97,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-cp");
         compileBuilder.command().add(cp);
         compileBuilder.command().add(mainClassName);
+        Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
+        compileBuilder.directory(workDir.toFile());
         compileBuilder.redirectErrorStream(true);
         Process compileProcess = compileBuilder.start();
         InputStream inputStream = compileProcess.getInputStream();
@@ -136,7 +139,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
 
-        if ( !Files.exists(projectConfiguration.getJavaStaticLibsPath())) {
+        if (!Files.exists(projectConfiguration.getJavaStaticLibsPath())) {
             System.err.println("We can't link because the static Java libraries are missing. " +
                     "The path "+ projectConfiguration.getJavaStaticLibsPath() + " does not exist.");
             return false;
@@ -188,7 +191,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         System.err.println("started linking");
         int result = compileProcess.waitFor();
         System.err.println("done linking");
-        if (result != 0 ) {
+        if (result != 0) {
             System.err.println("Linking failed. Details from linking below:");
             System.err.println("Command was: "+cmds);
             printFromInputStream(compileProcess.getInputStream());
@@ -229,7 +232,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return runBuilder.start();
     }
 
-    public boolean compileAdditionalSources(ProcessPaths paths, ProjectConfiguration projectConfiguration)
+    public boolean compileAdditionalSources()
             throws IOException, InterruptedException {
 
         String appName = projectConfiguration.getAppName();
@@ -262,11 +265,21 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     @Override
-    public InputStream run(Path appPath, String appName) throws IOException {
-        Process runProcess = startAppProcess(appPath,appName);
-        return runProcess.getInputStream();
+    public String run(Path appPath, String appName) throws IOException, InterruptedException {
+        Path app = Objects.requireNonNull(appPath, "Application path can't be null")
+                .resolve(Objects.requireNonNull(appName, "Application name can't be null"));
+        if (!Files.exists(app)) {
+            throw new IOException("Application not found at path " + app.toString());
+        }
+        ProcessRunner runner = new ProcessRunner(app.toString());
+        if (runner.runProcess("run " + appName) == 0) {
+            return runner.getLastResponse();
+        } else {
+            System.err.println("Run process failed. Command line was: " + runner.getCmd() + "\nOutput was:");
+            runner.getResponses().forEach(System.err::println);
+        }
+        return null;
     }
-
 
     @Override
     public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
@@ -274,7 +287,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         InputStream is = runProcess.getInputStream();
         asynPrintFromInputStream(is);
         int result = runProcess.waitFor();
-        if (result != 0 ) {
+        if (result != 0) {
             printFromInputStream(is);
             return false;
         }
@@ -610,7 +623,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "java.lang.Long",
             "java.lang.Runnable",
             "java.lang.String",
-            "java.lang.Thread",
             "java.net.SocketTimeoutException",
             "java.nio.ByteBuffer",
             "java.nio.charset.Charset",

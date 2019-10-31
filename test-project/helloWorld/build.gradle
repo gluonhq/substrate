@@ -27,6 +27,9 @@ task runScript(type: Exec) {
         throw new RuntimeException("java_home is not defined.")
     }
 
+    def skipsigning = System.getProperty("skipsigning")
+    def expected = System.getProperty("expected")
+
     def rootFile = new File(rootDir.getParent().concat("/build/"))
     def substratePath = rootFile.toString().concat("/classes/java/main") + ":" +
             rootFile.toString().concat("/resources/main") + ":" +
@@ -37,6 +40,12 @@ task runScript(type: Exec) {
                    "-Dgraalvm=$graal_path"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
+    }
+    if (skipsigning != null) {
+        argsList += ["-Dskipsigning=$skipsigning"]
+    }
+    if (expected != null) {
+        argsList += ["-Dexpected=$expected"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList

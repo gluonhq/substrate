@@ -44,6 +44,7 @@ task runScript(type: Exec) {
     def substratePath = rootFile.toString().concat("/classes/java/main") + ":" +
             rootFile.toString().concat("/resources/main") + ":" +
             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}"
+    def expected = System.getProperty("expected")
 
     def argsList = ["${java_home}/bin/java", '-cp', substratePath,
                     "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
@@ -51,6 +52,9 @@ task runScript(type: Exec) {
                     "-Dgraalvm=$graal_path", "-Djavafx=true"] //, "-Dprism.sw=true"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
+    }
+    if (expected != null) {
+        argsList += ["-Dexpected=$expected"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList

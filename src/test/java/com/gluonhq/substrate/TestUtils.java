@@ -27,39 +27,47 @@
  */
 package com.gluonhq.substrate;
 
-import org.gradle.testkit.runner.BuildResult;
-import org.gradle.testkit.runner.GradleRunner;
-import org.gradle.testkit.runner.TaskOutcome;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.util.Locale;
 
-import java.io.File;
+class TestUtils {
 
-import static com.gluonhq.substrate.TestUtils.isTravis;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-
-class HelloFXTest {
-
-    @BeforeEach
-    void notForTravis() {
-        assumeTrue(!isTravis());
+    /**
+     * Checks if the test is running on Travis CI
+     * @return true if on Travis CI
+     */
+    static boolean isTravis() {
+        return System.getenv("TRAVIS") != null;
     }
 
-    @Test
-    void helloFXTest() {
-        String expected = "QuantumRenderer: shutdown";
-        BuildResult result = GradleRunner.create()
-                .withProjectDir(new File("test-project"))
-                .withGradleVersion("5.3")
-                .withArguments(":helloFX:clean", ":helloFX:build",
-                        "-Dexpected=" + expected,
-                        ":helloFX:run", ":helloFX:runScript", "--stacktrace")
-                .forwardOutput()
-                .build();
-
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:run").getOutcome(), "Run failed!");
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:runScript").getOutcome(), "RunScript failed!");
+    /**
+     * Checks if the test is running on Mac OS, but not on Travis
+     * @return true if runs on a local Mac OS
+     */
+    static boolean isLocalMacOS() {
+        return !isTravis() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
     }
 
+    /**
+     * Checks if the test is running on Linux, but not on Travis
+     * @return true if runs on a local Linux
+     */
+    boolean isLocalLinux() {
+        return !isTravis() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("nux");
+    }
+
+    /**
+     * Checks if the test is running on Mac OS over Travis CI
+     * @return true if runs on Mac OS over Travis CI
+     */
+    static boolean isCIMacOS() {
+        return isTravis() && "osx".equalsIgnoreCase(System.getenv("TRAVIS_OS_NAME"));
+    }
+
+    /**
+     * Checks if the test is running on Linux over Travis CI
+     * @return true if runs on Linux over Travis CI
+     */
+    static boolean isCILinux() {
+        return isTravis() && "linux".equalsIgnoreCase(System.getenv("TRAVIS_OS_NAME"));
+    }
 }
