@@ -381,8 +381,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
             for (String javaClass : getJNIClassList(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 // TODO: create list of exclusions
-                writeEntry(bw, javaClass,
-                        "mac".equals(suffix) && javaClass.equals("java.lang.Thread"));
+                if ("arm64-ios".equals(suffix) && javaClass.equals("java.lang.Thread")) {
+                    writeThreadEntry(bw);
+                } else {
+                    writeEntry(bw, javaClass);
+                }
             }
             bw.write("]");
         }
@@ -414,6 +417,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         } else {
             bw.write("\n");
         }
+        bw.write("  }\n");
+    }
+
+    private static void writeThreadEntry (BufferedWriter bw) throws IOException {
+        bw.write(",\n");
+        bw.write("  {\n");
+        bw.write("    \"name\" : \"java.lang.Thread\",\n");
+        bw.write("    \"methods\" : [\n");
+        bw.write("        {\"name\":\"currentThread\",\"parameterTypes\":[] }, \n");
+        bw.write("        {\"name\":\"setContextClassLoader\",\"parameterTypes\":[\"java.lang.ClassLoader\"] }, \n");
+        bw.write("        {\"name\":\"getContextClassLoader\",\"parameterTypes\":[] } \n");
+        bw.write("    ]\n");
         bw.write("  }\n");
     }
 

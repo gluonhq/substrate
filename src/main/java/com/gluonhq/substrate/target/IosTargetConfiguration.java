@@ -48,7 +48,7 @@ import java.util.List;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
-    private List<String> iosAdditionalSourceFiles = Arrays.asList("AppDelegate.m", "thread.m");
+    private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
 
     private static final List<String> javafxReflectionIosClassList = Arrays.asList(
             "com.sun.prism.es2.ES2Pipeline",
