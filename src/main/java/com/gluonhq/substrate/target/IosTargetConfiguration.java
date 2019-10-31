@@ -74,6 +74,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             "com.sun.glass.ui.ios.IosView",
             "com.sun.glass.ui.ios.IosWindow",
             "java.util.Vector",
+            "java.lang.Thread",
             "com.sun.javafx.font.coretext.CGAffineTransform",
             "com.sun.javafx.font.coretext.CGPoint",
             "com.sun.javafx.font.coretext.CGRect",
