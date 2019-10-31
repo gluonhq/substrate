@@ -95,12 +95,14 @@ public class SubstrateDispatcher {
         });
         timer.setDaemon(true);
         timer.start();
-        boolean result = nativeCompile(buildRoot, config, classPath);
+
+        boolean nativeCompileSucceeded = nativeCompile(buildRoot, config, classPath);
         run = false;
-        if (!result) {
-            System.err.println("COMPILE FAILED");
-            return;
+        if (!nativeCompileSucceeded) {
+            System.err.println("Compiling failed");
+            System.exit(1);
         }
+
         try {
             System.err.println("Linking...");
             if (!nativeLink(buildRoot, config)) {
