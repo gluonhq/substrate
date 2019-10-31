@@ -117,6 +117,8 @@ class IOSTest {
 
     @Test
     void helloFXTest() {
+        assumeTrue(!isTravis());
+
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
