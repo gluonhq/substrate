@@ -70,6 +70,15 @@ public class FileDeps {
     );
 
     /**
+     *
+     * First, this method searches for a valid location of the java static libraries
+     * (e.g. libjava.a). When a user-supplied location is present, this location will be
+     * used to check for the presence of those libraries. If the user-supplied location is
+     * present, but the libraries are not there, an <code>IOException</code> is thrown.
+     *
+     * If no custom location has been specified, the default location for the static libs is used.
+     * If no libs are found on the default location, they are downloaded and unzipped (TBD!!!)
+     *
      * Verifies if Java static SDK and JavaFX static SDK (when using JavaFX) are present at
      * the default location, and contain an unmodified set of files.
      * If this is not the case, the correct SDK is downloaded and unzipped.
@@ -86,7 +95,8 @@ public class FileDeps {
         }
 
         Path javaStaticLibs = configuration.getJavaStaticLibsPath();
-        Path javaStaticSdk = configuration.getJavaStaticPath();
+        Path defaultJavaStaticPath = configuration.getDefaultJavaStaticPath();
+        boolean customJavaLocation = configuration.useCustomJavaStaticLibs();
 
         boolean downloadGraalLibs = false, downloadJavaStatic = false, downloadJavaFXStatic = false;
 
@@ -98,6 +108,9 @@ public class FileDeps {
         if (configuration.isUseJNI()) {
             if (! Files.isDirectory(javaStaticLibs)) {
                 System.err.println("Not a dir");
+                if (customJavaLocation) {
+                    throw new IOException ("A location for the static sdk libs was supplied, but it doesn't exist: "+javaStaticLibs);
+                }
                 downloadJavaStatic = true;
             } else {
                 String path = javaStaticLibs.toString();
@@ -106,10 +119,14 @@ public class FileDeps {
                         .anyMatch(f -> !f.exists())) {
                     Logger.logDebug("jar file not found");
                     System.err.println("jar not found");
+                    if (customJavaLocation) {
+                        throw new IOException ("A location for the static sdk libs was supplied, but the java libs are missing "+javaStaticLibs);
+                    }
                     downloadJavaStatic = true;
-                } else if (configuration.isEnableCheckHash()) {
+                } else if (!customJavaLocation && configuration.isEnableCheckHash()) {
+                    // when the directory for the libs is found, and it is not a user-supplied one, check for its validity
                     Logger.logDebug("Checking java static sdk hashes");
-                    String md5File = getChecksumFile(javaStaticSdk, "javaStaticSdk", target);
+                    String md5File = getChecksumFile(defaultJavaStaticPath, "javaStaticSdk", target);
                     Map<String, String> hashes = getHashMap(md5File);
                     if (hashes == null) {
                         Logger.logDebug(md5File+" not found");
@@ -173,8 +190,8 @@ public class FileDeps {
         }
         Logger.logDebug("Setup dependencies done");
 
-        if (!Files.exists(javaStaticSdk)) {
-            Logger.logSevere("Error: path " + javaStaticSdk + " doesn't exist");
+        if (!Files.exists(defaultJavaStaticPath)) {
+            Logger.logSevere("Error: path " + defaultJavaStaticPath + " doesn't exist");
             return false;
         }
         if (configuration.isUseJavaFX() && !Files.exists(configuration.getJavafxStaticLibsPath())) {

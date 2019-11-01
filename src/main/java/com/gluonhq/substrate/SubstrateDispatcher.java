@@ -63,6 +63,8 @@ public class SubstrateDispatcher {
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
+        String staticLibs = System.getProperty("javalibspath");
+
         String expected  = System.getProperty("expected");
 
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
@@ -72,20 +74,24 @@ public class SubstrateDispatcher {
         config.setGraalPath(graalVM);
         config.setMainClassName(mainClass);
         config.setAppName(appName);
-        config.setJavaStaticSdkVersion(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
         config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
         config.setUseJavaFX(useJavaFX);
         config.setUsePrismSW(usePrismSW);
         config.getIosSigningConfiguration().setSkipSigning(skipSigning);
-
+        if (staticLibs != null) {
+            config.setJavaStaticLibs(staticLibs);
+        }
+        // fail-fast: in case we're missing libraries, we don't want to start compiling
+        if (!FileDeps.setupDependencies(config)) {
+            throw new RuntimeException("Error while setting up dependencies.");
+        }
         TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was null");
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-        System.err.println("Config: " + config);
-        System.err.println("Compiling...");
-        System.err.println("ClassPath for compilation = "+classPath);
+
+
         Thread timer = new Thread(() -> {
             int counter = 1;
             while (run) {
