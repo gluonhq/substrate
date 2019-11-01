@@ -31,6 +31,7 @@ import java.nio.file.Path;
 
 public class Constants {
 
+    public static final String GLUON_SUBSTRATE = "GluonSubstrate";
     public static final Path USER_SUBSTRATE_PATH = Path.of(System.getProperty("user.home"))
             .resolve(".gluon").resolve("substrate");
 
@@ -81,7 +82,7 @@ public class Constants {
     public static final String TARGET_IOS_SIM = "ios-sim";
 
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+9";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "14-ea+1";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "14-ea+gvm1";
 
 //    /**
 //     * Supported target app folders

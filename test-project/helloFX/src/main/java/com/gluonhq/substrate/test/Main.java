@@ -19,14 +19,17 @@ public class Main extends Application {
         stage.setScene(scene);
         stage.show();
 
-        PauseTransition pause = new PauseTransition(Duration.seconds(0.5));
+        PauseTransition pause = new PauseTransition(Duration.seconds(5));
         pause.setOnFinished(f -> System.exit(0));
         pause.play();
     }
 
     public static void main(String[] args) {
-        System.setProperty("prism.order", "sw");
+//        System.setProperty("prism.order", "sw");
         System.setProperty("prism.verbose", "true");
+        if ("ios".equals(System.getProperty("substrate.target"))) {
+            System.setProperty("glass.platform", "ios");
+        }
         launch(args);
     }
 

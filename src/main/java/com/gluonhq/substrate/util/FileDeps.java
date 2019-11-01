@@ -41,7 +41,6 @@ import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -55,8 +54,10 @@ import java.util.zip.ZipInputStream;
 public class FileDeps {
 
     private static final String URL_GRAAL_LIBS = "http://download2.gluonhq.com/omega/graallibs/graalvm-svm-${host}-${version}.zip";
-    private static final String URL_JAVA_STATIC_SDK = "http://download2.gluonhq.com/substrate/staticjdk/labs-staticjdk-${target}-gvm-${version}.zip";
-    private static final String URL_JAVAFX_STATIC_SDK = "http://download2.gluonhq.com/substrate/javafxstaticsdk/${target}-libsfx-${version}.zip";
+    private static final String JAVA_STATIC_ZIP = "labs-staticjdk-${target}-gvm-${version}.zip";
+    private static final String JAVA_STATIC_URL = "http://download2.gluonhq.com/substrate/staticjdk/";
+    private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static.zip";
+    private static final String JAVAFX_STATIC_URL = "http://download2.gluonhq.com/substrate/javafxstaticsdk/";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
             "libjava.a", "libnet.a", "libnio.a", "libzip.a"
@@ -68,6 +69,15 @@ public class FileDeps {
             "libglass.a"
     );
 
+    /**
+     * Verifies if Java static SDK and JavaFX static SDK (when using JavaFX) are present at
+     * the default location, and contain an unmodified set of files.
+     * If this is not the case, the correct SDK is downloaded and unzipped.
+     *
+     * @param configuration Project configuration with the paths of the static SDKs
+     * @return true if the processed ended succesfully, false otherwise
+     * @throws IOException in case default path for Substrate dependencies can't be created
+     */
     public static boolean setupDependencies(ProjectConfiguration configuration) throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
 
@@ -162,6 +172,15 @@ public class FileDeps {
             throw new RuntimeException("Error downloading zips: " + e.getMessage());
         }
         Logger.logDebug("Setup dependencies done");
+
+        if (!Files.exists(javaStaticSdk)) {
+            Logger.logSevere("Error: path " + javaStaticSdk + " doesn't exist");
+            return false;
+        }
+        if (configuration.isUseJavaFX() && !Files.exists(configuration.getJavafxStaticLibsPath())) {
+            Logger.logSevere("Error: path " + configuration.getJavafxStaticLibsPath() + " doesn't exist");
+            return false;
+        }
         return true;
     }
 
@@ -180,26 +199,24 @@ public class FileDeps {
         return unpacked.getParent().resolve( String.format("%s-%s.md5", name, osArch) ).toString();
     }
 
-    private static void downloadJavaZip(String target, Path omegaPath, ProjectConfiguration configuration) throws IOException {
+    private static void downloadJavaZip(String target, Path substratePath, ProjectConfiguration configuration) throws IOException {
         Logger.logDebug("Process zip javaStaticSdk, target = "+target);
-        processZip(URL_JAVA_STATIC_SDK
-                        .replace("${version}", configuration.getJavaStaticSdkVersion())
-                        .replace("${target}", target),
-                omegaPath.resolve("${target}-libs-${version}.zip"
-                        .replace("${version}", configuration.getJavaStaticSdkVersion())
-                        .replace("${target}", target)),
+        String javaZip = JAVA_STATIC_ZIP
+                .replace("${version}", configuration.getJavaStaticSdkVersion())
+                .replace("${target}", target);
+        processZip(JAVA_STATIC_URL + javaZip,
+                substratePath.resolve(javaZip),
                 "javaStaticSdk", configuration.getJavaStaticSdkVersion(), configuration);
         Logger.logDebug("Processing zip java done");
     }
 
-    private static void downloadJavaFXZip(String osarch, Path omegaPath, ProjectConfiguration configuration) throws IOException {
+    private static void downloadJavaFXZip(String osarch, Path substratePath, ProjectConfiguration configuration) throws IOException {
         Logger.logDebug("Process zip javafxStaticSdk");
-        processZip(URL_JAVAFX_STATIC_SDK
-                        .replace("${version}", configuration.getJavafxStaticSdkVersion())
-                        .replace("${target}", osarch),
-                omegaPath.resolve("${target}-libsfx-${version}.zip"
-                        .replace("${version}", configuration.getJavafxStaticSdkVersion())
-                        .replace("${target}", osarch)),
+        String javafxZip = JAVAFX_STATIC_ZIP
+                .replace("${version}", configuration.getJavafxStaticSdkVersion())
+                .replace("${target}", osarch);
+        processZip(JAVAFX_STATIC_URL + javafxZip,
+                substratePath.resolve(javafxZip),
                 "javafxStaticSdk", configuration.getJavafxStaticSdkVersion(), configuration);
 
         Logger.logDebug("Process zip javafx done");

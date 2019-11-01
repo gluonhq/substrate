@@ -40,15 +40,17 @@ class HelloWorldTest {
 
     @Test
     void helloWorldTest() {
+        String expected = "Hello World";
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
-                .withArguments(":helloWorld:clean", ":helloWorld:build", ":helloWorld:run", ":helloWorld:runScript", "--stacktrace")
+                .withArguments(":helloWorld:clean", ":helloWorld:build", ":helloWorld:run",
+                        "-Dexpected=" + expected, ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
 
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:run").getOutcome(), "Failed build!");
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:runScript").getOutcome(), "Failed build!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:run").getOutcome(), "Run failed!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:runScript").getOutcome(), "RunScript failed!");
     }
 
 }
