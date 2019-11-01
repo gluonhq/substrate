@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
+import static com.gluonhq.substrate.TestUtils.isCILinux;
 import static com.gluonhq.substrate.TestUtils.isTravis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -43,7 +44,7 @@ class HelloFXTest {
 
     @BeforeEach
     void notForTravis() {
-        assumeTrue(!isTravis());
+        assumeTrue(!isTravis() || isCILinux());
     }
 
     @Test
