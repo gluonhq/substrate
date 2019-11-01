@@ -1,41 +1,35 @@
 [
   {
     "name" : "com.sun.pisces.AbstractSurface",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "fields" : [
+      {"name":"nativePtr" }
+    ]
   }
 ,
   {
     "name" : "com.sun.pisces.JavaSurface",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "fields" : [
+      {"name":"dataInt" }
+    ]
   }
 ,
   {
     "name" : "com.sun.pisces.PiscesRenderer",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "fields" : [
+      {"name":"nativePtr" },
+      {"name":"surface" }
+    ]
   }
 ,
   {
     "name" : "com.sun.pisces.Transform6",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "fields" : [
+      {"name":"m00" },
+      {"name":"m01" },
+      {"name":"m10" },
+      {"name":"m11" },
+      {"name":"m02" },
+      {"name":"m12" }
+    ]
   }
 ]

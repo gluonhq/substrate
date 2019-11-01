@@ -1,82 +1,53 @@
 [
   {
     "name" : "com.sun.glass.ui.ios.IosApplication",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"setEventThread","parameterTypes":[] }
+    ]
   }
 ,
   {
-    "name" : "com.sun.glass.ui.ios.IosCursor",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.ios.IosCursor"
   }
 ,
   {
     "name" : "com.sun.glass.ui.ios.IosGestureSupport",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"rotateGesturePerformed","parameterTypes":["com.sun.glass.ui.View","int","int","int","int","int","float"] },
+      {"name":"scrollGesturePerformed","parameterTypes":["com.sun.glass.ui.View","int","boolean","float","float","float","float","float","float"] },
+      {"name":"swipeGesturePerformed","parameterTypes":["com.sun.glass.ui.View","int","int","int","int","int","int"] },
+      {"name":"magnifyGesturePerformed","parameterTypes":["com.sun.glass.ui.View","int","int","int","int","int","float"] },
+      {"name":"gestureFinished","parameterTypes":["com.sun.glass.ui.View","int","int","int","int","int"] },
+      {"name":"notifyBeginTouchEvent","parameterTypes":["com.sun.glass.ui.View","int","int"] },
+      {"name":"notifyNextTouchEvent","parameterTypes":["com.sun.glass.ui.View","int","long","float","float"] },
+      {"name":"notifyEndTouchEvent","parameterTypes":["com.sun.glass.ui.View"] }
+    ]
   }
 ,
   {
-    "name" : "com.sun.glass.ui.ios.IosMenuBarDelegate",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.ios.IosMenuBarDelegate"
   }
 ,
   {
-    "name" : "com.sun.glass.ui.ios.IosPixels",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.ios.IosPixels"
   }
 ,
   {
     "name" : "com.sun.glass.ui.ios.IosView",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "fields" : [
+      {"name":"nativePtr" }
+    ]
   }
 ,
   {
-    "name" : "com.sun.glass.ui.ios.IosWindow",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.ios.IosWindow"
   }
 ,
   {
     "name" : "java.util.Vector",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"addElement","parameterTypes":["java.lang.Object"] }
+    ]
   }
 ,
   {
@@ -90,71 +61,53 @@
 ,
   {
     "name" : "com.sun.javafx.font.coretext.CGAffineTransform",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"a" },
+      {"name":"b" },
+      {"name":"c" },
+      {"name":"d" },
+      {"name":"tx" },
+      {"name":"ty" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.coretext.CGPoint",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"x" },
+      {"name":"y" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.coretext.CGRect",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"origin" },
+      {"name":"size" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.coretext.CGSize",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"width" },
+      {"name":"height" }
+    ]
   }
 ,
   {
-    "name" : "com.sun.javafx.font.FontConfigManager$FcCompFont",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
-  }
-,
-  {
-    "name" : "com.sun.javafx.font.FontConfigManager$FontConfigFont",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
-  }
-,
-  {
-    "name" : "com.sun.javafx.iio.ios.IosImageLoader",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.javafx.iio.ios.IosImageLoader"
   }
 ]

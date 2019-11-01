@@ -1,151 +1,119 @@
 [
   {
     "name" : "com.sun.glass.ui.mac.MacApplication",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"setEventThread","parameterTypes":[] },
+      {"name":"notifyApplicationDidTerminate","parameterTypes":[] }
+    ]
   }
 ,
   {
-    "name" : "com.sun.glass.ui.mac.MacCommonDialogs",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.mac.MacCommonDialogs"
   }
 ,
   {
-    "name" : "com.sun.glass.ui.mac.MacCursor",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.mac.MacCursor"
   }
 ,
   {
     "name" : "com.sun.glass.ui.mac.MacGestureSupport",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"rotateGesturePerformed","parameterTypes":["com.sun.glass.ui.View","int","int","int","int","int","float"] },
+      {"name":"scrollGesturePerformed","parameterTypes":["com.sun.glass.ui.View","int","int","int","int","int","int","float","float"] },
+      {"name":"swipeGesturePerformed","parameterTypes":["com.sun.glass.ui.View","int","int","int","int","int","int"] },
+      {"name":"magnifyGesturePerformed","parameterTypes":["com.sun.glass.ui.View","int","int","int","int","int","float"] },
+      {"name":"gestureFinished","parameterTypes":["com.sun.glass.ui.View","int","int","int","int","int"] },
+      {"name":"notifyBeginTouchEvent","parameterTypes":["com.sun.glass.ui.View","int","int"] },
+      {"name":"notifyNextTouchEvent","parameterTypes":["com.sun.glass.ui.View","int","long","float","float"] },
+      {"name":"notifyEndTouchEvent","parameterTypes":["com.sun.glass.ui.View"] }
+    ]
   }
 ,
   {
-    "name" : "com.sun.glass.ui.mac.MacMenuBarDelegate",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.mac.MacMenuBarDelegate"
   }
 ,
   {
-    "name" : "com.sun.glass.ui.mac.MacMenuDelegate",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.mac.MacMenuDelegate"
   }
 ,
   {
     "name" : "com.sun.glass.ui.mac.MacView",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"notifyInputMethodMac","parameterTypes":["java.lang.String","int","int","int","int","int"] }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.mac.MacWindow",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"notifyMove","parameterTypes":["int","int","boolean"] },
+      {"name":"notifyResize","parameterTypes":["int","int","int"] }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.coretext.CGAffineTransform",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"a" },
+      {"name":"b" },
+      {"name":"c" },
+      {"name":"d" },
+      {"name":"tx" },
+      {"name":"ty" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.coretext.CGPoint",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"x" },
+      {"name":"y" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.coretext.CGRect",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"origin" },
+      {"name":"size" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.coretext.CGSize",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"width" },
+      {"name":"height" }
+    ]
   }
 ,
   {
-    "name" : "com.sun.javafx.font.FontConfigManager$FcCompFont",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.javafx.font.FontConfigManager$FcCompFont"
   }
 ,
   {
-    "name" : "com.sun.javafx.font.FontConfigManager$FontConfigFont",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.javafx.font.FontConfigManager$FontConfigFont"
   }
 ,
   {
     "name" : "com.sun.glass.ui.EventLoop",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"enter","parameterTypes":[] },
+      {"name":"leave","parameterTypes":["java.lang.Object"] }
+    ]
   }
 ]

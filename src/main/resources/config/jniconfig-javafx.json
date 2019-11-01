@@ -1,131 +1,148 @@
 [
   {
     "name" : "com.sun.glass.ui.Application",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"notifyWillFinishLaunching","parameterTypes":[] },
+      {"name":"notifyDidFinishLaunching","parameterTypes":[] },
+      {"name":"notifyWillBecomeActive","parameterTypes":[] },
+      {"name":"notifyDidBecomeActive","parameterTypes":[] },
+      {"name":"notifyWillResignActive","parameterTypes":[] },
+      {"name":"notifyDidResignActive","parameterTypes":[] },
+      {"name":"notifyWillHide","parameterTypes":[] },
+      {"name":"notifyDidHide","parameterTypes":[] },
+      {"name":"notifyWillUnhide","parameterTypes":[] },
+      {"name":"notifyDidUnhide","parameterTypes":[] },
+      {"name":"notifyOpenFiles","parameterTypes":["java.lang.String[]"] },
+      {"name":"notifyWillQuit","parameterTypes":[] },
+      {"name":"createPixels","parameterTypes":["int", "int", "int[]", "float", "float"] },
+      {"name":"getScaleFactor","parameterTypes":["int", "int", "int", "int"] },
+      {"name":"reportException","parameterTypes":["java.lang.Throwable"] },
+      {"name":"enterNestedEventLoop","parameterTypes":[] },
+      {"name":"leaveNestedEventLoop","parameterTypes":["java.lang.Object"] }
+    ]
   }
 ,
   {
-    "name" : "com.sun.glass.ui.Clipboard",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.Clipboard"
   }
 ,
   {
-    "name" : "com.sun.glass.ui.Cursor",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "name" : "com.sun.glass.ui.Cursor"
   }
 ,
   {
     "name" : "com.sun.glass.ui.Menu",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"notifyMenuOpening","parameterTypes":[] },
+      {"name":"notifyMenuClosed","parameterTypes":[] }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.MenuItem$Callback",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"action","parameterTypes":[] },
+      {"name":"validate","parameterTypes":[] }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.Pixels",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"attachData","parameterTypes":["long"] }
+    ],
+    "fields" : [
+      {"name":"ints" },
+      {"name":"bytes" },
+      {"name":"width" },
+      {"name":"height" }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.Screen",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":["long","int","int","int","int","int","int","int","int","int","int","int","int","int","int","int","float","float","float","float"] },
+      {"name":"notifySettingsChanged","parameterTypes":[] }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.Size",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":["int","int"] }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.View",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"notifyView","parameterTypes":["int"] },
+      {"name":"notifyResize","parameterTypes":["int","int"] },
+      {"name":"notifyRepaint","parameterTypes":["int","int","int","int"] },
+      {"name":"notifyMenu","parameterTypes":["int","int","int","int","boolean"] },
+      {"name":"notifyMouse","parameterTypes":["int","int","int","int","int","int","int","boolean","boolean"] },
+      {"name":"notifyDragEnter","parameterTypes":["int","int","int","int","int"] },
+      {"name":"notifyDragOver","parameterTypes":["int","int","int","int","int"] },
+      {"name":"notifyDragLeave","parameterTypes":[] },
+      {"name":"notifyDragDrop","parameterTypes":["int","int","int","int","int"] },
+      {"name":"notifyDragEnd","parameterTypes":["int"] },
+      {"name":"notifyKey","parameterTypes":["int","int","char[]","int"] },
+      {"name":"notifyInputMethod","parameterTypes":["java.lang.String","int[]","int[]","byte[]","int","int","int"] },
+      {"name":"notifyInputMethodCandidatePosRequest","parameterTypes":["int"] },
+      {"name":"getAccessible","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"ptr" },
+      {"name":"window" },
+      {"name":"width" },
+      {"name":"height" }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.Window",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"notifyMove","parameterTypes":["int","int"] },
+      {"name":"notifyResize","parameterTypes":["int","int","int"] },
+      {"name":"notifyScaleChanged","parameterTypes":["float","float","float","float"] },
+      {"name":"notifyClose","parameterTypes":[] },
+      {"name":"notifyFocus","parameterTypes":["int"] },
+      {"name":"notifyFocusUngrab","parameterTypes":[] },
+      {"name":"notifyFocusDisabled","parameterTypes":[] },
+      {"name":"notifyDestroy","parameterTypes":[] },
+      {"name":"notifyDelegatePtr","parameterTypes":["long"] },
+      {"name":"notifyMoveToAnotherScreen","parameterTypes":["com.sun.glass.ui.Screen"] }
+    ],
+    "fields" : [
+      {"name":"ptr" },
+      {"name":"view" },
+      {"name":"x" },
+      {"name":"y" },
+      {"name":"width" },
+      {"name":"height" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.geom.Path2D",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":["int","byte[]","int","float[]","int"] }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.CommonDialogs$ExtensionFilter",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"getDescription","parameterTypes":[] },
+      {"name":"extensionsToArray","parameterTypes":[] }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.CommonDialogs$FileChooserResult",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":["java.util.List","com.sun.glass.ui.CommonDialogs$ExtensionFilter"] }
+    ]
   }
 ]
