@@ -190,8 +190,8 @@ public class FileDeps {
         }
         Logger.logDebug("Setup dependencies done");
 
-        if (!Files.exists(javaStaticLibs)) {
-            Logger.logSevere("Error: path " + javaStaticLibs + " doesn't exist");
+        if (!Files.exists(defaultJavaStaticPath)) {
+            Logger.logSevere("Error: path " + defaultJavaStaticPath + " doesn't exist");
             return false;
         }
         if (configuration.isUseJavaFX() && !Files.exists(configuration.getJavafxStaticLibsPath())) {
