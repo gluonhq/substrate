@@ -22,7 +22,7 @@ javafx {
 }
 
 run {
-    jvmArgs = ["-Dprism.verbose=true"] //, "-Dprism.order=sw"]
+    jvmArgs = ["-Dprism.verbose=true", "-Dprism.order=sw"]
 }
 
 mainClassName = "com.gluonhq.substrate.test.Main"
@@ -49,7 +49,7 @@ task runScript(type: Exec) {
     def argsList = ["${java_home}/bin/java", '-cp', substratePath,
                     "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
-                    "-Dgraalvm=$graal_path"] //, "-Dprism.sw=true"]
+                    "-Dgraalvm=$graal_path", "-Dprism.sw=true"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
     }

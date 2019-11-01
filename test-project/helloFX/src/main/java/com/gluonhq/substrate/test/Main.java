@@ -25,7 +25,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-//        System.setProperty("prism.order", "sw");
+        System.setProperty("prism.order", "sw");
         System.setProperty("prism.verbose", "true");
         if ("ios".equals(System.getProperty("substrate.target"))) {
             System.setProperty("glass.platform", "ios");
