@@ -149,6 +149,7 @@ public class ProcessRunner {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    System.err.println(line);
                     sb.append(line).append("\n");
                     if (info) {
                         Logger.logInfo("[SUB] " + line);
