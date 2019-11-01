@@ -65,24 +65,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             "com.sun.glass.ui.ios.IosWindow"
     );
 
-    private static final List<String>javafxJNIIosClassList = Arrays.asList(
-            "com.sun.glass.ui.ios.IosApplication",
-            "com.sun.glass.ui.ios.IosCursor",
-            "com.sun.glass.ui.ios.IosGestureSupport",
-            "com.sun.glass.ui.ios.IosMenuBarDelegate",
-            "com.sun.glass.ui.ios.IosPixels",
-            "com.sun.glass.ui.ios.IosView",
-            "com.sun.glass.ui.ios.IosWindow",
-            "java.util.Vector",
-            "java.lang.Thread",
-            "com.sun.javafx.font.coretext.CGAffineTransform",
-            "com.sun.javafx.font.coretext.CGPoint",
-            "com.sun.javafx.font.coretext.CGRect",
-            "com.sun.javafx.font.coretext.CGSize",
-            "com.sun.javafx.font.FontConfigManager$FcCompFont",
-            "com.sun.javafx.font.FontConfigManager$FontConfigFont",
-            "com.sun.javafx.iio.ios.IosImageLoader"
-    );
+    private static final String javafxJNIIosClassList = "jniconfig-javafx-arm64-ios.json";
 
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-lz", "-lstrictmath", "-llibchelper",
@@ -157,7 +140,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new ArrayList<>(super.getJNIClassList(useJavaFX, usePrismSW));
-        if (useJavaFX) answer.addAll(javafxJNIIosClassList);
+        if (useJavaFX) answer.add(javafxJNIIosClassList);
         return answer;
     }
 

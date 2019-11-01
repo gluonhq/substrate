@@ -82,20 +82,12 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return answer;
     }
 
-    private static final List<String> javafxJNILinuxClassList = Arrays.asList("com.sun.glass.ui.gtk.GtkApplication",
-            "com.sun.glass.ui.gtk.GtkPixels",
-            "com.sun.glass.ui.gtk.GtkView",
-            "com.sun.glass.ui.gtk.GtkWindow",
-            "com.sun.javafx.font.FontConfigManager$FcCompFont",
-            "com.sun.javafx.font.FontConfigManager$FontConfigFont",
-            "com.sun.javafx.font.freetype.FT_Bitmap",
-            "com.sun.javafx.font.freetype.FT_GlyphSlotRec",
-            "com.sun.javafx.font.freetype.FT_Glyph_Metrics");
+    private static final String javafxJNILinuxClassList = "jniconfig-javafx-x86_64-linux.json";
 
     @Override
     List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new ArrayList<>(super.getJNIClassList(useJavaFX, usePrismSW));
-        if (useJavaFX) answer.addAll(javafxJNILinuxClassList);
+        if (useJavaFX) answer.add(javafxJNILinuxClassList);
         return answer;
     }
 
