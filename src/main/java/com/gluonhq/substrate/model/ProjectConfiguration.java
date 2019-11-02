@@ -131,15 +131,7 @@ public class ProjectConfiguration {
      * @return the path to the location where the static JDK libraries are expected.
      */
     public Path getJavaStaticLibsPath() {
-<<<<<<< HEAD
         return javaStaticLibs != null? Paths.get(javaStaticLibs): getDefaultJavaStaticLibsPath();
-=======
-        if (javaStaticLibs != null) {
-            return Paths.get(javaStaticLibs);
-        } else {
-            return getDefaultJavaStaticLibsPath();
-        }
->>>>>>> allow to set the custom location for the java static libs location
     }
 
     /**
