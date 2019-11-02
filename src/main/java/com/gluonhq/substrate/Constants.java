@@ -81,7 +81,7 @@ public class Constants {
     public static final String TARGET_IOS = "ios";
     public static final String TARGET_IOS_SIM = "ios-sim";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+9";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "14-ea+2";
     public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "14-ea+gvm1";
 
 //    /**
