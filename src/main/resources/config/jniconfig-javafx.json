@@ -18,16 +18,24 @@
       {"name":"getScaleFactor","parameterTypes":["int", "int", "int", "int"] },
       {"name":"reportException","parameterTypes":["java.lang.Throwable"] },
       {"name":"enterNestedEventLoop","parameterTypes":[] },
-      {"name":"leaveNestedEventLoop","parameterTypes":["java.lang.Object"] }
+      {"name":"leaveNestedEventLoop","parameterTypes":["java.lang.Object"] },
+      {"name":"GetApplication","parameterTypes":[] },
+      {"name":"getName","parameterTypes":[] }
     ]
   }
 ,
   {
-    "name" : "com.sun.glass.ui.Clipboard"
+    "name" : "com.sun.glass.ui.Clipboard",
+    "methods" : [
+      {"name":"contentChanged","parameterTypes":[] }
+    ]
   }
 ,
   {
-    "name" : "com.sun.glass.ui.Cursor"
+    "name" : "com.sun.glass.ui.Cursor",
+    "fields" : [
+      {"name":"ptr" }
+    ]
   }
 ,
   {
@@ -49,7 +57,8 @@
   {
     "name" : "com.sun.glass.ui.Pixels",
     "methods" : [
-      {"name":"attachData","parameterTypes":["long"] }
+      {"name":"attachData","parameterTypes":["long"] },
+      {"name":"<init>","parameterTypes":["int","int","java.nio.ByteBuffer"] }
     ],
     "fields" : [
       {"name":"ints" },
@@ -70,6 +79,7 @@
   {
     "name" : "com.sun.glass.ui.Size",
     "methods" : [
+      {"name":"<init>","parameterTypes":[] },
       {"name":"<init>","parameterTypes":["int","int"] }
     ]
   }
@@ -87,6 +97,7 @@
       {"name":"notifyDragLeave","parameterTypes":[] },
       {"name":"notifyDragDrop","parameterTypes":["int","int","int","int","int"] },
       {"name":"notifyDragEnd","parameterTypes":["int"] },
+      {"name":"notifyScroll","parameterTypes":["int","int","int","int","double","double","int","int","int","int","int","double","double"] },
       {"name":"notifyKey","parameterTypes":["int","int","char[]","int"] },
       {"name":"notifyInputMethod","parameterTypes":["java.lang.String","int[]","int[]","byte[]","int","int","int"] },
       {"name":"notifyInputMethodCandidatePosRequest","parameterTypes":["int"] },
@@ -112,7 +123,9 @@
       {"name":"notifyFocusDisabled","parameterTypes":[] },
       {"name":"notifyDestroy","parameterTypes":[] },
       {"name":"notifyDelegatePtr","parameterTypes":["long"] },
-      {"name":"notifyMoveToAnotherScreen","parameterTypes":["com.sun.glass.ui.Screen"] }
+      {"name":"notifyMoveToAnotherScreen","parameterTypes":["com.sun.glass.ui.Screen"] },
+      {"name":"notifyLevelChanged","parameterTypes":["int"] },
+      {"name":"isEnabled","parameterTypes":[] }
     ],
     "fields" : [
       {"name":"ptr" },

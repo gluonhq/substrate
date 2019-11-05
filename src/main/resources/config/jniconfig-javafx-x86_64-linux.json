@@ -1,91 +1,101 @@
 [
   {
     "name" : "com.sun.glass.ui.gtk.GtkApplication",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "fields" : [
+      {"name":"display" },
+      {"name":"screen" },
+      {"name":"visualID" }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.gtk.GtkPixels",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":["int","int","java.nio.ByteBuffer"] }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.gtk.GtkView",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"notifyInputMethodDraw","parameterTypes":["java.lang.String","int","int","int","byte[]"] },
+      {"name":"notifyInputMethodCaret","parameterTypes":["int","int","int"] },
+      {"name":"notifyPreeditMode","parameterTypes":["boolean"] }
+    ]
   }
 ,
   {
     "name" : "com.sun.glass.ui.gtk.GtkWindow",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"notifyStateChanged","parameterTypes":["int"] }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.FontConfigManager$FcCompFont",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "fields" : [
+      {"name":"fcName" },
+      {"name":"firstFont" },
+      {"name":"allFonts" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.FontConfigManager$FontConfigFont",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"familyName" },
+      {"name":"styleStr" },
+      {"name":"fullName" },
+      {"name":"fontFile" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.freetype.FT_Bitmap",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "fields" : [
+      {"name":"rows" },
+      {"name":"width" },
+      {"name":"pitch" },
+      {"name":"buffer" },
+      {"name":"num_grays" },
+      {"name":"pixel_mode" },
+      {"name":"palette_mode" },
+      {"name":"palette" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.freetype.FT_GlyphSlotRec",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"metrics" },
+      {"name":"linearHoriAdvance" },
+      {"name":"linearVertAdvance" },
+      {"name":"advance_x" },
+      {"name":"advance_y" },
+      {"name":"format" },
+      {"name":"bitmap" },
+      {"name":"bitmap_left" },
+      {"name":"bitmap_top" }
+    ]
   }
 ,
   {
     "name" : "com.sun.javafx.font.freetype.FT_Glyph_Metrics",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredFields" : true,
-    "allPublicFields" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true
+    "fields" : [
+      {"name":"width" },
+      {"name":"height" },
+      {"name":"horiBearingX" },
+      {"name":"horiBearingY" },
+      {"name":"horiAdvance" },
+      {"name":"vertBearingX" },
+      {"name":"vertBearingY" },
+      {"name":"vertAdvance" }
+    ]
   }
 ]
