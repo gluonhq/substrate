@@ -44,7 +44,7 @@ class HelloFXTest {
 
     @BeforeEach
     void notForTravis() {
-        assumeTrue(!isTravis() || isCILinux());
+//        assumeTrue(!isTravis() || isCILinux());
     }
 
     @Test
