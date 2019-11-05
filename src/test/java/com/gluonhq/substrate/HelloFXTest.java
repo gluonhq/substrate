@@ -30,22 +30,13 @@ package com.gluonhq.substrate;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
-import static com.gluonhq.substrate.TestUtils.isCILinux;
-import static com.gluonhq.substrate.TestUtils.isTravis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class HelloFXTest {
-
-    @BeforeEach
-    void notForTravis() {
-//        assumeTrue(!isTravis());
-    }
 
     @Test
     void helloFXTest() {
