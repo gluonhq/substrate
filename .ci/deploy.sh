@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-openssl aes-256-cbc -K $encrypted_55b8fcde0fad_key -iv $encrypted_55b8fcde0fad_iv -in .ci/sonatype.gpg.enc -out sonatype.gpg -d
+openssl aes-256-cbc -K $encrypted_da16bb6c74a0_key -iv $encrypted_da16bb6c74a0_iv -in .ci/sonatype.gpg.enc -out sonatype.gpg -d
 if [[ ! -s sonatype.gpg ]]
    then echo "Decryption failed."
    exit 1
