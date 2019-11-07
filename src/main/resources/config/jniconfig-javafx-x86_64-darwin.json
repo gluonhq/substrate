@@ -34,7 +34,10 @@
   }
 ,
   {
-    "name" : "com.sun.glass.ui.mac.MacMenuDelegate"
+    "name" : "com.sun.glass.ui.mac.MacMenuDelegate",
+    "fields": [
+      {"name":"menu" }
+    ]
   }
 ,
   {

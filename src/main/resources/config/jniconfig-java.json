@@ -21,7 +21,8 @@
   {
     "name" : "java.lang.Class",
     "methods" : [
-      {"name":"forName","parameterTypes":["java.lang.String", "boolean", "java.lang.ClassLoader"] }
+      {"name":"forName","parameterTypes":["java.lang.String", "boolean", "java.lang.ClassLoader"] },
+      {"name":"getCanonicalName","parameterTypes":[] }
     ]
   }
 ,
@@ -36,6 +37,7 @@
   {
     "name" : "java.lang.Integer",
     "methods" : [
+      {"name":"<init>","parameterTypes":["int"] },
       {"name":"intValue","parameterTypes":[] }
     ]
   }

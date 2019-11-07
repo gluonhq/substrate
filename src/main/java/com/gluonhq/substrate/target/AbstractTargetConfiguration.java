@@ -384,15 +384,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
             for (String javaFile : getJNIClassList(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 bw.write(",\n");
-                Files.lines(Paths.get(AbstractTargetConfiguration.class.getResource("/config/" + javaFile).toURI()))
+                List<String> lines = Files.lines(Paths.get(AbstractTargetConfiguration.class.getResource("/config/" + javaFile).toURI()))
                         .filter(line -> !line.startsWith("[") && !line.startsWith("]"))
-                        .forEach(line -> {
-                            try {
-                                bw.write(line + "\n");
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        });
+                        .collect(Collectors.toList());
+                for (String line : lines) {
+                    bw.write(line + "\n");
+                }
             }
             bw.write("]");
         } catch (URISyntaxException e) {
