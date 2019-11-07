@@ -37,3 +37,11 @@ int main(int argc, char** argv) {
     #endif
     outBox(argc, argv);
 }
+
+void Java_java_io_ObjectOutputStream_floatsToBytes( ) {
+    fprintf(stderr, "FloatsToBytesmismatch\n");
+}
+
+void Java_java_io_ObjectOutputStream_doublesToBytes() {
+    fprintf(stderr, "DoublesToBytesmismatch\n");
+}
