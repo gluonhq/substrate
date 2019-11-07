@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.gluonhq"
-version = "0.0.1-SNAPSHOT"
+version = "0.0.2-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -92,9 +92,13 @@ publishing {
     }
     repositories {
         maven {
-            def releasesRepoUrl  = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-            def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            if (project.hasProperty("repositoryUrl")) {
+              url = project.getProperty("repositoryUrl")
+            } else {
+              def releasesRepoUrl  = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+              def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+              url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            }
             if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
                 credentials {
                     username project.property('sonatypeUsername')
