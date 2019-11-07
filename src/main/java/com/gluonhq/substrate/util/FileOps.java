@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,10 +42,13 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -146,5 +150,60 @@ public class FileOps {
             Logger.logFatal(ex, "Failed copying " + source + " to " + destination + ": " + ex);
         }
         return destination;
+    }
+
+    /**
+     * Deletes recursively a directory and all its content
+     * @param start the top level directory to be removed
+     * @throws IOException if a file or directory can't be deleted
+     */
+    public static void deleteDirectory(Path start) throws IOException {
+        if (start == null || !Files.exists(start)) {
+            throw new RuntimeException("Error: path " + start + " doesn't exist");
+        }
+
+        Files.walkFileTree(start, new HashSet(), Integer.MAX_VALUE, new FileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                return FileVisitResult.TERMINATE;
+
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    /**
+     * Copies recursively a directory and all its content
+     * @param source path of the directory to be copied
+     * @param destination path where the directory will be copied
+     * @throws IOException if an exception happens when listing the content
+     */
+    public static void copyDirectory(Path source, Path destination) throws IOException {
+        copyFile(source, destination);
+        if (Files.isDirectory(source)) {
+            List<Path> fileNames = Files.list(source)
+                    .map(Path::getFileName)
+                    .collect(Collectors.toList());
+            for (Path fileName : fileNames) {
+                copyDirectory(source.resolve(fileName), destination.resolve(fileName));
+            }
+        }
     }
 }

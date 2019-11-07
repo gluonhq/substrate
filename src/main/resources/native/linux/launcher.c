@@ -35,3 +35,16 @@ int main() {
     #endif
     (*IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e)(1);
 }
+
+// the following functions are used in Java 11 but not in 14
+// we use the native libs from 14.
+// in case they are still able to be called, we need to implement them
+
+void Java_java_io_ObjectOutputStream_floatsToBytes( ) {
+    fprintf(stderr, "FloatsToBytesmismatch\n");
+}
+
+void Java_java_io_ObjectOutputStream_doublesToBytes() {
+    fprintf(stderr, "DoublesToBytesmismatch\n");
+}
+

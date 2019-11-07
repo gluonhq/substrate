@@ -115,4 +115,19 @@ class IOSTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:runScript").getOutcome(), "RunScript failed!");
     }
 
+    @Test
+    void helloFXTest() {
+        assumeTrue(!isTravis());
+
+        BuildResult result = GradleRunner.create()
+                .withProjectDir(new File("test-project"))
+                .withGradleVersion("5.3")
+                .withArguments(":helloFX:clean", ":helloFX:build", "-Dsubstrate.target=ios", ":helloFX:run", ":helloFX:runScript", "--stacktrace")
+                .forwardOutput()
+                .build();
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:run").getOutcome(), "Failed build!");
+        assertEquals(TaskOutcome.SUCCESS, result.task(":helloFX:runScript").getOutcome(), "Failed build!");
+    }
+
 }

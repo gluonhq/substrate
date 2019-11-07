@@ -6,13 +6,23 @@ repositories {
     mavenCentral()
 }
 
+def target = System.getProperty("substrate.target")
+
+dependencies {
+    if ("ios" == target) {
+        implementation 'com.googlecode.plist:dd-plist:1.22'
+        implementation 'com.github.jnr:jnr-ffi:2.1.10'
+        implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
+    }
+}
+
 javafx {
     version = "13.0.1"
     modules = [ "javafx.controls" ]
 }
 
 run {
-    jvmArgs = ["-Dprism.verbose=true", "-Dprism.order=sw"]
+    jvmArgs = ["-Dprism.verbose=true"] //, "-Dprism.order=sw"]
 }
 
 mainClassName = "com.gluonhq.substrate.test.Main"
@@ -20,22 +30,29 @@ mainClassName = "com.gluonhq.substrate.test.Main"
 def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
 
 task runScript(type: Exec) {
-    dependsOn 'clean'
     dependsOn 'build'
 
-    def graal_path = setupDependencies(platform)
+    def graal_path = setupGraalDependencies(platform)
 
     if (java_home == null) {
         throw new RuntimeException("java_home is not defined.")
     }
 
+    def javafx_path = setupJavaFXDependencies(platform, target)
+
     def rootFile = new File(rootDir.getParent().concat("/build/"))
-    def substratePath = rootFile.toString().concat("/classes/java/main") + ":" + rootFile.toString().concat("/resources/main")
+    def substratePath = rootFile.toString().concat("/classes/java/main") + ":" +
+            rootFile.toString().concat("/resources/main") + ":" +
+            "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}"
     def expected = System.getProperty("expected")
 
     def argsList = ["${java_home}/bin/java", '-cp', substratePath,
-                     "-Dimagecp=${project.sourceSets.main.runtimeClasspath.asPath}",
-                     "-Dgraalvm=$graal_path", "-Djavafx=true", "-Dprism.sw=true"]
+                    "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
+                            "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
+                    "-Dgraalvm=$graal_path"] //, "-Dprism.sw=true"]
+    if (target != null) {
+        argsList += ["-DtargetProfile=$target"]
+    }
     if (expected != null) {
         argsList += ["-Dexpected=$expected"]
     }

@@ -37,6 +37,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -76,7 +77,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getJavaFXReflectionClassList() {
-        List<String> answer = super.getJavaFXReflectionClassList();
+        List<String> answer = new ArrayList<>(super.getJavaFXReflectionClassList());
         answer.addAll(javafxReflectionLinuxClassList);
         return answer;
     }
@@ -93,7 +94,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
-        List<String> answer = super.getJNIClassList(useJavaFX, usePrismSW);
+        List<String> answer = new ArrayList<>(super.getJNIClassList(useJavaFX, usePrismSW));
         if (useJavaFX) answer.addAll(javafxJNILinuxClassList);
         return answer;
     }
