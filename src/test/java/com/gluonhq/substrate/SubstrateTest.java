@@ -29,7 +29,11 @@ package com.gluonhq.substrate;
 
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
+import org.gradle.internal.impldep.org.apache.commons.lang.ObjectUtils;
 import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -63,5 +67,12 @@ class SubstrateTest {
                 SubstrateDispatcher.nativeCompile(null, config, null);
             });
         }
+    }
+
+    @Test
+    void testAssertGraal() {
+        ProjectConfiguration config = new ProjectConfiguration();
+        assertThrows(NullPointerException.class, () -> SubstrateDispatcher.assertGraal(null));
+        assertThrows(IllegalArgumentException.class, () -> SubstrateDispatcher.assertGraal(config));
     }
 }
