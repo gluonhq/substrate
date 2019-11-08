@@ -76,7 +76,7 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new ArrayList<>(super.getJNIClassList(useJavaFX, usePrismSW));
-        if (useJavaFX) answer.addAll(javafxJNIMacClassList);
+        if (useJavaFX) answer.add(javafxJNIMacClassList);
         return answer;
     }
 
@@ -96,22 +96,6 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
             "com.sun.javafx.font.coretext.CTFactory"
     );
 
-    private static final List<String>javafxJNIMacClassList = Arrays.asList(
-            "com.sun.glass.ui.mac.MacApplication",
-            "com.sun.glass.ui.mac.MacCommonDialogs",
-            "com.sun.glass.ui.mac.MacCursor",
-            "com.sun.glass.ui.mac.MacGestureSupport",
-            "com.sun.glass.ui.mac.MacMenuBarDelegate",
-            "com.sun.glass.ui.mac.MacMenuDelegate",
-            "com.sun.glass.ui.mac.MacView",
-            "com.sun.glass.ui.mac.MacWindow",
-            "com.sun.javafx.font.coretext.CGAffineTransform",
-            "com.sun.javafx.font.coretext.CGPoint",
-            "com.sun.javafx.font.coretext.CGRect",
-            "com.sun.javafx.font.coretext.CGSize",
-            "com.sun.javafx.font.FontConfigManager$FcCompFont",
-            "com.sun.javafx.font.FontConfigManager$FontConfigFont",
-            "com.sun.glass.ui.EventLoop"
-    );
+    private static final String javafxJNIMacClassList = "jniconfig-javafx-x86_64-darwin.json";
 
 }

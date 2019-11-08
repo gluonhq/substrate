@@ -42,8 +42,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -272,6 +274,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             throw new IOException("Application not found at path " + app.toString());
         }
         ProcessRunner runner = new ProcessRunner(app.toString());
+        runner.setInfo(true);
         if (runner.runProcess("run " + appName) == 0) {
             return runner.getLastResponse();
         } else {
@@ -305,10 +308,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
         if (!useJavaFX) return Collections.emptyList();
         List<String> answer = new LinkedList<>();
-        answer.addAll(javaJNIClassList);
-        answer.addAll(javafxJNIClassList);
+        answer.add(javaJNIClassList);
+        answer.add(javafxJNIClassList);
         if (usePrismSW) {
-            answer.addAll(javafxSWJNIClassList);
+            answer.add(javafxSWJNIClassList);
         }
         return answer;
     }
@@ -379,20 +382,21 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
             bw.write("[\n");
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
-            for (String javaClass : getJNIClassList(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
-                // TODO: create list of exclusions
-                if ("arm64-ios".equals(suffix) && javaClass.equals("java.lang.Thread")) {
-                    writeThreadEntry(bw);
-                } else {
-                    writeEntry(bw, javaClass);
+            for (String javaFile : getJNIClassList(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
+                bw.write(",\n");
+                List<String> lines = Files.lines(Paths.get(AbstractTargetConfiguration.class.getResource("/config/" + javaFile).toURI()))
+                        .filter(line -> !line.startsWith("[") && !line.startsWith("]"))
+                        .collect(Collectors.toList());
+                for (String line : lines) {
+                    bw.write(line + "\n");
                 }
             }
             bw.write("]");
+        } catch (URISyntaxException e) {
+            throw new IOException("Error finding jni file: " + e.getMessage());
         }
         return jniPath;
     }
-
-
 
     private static void writeEntry(BufferedWriter bw, String javaClass) throws IOException {
         writeEntry(bw, javaClass, false);
@@ -625,50 +629,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "com.sun.prism.sw.SWPipeline",
             "com.sun.prism.sw.SWResourceFactory");
 
-    private static final List<String> javaJNIClassList = Arrays.asList(
-            "java.io.File",
-            "java.io.FileNotFoundException",
-            "java.io.InputStream",
-            "java.lang.Boolean",
-            "java.lang.Class",
-            "java.lang.ClassNotFoundException",
-            "java.lang.IllegalStateException",
-            "java.lang.Integer",
-            "java.lang.Iterable",
-            "java.lang.Long",
-            "java.lang.Runnable",
-            "java.lang.String",
-            "java.net.SocketTimeoutException",
-            "java.nio.ByteBuffer",
-            "java.nio.charset.Charset",
-            "java.util.ArrayList",
-            "java.util.HashMap",
-            "java.util.HashSet",
-            "java.util.Iterator",
-            "java.util.List",
-            "java.util.Map",
-            "java.util.Set");
-
-    private static final List<String> javafxJNIClassList = Arrays.asList(
-            "com.sun.glass.ui.Application",
-            "com.sun.glass.ui.Clipboard",
-            "com.sun.glass.ui.Cursor",
-            "com.sun.glass.ui.Menu",
-            "com.sun.glass.ui.MenuItem$Callback",
-            "com.sun.glass.ui.Pixels",
-            "com.sun.glass.ui.Screen",
-            "com.sun.glass.ui.Size",
-            "com.sun.glass.ui.View",
-            "com.sun.glass.ui.Window",
-            "com.sun.javafx.geom.Path2D",
-            "com.sun.glass.ui.CommonDialogs$ExtensionFilter",
-            "com.sun.glass.ui.CommonDialogs$FileChooserResult");
-
-    private static final List<String> javafxSWJNIClassList = Arrays.asList(
-            "com.sun.pisces.AbstractSurface",
-            "com.sun.pisces.JavaSurface",
-            "com.sun.pisces.PiscesRenderer",
-            "com.sun.pisces.Transform6");
+    private static final String javaJNIClassList = "jniconfig-java.json";
+    private static final String javafxJNIClassList = "jniconfig-javafx.json";
+    private static final String javafxSWJNIClassList = "jniconfig-javafxsw.json";
 
     // Default settings below, can be overridden by subclasses
 
