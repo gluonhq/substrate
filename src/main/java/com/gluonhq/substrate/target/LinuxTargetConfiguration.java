@@ -37,7 +37,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,23 +64,6 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
             "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
-
-    private static final String javafxReflectionLinuxClassList = "reflectionconfig-javafx-x86_64-linux.json";
-    private static final String javafxJNILinuxClassList = "jniconfig-javafx-x86_64-linux.json";
-
-    @Override
-    List<String> getJavaFXReflectionClassList() {
-        List<String> answer = new ArrayList<>(super.getJavaFXReflectionClassList());
-        answer.add(javafxReflectionLinuxClassList);
-        return answer;
-    }
-
-    @Override
-    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
-        List<String> answer = new ArrayList<>(super.getJNIClassList(useJavaFX, usePrismSW));
-        if (useJavaFX) answer.add(javafxJNILinuxClassList);
-        return answer;
-    }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {

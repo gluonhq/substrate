@@ -50,9 +50,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
 
-    private static final String javafxReflectionIosClassList =  "reflectionconfig-javafx-arm64-ios.json";
-    private static final String javafxJNIIosClassList = "jniconfig-javafx-arm64-ios.json";
-
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-lz", "-lstrictmath", "-llibchelper",
             "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm");
@@ -114,20 +111,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         Path gvmPath = paths.getGvmPath();
         Path objectFile = FileOps.findFile(gvmPath, "llvm.o");
         return Collections.singletonList(objectFile.toAbsolutePath().toString());
-    }
-
-    @Override
-    List<String> getJavaFXReflectionClassList() {
-        List<String> answer = new ArrayList<>(super.getJavaFXReflectionClassList());
-        answer.add(javafxReflectionIosClassList);
-        return answer;
-    }
-
-    @Override
-    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
-        List<String> answer = new ArrayList<>(super.getJNIClassList(useJavaFX, usePrismSW));
-        if (useJavaFX) answer.add(javafxJNIIosClassList);
-        return answer;
     }
 
     @Override

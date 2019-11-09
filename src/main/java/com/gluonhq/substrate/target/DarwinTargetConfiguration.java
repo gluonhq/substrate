@@ -65,22 +65,4 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,-framework,Foundation", "-Wl,-framework,AppKit",
             "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");
-
-    @Override
-    List<String> getJavaFXReflectionClassList() {
-        List<String> answer = new ArrayList<>(super.getJavaFXReflectionClassList());
-        answer.add(javafxReflectionMacClassList);
-        return answer;
-    }
-
-    @Override
-    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
-        List<String> answer = new ArrayList<>(super.getJNIClassList(useJavaFX, usePrismSW));
-        if (useJavaFX) answer.add(javafxJNIMacClassList);
-        return answer;
-    }
-
-    private static final String javafxReflectionMacClassList = "reflectionconfig-javafx-x86_64-darwin.json";
-    private static final String javafxJNIMacClassList = "jniconfig-javafx-x86_64-darwin.json";
-
 }

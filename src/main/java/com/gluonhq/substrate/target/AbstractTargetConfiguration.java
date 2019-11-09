@@ -297,29 +297,33 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return true;
     }
 
-    List<String> getJavaReflectionClassList() {
-        return Collections.singletonList(javaReflectionClassList);
-    }
-
-    List<String> getJavaFXReflectionClassList() {
-        return Collections.singletonList(javafxReflectionClassList);
-    }
-
-    List<String> getJavaFXSWReflectionClassList() {
-        return Collections.singletonList(javafxSWReflectionClassList);
-    }
-
-    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
-        if (!useJavaFX) return Collections.emptyList();
+    private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
-        answer.add(javaJNIClassList);
-        answer.add(javafxJNIClassList);
-        if (usePrismSW) {
-            answer.add(javafxSWJNIClassList);
+        answer.add(Constants.REFLECTION_JAVA_FILE);
+        if (useJavaFX) {
+            answer.add(Constants.REFLECTION_JAVAFX_FILE);
+            answer.add(Constants.REFLECTION_JAVAFX_ARCH_FILE
+                    .replace("${archOs}", suffix));
+            if (usePrismSW) {
+                answer.add(Constants.REFLECTION_JAVAFXSW_FILE);
+            }
         }
         return answer;
     }
 
+    private List<String> getJNIClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
+        List<String> answer = new LinkedList<>();
+        answer.add(Constants.JNI_JAVA_FILE);
+        if (useJavaFX) {
+            answer.add(Constants.JNI_JAVAFX_FILE);
+            answer.add(Constants.JNI_JAVAFX_ARCH_FILE
+                    .replace("${archOs}", suffix));
+            if (usePrismSW) {
+                answer.add(Constants.JNI_JAVAFXSW_FILE);
+            }
+        }
+        return answer;
+    }
 
     private static final List<String> resourcesList = Arrays.asList(
             "frag", "fxml", "css", "gls", "ttf",
@@ -353,7 +357,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private Path createReflectionConfig(String suffix) throws IOException {
         Path gvmPath = paths.getGvmPath();
-        Path reflectionPath = gvmPath.resolve("reflectionconfig-" + suffix + ".json");
+        Path reflectionPath = gvmPath.resolve(Constants.REFLECTION_ARCH_FILE
+                .replace("${archOs}", suffix));
         File f = reflectionPath.toFile();
         if (f.exists()) {
             f.delete();
@@ -361,20 +366,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
             bw.write("[\n");
             writeSingleEntry(bw, projectConfiguration.getMainClassName(), false);
-            List<String> reflectionClassList = new ArrayList<>(getJavaReflectionClassList());
-            if (projectConfiguration.isUseJavaFX()) {
-                reflectionClassList.addAll(getJavaFXReflectionClassList());
-                if (projectConfiguration.isUsePrismSW()) {
-                    reflectionClassList.addAll(getJavaFXSWReflectionClassList());
-                }
-                for (String javaFile : reflectionClassList) {
-                    bw.write(",\n");
-                    List<String> lines = Files.lines(Paths.get(AbstractTargetConfiguration.class.getResource("/config/" + javaFile).toURI()))
-                            .filter(line -> !line.startsWith("[") && !line.startsWith("]"))
-                            .collect(Collectors.toList());
-                    for (String line : lines) {
-                        bw.write(line + "\n");
-                    }
+            for (String javaFile : getReflectionClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
+                bw.write(",\n");
+                List<String> lines = Files.lines(Paths.get(AbstractTargetConfiguration.class.getResource(Constants.CONFIG_FILES + javaFile).toURI()))
+                        .filter(line -> !line.startsWith("[") && !line.startsWith("]"))
+                        .collect(Collectors.toList());
+                for (String line : lines) {
+                    bw.write(line + "\n");
                 }
             }
             bw.write("]");
@@ -386,7 +384,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private Path createJNIConfig(String suffix) throws IOException {
         Path gvmPath = paths.getGvmPath();
-        Path jniPath = gvmPath.resolve("jniconfig-" + suffix + ".json");
+        Path jniPath = gvmPath.resolve(Constants.JNI_ARCH_FILE
+                .replace("${archOs}", suffix));
         File f = jniPath.toFile();
         if (f.exists()) {
             f.delete();
@@ -394,9 +393,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
             bw.write("[\n");
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
-            for (String javaFile : getJNIClassList(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
+            for (String javaFile : getJNIClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 bw.write(",\n");
-                List<String> lines = Files.lines(Paths.get(AbstractTargetConfiguration.class.getResource("/config/" + javaFile).toURI()))
+                List<String> lines = Files.lines(Paths.get(AbstractTargetConfiguration.class.getResource(Constants.CONFIG_FILES + javaFile).toURI()))
                         .filter(line -> !line.startsWith("[") && !line.startsWith("]"))
                         .collect(Collectors.toList());
                 for (String line : lines) {
@@ -408,15 +407,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             throw new IOException("Error finding jni file: " + e.getMessage());
         }
         return jniPath;
-    }
-
-    private static void writeEntry(BufferedWriter bw, String javaClass) throws IOException {
-        writeEntry(bw, javaClass, false);
-    }
-
-    private static void writeEntry(BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
-        bw.write(",\n");
-        writeSingleEntry(bw, javaClass, exclude);
     }
 
     private static void writeSingleEntry (BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
@@ -435,14 +425,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         bw.write("  }\n");
     }
-
-    private static final String javaReflectionClassList = "reflectionconfig-java.json";
-    private static final String javafxReflectionClassList = "reflectionconfig-javafx.json";
-    private static final String javafxSWReflectionClassList = "reflectionconfig-javafxsw.json";
-
-    private static final String javaJNIClassList = "jniconfig-java.json";
-    private static final String javafxJNIClassList = "jniconfig-javafx.json";
-    private static final String javafxSWJNIClassList = "jniconfig-javafxsw.json";
 
     // Default settings below, can be overridden by subclasses
 
