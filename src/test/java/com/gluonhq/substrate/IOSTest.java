@@ -122,7 +122,8 @@ class IOSTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
-                .withArguments(":helloFX:clean", ":helloFX:build", "-Dsubstrate.target=ios", ":helloFX:run", ":helloFX:runScript", "--stacktrace")
+                .withArguments(":helloFX:clean", ":helloFX:build",
+                        "-Dsubstrate.target=ios", ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
 

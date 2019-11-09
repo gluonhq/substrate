@@ -37,7 +37,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,31 +64,6 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
             "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
-
-    private static final List<String> javafxReflectionLinuxClassList = Arrays.asList(
-            "com.sun.glass.ui.gtk.GtkPlatformFactory",
-            "com.sun.prism.es2.ES2Pipeline",
-            "com.sun.prism.es2.ES2ResourceFactory",
-            "com.sun.prism.es2.ES2Shader",
-            "com.sun.prism.es2.X11GLFactory",
-            "com.sun.scenario.effect.impl.es2.ES2ShaderSource",
-            "com.sun.javafx.font.freetype.FTFactory");
-
-    @Override
-    List<String> getJavaFXReflectionClassList() {
-        List<String> answer = new ArrayList<>(super.getJavaFXReflectionClassList());
-        answer.addAll(javafxReflectionLinuxClassList);
-        return answer;
-    }
-
-    private static final String javafxJNILinuxClassList = "jniconfig-javafx-x86_64-linux.json";
-
-    @Override
-    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
-        List<String> answer = new ArrayList<>(super.getJNIClassList(useJavaFX, usePrismSW));
-        if (useJavaFX) answer.add(javafxJNILinuxClassList);
-        return answer;
-    }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {

@@ -29,9 +29,11 @@ package com.gluonhq.substrate.util;
 
 import com.gluonhq.substrate.SubstrateDispatcher;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -40,6 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -47,6 +50,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -205,5 +209,36 @@ public class FileOps {
                 copyDirectory(source.resolve(fileName), destination.resolve(fileName));
             }
         }
+    }
+
+    /**
+     * Reads a file from an inputStream and returns a list with its lines
+     * @param inputStream The input stream of bytes
+     * @return a list of strings with the lines read from the input stream
+     * @throws IOException
+     */
+    public static List<String> readFileLines(InputStream inputStream) throws IOException {
+        return readFileLines(inputStream, null);
+    }
+
+    /**
+     * Reads a file from an inputStream and returns a list with its lines
+     * @param inputStream The input stream of bytes
+     * @param predicate A predicate of content found in the lines
+     * @return a list of strings with the lines read from the input stream,
+     *          that match the predicate
+     * @throws IOException
+     */
+    public static List<String> readFileLines(InputStream inputStream, Predicate<String> predicate) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (predicate == null || predicate.test(line)) {
+                    lines.add(line);
+                }
+            }
+        }
+        return lines;
     }
 }
