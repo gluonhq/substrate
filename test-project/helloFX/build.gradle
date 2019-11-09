@@ -21,10 +21,6 @@ javafx {
     modules = [ "javafx.controls" ]
 }
 
-run {
-    jvmArgs = ["-Dprism.verbose=true", "-Dprism.order=sw"]
-}
-
 mainClassName = "com.gluonhq.substrate.test.Main"
 
 def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
@@ -49,9 +45,11 @@ task runScript(type: Exec) {
     def argsList = ["${java_home}/bin/java", '-cp', substratePath,
                     "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
-                    "-Dgraalvm=$graal_path", "-Dprism.sw=true"]
+                    "-Dgraalvm=$graal_path"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
+    } else {
+        argsList += ["-Dprism.sw=true"]
     }
     if (expected != null) {
         argsList += ["-Dexpected=$expected"]

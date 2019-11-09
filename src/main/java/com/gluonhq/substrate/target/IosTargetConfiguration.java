@@ -50,21 +50,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
 
-    private static final List<String> javafxReflectionIosClassList = Arrays.asList(
-            "com.sun.prism.es2.ES2Pipeline",
-            "com.sun.prism.es2.IOSGLFactory",
-            "com.sun.javafx.font.coretext.CTFactory",
-            "com.sun.scenario.effect.impl.es2.ES2ShaderSource",
-            "com.sun.glass.ui.ios.IosApplication",
-            "com.sun.glass.ui.ios.IosCursor",
-            "com.sun.glass.ui.ios.IosGestureSupport",
-            "com.sun.glass.ui.ios.IosMenuBarDelegate",
-            "com.sun.glass.ui.ios.IosPlatformFactory",
-            "com.sun.glass.ui.ios.IosPixels",
-            "com.sun.glass.ui.ios.IosView",
-            "com.sun.glass.ui.ios.IosWindow"
-    );
-
+    private static final String javafxReflectionIosClassList =  "reflectionconfig-javafx-arm64-ios.json";
     private static final String javafxJNIIosClassList = "jniconfig-javafx-arm64-ios.json";
 
     private static final List<String> ioslibs = Arrays.asList(
@@ -133,7 +119,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getJavaFXReflectionClassList() {
         List<String> answer = new ArrayList<>(super.getJavaFXReflectionClassList());
-        answer.addAll(javafxReflectionIosClassList);
+        answer.add(javafxReflectionIosClassList);
         return answer;
     }
 

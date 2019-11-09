@@ -1,0 +1,15 @@
+[
+  {
+    "name" : "com.sun.prism.sw.SWPipeline",
+    "methods":[{"name":"getInstance","parameterTypes":[] }]
+  }
+,
+  {
+    "name" : "com.sun.prism.sw.SWResourceFactory"
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.prism.sw.PSWRenderer",
+    "methods":[{"name":"createRenderer","parameterTypes":["com.sun.scenario.effect.FilterContext"] }]
+  }
+]
