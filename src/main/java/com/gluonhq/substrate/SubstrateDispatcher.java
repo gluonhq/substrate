@@ -37,9 +37,11 @@ import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -165,6 +167,7 @@ public class SubstrateDispatcher {
      */
     public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
         Objects.requireNonNull(config,  "Project configuration can't be null");
+        assertGraal(config);
         if (classPath != null) {
             boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
                     .anyMatch(s -> s.contains("javafx"));
@@ -248,4 +251,33 @@ public class SubstrateDispatcher {
 
     }
 
+    /**
+     * check if the GraalVM provided by the configuration is capable of running native-image
+     * @param configuration
+     * @throws NullPointerException when the configuration is null
+     * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
+     * @throws IOException when the path to bin/native-image doesn't exist
+     */
+    static void assertGraal(ProjectConfiguration configuration) throws IOException {
+        Objects.requireNonNull(configuration);
+        String graalPathString = configuration.getGraalPath();
+        if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
+        Path graalPath = Path.of(graalPathString);
+        if (!graalPath.toFile().exists()) throw new IOException ("Path provided for GraalVM doesn't exist: "+graalPathString);
+        Path binPath = graalPath.resolve("bin");
+        if (!binPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: "+graalPathString);
+        Path niPath = binPath.resolve("native-image");
+        if (!niPath.toFile().exists()) throw new IOException ("Path provided for GraalVM doesn't contain bin/native-image: "+graalPathString);
+        Path javacmd = binPath.resolve("java");
+        ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
+        processBuilder.command().add("-version");
+        processBuilder.redirectErrorStream(true);
+        Process process = processBuilder.start();
+        InputStream is = process.getInputStream();
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        String l = br.readLine();
+        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in "+graalPathString);
+        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in "+graalPathString+
+                " which uses Java version "+l+"\nUse GraalVM 19.3 or later");
+    }
 }
