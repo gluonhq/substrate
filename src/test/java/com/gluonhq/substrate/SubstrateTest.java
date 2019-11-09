@@ -29,16 +29,10 @@ package com.gluonhq.substrate;
 
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
-import org.gradle.internal.impldep.org.apache.commons.lang.ObjectUtils;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.IOException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SubstrateTest {
 

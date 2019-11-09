@@ -277,7 +277,7 @@ public class SubstrateDispatcher {
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String l = br.readLine();
         if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in "+graalPathString);
-        if (l.indexOf("\"1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in "+graalPathString+
+        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in "+graalPathString+
                 " which uses Java version "+l+"\nUse GraalVM 19.3 or later");
     }
 }
