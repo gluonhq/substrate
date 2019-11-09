@@ -42,10 +42,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -368,16 +366,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             writeSingleEntry(bw, projectConfiguration.getMainClassName(), false);
             for (String javaFile : getReflectionClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 bw.write(",\n");
-                List<String> lines = Files.lines(Paths.get(AbstractTargetConfiguration.class.getResource(Constants.CONFIG_FILES + javaFile).toURI()))
-                        .filter(line -> !line.startsWith("[") && !line.startsWith("]"))
-                        .collect(Collectors.toList());
+                List<String> lines = FileOps.readFileLines(AbstractTargetConfiguration.class
+                        .getResourceAsStream(Constants.CONFIG_FILES + javaFile),
+                        line -> !line.startsWith("[") && !line.startsWith("]"));
                 for (String line : lines) {
                     bw.write(line + "\n");
                 }
             }
             bw.write("]");
-        } catch (URISyntaxException e) {
-            throw new IOException("Error finding reflection file: " + e.getMessage());
         }
         return reflectionPath;
     }
@@ -395,16 +391,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
             for (String javaFile : getJNIClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 bw.write(",\n");
-                List<String> lines = Files.lines(Paths.get(AbstractTargetConfiguration.class.getResource(Constants.CONFIG_FILES + javaFile).toURI()))
-                        .filter(line -> !line.startsWith("[") && !line.startsWith("]"))
-                        .collect(Collectors.toList());
+                List<String> lines = FileOps.readFileLines(AbstractTargetConfiguration.class
+                        .getResourceAsStream(Constants.CONFIG_FILES + javaFile),
+                        line -> !line.startsWith("[") && !line.startsWith("]"));
                 for (String line : lines) {
                     bw.write(line + "\n");
                 }
             }
             bw.write("]");
-        } catch (URISyntaxException e) {
-            throw new IOException("Error finding jni file: " + e.getMessage());
         }
         return jniPath;
     }
