@@ -458,7 +458,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return Collections.emptyList();
     }
 
-    List<String> getTargetSpecificAOTCompileFlags() {
+    List<String> getTargetSpecificAOTCompileFlags() throws IOException {
         return Collections.emptyList();
     }
 

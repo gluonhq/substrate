@@ -39,6 +39,9 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestInputStream;
@@ -58,6 +61,7 @@ public class FileDeps {
     private static final String JAVA_STATIC_URL = "http://download2.gluonhq.com/substrate/staticjdk/";
     private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static.zip";
     private static final String JAVAFX_STATIC_URL = "http://download2.gluonhq.com/substrate/javafxstaticsdk/";
+    private static final String LLC_URL = "http://download2.gluonhq.com/substrate/llvm/";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
             "libjava.a", "libnet.a", "libnio.a", "libzip.a"
@@ -199,6 +203,43 @@ public class FileDeps {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Returns the path to the llc compiler that is working for the provided configuration.
+     * The <code>configuration</code> object must have its host triplet set correctly.
+     * If the llc compiler is found in the file cache, it will be returned. Otherwise, it will
+     * be downloaded and stored in the cache. After calling this method, it is guaranteed that an
+     * llc compiler is in the specified path.
+     * <p>
+     *     There might be different versions for the llc compiler, but this is handled inside
+     *     Substrate. If the developer wants a specific flavour of llc, it is recommended to
+     *     use <code>configuration.setLlcPath()</code> which takes precedence over calling this method.
+     * </p>
+     * @param configuration
+     * @return the path to a working llc compiler.
+     * @throws IOException in case the required directories can't be created or navigated into.
+     */
+    public static Path getLlcPath(ProjectConfiguration configuration) throws IOException {
+        Path llcRootPath = Constants.USER_SUBSTRATE_PATH.resolve("llc");
+        String archos = configuration.getHostTriplet().getArchOs();
+        Path archosPath = llcRootPath.resolve(archos).resolve(Constants.LLC_VERSION);
+        if (!archosPath.toFile().exists()) {
+            archosPath.toFile().mkdirs();
+        }
+        String llcname = "llc-"+archos+"-"+Constants.LLC_VERSION;
+        Path llcPath = archosPath.resolve(llcname);
+        if (llcPath.toFile().exists()) {
+            return llcPath;
+        }
+        // we don't have the required llc. Download it and store it in llcPath.
+        URL url = new URL(LLC_URL+llcname);
+        ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
+        FileOutputStream fileOutputStream = new FileOutputStream(llcPath.toFile());
+        FileChannel fileChannel = fileOutputStream.getChannel();
+        fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+        // now llcPath contains the llc, return it.
+        return llcPath;
     }
 
     private static Map<String, String> getHashMap(String nameFile) {
