@@ -38,6 +38,7 @@ import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
@@ -195,9 +197,23 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    String processClassPath(String cp) {
-        System.err.println("Process class path: "+cp);
-        return cp;
+    String processClassPath(String classPath) {
+        System.err.println("Process class path: "+classPath);
+        StringBuffer answer = new StringBuffer();
+        Stream.of(classPath.split(File.pathSeparator)).forEach(s ->{
+            if (s.indexOf("javafx") < 0 ){
+                answer.append(s).append(File.pathSeparator);
+            } else {
+                if (s.indexOf("javafx.graphics") > 0) {
+                    Constants.
+                } else if (s.indexOf("javafx.controls") > 0 ) {
+
+                } else {
+                    answer.append(s).append(File.pathSeparator);
+                }
+            }
+        });
+        return classPath;
     }
 
     private String getArch() {
