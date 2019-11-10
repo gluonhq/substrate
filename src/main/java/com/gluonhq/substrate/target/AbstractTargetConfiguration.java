@@ -59,14 +59,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c");
 
-    String processClassPath(String cp) {
+    String processClassPath(String cp) throws IOException {
         return cp;
     }
 
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
-        String classPath = processClassPath(cp);
         this.projectConfiguration = config;
+        String classPath = processClassPath(cp);
         this.paths = paths;
         Triplet target =  config.getTargetTriplet();
         String suffix = target.getArchOs();
