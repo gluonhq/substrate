@@ -221,15 +221,15 @@ public class FileDeps {
      * @throws IOException in case the required directories can't be created or navigated into.
      */
     public static Path getLlcPath(ProjectConfiguration configuration) throws IOException {
-        Path llcRootPath = Constants.USER_SUBSTRATE_PATH.resolve("llc");
+        Path llcRootPath = Constants.USER_SUBSTRATE_PATH.resolve(Constants.LLC_NAME);
         String archos = configuration.getHostTriplet().getArchOs();
         Path archosPath = llcRootPath.resolve(archos).resolve(Constants.LLC_VERSION);
-        if (!archosPath.toFile().exists()) {
-            archosPath.toFile().mkdirs();
+        if (!Files.exists(archosPath)) {
+            Files.createDirectories(archosPath);
         }
         String llcname = "llc-"+archos+"-"+Constants.LLC_VERSION;
         Path llcPath = archosPath.resolve(llcname);
-        if (llcPath.toFile().exists()) {
+        if (Files.exists(llcPath)) {
             return llcPath;
         }
         // we don't have the required llc. Download it and store it in llcPath.
@@ -237,7 +237,7 @@ public class FileDeps {
         ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
         FileOutputStream fileOutputStream = new FileOutputStream(llcPath.toFile());
         FileChannel fileChannel = fileOutputStream.getChannel();
-        fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+        fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
         // now llcPath contains the llc, return it.
         return llcPath;
     }

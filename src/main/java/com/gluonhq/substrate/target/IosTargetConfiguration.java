@@ -111,7 +111,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     Path getLlcPath() throws IOException {
         if (projectConfiguration.getLlcPath() != null) {
             Path llcPath = Path.of(projectConfiguration.getLlcPath());
-            if (!llcPath.toFile().exists()) {
+            if (!Files.exists(llcPath)) {
                 throw new IllegalArgumentException("Configuration points to an llc that does not exist: "+llcPath);
             } else {
                 return llcPath;
@@ -192,6 +192,12 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             }
         }
         return appPath.toString() + "/" + appName;
+    }
+
+    @Override
+    String processClassPath(String cp) {
+        System.err.println("Process class path: "+cp);
+        return cp;
     }
 
     private String getArch() {

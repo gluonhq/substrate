@@ -121,5 +121,6 @@ public class Constants {
     public static final String JNI_JAVAFX_ARCH_FILE = "jniconfig-javafx-${archOs}.json";
     public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
 
+    public static final String LLC_NAME = "llc";
     public static final String LLC_VERSION = "1";
 }
