@@ -237,11 +237,16 @@ public class FileDeps {
             return llcPath;
         }
         // we don't have the required llc. Download it and store it in llcPath.
+
         URL url = new URL(LLC_URL+llcname);
-        ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-        FileOutputStream fileOutputStream = new FileOutputStream(llcPath.toFile());
-        FileChannel fileChannel = fileOutputStream.getChannel();
-        fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+        try (ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
+             FileOutputStream fileOutputStream = new FileOutputStream(llcPath.toFile());
+             FileChannel fileChannel = fileOutputStream.getChannel()) {
+            fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+            readableByteChannel.close();
+        } catch (IOException e) {
+            throw new IOException("Error downloading LLC from " + url + ": " + e.getMessage() + ", " + e.getSuppressed());
+        }
         Set<PosixFilePermission> perms = new HashSet<>();
         perms.add(PosixFilePermission.OWNER_READ);
         perms.add(PosixFilePermission.OWNER_EXECUTE);
