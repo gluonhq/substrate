@@ -260,6 +260,7 @@ public class FileDeps {
              ObjectInputStream ois = new ObjectInputStream(fis)) {
             hashes = (Map<String, String>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
+            Logger.logDebug("Exception trying to get hashmap for "+nameFile+": "+e);
             return null;
         }
         return hashes;
