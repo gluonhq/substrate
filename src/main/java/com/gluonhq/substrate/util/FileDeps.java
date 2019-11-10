@@ -44,6 +44,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -242,13 +243,24 @@ public class FileDeps {
         return llcPath;
     }
 
+    /**
+     * Return the hashmap associated with this nameFile.
+     * If a file named <code>nameFile</code> exists, and it contains  a serialized version of a Map, this
+     * Map will be returned.
+     * If the file doesn't exist or is corrupt, this method returns null
+     * @param nameFile
+     * @return the Map contained in the file named nameFile, or null in all other cases.
+     */
     private static Map<String, String> getHashMap(String nameFile) {
         Map<String, String> hashes = null;
+        if (!Files.exists(Paths.get(nameFile))) {
+            return null;
+        }
         try (FileInputStream fis = new FileInputStream(new File(nameFile));
              ObjectInputStream ois = new ObjectInputStream(fis)) {
             hashes = (Map<String, String>) ois.readObject();
-        } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
+        } catch (IOException | ClassNotFoundException e) {
+            return null;
         }
         return hashes;
     }
