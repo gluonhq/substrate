@@ -194,12 +194,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return appPath.toString() + "/" + appName;
     }
 
-    @Override
-    String processClassPath(String cp) {
-        System.err.println("Process class path: "+cp);
-        return cp;
-    }
-
     private String getArch() {
         return projectConfiguration.getTargetTriplet().getArch();
     }

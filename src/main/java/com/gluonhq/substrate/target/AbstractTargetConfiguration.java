@@ -59,13 +59,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c");
 
-    String processClassPath(String cp) {
-        return cp;
-    }
-
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
-        String classPath = processClassPath(cp);
         this.projectConfiguration = config;
         this.paths = paths;
         Triplet target =  config.getTargetTriplet();
@@ -100,7 +95,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
-        compileBuilder.command().add(classPath);
+        compileBuilder.command().add(cp);
         compileBuilder.command().add(mainClassName);
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
         compileBuilder.directory(workDir.toFile());
