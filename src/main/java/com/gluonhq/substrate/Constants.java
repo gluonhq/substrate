@@ -31,6 +31,7 @@ import java.nio.file.Path;
 
 public class Constants {
 
+    public static final String GLUON_SUBSTRATE = "GluonSubstrate";
     public static final Path USER_SUBSTRATE_PATH = Path.of(System.getProperty("user.home"))
             .resolve(".gluon").resolve("substrate");
 
@@ -80,31 +81,9 @@ public class Constants {
     public static final String TARGET_IOS = "ios";
     public static final String TARGET_IOS_SIM = "ios-sim";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+8";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "14-ea+1";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "14-ea+2";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "14-ea+gvm1";
 
-//    /**
-//     * Supported target app folders
-//     *
-//     */
-//    public static final String APP_MAC = "mac";
-//    public static final String APP_LINUX = "linux";
-//    public static final String APP_IOS = "ios";
-//
-//    /**
-//     * Supported target source folders
-//     *
-//     */
-//    public static final String SOURCE_MAC = "mac";
-//    public static final String SOURCE_IOS = "ios";
-
-//    /**
-//     * String used to download dependencies for supported hosts
-//     *
-//     */
-//    public static final String DEPS_HOST_MAC = "darwin";
-//    public static final String DEPS_HOST_LINUX = "linux";
-//
     /**
      * Paths
      */
@@ -127,5 +106,19 @@ public class Constants {
     /**
      * Supported files
      */
-     public static final String PLIST_FILE = "Default-Info.plist";
+    public static final String PLIST_FILE = "Default-Info.plist";
+
+    public static final String CONFIG_FILES = "/config/";
+    public static final String REFLECTION_JAVA_FILE = "reflectionconfig-java.json";
+    public static final String REFLECTION_JAVAFX_FILE = "reflectionconfig-javafx.json";
+    public static final String REFLECTION_JAVAFXSW_FILE = "reflectionconfig-javafxsw.json";
+    public static final String REFLECTION_JAVAFX_ARCH_FILE = "reflectionconfig-javafx-${archOs}.json";
+    public static final String REFLECTION_ARCH_FILE = "reflectionconfig-${archOs}.json";
+
+    public static final String JNI_JAVA_FILE = "jniconfig-java.json";
+    public static final String JNI_JAVAFX_FILE = "jniconfig-javafx.json";
+    public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
+    public static final String JNI_JAVAFX_ARCH_FILE = "jniconfig-javafx-${archOs}.json";
+    public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
+
 }

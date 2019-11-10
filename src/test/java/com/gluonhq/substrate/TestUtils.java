@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,38 +25,49 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.target;
+package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import java.util.Locale;
 
-import java.io.IOException;
-import java.nio.file.Path;
-
-public interface TargetConfiguration {
+class TestUtils {
 
     /**
-     * Compiles the classes to objectcode for this TargetConfiguration.
-     * @param paths
-     * @param config
-     * @param classPath
-     * @return true if compilation succeeded, false if it failed
-     * @throws Exception
+     * Checks if the test is running on Travis CI
+     * @return true if on Travis CI
      */
-    boolean compile(ProcessPaths paths, ProjectConfiguration config, String classPath) throws Exception;
-
-    boolean link(ProcessPaths paths, ProjectConfiguration config) throws IOException, InterruptedException;
-
-    boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException;
+    static boolean isTravis() {
+        return System.getenv("TRAVIS") != null;
+    }
 
     /**
-     * Runs the application at the given path, and if successful, returns the last line
-     * printed by the process
-     * @param appPath Path to the application
-     * @param appName application name
-     * @return A string (it can be empty) or null if the process failed
-     * @throws IOException
-     * @throws InterruptedException
+     * Checks if the test is running on Mac OS, but not on Travis
+     * @return true if runs on a local Mac OS
      */
-    String run(Path appPath, String appName) throws IOException, InterruptedException;
+    static boolean isLocalMacOS() {
+        return !isTravis() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
+    }
+
+    /**
+     * Checks if the test is running on Linux, but not on Travis
+     * @return true if runs on a local Linux
+     */
+    boolean isLocalLinux() {
+        return !isTravis() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("nux");
+    }
+
+    /**
+     * Checks if the test is running on Mac OS over Travis CI
+     * @return true if runs on Mac OS over Travis CI
+     */
+    static boolean isCIMacOS() {
+        return isTravis() && "osx".equalsIgnoreCase(System.getenv("TRAVIS_OS_NAME"));
+    }
+
+    /**
+     * Checks if the test is running on Linux over Travis CI
+     * @return true if runs on Linux over Travis CI
+     */
+    static boolean isCILinux() {
+        return isTravis() && "linux".equalsIgnoreCase(System.getenv("TRAVIS_OS_NAME"));
+    }
 }

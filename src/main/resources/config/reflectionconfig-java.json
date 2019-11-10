@@ -1,0 +1,72 @@
+[
+  {
+    "name":"java.lang.Character",
+    "methods":[{"name":"isIdeographic","parameterTypes":["int"] }]
+  },
+  {
+    "name":"java.lang.Class"
+  },
+  {
+    "name":"java.lang.Deprecated",
+    "allDeclaredMethods":true
+  },
+  {
+    "name":"java.lang.Long"
+  },
+  {
+    "name":"java.lang.Object"
+  },
+  {
+    "name":"java.lang.Runnable"
+  },
+  {
+    "name" : "java.net.InetAddress"
+  },
+  {
+    "name":"java.lang.String",
+    "fields":[
+      {"name":"coder"},
+      {"name":"value"}
+    ]
+  },
+  {
+    "name":"java.lang.StringConcatHelper"
+  },
+  {
+    "name":"java.lang.System"
+  },
+  {
+    "name":"java.lang.Thread",
+    "fields":[
+      {"name":"parkBlocker", "allowUnsafeAccess":true},
+      {"name":"threadLocalRandomSecondarySeed", "allowUnsafeAccess":true},
+      {"name":"tid", "allowUnsafeAccess":true}
+    ]
+  },
+  {
+    "name":"java.lang.annotation.Documented"
+  },
+  {
+    "name":"java.lang.annotation.Retention",
+    "allDeclaredMethods":true
+  },
+  {
+    "name":"java.lang.annotation.RetentionPolicy",
+    "methods":[{"name":"values","parameterTypes":[] }]
+  },
+  {
+    "name":"java.lang.annotation.Target"
+  },
+  {
+    "name":"java.lang.invoke.BoundMethodHandle",
+    "methods":[{"name":"<init>","parameterTypes":["java.lang.invoke.MethodType","java.lang.invoke.LambdaForm"] }]
+  },
+  {
+    "name":"java.nio.ByteBuffer",
+    "methods":[{"name":"order","parameterTypes":["java.nio.ByteOrder"] }]
+  },
+  {
+    "name":"java.nio.ByteOrder",
+    "methods":[{"name":"nativeOrder","parameterTypes":[] }]
+  }
+]

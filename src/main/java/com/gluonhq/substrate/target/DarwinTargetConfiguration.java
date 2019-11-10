@@ -40,7 +40,7 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        return Arrays.asList("AppDelegate.m", "launcher.c", "thread.c");
+        return Arrays.asList("AppDelegate.m", "launcher.c");
     }
 
     @Override
@@ -65,53 +65,4 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,-framework,Foundation", "-Wl,-framework,AppKit",
             "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");
-
-    @Override
-    List<String> getJavaFXReflectionClassList() {
-        List<String> answer = super.getJavaFXReflectionClassList();
-        answer.addAll(javafxReflectionMacClassList);
-        return answer;
-    }
-
-    @Override
-    List<String> getJNIClassList(boolean useJavaFX, boolean usePrismSW) {
-        List<String> answer = super.getJNIClassList(useJavaFX, usePrismSW);
-        if (useJavaFX) answer.addAll(javafxJNIMacClassList);
-        return answer;
-    }
-
-    private static final List<String> javafxReflectionMacClassList = Arrays.asList(
-            "com.sun.prism.es2.ES2Pipeline",
-            "com.sun.prism.es2.ES2ResourceFactory",
-            "com.sun.prism.es2.ES2Shader",
-            "com.sun.prism.es2.MacGLFactory",
-            "com.sun.scenario.effect.impl.es2.ES2ShaderSource",
-            "com.sun.glass.ui.mac.MacApplication",
-            "com.sun.glass.ui.mac.MacView",
-            "com.sun.glass.ui.mac.MacPlatformFactory",
-            "com.sun.glass.ui.mac.MacGestureSupport",
-            "com.sun.glass.ui.mac.MacMenuBarDelegate",
-            "com.sun.glass.ui.mac.MacCommonDialogs",
-            "com.sun.glass.ui.mac.MacFileNSURL",
-            "com.sun.javafx.font.coretext.CTFactory"
-    );
-
-    private static final List<String>javafxJNIMacClassList = Arrays.asList(
-            "com.sun.glass.ui.mac.MacApplication",
-            "com.sun.glass.ui.mac.MacCommonDialogs",
-            "com.sun.glass.ui.mac.MacCursor",
-            "com.sun.glass.ui.mac.MacGestureSupport",
-            "com.sun.glass.ui.mac.MacMenuBarDelegate",
-            "com.sun.glass.ui.mac.MacMenuDelegate",
-            "com.sun.glass.ui.mac.MacView",
-            "com.sun.glass.ui.mac.MacWindow",
-            "com.sun.javafx.font.coretext.CGAffineTransform",
-            "com.sun.javafx.font.coretext.CGPoint",
-            "com.sun.javafx.font.coretext.CGRect",
-            "com.sun.javafx.font.coretext.CGSize",
-            "com.sun.javafx.font.FontConfigManager$FcCompFont",
-            "com.sun.javafx.font.FontConfigManager$FontConfigFont",
-            "com.sun.glass.ui.EventLoop"
-    );
-
 }

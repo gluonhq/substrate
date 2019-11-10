@@ -30,23 +30,29 @@ package com.gluonhq.substrate.model;
 import com.gluonhq.substrate.Constants;
 
 import java.nio.file.Path;
-import java.util.Collection;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
+ *
+ * This class allows to specify where the Java core libs are located. If <code>setJavaStaticLibs</code> is called,
+ * the libraries are expected to be found in the location provided by the location passed to
+ * <code>setJavaStaticLibs</code>
+ *
+ * If this method has not been called, getJavaStaticLibsPath() will return the default location, taking into account
+ * the value of javaStaticSdkVersion. If that value is not set, the default value is used.
  */
 public class ProjectConfiguration {
 
-//    private String graalLibsVersion;
     private String graalPath;
-    private String javaStaticSdkVersion;
+    private String javaStaticSdkVersion = Constants.DEFAULT_JAVA_STATIC_SDK_VERSION;
+    private String javaStaticLibs;
+
     private String javafxStaticSdkVersion;
-//    private String graalLibsRoot;
-//    private String graalLibsUserPath;
+
     private String llcPath;
-//    private String JavaFXRoot;
     private String StaticRoot;
     private boolean useJNI = true;
     private boolean useJavaFX = false;
@@ -68,6 +74,8 @@ public class ProjectConfiguration {
     private String appName;
     private String mainClassName;
 
+    private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
+
     public ProjectConfiguration() {}
 
     public String getGraalPath() {
@@ -77,24 +85,24 @@ public class ProjectConfiguration {
     public void setGraalPath(String path) {
         this.graalPath = path;
     }
-//    public String getGraalLibsVersion() {
-//        return graalLibsVersion;
-//    }
-//
-//    /**
-//     * Sets the Graal libs version
-//     * @param graalLibsVersion the Graal libs version
-//     */
-//    public void setGraalLibsVersion(String graalLibsVersion) {
-//        this.graalLibsVersion = graalLibsVersion;
-//    }
 
+    /**
+     * Returns the version string for the static JDK libs.
+     * If this has not been specified before, the default will be
+     * returned.
+     * @return the specified JavaStaticSDK version, or the default
+     */
     public String getJavaStaticSdkVersion() {
         return javaStaticSdkVersion;
     }
 
     /**
      * Sets the Java static SDK version
+     * This is only relevant when no specific custom location
+     * for the Java static libs is provided via
+     * <code>setJavaStaticLibs</code>
+     * If this method is not called, calls to
+     * <code>getJavaStaticSdkVersion</code> will return a default value.
      * @param javaStaticSdkVersion the Java static SDK version
      */
     public void setJavaStaticSdkVersion(String javaStaticSdkVersion) {
@@ -102,11 +110,45 @@ public class ProjectConfiguration {
     }
 
     /**
-     * Return the path where the static JDK is installed for the os-arch combination of this configuration, and for
+     * Sets the location for the static JDK libs (e.g. libjava.a)
+     * When this method is used, subsecquent calls to
+     * <code>getStaticLibsPath</code> will override the default
+     * location
+     * @param location the location of the directory where
+     *                 the static libs are expected.
+     */
+    public void setJavaStaticLibs(String location) {
+        this.javaStaticLibs = location;
+    }
+
+    /**
+     * Returns the Path containing the location of the
+     * static libraries. If the <code>setJavaStaticLibs</code>
+     * method has been called before, the Path pointed to
+     * by the argument to <code>setJavaStaticLibs</code> will be returned.
+     * Otherwise, the default location of the static libs will be returned.
+     * There is no guarantee that the libraries in the returned directory actually exist.
+     * @return the path to the location where the static JDK libraries are expected.
+     */
+    public Path getJavaStaticLibsPath() {
+        return javaStaticLibs != null? Paths.get(javaStaticLibs): getDefaultJavaStaticLibsPath();
+    }
+
+    /**
+     * Check whether a custom path to static Java libs is
+     * provided
+     * @return true if a custom path is provided, false otherwise.
+     */
+    public boolean useCustomJavaStaticLibs() {
+        return this.javaStaticLibs != null;
+    }
+
+    /**
+     * Return the default path where the static JDK is installed for the os-arch combination of this configuration, and for
      * the version in <code>javaStaticSdkVersion</code>
      * @return the path to the Java SDK (including at least the libs)
      */
-    public Path getJavaStaticPath() {
+    public Path getDefaultJavaStaticPath() {
         Path answer = Constants.USER_SUBSTRATE_PATH
                 .resolve("javaStaticSdk")
                 .resolve(getJavaStaticSdkVersion())
@@ -115,8 +157,8 @@ public class ProjectConfiguration {
         return answer;
     }
 
-    public Path getJavaStaticLibsPath() {
-        return getJavaStaticPath().resolve("lib").resolve("static");
+    private Path getDefaultJavaStaticLibsPath() {
+        return getDefaultJavaStaticPath().resolve("lib").resolve("static");
     }
 
 
@@ -150,32 +192,6 @@ public class ProjectConfiguration {
         this.javafxStaticSdkVersion = javafxStaticSdkVersion;
     }
 
-//    public String getGraalLibsRoot() {
-//        return graalLibsRoot;
-//    }
-//
-//    /**
-//     * Sets the omega dependencies directory
-//     * @param graalLibsRoot the omega dependencies directory
-//     *                      (e.g ~/.gluon/omega/graalLibs/20-ea/bundle/lib)
-//     */
-//    public void setGraalLibsRoot(String graalLibsRoot) {
-//        this.graalLibsRoot = graalLibsRoot;
-//    }
-//
-//    public String getGraalLibsUserPath() {
-//        return graalLibsUserPath;
-//    }
-//
-//    /**
-//     * Sets the omega dependencies directory set by the user
-//     * @param graalLibsUserPath the omega dependencies directory
-//     *                          (e.g $user/Downloads/graalLibs/lib)
-//     */
-//    public void setGraalLibsUserPath(String graalLibsUserPath) {
-//        this.graalLibsUserPath = graalLibsUserPath;
-//    }
-
     public String getLlcPath() {
         return llcPath;
     }
@@ -186,30 +202,6 @@ public class ProjectConfiguration {
      */
     public void setLlcPath(String llcPath) {
         this.llcPath = llcPath;
-    }
-
-//    public String getJavaFXRoot() {
-//        return JavaFXRoot;
-//    }
-
-//    /**
-//     * Sets the JavaFX SDK directory
-//     * @param javaFXRoot the JavaFX SDK directory
-//     */
-//    public void setJavaFXRoot(String javaFXRoot) {
-//        JavaFXRoot = javaFXRoot;
-//    }
-
-    public String getStaticRoot() {
-        return StaticRoot;
-    }
-
-    /**
-     * Sets the Static Libs directory
-     * @param staticRoot the Static Libs directory
-     */
-    public void setStaticRoot(String staticRoot) {
-        StaticRoot = staticRoot;
     }
 
     public boolean isUseJNI() {
@@ -405,6 +397,18 @@ public class ProjectConfiguration {
         this.mainClassName = mainClassName;
     }
 
+    public IosSigningConfiguration getIosSigningConfiguration() {
+        return iosSigningConfiguration;
+    }
+
+    /**
+     * Sets some iOS specific parameters
+     * @param iosSigningConfiguration iOS configuration
+     */
+    public void setIosSigningConfiguration(IosSigningConfiguration iosSigningConfiguration) {
+        this.iosSigningConfiguration = iosSigningConfiguration;
+    }
+
     @Override
     public String toString() {
         return "ProjectConfiguration{" +
@@ -429,6 +433,7 @@ public class ProjectConfiguration {
                 ", runtimeArgsList=" + runtimeArgsList +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + appName + '\'' +
+                ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
                 '}';
     }

@@ -25,38 +25,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.target;
+package com.gluonhq.substrate.util;
 
-import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import java.io.IOException;
-import java.nio.file.Path;
+public class VersionParser {
 
-public interface TargetConfiguration {
+    private static final Pattern versionPattern = Pattern.compile("((\\d+\\.*)+)[\\D\\-]*.*");
 
-    /**
-     * Compiles the classes to objectcode for this TargetConfiguration.
-     * @param paths
-     * @param config
-     * @param classPath
-     * @return true if compilation succeeded, false if it failed
-     * @throws Exception
-     */
-    boolean compile(ProcessPaths paths, ProjectConfiguration config, String classPath) throws Exception;
-
-    boolean link(ProcessPaths paths, ProjectConfiguration config) throws IOException, InterruptedException;
-
-    boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException;
-
-    /**
-     * Runs the application at the given path, and if successful, returns the last line
-     * printed by the process
-     * @param appPath Path to the application
-     * @param appName application name
-     * @return A string (it can be empty) or null if the process failed
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    String run(Path appPath, String appName) throws IOException, InterruptedException;
+    public Version parseVersion(String input) {
+        Matcher matcher = versionPattern.matcher(input);
+        if (matcher.find() && matcher.groupCount() >= 1) {
+            return new Version(matcher.group(1));
+        }
+        return null;
+    }
 }

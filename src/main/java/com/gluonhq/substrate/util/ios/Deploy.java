@@ -27,14 +27,24 @@
  */
 package com.gluonhq.substrate.util.ios;
 
+import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.gluonhq.substrate.util.XcodeUtils.XCODE_PRODUCTS_PATH;
 
 public class Deploy {
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static MobileDeviceBridge bridge;
 
     public static Path getIOSDeployPath() throws IOException, InterruptedException {
@@ -95,5 +105,47 @@ public class Deploy {
             return result;
         }
         return false;
+    }
+
+    public static void addDebugSymbolInfo(Path appPath, String appName) throws IOException, InterruptedException {
+        Path applicationPath = appPath.resolve(appName + ".app");
+        Path debugSymbolsPath = Path.of(applicationPath.toString() + ".dSYM");
+        if (Files.exists(debugSymbolsPath)) {
+            FileOps.deleteDirectory(debugSymbolsPath);
+        }
+        Path executablePath = applicationPath.resolve(appName);
+
+        Logger.logDebug("Generating debug symbol files...");
+        ProcessRunner runner = new ProcessRunner("xcrun", "dsymutil", "-o", debugSymbolsPath.toString(), executablePath.toString());
+        if (runner.runProcess("dsymutil") == 0) {
+            copyAppToProducts(debugSymbolsPath, executablePath, appName);
+        } else {
+            throw new RuntimeException("Error generating debug symbol files");
+        }
+    }
+
+    private static void copyAppToProducts(Path debugSymbolsPath, Path executablePath, String appName) throws IOException {
+        if (Files.exists(XCODE_PRODUCTS_PATH)) {
+            List<Path> oldAppsPaths = Files.walk(XCODE_PRODUCTS_PATH, 1)
+                    .filter(Objects::nonNull)
+                    .filter(path -> path.getFileName().toString().startsWith(appName))
+                    .collect(Collectors.toList());
+            for (Path path : oldAppsPaths) {
+                Logger.logDebug("Removing older version: " + path.getFileName().toString());
+                FileOps.deleteDirectory(path);
+            }
+        }
+
+        String now = DATE_TIME_FORMATTER.format(LocalDateTime.now());
+        Path productAppPath = XCODE_PRODUCTS_PATH.resolve(appName + "_" + now);
+        Files.createDirectories(productAppPath);
+
+        Path productExecAppPath = productAppPath.resolve(appName + ".app");
+        Files.createDirectories(productExecAppPath);
+        Files.copy(executablePath, productExecAppPath.resolve(executablePath.getFileName()));
+
+        Path productDebugSymbolsPath = productAppPath.resolve(debugSymbolsPath.getFileName());
+        Files.createDirectories(productDebugSymbolsPath);
+        FileOps.copyDirectory(debugSymbolsPath, productDebugSymbolsPath);
     }
 }

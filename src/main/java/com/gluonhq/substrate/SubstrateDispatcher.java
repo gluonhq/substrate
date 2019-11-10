@@ -37,13 +37,18 @@ import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class SubstrateDispatcher {
 
@@ -61,9 +66,11 @@ public class SubstrateDispatcher {
         String reflectionList = System.getProperty("reflectionlist");
         String jniList = System.getProperty("jnilist");
         String targetProfile = System.getProperty("targetProfile");
-        boolean useJavaFX = Boolean.parseBoolean(System.getProperty("javafx", "false"));
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
+        boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
+        String staticLibs = System.getProperty("javalibspath");
+
         String expected  = System.getProperty("expected");
 
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
@@ -73,10 +80,8 @@ public class SubstrateDispatcher {
         config.setGraalPath(graalVM);
         config.setMainClassName(mainClass);
         config.setAppName(appName);
-        config.setJavaStaticSdkVersion(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
         config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
-        config.setUseJavaFX(useJavaFX);
         config.setUsePrismSW(usePrismSW);
         if (reflectionList != null && !reflectionList.trim().isEmpty()) {
             config.setReflectionList(Arrays.asList(reflectionList.split(",")));
@@ -85,11 +90,20 @@ public class SubstrateDispatcher {
             config.setJniList(Arrays.asList(jniList.split(",")));
         }
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
+        config.getIosSigningConfiguration().setSkipSigning(skipSigning);
+        if (staticLibs != null) {
+            config.setJavaStaticLibs(staticLibs);
+        }
+        // fail-fast: in case we're missing libraries, we don't want to start compiling
+        if (!FileDeps.setupDependencies(config)) {
+            throw new RuntimeException("Error while setting up dependencies.");
+        }
+        TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
+                "Error: Target Configuration was null");
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-        System.err.println("Config: " + config);
-        System.err.println("Compiling...");
-        System.err.println("ClassPath for compilation = "+classPath);
+
+
         Thread timer = new Thread(() -> {
             int counter = 1;
             while (run) {
@@ -103,12 +117,14 @@ public class SubstrateDispatcher {
         });
         timer.setDaemon(true);
         timer.start();
-        boolean result = nativeCompile(buildRoot, config, classPath);
+
+        boolean nativeCompileSucceeded = nativeCompile(buildRoot, config, classPath);
         run = false;
-        if (!result) {
-            System.err.println("COMPILE FAILED");
-            return;
+        if (!nativeCompileSucceeded) {
+            System.err.println("Compiling failed");
+            System.exit(1);
         }
+
         try {
             System.err.println("Linking...");
             if (!nativeLink(buildRoot, config)) {
@@ -122,9 +138,13 @@ public class SubstrateDispatcher {
         }
         System.err.println("Running...");
         if (expected != null) {
-            InputStream is = targetConfiguration.run(paths.getAppPath(), appName);
-            // TODO: compare expected and actual output
-
+            String response = targetConfiguration.run(paths.getAppPath(), appName);
+            if (expected.equals(response)) {
+                System.err.println("Run ended successfully, the output: " + expected + " matched the expected result.");
+            } else {
+                System.err.println("Run failed, expected output: " + expected + ", output: " + response);
+                System.exit(1);
+            }
         } else {
             nativeRun(buildRoot, config);
         }
@@ -149,13 +169,21 @@ public class SubstrateDispatcher {
      * The result of compilation is a at least one native file (2 files in case LLVM backend is used).
      * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails
      * @param buildRoot the root, relative to which the compilation step can create objectfiles and temporary files
-     * @param config the Projectconfiguration, including the target triplet
+     * @param config the ProjectConfiguration, including the target triplet
      * @param classPath the classpath needed to compile the application (this is not the classpath for native-image)
      * @return true if compilation succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
+        Objects.requireNonNull(config,  "Project configuration can't be null");
+        assertGraal(config);
+        if (classPath != null) {
+            boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
+                    .anyMatch(s -> s.contains("javafx"));
+            config.setUseJavaFX(useJavaFX);
+        }
+
         Triplet targetTriplet  = config.getTargetTriplet();
         if (! canCompileTo(config.getHostTriplet(), config.getTargetTriplet())) {
             throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
@@ -178,26 +206,29 @@ public class SubstrateDispatcher {
     }
 
     public static boolean nativeLink(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
+        Objects.requireNonNull(config,  "Project configuration can't be null");
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
-            throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
+            throw new IllegalArgumentException("We don't have a configuration to link " + targetTriplet);
         }
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-        FileDeps.setupDependencies(config);
-        boolean link = targetConfiguration.link(paths, config);
-        return link;
+        if (!FileDeps.setupDependencies(config)) {
+            throw new RuntimeException("Error while setting up dependencies: nativeLink can't be performed");
+        }
+        return targetConfiguration.link(paths, config);
     }
 
     public static void nativeRun(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
+        Objects.requireNonNull(config,  "Project configuration can't be null");
         Triplet targetTriplet  = config.getTargetTriplet();
-        TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
+        TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet), "Target Configuration was null");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         targetConfiguration.runUntilEnd(paths, config);
     }
 
     private static TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
-        switch( targetTriplet.getOs() ) {
+        switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX : return new LinuxTargetConfiguration();
             case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
             case Constants.OS_IOS: return new IosTargetConfiguration();
@@ -230,4 +261,33 @@ public class SubstrateDispatcher {
 
     }
 
+    /**
+     * check if the GraalVM provided by the configuration is capable of running native-image
+     * @param configuration
+     * @throws NullPointerException when the configuration is null
+     * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
+     * @throws IOException when the path to bin/native-image doesn't exist
+     */
+    static void assertGraal(ProjectConfiguration configuration) throws IOException {
+        Objects.requireNonNull(configuration);
+        String graalPathString = configuration.getGraalPath();
+        if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
+        Path graalPath = Path.of(graalPathString);
+        if (!graalPath.toFile().exists()) throw new IOException ("Path provided for GraalVM doesn't exist: "+graalPathString);
+        Path binPath = graalPath.resolve("bin");
+        if (!binPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: "+graalPathString);
+        Path niPath = binPath.resolve("native-image");
+        if (!niPath.toFile().exists()) throw new IOException ("Path provided for GraalVM doesn't contain bin/native-image: "+graalPathString);
+        Path javacmd = binPath.resolve("java");
+        ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
+        processBuilder.command().add("-version");
+        processBuilder.redirectErrorStream(true);
+        Process process = processBuilder.start();
+        InputStream is = process.getInputStream();
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        String l = br.readLine();
+        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in "+graalPathString);
+        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in "+graalPathString+
+                " which uses Java version "+l+"\nUse GraalVM 19.3 or later");
+    }
 }

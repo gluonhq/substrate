@@ -41,6 +41,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -49,25 +50,39 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
 
+    private static final List<String> ioslibs = Arrays.asList(
+            "-lpthread", "-lz", "-lstrictmath", "-llibchelper",
+            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm");
+
+    private static final List<String> javafxLibs = Arrays.asList(
+            "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
+
+    private static final List<String> iosFrameworks = Arrays.asList(
+            "-Wl,-framework,Foundation", "-Wl,-framework,UIKit",
+            "-Wl,-framework,CoreGraphics", "-Wl,-framework,MobileCoreServices",
+            "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
+            "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
+
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        return Arrays.asList("-w", "-fPIC",
+        List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
                 "-arch", Constants.ARCH_ARM64,
                 "-mios-version-min=11.0",
-                "-isysroot", getSysroot(),
-                "-Wl,-framework,Foundation",
-                "-Wl,-framework,UIKit",
-                "-Wl,-framework,CoreGraphics",
-                "-Wl,-framework,CoreText",
-                "-Wl,-framework,OpenGLES",
-                "-Wl,-framework,MobileCoreServices");
+                "-isysroot", getSysroot()));
+        if (useJavaFX) {
+            String javafxSDK = projectConfiguration.getJavafxStaticLibsPath().toString();
+            javafxLibs.forEach(name ->
+                    linkFlags.add("-Wl,-force_load," + javafxSDK + "/lib" + name + ".a"));
+        }
+        linkFlags.addAll(ioslibs);
+        linkFlags.addAll(iosFrameworks);
+        return linkFlags;
     }
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
         return Arrays.asList("-xobjective-c",
                 "-arch", getArch(),
-                "-Dsvn.targetArch=" + getArch(),
                 "-isysroot", getSysroot());
     }
 
@@ -76,6 +91,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         Path llcPath = Path.of(projectConfiguration.getGraalPath(),"bin", "llc");
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
+                "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getArch(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
@@ -90,10 +106,16 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return iosAdditionalSourceFiles;
     }
 
+    @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
         Path gvmPath = paths.getGvmPath();
         Path objectFile = FileOps.findFile(gvmPath, "llvm.o");
-        return Arrays.asList(objectFile.toAbsolutePath().toString());
+        return Collections.singletonList(objectFile.toAbsolutePath().toString());
+    }
+
+    @Override
+    String getLinker() {
+        return "clang";
     }
 
     @Override
@@ -103,7 +125,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         if (result) {
             createInfoPlist(paths, projectConfiguration);
 
-            if (!isSimulator()) {
+            if (!isSimulator() && !projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
                 CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
                 if (!codeSigning.signApp()) {
                     throw new RuntimeException("Error signing the app");
@@ -115,13 +137,17 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+        this.paths = paths;
         this.projectConfiguration = projectConfiguration;
+        Deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
         String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
         if (isSimulator()) {
             // TODO: launchOnSimulator(appPath);
             return false;
+        } else if (!projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
+            return Deploy.install(appPath);
         }
-        return Deploy.install(appPath);
+        return true;
     }
 
     @Override

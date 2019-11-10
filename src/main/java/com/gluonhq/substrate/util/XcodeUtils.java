@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
 
+import static com.gluonhq.substrate.Constants.GLUON_SUBSTRATE;
+
 public class XcodeUtils {
 
     public enum SDKS {
@@ -37,6 +39,9 @@ public class XcodeUtils {
             return null;
         }
     }
+
+    public static final Path XCODE_PRODUCTS_PATH = Paths.get(System.getProperty("user.home")).
+            resolve("Library/Developer/Xcode/DerivedData/" + GLUON_SUBSTRATE + "/Build/Products/");
 
     private final SDKS sdk;
 
