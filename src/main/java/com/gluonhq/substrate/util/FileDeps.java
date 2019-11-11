@@ -107,20 +107,18 @@ public class FileDeps {
     }
 
     /**
-     * Return the path to the JavaFX SDK for this configuration.
-     * The path is cached on the provided configuration.
-     * If it is not there yet, all dependencies are retrieved.
+     * Fpr a given path, it verifies that the path exists, or else it tries
+     * to install it. After that, it returns the path for this configuration.
      * @param configuration the project configuration
      * @param path the initial path
      * @param errorMessage a message that will be displayed in case of error
-     * @return the location of the JavaFX SDK for the arch-os for this configuration
+     * @return the location of the path for this configuration
      * @throws IOException in case anything goes wrong.
      */
     private static Path resolvePath(ProjectConfiguration configuration, Path path, String errorMessage) throws IOException {
         if (Files.exists(Objects.requireNonNull(path))) {
             return path;
         }
-        // we don't have the JavaFX SDK yet. setup dependencies, and throw IOException if that "fails"
         if (!setupDependencies(Objects.requireNonNull(configuration))) {
             throw new IOException("Error setting up dependencies");
         }
