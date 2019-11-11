@@ -1,16 +1,16 @@
 
 repositories {
-    mavenCentral()
+    mavenLocal()
 }
 
 def target = System.getProperty("substrate.target")
 
+configurations {
+    provided
+}
+
 dependencies {
-    if ("ios" == target) {
-        implementation 'com.googlecode.plist:dd-plist:1.22'
-        implementation 'com.github.jnr:jnr-ffi:2.1.10'
-        implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
-    }
+    provided "com.gluonhq:substrate:0.0.2-SNAPSHOT"
 }
 
 mainClassName = "com.gluonhq.substrate.test.Main"
@@ -30,12 +30,7 @@ task runScript(type: Exec) {
     def skipsigning = System.getProperty("skipsigning")
     def expected = System.getProperty("expected")
 
-    def rootFile = new File(rootDir.getParent().concat("/build/"))
-    def substratePath = rootFile.toString().concat("/classes/java/main") + ":" +
-            rootFile.toString().concat("/resources/main") + ":" +
-            "${project.sourceSets.main.runtimeClasspath.asPath}"
-
-    def argsList = ["${java_home}/bin/java", '-cp', substratePath,
+    def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.provided.asPath}",
                    "-Dimagecp=${project.sourceSets.main.runtimeClasspath.asPath}",
                    "-Dgraalvm=$graal_path"]
     if (target != null) {

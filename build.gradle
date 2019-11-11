@@ -12,6 +12,7 @@ repositories {
 }
 
 test {
+    dependsOn publishToMavenLocal
     useJUnitPlatform()
 
     testLogging {
