@@ -39,15 +39,22 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -58,6 +65,7 @@ public class FileDeps {
     private static final String JAVA_STATIC_URL = "http://download2.gluonhq.com/substrate/staticjdk/";
     private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static.zip";
     private static final String JAVAFX_STATIC_URL = "http://download2.gluonhq.com/substrate/javafxstaticsdk/";
+    private static final String LLC_URL = "http://download2.gluonhq.com/substrate/llvm/";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
             "libjava.a", "libnet.a", "libnio.a", "libzip.a"
@@ -68,6 +76,27 @@ public class FileDeps {
             "javafx.fxml.jar", "javafx.media.jar", "javafx.web.jar",
             "libglass.a"
     );
+
+    /**
+     * Return the path to the JavaFX SDK for this configuration.
+     * The path is cached on the provided configuration.
+     * If it is not there yet, all dependencies are retrieved.
+     * @param configuration
+     * @return the location of the JavaFX SDK for the arch-os for this configuration
+     * @throws IOException in case anything goes wrong.
+     */
+    public static Path getJavaFXSDK(ProjectConfiguration configuration) throws IOException {
+        Path javafxStaticPath = configuration.getJavafxStaticPath();
+        if (Files.exists(javafxStaticPath)) {
+            return javafxStaticPath;
+        }
+        // we don't have the JavaFX SDK yet. setup dependencies, and throw IOException if that "fails"
+        setupDependencies(configuration);
+        if (!Files.exists(javafxStaticPath)) throw new IOException("Fatal error, could not install JavaFX SDK ");
+        return configuration.getJavafxStaticPath();
+    }
+
+
 
     /**
      *
@@ -201,13 +230,71 @@ public class FileDeps {
         return true;
     }
 
+    /**
+     * Returns the path to the llc compiler that is working for the provided configuration.
+     * The <code>configuration</code> object must have its host triplet set correctly.
+     * If the llc compiler is found in the file cache, it will be returned. Otherwise, it will
+     * be downloaded and stored in the cache. After calling this method, it is guaranteed that an
+     * llc compiler is in the specified path.
+     * <p>
+     *     There might be different versions for the llc compiler, but this is handled inside
+     *     Substrate. If the developer wants a specific flavour of llc, it is recommended to
+     *     use <code>configuration.setLlcPath()</code> which takes precedence over calling this method.
+     * </p>
+     * @param configuration
+     * @return the path to a working llc compiler.
+     * @throws IOException in case the required directories can't be created or navigated into.
+     */
+    public static Path getLlcPath(ProjectConfiguration configuration) throws IOException {
+        Path llcRootPath = Constants.USER_SUBSTRATE_PATH.resolve(Constants.LLC_NAME);
+        String archos = configuration.getHostTriplet().getArchOs();
+        Path archosPath = llcRootPath.resolve(archos).resolve(Constants.LLC_VERSION);
+        if (!Files.exists(archosPath)) {
+            Files.createDirectories(archosPath);
+        }
+        String llcname = "llc-"+archos+"-"+Constants.LLC_VERSION;
+        Path llcPath = archosPath.resolve(llcname);
+        if (Files.exists(llcPath)) {
+            return llcPath;
+        }
+        // we don't have the required llc. Download it and store it in llcPath.
+
+        URL url = new URL(LLC_URL+llcname);
+        try (ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
+             FileOutputStream fileOutputStream = new FileOutputStream(llcPath.toFile());
+             FileChannel fileChannel = fileOutputStream.getChannel()) {
+            fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+            readableByteChannel.close();
+        } catch (IOException e) {
+            throw new IOException("Error downloading LLC from " + url + ": " + e.getMessage() + ", " + e.getSuppressed());
+        }
+        Set<PosixFilePermission> perms = new HashSet<>();
+        perms.add(PosixFilePermission.OWNER_READ);
+        perms.add(PosixFilePermission.OWNER_EXECUTE);
+        Files.setPosixFilePermissions(llcPath, perms);
+        // now llcPath contains the llc, return it.
+        return llcPath;
+    }
+
+    /**
+     * Return the hashmap associated with this nameFile.
+     * If a file named <code>nameFile</code> exists, and it contains  a serialized version of a Map, this
+     * Map will be returned.
+     * If the file doesn't exist or is corrupt, this method returns null
+     * @param nameFile
+     * @return the Map contained in the file named nameFile, or null in all other cases.
+     */
     private static Map<String, String> getHashMap(String nameFile) {
         Map<String, String> hashes = null;
+        if (!Files.exists(Paths.get(nameFile))) {
+            return null;
+        }
         try (FileInputStream fis = new FileInputStream(new File(nameFile));
              ObjectInputStream ois = new ObjectInputStream(fis)) {
             hashes = (Map<String, String>) ois.readObject();
-        } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
+        } catch (IOException | ClassNotFoundException e) {
+            Logger.logDebug("Exception trying to get hashmap for "+nameFile+": "+e);
+            return null;
         }
         return hashes;
     }

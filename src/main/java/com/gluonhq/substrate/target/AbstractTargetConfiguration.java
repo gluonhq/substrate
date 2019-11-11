@@ -61,9 +61,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private List<String> attachList = Collections.emptyList();
     private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c");
 
+    String processClassPath(String cp) throws IOException {
+        return cp;
+    }
+
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
         this.projectConfiguration = config;
+        String classPath = processClassPath(cp);
         this.paths = paths;
         Triplet target =  config.getTargetTriplet();
         String suffix = target.getArchOs();
@@ -98,7 +103,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
-        compileBuilder.command().add(cp);
+        compileBuilder.command().add(classPath);
         compileBuilder.command().add(mainClassName);
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
         compileBuilder.directory(workDir.toFile());
@@ -487,7 +492,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return Collections.emptyList();
     }
 
-    List<String> getTargetSpecificAOTCompileFlags() {
+    List<String> getTargetSpecificAOTCompileFlags() throws IOException {
         return Collections.emptyList();
     }
 

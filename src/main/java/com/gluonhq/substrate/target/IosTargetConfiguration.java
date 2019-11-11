@@ -30,6 +30,7 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.XcodeUtils;
@@ -37,6 +38,7 @@ import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
@@ -87,13 +90,38 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificAOTCompileFlags() {
-        Path llcPath = Path.of(projectConfiguration.getGraalPath(),"bin", "llc");
+    List<String> getTargetSpecificAOTCompileFlags() throws IOException {
+
+        Path llcPath = getLlcPath();
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getArch(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+    }
+
+    /*
+     * Returns the path to an llc compiler
+     * First, the projectConfiguration is checked for llcPath.
+     * If that property is set, it will be used. If the property is set, but the llc compiler is not at the
+     * pointed location or is not working, an IllegalArgumentException will be thrown.
+     *
+     * If there is no llcPath property in the projectConfiguration, the file cache is checked for an llc version
+     * that works for the current architecture.
+     * If there is no llc in the file cache, it is retrieved from the download site, and added to the cache.
+     */
+    Path getLlcPath() throws IOException {
+        if (projectConfiguration.getLlcPath() != null) {
+            Path llcPath = Path.of(projectConfiguration.getLlcPath());
+            if (!Files.exists(llcPath)) {
+                throw new IllegalArgumentException("Configuration points to an llc that does not exist: "+llcPath);
+            } else {
+                return llcPath;
+            }
+        }
+        // there is no pre-configured llc, search it in the cache, or populare the cache
+        Path llcPath = FileDeps.getLlcPath(projectConfiguration);
+        return llcPath;
     }
 
     @Override
@@ -166,6 +194,41 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             }
         }
         return appPath.toString() + "/" + appName;
+    }
+
+    /**
+     * If we are not using JavaFX, we immediately return the provided classpath, no further processing needed
+     * If we use JavaFX, we will first obtain the location of the JavaFX SDK for this configuration.
+     * This may throw an IOException.
+     * After the path to the JavaFX SDK is obtained, the JavaFX jars for the host platform are replaced by
+     * the JavaFX jars for the target platform.
+     * @param classPath
+     * @return
+     * @throws IOException
+     */
+    @Override
+    String processClassPath(String classPath) throws IOException {
+        if (!this.projectConfiguration.isUseJavaFX()) {
+            return classPath;
+        }
+        // we are using JavaFX
+        String javafxSDK = FileDeps.getJavaFXSDK(projectConfiguration).resolve("lib").toString();
+
+        StringBuffer answer = new StringBuffer();
+        Stream.of(classPath.split(File.pathSeparator)).forEach(s ->{
+            if (s.indexOf("javafx") < 0 ){
+                answer.append(s).append(File.pathSeparator);
+            } else {
+                if (s.indexOf("javafx-graphics") > 0) {
+                    answer.append(javafxSDK+File.separator+"javafx.graphics.jar").append(File.pathSeparator);
+                } else if (s.indexOf("javafx-controls") > 0 ) {
+                    answer.append(javafxSDK+File.separator+"javafx.controls.jar").append(File.pathSeparator);
+                } else {
+                    answer.append(s).append(File.pathSeparator);
+                }
+            }
+        });
+        return answer.toString();
     }
 
     private String getArch() {
