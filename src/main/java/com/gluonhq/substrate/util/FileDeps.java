@@ -78,6 +78,27 @@ public class FileDeps {
     );
 
     /**
+     * Return the path to the JavaFX SDK for this configuration.
+     * The path is cached on the provided configuration.
+     * If it is not there yet, all dependencies are retrieved.
+     * @param configuration
+     * @return the location of the JavaFX SDK for the arch-os for this configuration
+     * @throws IOException in case anything goes wrong.
+     */
+    public static Path getJavaFXSDK(ProjectConfiguration configuration) throws IOException {
+        Path javafxStaticPath = configuration.getJavafxStaticPath();
+        if (Files.exists(javafxStaticPath)) {
+            return javafxStaticPath;
+        }
+        // we don't have the JavaFX SDK yet. setup dependencies, and throw IOException if that "fails"
+        setupDependencies(configuration);
+        if (!Files.exists(javafxStaticPath)) throw new IOException("Fatal error, could not install JavaFX SDK ");
+        return configuration.getJavafxStaticPath();
+    }
+
+
+
+    /**
      *
      * First, this method searches for a valid location of the java static libraries
      * (e.g. libjava.a). When a user-supplied location is present, this location will be

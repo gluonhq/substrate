@@ -38,6 +38,7 @@ import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
@@ -192,6 +194,41 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             }
         }
         return appPath.toString() + "/" + appName;
+    }
+
+    /**
+     * If we are not using JavaFX, we immediately return the provided classpath, no further processing needed
+     * If we use JavaFX, we will first obtain the location of the JavaFX SDK for this configuration.
+     * This may throw an IOException.
+     * After the path to the JavaFX SDK is obtained, the JavaFX jars for the host platform are replaced by
+     * the JavaFX jars for the target platform.
+     * @param classPath
+     * @return
+     * @throws IOException
+     */
+    @Override
+    String processClassPath(String classPath) throws IOException {
+        if (!this.projectConfiguration.isUseJavaFX()) {
+            return classPath;
+        }
+        // we are using JavaFX
+        String javafxSDK = FileDeps.getJavaFXSDK(projectConfiguration).resolve("lib").toString();
+
+        StringBuffer answer = new StringBuffer();
+        Stream.of(classPath.split(File.pathSeparator)).forEach(s ->{
+            if (s.indexOf("javafx") < 0 ){
+                answer.append(s).append(File.pathSeparator);
+            } else {
+                if (s.indexOf("javafx-graphics") > 0) {
+                    answer.append(javafxSDK+File.separator+"javafx.graphics.jar").append(File.pathSeparator);
+                } else if (s.indexOf("javafx-controls") > 0 ) {
+                    answer.append(javafxSDK+File.separator+"javafx.controls.jar").append(File.pathSeparator);
+                } else {
+                    answer.append(s).append(File.pathSeparator);
+                }
+            }
+        });
+        return answer.toString();
     }
 
     private String getArch() {
