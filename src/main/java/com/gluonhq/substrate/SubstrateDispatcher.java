@@ -84,10 +84,6 @@ public class SubstrateDispatcher {
         if (staticLibs != null) {
             config.setJavaStaticLibs(staticLibs);
         }
-        // fail-fast: in case we're missing libraries, we don't want to start compiling
-        if (!FileDeps.setupDependencies(config)) {
-            throw new RuntimeException("Error while setting up dependencies.");
-        }
         TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was null");
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
@@ -203,9 +199,6 @@ public class SubstrateDispatcher {
             throw new IllegalArgumentException("We don't have a configuration to link " + targetTriplet);
         }
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-        if (!FileDeps.setupDependencies(config)) {
-            throw new RuntimeException("Error while setting up dependencies: nativeLink can't be performed");
-        }
         return targetConfiguration.link(paths, config);
     }
 

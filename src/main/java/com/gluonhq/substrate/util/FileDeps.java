@@ -54,6 +54,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -81,22 +82,53 @@ public class FileDeps {
      * Return the path to the JavaFX SDK for this configuration.
      * The path is cached on the provided configuration.
      * If it is not there yet, all dependencies are retrieved.
-     * @param configuration
+     * @param configuration the project configuration
      * @return the location of the JavaFX SDK for the arch-os for this configuration
      * @throws IOException in case anything goes wrong.
      */
-    public static Path getJavaFXSDK(ProjectConfiguration configuration) throws IOException {
-        Path javafxStaticPath = configuration.getJavafxStaticPath();
-        if (Files.exists(javafxStaticPath)) {
-            return javafxStaticPath;
-        }
-        // we don't have the JavaFX SDK yet. setup dependencies, and throw IOException if that "fails"
-        setupDependencies(configuration);
-        if (!Files.exists(javafxStaticPath)) throw new IOException("Fatal error, could not install JavaFX SDK ");
-        return configuration.getJavafxStaticPath();
+    public static Path getJavaSDKPath(ProjectConfiguration configuration) throws IOException {
+        return resolvePath(configuration,
+                configuration.getJavaStaticLibsPath(),
+                "Fatal error, could not install Java SDK ");
     }
 
+    /**
+     * Return the path to the JavaFX SDK for this configuration.
+     * The path is cached on the provided configuration.
+     * If it is not there yet, all dependencies are retrieved.
+     * @param configuration the project configuration
+     * @return the location of the JavaFX SDK for the arch-os for this configuration
+     * @throws IOException in case anything goes wrong.
+     */
+    public static Path getJavaFXSDKLibsPath(ProjectConfiguration configuration) throws IOException {
+        return resolvePath(configuration,
+                configuration.getJavafxStaticLibsPath(),
+                "Fatal error, could not install JavaFX SDK ");
+    }
 
+    /**
+     * Return the path to the JavaFX SDK for this configuration.
+     * The path is cached on the provided configuration.
+     * If it is not there yet, all dependencies are retrieved.
+     * @param configuration the project configuration
+     * @param path the initial path
+     * @param errorMessage a message that will be displayed in case of error
+     * @return the location of the JavaFX SDK for the arch-os for this configuration
+     * @throws IOException in case anything goes wrong.
+     */
+    private static Path resolvePath(ProjectConfiguration configuration, Path path, String errorMessage) throws IOException {
+        if (Files.exists(Objects.requireNonNull(path))) {
+            return path;
+        }
+        // we don't have the JavaFX SDK yet. setup dependencies, and throw IOException if that "fails"
+        if (!setupDependencies(Objects.requireNonNull(configuration))) {
+            throw new IOException("Error setting up dependencies");
+        }
+        if (!Files.exists(path)) {
+            throw new IOException(errorMessage);
+        }
+        return path;
+    }
 
     /**
      *
@@ -116,7 +148,7 @@ public class FileDeps {
      * @return true if the processed ended succesfully, false otherwise
      * @throws IOException in case default path for Substrate dependencies can't be created
      */
-    public static boolean setupDependencies(ProjectConfiguration configuration) throws IOException {
+    private static boolean setupDependencies(ProjectConfiguration configuration) throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
 
         if (!Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
@@ -175,7 +207,7 @@ public class FileDeps {
             Path javafxStatic = configuration.getJavafxStaticLibsPath();
             Logger.logDebug("Processing JavaFXStatic dependencies at " + javafxStatic.toString());
 
-            if (! Files.isDirectory(javafxStatic)) {
+            if (!Files.isDirectory(javafxStatic)) {
          //       Logger.logDebug("javafxStaticSdk/" + configuration.getJavafxStaticSdkVersion() + "/" + target + "-sdk/lib folder not found");
                 downloadJavaFXStatic = true;
             } else {
@@ -252,14 +284,14 @@ public class FileDeps {
         if (!Files.exists(archosPath)) {
             Files.createDirectories(archosPath);
         }
-        String llcname = "llc-"+archos+"-"+Constants.LLC_VERSION;
+        String llcname = Constants.LLC_NAME + "-" + archos + "-" + Constants.LLC_VERSION;
         Path llcPath = archosPath.resolve(llcname);
         if (Files.exists(llcPath)) {
             return llcPath;
         }
         // we don't have the required llc. Download it and store it in llcPath.
 
-        URL url = new URL(LLC_URL+llcname);
+        URL url = new URL(LLC_URL + llcname);
         try (ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
              FileOutputStream fileOutputStream = new FileOutputStream(llcPath.toFile());
              FileChannel fileChannel = fileOutputStream.getChannel()) {

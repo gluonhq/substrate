@@ -208,25 +208,26 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
      */
     @Override
     String processClassPath(String classPath) throws IOException {
-        if (!this.projectConfiguration.isUseJavaFX()) {
+        if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
         // we are using JavaFX
-        String javafxSDK = FileDeps.getJavaFXSDK(projectConfiguration).resolve("lib").toString();
+        String javafxSDKLibs = FileDeps.getJavaFXSDKLibsPath(projectConfiguration).toString();
 
-        StringBuffer answer = new StringBuffer();
-        Stream.of(classPath.split(File.pathSeparator)).forEach(s ->{
-            if (s.indexOf("javafx") < 0 ){
-                answer.append(s).append(File.pathSeparator);
+        StringBuilder answer = new StringBuilder();
+        Stream.of(classPath.split(File.pathSeparator)).forEach(s -> {
+            if (!s.contains("javafx")) {
+                answer.append(s);
             } else {
                 if (s.indexOf("javafx-graphics") > 0) {
-                    answer.append(javafxSDK+File.separator+"javafx.graphics.jar").append(File.pathSeparator);
-                } else if (s.indexOf("javafx-controls") > 0 ) {
-                    answer.append(javafxSDK+File.separator+"javafx.controls.jar").append(File.pathSeparator);
+                    answer.append(javafxSDKLibs + File.separator + "javafx.graphics.jar");
+                } else if (s.indexOf("javafx-controls") > 0) {
+                    answer.append(javafxSDKLibs + File.separator + "javafx.controls.jar");
                 } else {
-                    answer.append(s).append(File.pathSeparator);
+                    answer.append(s);
                 }
             }
+            answer.append(File.pathSeparator);
         });
         return answer.toString();
     }
