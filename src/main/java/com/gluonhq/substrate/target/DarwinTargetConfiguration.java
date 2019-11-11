@@ -53,6 +53,7 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
                 libPath + "libprism_es2.a", libPath + "libglass.a",
                 libPath + "libjavafx_font.a", libPath + "libjavafx_iio.a"));
         if (usePrismSW) {
+            answer.add(libPath + "libdecora_sse.a");
             answer.add(libPath + "libprism_sw.a");
         }
         answer.addAll(macoslibs);

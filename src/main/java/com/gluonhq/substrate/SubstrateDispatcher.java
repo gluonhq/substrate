@@ -89,7 +89,6 @@ public class SubstrateDispatcher {
         if (jniList != null && !jniList.trim().isEmpty()) {
             config.setJniList(Arrays.asList(jniList.split(",")));
         }
-        TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         config.getIosSigningConfiguration().setSkipSigning(skipSigning);
         if (staticLibs != null) {
             config.setJavaStaticLibs(staticLibs);
@@ -102,7 +101,6 @@ public class SubstrateDispatcher {
                 "Error: Target Configuration was null");
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-
 
         Thread timer = new Thread(() -> {
             int counter = 1;

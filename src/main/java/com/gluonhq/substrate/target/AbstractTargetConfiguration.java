@@ -375,9 +375,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 for (String line : lines) {
                     bw.write(line + "\n");
                 }
-                for (String attachClass : attachList) {
-                    writeEntry(bw, attachClass);
-                }
+            }
+            for (String attachClass : attachList) {
+                bw.write(",\n");
+                writeInitEntry(bw, attachClass);
             }
             for (String javaClass : projectConfiguration.getReflectionList()) {
                 writeEntry(bw, javaClass);
@@ -405,11 +406,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                         line -> !line.startsWith("[") && !line.startsWith("]"));
                 for (String line : lines) {
                     bw.write(line + "\n");
-                }
-            }
-            if (projectConfiguration.isUseJavaFX()) {
-                for (String attachClass : attachList) {
-                    writeEntry(bw, attachClass);
                 }
             }
             for (String javaClass : projectConfiguration.getJniList()) {
@@ -443,6 +439,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         } else {
             bw.write("\n");
         }
+        bw.write("  }\n");
+    }
+
+    private static void writeInitEntry(BufferedWriter bw, String javaClass) throws IOException {
+        bw.write("  {\n");
+        bw.write("    \"name\" : \"" + javaClass + "\",\n");
+        bw.write("    \"methods\":[{\"name\":\"<init>\",\"parameterTypes\":[] }]\n");
         bw.write("  }\n");
     }
 

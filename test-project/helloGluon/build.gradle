@@ -17,7 +17,11 @@ dependencies {
     implementation "com.gluonhq:charm-glisten:6.0.1"
     implementation "com.gluonhq.attach:display:$attachVersion:$classifier"
     implementation "com.gluonhq.attach:lifecycle:$attachVersion:$classifier"
-    implementation "com.gluonhq.attach:statusbar:$attachVersion:$classifier"
+    if ("ios" == target) {
+        implementation "com.gluonhq.attach:statusbar:$attachVersion:$classifier"
+    } else {
+        implementation "com.gluonhq.attach:statusbar:$attachVersion"
+    }
     implementation "com.gluonhq.attach:storage:$attachVersion:$classifier"
     implementation "com.gluonhq.attach:util:$attachVersion"
 
@@ -33,16 +37,11 @@ javafx {
     modules = [ "javafx.controls" ]
 }
 
-run {
-    jvmArgs = ["-Dprism.verbose=true"] //, "-Dprism.order=sw"]
-}
-
 mainClassName = "com.gluonhq.substrate.test.Main"
 
 def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
 
 task runScript(type: Exec) {
-    dependsOn 'clean'
     dependsOn 'build'
 
     def graal_path = setupGraalDependencies(platform)
@@ -62,12 +61,12 @@ task runScript(type: Exec) {
                     "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
                     "-Dgraalvm=$graal_path",
-                    "-Dreflectionlist=com.gluonhq.impl.charm.glisten.control.skin.GlistenButtonSkin",
-                    "-Djavafx=true"] //, "-Dprism.sw=true"]
+                    "-Dreflectionlist=com.gluonhq.impl.charm.glisten.control.skin.GlistenButtonSkin"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
+    } else {
+        argsList += ["-Dprism.sw=true"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
-    println "LIST: ${argsList.toString()}"
     commandLine argsList
 }

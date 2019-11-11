@@ -12,4 +12,34 @@
     "name" : "com.sun.scenario.effect.impl.prism.sw.PSWRenderer",
     "methods":[{"name":"createRenderer","parameterTypes":["com.sun.scenario.effect.FilterContext"] }]
   }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_INPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.sse.SSEBoxBlurPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.sse.SSEBoxShadowPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.sse.SSELinearConvolvePeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.sse.SSELinearConvolveShadowPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.sse.SSERendererDelegate",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
 ]
