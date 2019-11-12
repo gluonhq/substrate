@@ -786,8 +786,10 @@
 ,
   {
     "name" : "com.sun.scenario.effect.impl.prism.PrRenderer",
-    "methods":[{"name":"<init>","parameterTypes":[] }],
-    "methods":[{"name":"createRenderer","parameterTypes":["com.sun.scenario.effect.FilterContext"] }]
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"createRenderer","parameterTypes":["com.sun.scenario.effect.FilterContext"] }
+    ]
   }
 ,
   {

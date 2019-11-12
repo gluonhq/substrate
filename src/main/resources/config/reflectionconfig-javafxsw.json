@@ -10,7 +10,11 @@
 ,
   {
     "name" : "com.sun.scenario.effect.impl.prism.sw.PSWRenderer",
-    "methods":[{"name":"createRenderer","parameterTypes":["com.sun.scenario.effect.FilterContext"] }]
+    "methods":[
+      {"name":"createRenderer","parameterTypes":["com.sun.scenario.effect.FilterContext"] },
+      {"name":"createJSWInstance","parameterTypes":["com.sun.scenario.effect.FilterContext"] },
+      {"name":"createJSWInstance","parameterTypes":["com.sun.glass.ui.Screen"] }
+    ]
   }
 ,
   {
@@ -41,5 +45,35 @@
   {
     "name" : "com.sun.scenario.effect.impl.sw.sse.SSERendererDelegate",
     "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.java.JSWRendererDelegate",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.java.JSWBlend_SRC_INPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.java.JSWBoxBlurPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.java.JSWBoxShadowPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.java.JSWLinearConvolvePeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.sw.java.JSWLinearConvolveShadowPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
   }
 ]
