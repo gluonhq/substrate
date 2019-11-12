@@ -1,6 +1,7 @@
 
 repositories {
     mavenLocal()
+    mavenCentral()
 }
 
 def target = System.getProperty("substrate.target")
