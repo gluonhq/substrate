@@ -8,7 +8,11 @@
   }
 ,
   {
-    "name" : "java.io.InputStream"
+    "name" : "java.io.InputStream",
+    "methods" : [
+      {"name":"read","parameterTypes":["byte[]","int","int"] },
+      {"name":"skip","parameterTypes":["long"] }
+    ]
   }
 ,
   {

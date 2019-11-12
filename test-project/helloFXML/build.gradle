@@ -1,0 +1,59 @@
+plugins {
+    id 'org.openjfx.javafxplugin' version '0.0.8'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+def target = System.getProperty("substrate.target")
+
+configurations {
+    substrate
+}
+
+dependencies {
+    substrate "com.gluonhq:substrate:0.0.2-SNAPSHOT"
+}
+
+javafx {
+    version = "13.0.1"
+    modules = [ "javafx.controls", "javafx.fxml" ]
+}
+
+mainClassName = "com.gluonhq.substrate.test.Main"
+
+def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
+
+task runScript(type: Exec) {
+    dependsOn 'build'
+
+    def graal_path = setupGraalDependencies(platform)
+
+    if (java_home == null) {
+        throw new RuntimeException("java_home is not defined.")
+    }
+
+    def javafx_path = setupJavaFXDependencies(platform, target)
+
+    def expected = System.getProperty("expected")
+
+    def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
+                    "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:${javafx_path}/javafx.fxml.jar:" +
+                            "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
+                    "-Dgraalvm=$graal_path",
+                    "-Dbundleslist=com.gluonhq.substrate.test.bundle",
+                    "-Dreflectionlist=javafx.fxml.FXMLLoader,com.gluonhq.substrate.test.MainController,javafx.scene.control.Button,javafx.scene.control.Label",
+            ]
+    if (target != null) {
+        argsList += ["-DtargetProfile=$target"]
+    } else {
+        argsList += ["-Dprism.sw=true"]
+    }
+    if (expected != null) {
+        argsList += ["-Dexpected=$expected"]
+    }
+    argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
+    commandLine argsList
+}

@@ -1,0 +1,14 @@
+.box {
+    -fx-spacing: 50;
+    -fx-alignment: center;
+}
+
+.box > .label {
+    -fx-font-size: 1.3em;
+    -fx-text-fill: #de2125;
+}
+
+.box > .button {
+    -fx-font-size: 1.5em;
+    -fx-text-fill: derive(#2125de, 30%);
+}

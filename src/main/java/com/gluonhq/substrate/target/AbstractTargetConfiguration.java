@@ -96,7 +96,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().addAll(getResources());
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
-            compileBuilder.command().add("-H:IncludeResourceBundles=" + String.join(",", getBundlesList()));
+            String bundles = String.join(",", getBundlesList());
+            System.out.println("bundles = " + bundles);
+            compileBuilder.command().add("-H:IncludeResourceBundles=" + bundles);
         }
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
@@ -352,10 +354,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     ));
 
     private List<String> getBundlesList() {
+        List<String> list = new ArrayList<>(projectConfiguration.getBundlesList());
         if (projectConfiguration.isUseJavaFX()) {
-            return bundlesList;
+            list.addAll(bundlesList);
         }
-        return Collections.emptyList();
+        return list;
     }
 
     private Path createReflectionConfig(String suffix) throws IOException {
@@ -377,6 +380,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 for (String line : lines) {
                     bw.write(line + "\n");
                 }
+            }
+            for (String javaClass : projectConfiguration.getReflectionList()) {
+                bw.write(",\n");
+                writeSingleEntry(bw, javaClass, false);
             }
             bw.write("]");
         }
