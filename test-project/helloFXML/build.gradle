@@ -19,7 +19,7 @@ dependencies {
 
 javafx {
     version = "13.0.1"
-    modules = [ "javafx.controls" ]
+    modules = [ "javafx.controls", "javafx.fxml" ]
 }
 
 mainClassName = "com.gluonhq.substrate.test.Main"
@@ -40,9 +40,12 @@ task runScript(type: Exec) {
     def expected = System.getProperty("expected")
 
     def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
-                    "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
+                    "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:${javafx_path}/javafx.fxml.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
-                    "-Dgraalvm=$graal_path"]
+                    "-Dgraalvm=$graal_path",
+                    "-Dbundleslist=com.gluonhq.substrate.test.bundle",
+                    "-Dreflectionlist=javafx.fxml.FXMLLoader,com.gluonhq.substrate.test.MainController,javafx.scene.control.Button,javafx.scene.control.Label",
+            ]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
     } else {

@@ -45,6 +45,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -62,11 +63,14 @@ public class SubstrateDispatcher {
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
+        String reflectionList = System.getProperty("reflectionlist");
+        String bundlesList = System.getProperty("bundleslist");
         String targetProfile = System.getProperty("targetProfile");
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
         String staticLibs = System.getProperty("javalibspath");
+        String staticJavaFXSDK = System.getProperty("javafxsdk");
 
         String expected  = System.getProperty("expected");
 
@@ -82,12 +86,17 @@ public class SubstrateDispatcher {
         config.setUsePrismSW(usePrismSW);
         config.getIosSigningConfiguration().setSkipSigning(skipSigning);
         Optional.ofNullable(staticLibs).ifPresent(config::setJavaStaticLibs);
-
+        Optional.ofNullable(staticJavaFXSDK).ifPresent(config::setJavaFXStaticSDK);
+        if (reflectionList != null && !reflectionList.trim().isEmpty()) {
+            config.setReflectionList(Arrays.asList(reflectionList.split(",")));
+        }
+        if (bundlesList != null && !bundlesList.trim().isEmpty()) {
+            config.setBundlesList(Arrays.asList(bundlesList.split(",")));
+        }
         TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was null");
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-
 
         Thread timer = new Thread(() -> {
             int counter = 1;

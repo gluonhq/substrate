@@ -108,6 +108,10 @@
   }
 ,
   {
-    "name" : "com.sun.javafx.iio.ios.IosImageLoader"
+    "name" : "com.sun.javafx.iio.ios.IosImageLoader",
+    "methods" : [
+      {"name":"setInputParameters","parameterTypes":["int","int","int","int"] },
+      {"name":"updateProgress","parameterTypes":["float"] }
+    ]
   }
 ]
