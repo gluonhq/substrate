@@ -3,17 +3,18 @@ plugins {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 def target = System.getProperty("substrate.target")
 
+configurations {
+    substrate
+}
+
 dependencies {
-    if ("ios" == target) {
-        implementation 'com.googlecode.plist:dd-plist:1.22'
-        implementation 'com.github.jnr:jnr-ffi:2.1.10'
-        implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
-    }
+    substrate "com.gluonhq:substrate:0.0.2-SNAPSHOT"
 }
 
 javafx {
@@ -36,13 +37,9 @@ task runScript(type: Exec) {
 
     def javafx_path = setupJavaFXDependencies(platform, target)
 
-    def rootFile = new File(rootDir.getParent().concat("/build/"))
-    def substratePath = rootFile.toString().concat("/classes/java/main") + ":" +
-            rootFile.toString().concat("/resources/main") + ":" +
-            "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}"
     def expected = System.getProperty("expected")
 
-    def argsList = ["${java_home}/bin/java", '-cp', substratePath,
+    def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                     "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
                     "-Dgraalvm=$graal_path"]
