@@ -70,6 +70,7 @@ public class SubstrateDispatcher {
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
         String staticLibs = System.getProperty("javalibspath");
+        String staticJavaFXSDK = System.getProperty("javafxsdk");
 
         String expected  = System.getProperty("expected");
 
@@ -92,6 +93,9 @@ public class SubstrateDispatcher {
         }
         if (bundlesList != null && !bundlesList.trim().isEmpty()) {
             config.setBundlesList(Arrays.asList(bundlesList.split(",")));
+        }
+        if (staticJavaFXSDK != null) {
+            config.setJavaFXStaticSDK(staticJavaFXSDK);
         }
         // fail-fast: in case we're missing libraries, we don't want to start compiling
         if (!FileDeps.setupDependencies(config)) {
