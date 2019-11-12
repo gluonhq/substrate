@@ -10,11 +10,11 @@ repositories {
 def target = System.getProperty("substrate.target")
 
 configurations {
-    provided
+    substrate
 }
 
 dependencies {
-    provided "com.gluonhq:substrate:0.0.2-SNAPSHOT"
+    substrate "com.gluonhq:substrate:0.0.2-SNAPSHOT"
 }
 
 javafx {
@@ -39,7 +39,7 @@ task runScript(type: Exec) {
 
     def expected = System.getProperty("expected")
 
-    def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.provided.asPath}",
+    def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                     "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
                     "-Dgraalvm=$graal_path"]
