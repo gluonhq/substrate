@@ -11,7 +11,7 @@ configurations {
 }
 
 dependencies {
-    substrate "com.gluonhq:substrate:0.0.2"
+    substrate "com.gluonhq:substrate:0.0.3-SNAPSHOT"
 }
 
 mainClassName = "com.gluonhq.substrate.test.Main"

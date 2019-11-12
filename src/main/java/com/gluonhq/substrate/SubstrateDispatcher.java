@@ -45,6 +45,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -62,6 +63,8 @@ public class SubstrateDispatcher {
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
+        String reflectionList = System.getProperty("reflectionlist");
+        String bundlesList = System.getProperty("bundleslist");
         String targetProfile = System.getProperty("targetProfile");
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
@@ -84,6 +87,12 @@ public class SubstrateDispatcher {
         config.getIosSigningConfiguration().setSkipSigning(skipSigning);
         if (staticLibs != null) {
             config.setJavaStaticLibs(staticLibs);
+        }
+        if (reflectionList != null && !reflectionList.trim().isEmpty()) {
+            config.setReflectionList(Arrays.asList(reflectionList.split(",")));
+        }
+        if (bundlesList != null && !bundlesList.trim().isEmpty()) {
+            config.setBundlesList(Arrays.asList(bundlesList.split(",")));
         }
         if (staticJavaFXSDK != null) {
             config.setJavaFXStaticSDK(staticJavaFXSDK);
