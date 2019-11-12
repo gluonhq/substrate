@@ -85,27 +85,18 @@ public class SubstrateDispatcher {
         config.setTarget(targetTriplet);
         config.setUsePrismSW(usePrismSW);
         config.getIosSigningConfiguration().setSkipSigning(skipSigning);
-        if (staticLibs != null) {
-            config.setJavaStaticLibs(staticLibs);
-        }
+        Optional.ofNullable(staticLibs).ifPresent(config::setJavaStaticLibs);
+        Optional.ofNullable(staticJavaFXSDK).ifPresent(config::setJavaFXStaticSDK);
         if (reflectionList != null && !reflectionList.trim().isEmpty()) {
             config.setReflectionList(Arrays.asList(reflectionList.split(",")));
         }
         if (bundlesList != null && !bundlesList.trim().isEmpty()) {
             config.setBundlesList(Arrays.asList(bundlesList.split(",")));
         }
-        if (staticJavaFXSDK != null) {
-            config.setJavaFXStaticSDK(staticJavaFXSDK);
-        }
-        // fail-fast: in case we're missing libraries, we don't want to start compiling
-        if (!FileDeps.setupDependencies(config)) {
-            throw new RuntimeException("Error while setting up dependencies.");
-        }
         TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was null");
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-
 
         Thread timer = new Thread(() -> {
             int counter = 1;
@@ -216,9 +207,6 @@ public class SubstrateDispatcher {
             throw new IllegalArgumentException("We don't have a configuration to link " + targetTriplet);
         }
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-        if (!FileDeps.setupDependencies(config)) {
-            throw new RuntimeException("Error while setting up dependencies: nativeLink can't be performed");
-        }
         return targetConfiguration.link(paths, config);
     }
 

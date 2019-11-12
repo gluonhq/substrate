@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
@@ -202,33 +203,27 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
      * This may throw an IOException.
      * After the path to the JavaFX SDK is obtained, the JavaFX jars for the host platform are replaced by
      * the JavaFX jars for the target platform.
-     * @param classPath
-     * @return
+     * @param classPath The provided classpath
+     * @return A string with the modified classpath if JavaFX is used
      * @throws IOException
      */
     @Override
     String processClassPath(String classPath) throws IOException {
-        if (!this.projectConfiguration.isUseJavaFX()) {
+        if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
-        // we are using JavaFX
-        String javafxSDK = FileDeps.getJavaFXSDK(projectConfiguration).resolve("lib").toString();
-
-        StringBuffer answer = new StringBuffer();
-        Stream.of(classPath.split(File.pathSeparator)).forEach(s ->{
-            if (s.indexOf("javafx") < 0 ){
-                answer.append(s).append(File.pathSeparator);
-            } else {
-                if (s.indexOf("javafx-graphics") > 0) {
-                    answer.append(javafxSDK+File.separator+"javafx.graphics.jar").append(File.pathSeparator);
-                } else if (s.indexOf("javafx-controls") > 0 ) {
-                    answer.append(javafxSDK+File.separator+"javafx.controls.jar").append(File.pathSeparator);
-                } else {
-                    answer.append(s).append(File.pathSeparator);
-                }
-            }
-        });
-        return answer.toString();
+        Path javafxSDKLibsPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
+        return Stream.of(classPath.split(File.pathSeparator))
+                .map(s -> {
+                    if (s.indexOf("javafx-graphics") > 0) {
+                        return javafxSDKLibsPath.resolve("javafx.graphics.jar").toString();
+                    } else if (s.indexOf("javafx-controls") > 0) {
+                        return javafxSDKLibsPath.resolve("javafx.controls.jar").toString();
+                    } else {
+                        return s;
+                    }
+                })
+                .collect(Collectors.joining(File.pathSeparator));
     }
 
     private String getArch() {
