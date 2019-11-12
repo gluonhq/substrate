@@ -7,11 +7,11 @@ repositories {
 def target = System.getProperty("substrate.target")
 
 configurations {
-    provided
+    substrate
 }
 
 dependencies {
-    provided "com.gluonhq:substrate:0.0.2-SNAPSHOT"
+    substrate "com.gluonhq:substrate:0.0.2-SNAPSHOT"
 }
 
 mainClassName = "com.gluonhq.substrate.test.Main"
@@ -31,7 +31,7 @@ task runScript(type: Exec) {
     def skipsigning = System.getProperty("skipsigning")
     def expected = System.getProperty("expected")
 
-    def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.provided.asPath}",
+    def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                    "-Dimagecp=${project.sourceSets.main.runtimeClasspath.asPath}",
                    "-Dgraalvm=$graal_path"]
     if (target != null) {
