@@ -122,9 +122,6 @@ public class FileDeps {
         if (!setupDependencies(Objects.requireNonNull(configuration))) {
             throw new IOException("Error setting up dependencies");
         }
-        if (!Files.exists(path)) {
-            throw new IOException(errorMessage);
-        }
         return path;
     }
 

@@ -81,9 +81,8 @@ public class SubstrateDispatcher {
         config.setTarget(targetTriplet);
         config.setUsePrismSW(usePrismSW);
         config.getIosSigningConfiguration().setSkipSigning(skipSigning);
-        if (staticLibs != null) {
-            config.setJavaStaticLibs(staticLibs);
-        }
+        Optional.ofNullable(staticLibs).ifPresent(config::setJavaStaticLibs);
+
         TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was null");
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
