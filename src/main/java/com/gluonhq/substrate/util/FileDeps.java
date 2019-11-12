@@ -107,7 +107,7 @@ public class FileDeps {
     }
 
     /**
-     * Fpr a given path, it verifies that the path exists, or else it tries
+     * For a given path, it verifies that the path exists, or else it tries
      * to install it. After that, it returns the path for this configuration.
      * @param configuration the project configuration
      * @param path the initial path
