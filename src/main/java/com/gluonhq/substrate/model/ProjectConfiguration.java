@@ -49,6 +49,7 @@ public class ProjectConfiguration {
     private String graalPath;
     private String javaStaticSdkVersion = Constants.DEFAULT_JAVA_STATIC_SDK_VERSION;
     private String javaStaticLibs;
+    private String javaFXStaticSDK;
 
     private String javafxStaticSdkVersion;
 
@@ -161,14 +162,34 @@ public class ProjectConfiguration {
         return getDefaultJavaStaticPath().resolve("lib").resolve("static");
     }
 
+    /**
+     * Sets the location for the JavaFX static SDK
+     * At this moment, the JavaFX static SDK contains
+     * platform-specific jars and platform-specific static native libraries.
+     * When this method is used, subsequent calls to
+     * <code>getJavaFXStaticLibsPath</code> and <code>getJavaFXStaticPath</code> will override the default
+     * location
+     * @param location the location of the directory where
+     *                 the JavaFX static SDK expected.
+     */
+    public void setJavaFXStaticSDK(String location) {
+        this.javaFXStaticSDK = location;
+    }
 
     /**
      * Return the path where the static JavaFX SDK is installed for the os-arch combination of this configuration, and for
-     * the version in <code>javafxStaticSdkVersion</code>
+     * the version in <code>javafxStaticSdkVersion</code>.
+     * If the location of the JavaFX SDK has previously been set using
+     * <code>setJavaFXStaticSDK</code>, that SDK will be used.
      * @return the path to the JavaFX SDK
      */
     public Path getJavafxStaticPath() {
-        Path answer = Constants.USER_SUBSTRATE_PATH
+        return javaFXStaticSDK != null? Paths.get(javaFXStaticSDK): getDefaultJavafxStaticPath();
+
+    }
+
+     Path getDefaultJavafxStaticPath() {
+            Path answer = Constants.USER_SUBSTRATE_PATH
                 .resolve("javafxStaticSdk")
                 .resolve(getJavafxStaticSdkVersion())
                 .resolve(targetTriplet.getOsArch())
