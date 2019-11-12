@@ -19,7 +19,7 @@ configurations {
 }
 
 dependencies {
-    substrate "com.gluonhq:substrate:0.0.2-SNAPSHOT"
+    substrate "com.gluonhq:substrate:$substrateVersion"
 
     implementation "com.gluonhq:charm-glisten:6.0.1"
     implementation "com.gluonhq.attach:display:$attachVersion:$classifier"
