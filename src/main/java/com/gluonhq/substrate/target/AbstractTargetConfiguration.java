@@ -97,7 +97,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
             String bundles = String.join(",", getBundlesList());
-            System.out.println("bundles = " + bundles);
             compileBuilder.command().add("-H:IncludeResourceBundles=" + bundles);
         }
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
