@@ -65,11 +65,13 @@ public class SubstrateDispatcher {
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String reflectionList = System.getProperty("reflectionlist");
         String jniList = System.getProperty("jnilist");
+        String bundlesList = System.getProperty("bundleslist");
         String targetProfile = System.getProperty("targetProfile");
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
         String staticLibs = System.getProperty("javalibspath");
+        String staticJavaFXSDK = System.getProperty("javafxsdk");
 
         String expected  = System.getProperty("expected");
 
@@ -83,19 +85,17 @@ public class SubstrateDispatcher {
         config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
         config.setUsePrismSW(usePrismSW);
+        config.getIosSigningConfiguration().setSkipSigning(skipSigning);
+        Optional.ofNullable(staticLibs).ifPresent(config::setJavaStaticLibs);
+        Optional.ofNullable(staticJavaFXSDK).ifPresent(config::setJavaFXStaticSDK);
         if (reflectionList != null && !reflectionList.trim().isEmpty()) {
             config.setReflectionList(Arrays.asList(reflectionList.split(",")));
         }
         if (jniList != null && !jniList.trim().isEmpty()) {
             config.setJniList(Arrays.asList(jniList.split(",")));
         }
-        config.getIosSigningConfiguration().setSkipSigning(skipSigning);
-        if (staticLibs != null) {
-            config.setJavaStaticLibs(staticLibs);
-        }
-        // fail-fast: in case we're missing libraries, we don't want to start compiling
-        if (!FileDeps.setupDependencies(config)) {
-            throw new RuntimeException("Error while setting up dependencies.");
+        if (bundlesList != null && !bundlesList.trim().isEmpty()) {
+            config.setBundlesList(Arrays.asList(bundlesList.split(",")));
         }
         TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was null");
@@ -211,9 +211,6 @@ public class SubstrateDispatcher {
             throw new IllegalArgumentException("We don't have a configuration to link " + targetTriplet);
         }
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
-        if (!FileDeps.setupDependencies(config)) {
-            throw new RuntimeException("Error while setting up dependencies: nativeLink can't be performed");
-        }
         return targetConfiguration.link(paths, config);
     }
 

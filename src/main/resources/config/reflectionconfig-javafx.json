@@ -20,7 +20,18 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.AnchorPane"
+    "name" : "javafx.scene.layout.AnchorPane",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"setBottomAnchor","parameterTypes":["javafx.scene.Node", "java.lang.Double"] },
+      {"name":"setLeftAnchor","parameterTypes":["javafx.scene.Node", "java.lang.Double"] },
+      {"name":"setRightAnchor","parameterTypes":["javafx.scene.Node", "java.lang.Double"] },
+      {"name":"setTopAnchor","parameterTypes":["javafx.scene.Node", "java.lang.Double"] },
+      {"name":"getBottomAnchor","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getLeftAnchor","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getRightAnchor","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getTopAnchor","parameterTypes":["javafx.scene.Node"] }
+    ]
   }
 ,
   {
@@ -44,7 +55,11 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.Pane"
+    "name" : "javafx.scene.layout.Pane",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"getChildren","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -68,7 +83,8 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.VBox"
+    "name" : "javafx.scene.layout.VBox",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
   }
 ,
   {
@@ -241,7 +257,8 @@
   }
 ,
   {
-    "name" : "com.sun.javafx.reflect.Trampoline"
+    "name" : "com.sun.javafx.reflect.Trampoline",
+    "methods":[{"name":"invoke","parameterTypes":["java.lang.reflect.Method","java.lang.Object","java.lang.Object[]"] }]
   }
 ,
   {
@@ -813,7 +830,8 @@
   }
 ,
   {
-    "name" : "com.sun.xml.internal.stream.XMLInputFactoryImpl"
+    "name" : "com.sun.xml.internal.stream.XMLInputFactoryImpl",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
   }
 ,
   {

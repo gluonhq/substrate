@@ -32,6 +32,7 @@ import com.gluonhq.substrate.attach.AttachResolver;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
+import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.ProcessRunner;
 
@@ -59,7 +60,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     ProcessPaths paths;
 
     private List<String> attachList = Collections.emptyList();
-    private List<String> defaultAdditionalSourceFiles = Arrays.asList("launcher.c");
+    private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
 
     String processClassPath(String cp) throws IOException {
         return cp;
@@ -68,8 +69,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     @Override
     public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
         this.projectConfiguration = config;
-        String classPath = processClassPath(cp);
         this.paths = paths;
+        String classPath = processClassPath(cp);
         Triplet target =  config.getTargetTriplet();
         String suffix = target.getArchOs();
         String jniPlatform = getJniPlatform(target.getOs());
@@ -99,7 +100,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().addAll(getResources());
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
-            compileBuilder.command().add("-H:IncludeResourceBundles=" + String.join(",", getBundlesList()));
+            String bundles = String.join(",", getBundlesList());
+            compileBuilder.command().add("-H:IncludeResourceBundles=" + bundles);
         }
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
@@ -146,15 +148,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
-
-        if (!Files.exists(projectConfiguration.getJavaStaticLibsPath())) {
-            System.err.println("We can't link because the static Java libraries are missing. " +
-                    "The path "+ projectConfiguration.getJavaStaticLibsPath() + " does not exist.");
-            return false;
-        }
-
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
+        Path javaSDKPath = FileDeps.getJavaSDKPath(projectConfiguration);
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
         Triplet target = projectConfiguration.getTargetTriplet();
@@ -176,9 +172,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
-        linkBuilder.command().add("-L" + projectConfiguration.getJavaStaticLibsPath());
+        linkBuilder.command().add("-L" + javaSDKPath);
         if (projectConfiguration.isUseJavaFX()) {
-            linkBuilder.command().add("-L" + projectConfiguration.getJavafxStaticLibsPath());
+            Path javafxSDKPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
+            linkBuilder.command().add("-L" + javafxSDKPath);
         }
         linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
         linkBuilder.command().add("-ljava");
@@ -355,10 +352,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     ));
 
     private List<String> getBundlesList() {
+        List<String> list = new ArrayList<>(projectConfiguration.getBundlesList());
         if (projectConfiguration.isUseJavaFX()) {
-            return bundlesList;
+            list.addAll(bundlesList);
         }
-        return Collections.emptyList();
+        return list;
     }
 
     private Path createReflectionConfig(String suffix) throws IOException {
