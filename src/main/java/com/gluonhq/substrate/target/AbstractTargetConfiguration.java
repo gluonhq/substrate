@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.attach.AttachResolver;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
@@ -58,6 +59,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     ProjectConfiguration projectConfiguration;
     ProcessPaths paths;
 
+    private List<String> attachList = Collections.emptyList();
     private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
 
     String processClassPath(String cp) throws IOException {
@@ -85,6 +87,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (cp == null || cp.isEmpty()) {
             throw new IllegalArgumentException("No classpath specified. Cannot compile");
         }
+        attachList = AttachResolver.attachServices(cp);
         String nativeImage = getNativeImagePath(config);
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
         compileBuilder.command().add("--report-unsupported-elements-at-runtime");
@@ -376,9 +379,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     bw.write(line + "\n");
                 }
             }
-            for (String javaClass : projectConfiguration.getReflectionList()) {
+            for (String attachClass : attachList) {
                 bw.write(",\n");
-                writeSingleEntry(bw, javaClass, false);
+                writeInitEntry(bw, attachClass);
+            }
+            for (String javaClass : projectConfiguration.getReflectionList()) {
+                writeEntry(bw, javaClass);
             }
             bw.write("]");
         }
@@ -405,9 +411,21 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     bw.write(line + "\n");
                 }
             }
+            for (String javaClass : projectConfiguration.getJniList()) {
+                writeEntry(bw, javaClass);
+            }
             bw.write("]");
         }
         return jniPath;
+    }
+
+    private static void writeEntry(BufferedWriter bw, String javaClass) throws IOException {
+        writeEntry(bw, javaClass, false);
+    }
+
+    private static void writeEntry(BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
+        bw.write(",\n");
+        writeSingleEntry(bw, javaClass, exclude);
     }
 
     private static void writeSingleEntry (BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
@@ -424,6 +442,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         } else {
             bw.write("\n");
         }
+        bw.write("  }\n");
+    }
+
+    private static void writeInitEntry(BufferedWriter bw, String javaClass) throws IOException {
+        bw.write("  {\n");
+        bw.write("    \"name\" : \"" + javaClass + "\",\n");
+        bw.write("    \"methods\":[{\"name\":\"<init>\",\"parameterTypes\":[] }]\n");
         bw.write("  }\n");
     }
 

@@ -5,9 +5,14 @@ plugins {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+        url 'https://nexus.gluonhq.com/nexus/content/repositories/releases/'
+    }
 }
 
+def attachVersion = "4.0.2"
 def target = System.getProperty("substrate.target")
+def classifier = "ios" == target ? target : "desktop"
 
 configurations {
     substrate
@@ -15,6 +20,17 @@ configurations {
 
 dependencies {
     substrate "com.gluonhq:substrate:$substrateVersion"
+
+    implementation "com.gluonhq:charm-glisten:6.0.1"
+    implementation "com.gluonhq.attach:display:$attachVersion:$classifier"
+    implementation "com.gluonhq.attach:lifecycle:$attachVersion:$classifier"
+    if ("ios" == target) {
+        implementation "com.gluonhq.attach:statusbar:$attachVersion:$classifier"
+    } else {
+        implementation "com.gluonhq.attach:statusbar:$attachVersion"
+    }
+    implementation "com.gluonhq.attach:storage:$attachVersion:$classifier"
+    implementation "com.gluonhq.attach:util:$attachVersion"
 }
 
 javafx {
@@ -37,19 +53,15 @@ task runScript(type: Exec) {
 
     def javafx_path = setupJavaFXDependencies(platform, target)
 
-    def expected = System.getProperty("expected")
-
     def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                     "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
-                    "-Dgraalvm=$graal_path"]
+                    "-Dgraalvm=$graal_path",
+                    "-Dreflectionlist=com.gluonhq.impl.charm.glisten.control.skin.GlistenButtonSkin"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
     } else {
         argsList += ["-Dprism.sw=true"]
-    }
-    if (expected != null) {
-        argsList += ["-Dexpected=$expected"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList

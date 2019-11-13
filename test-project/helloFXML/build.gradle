@@ -14,7 +14,7 @@ configurations {
 }
 
 dependencies {
-    substrate "com.gluonhq:substrate:0.0.3-SNAPSHOT"
+    substrate "com.gluonhq:substrate:$substrateVersion"
 }
 
 javafx {

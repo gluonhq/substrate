@@ -27,11 +27,13 @@
  */
 package com.gluonhq.substrate.attach;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -40,6 +42,19 @@ public class AttachResolver {
     public static final String DEPENDENCY_GROUP = "com.gluonhq.attach";
     public static final String DEPENDENCY_M2_GROUP = "com/gluonhq/attach/";
     public static final String UTIL_ARTIFACT = "util";
+
+    /**
+     * Extract Attach implementation Service classes
+     * @param classpath String with all the jars in the classpath,
+     *              including Attach jars
+     * @return a list of Service classes, that can be added
+     *          to reflection and jni lists
+     */
+    public static List<String> attachServices(String classpath) {
+        return attachServices(Stream.of(classpath.split(File.pathSeparator))
+                .map(s -> Path.of(s))
+                .collect(Collectors.toList()));
+    }
 
     /**
      * Extract Attach implementation Service classes

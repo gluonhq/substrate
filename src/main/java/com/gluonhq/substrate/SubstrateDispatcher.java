@@ -64,6 +64,7 @@ public class SubstrateDispatcher {
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String reflectionList = System.getProperty("reflectionlist");
+        String jniList = System.getProperty("jnilist");
         String bundlesList = System.getProperty("bundleslist");
         String targetProfile = System.getProperty("targetProfile");
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
@@ -89,6 +90,9 @@ public class SubstrateDispatcher {
         Optional.ofNullable(staticJavaFXSDK).ifPresent(config::setJavaFXStaticSDK);
         if (reflectionList != null && !reflectionList.trim().isEmpty()) {
             config.setReflectionList(Arrays.asList(reflectionList.split(",")));
+        }
+        if (jniList != null && !jniList.trim().isEmpty()) {
+            config.setJniList(Arrays.asList(jniList.split(",")));
         }
         if (bundlesList != null && !bundlesList.trim().isEmpty()) {
             config.setBundlesList(Arrays.asList(bundlesList.split(",")));
