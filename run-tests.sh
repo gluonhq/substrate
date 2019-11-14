@@ -92,7 +92,7 @@ java -classpath ${SUBSTRATE_MODULE_PATH}:out/substrate:src/main/resources \
  -Dimagecp="$(pwd)/out/helloFX:${TEST_HELLOFX_MODULE_PATH}" \
  -Dgraalvm=${GRAALVM_HOME} \
  -Dmainclass=com.gluonhq.substrate.test.Main \
- -Djavafxsdk=libs/javafxstatic \
+ -Djavafxsdk=libs/javafxstatic/sdk \
  -Dprism.sw=true \
  com.gluonhq.substrate.SubstrateDispatcher
 echo "test HelloFX completed"
