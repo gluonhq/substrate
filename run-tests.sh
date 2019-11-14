@@ -1,5 +1,3 @@
-#!/bin/bash -ex
-
 rm -rf out
 
 JAVAFX_PLATFORM=linux
