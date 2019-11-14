@@ -10,7 +10,8 @@ echo "Downloading JavaFX ${JAVAFX_VERSION}-${JAVAFX_PLATFORM} jars..."
 mkdir -p libs/javafx
 for javafxModule in `echo "base controls graphics"`; do
   if [ ! -f libs/javafx/javafx-${javafxModule}-${JAVAFX_VERSION}-${JAVAFX_PLATFORM}.jar ]; then
-    wget -O libs/javafx/javafx-${javafxModule}-${JAVAFX_VERSION}-${JAVAFX_PLATFORM}.jar https://repo1.maven.org/maven2/org/openjfx/javafx-${javafxModule}/${JAVAFX_VERSION}/javafx-${javafxModule}-${JAVAFX_VERSION}-${JAVAFX_PLATFORM}.jar
+    mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:get -Dartifact=org.openjfx:javafx-${javafxModule}:${JAVAFX_VERSION}:jar:${JAVAFX_PLATFORM}
+    mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:copy -Dartifact=org.openjfx:javafx-${javafxModule}:${JAVAFX_VERSION}:jar:${JAVAFX_PLATFORM} -DoutputDirectory=libs/javafx
   fi
 done
 echo "Downloading JavaFX jars completed!"
@@ -26,16 +27,20 @@ echo "Downloading JavaFX static SDK completed!"
 echo "Downloading substrate dependencies..."
 mkdir -p libs/substrate
 if [ ! -f libs/substrate/dd-plist-1.22.jar ]; then
-  wget -O libs/substrate/dd-plist-1.22.jar https://repo1.maven.org/maven2/com/googlecode/plist/dd-plist/1.22/dd-plist-1.22.jar
+  mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:get -Dartifact=com.googlecode.plist:dd-plist:1.22
+  mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:copy -Dartifact=com.googlecode.plist:dd-plist:1.22 -DoutputDirectory=libs/substrate
 fi
 if [ ! -f libs/substrate/jnr-ffi-2.1.11.jar ]; then
-  wget -O libs/substrate/jnr-ffi-2.1.11.jar https://repo1.maven.org/maven2/com/github/jnr/jnr-ffi/2.1.11/jnr-ffi-2.1.11.jar
+  mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:get -Dartifact=com.github.jnr:jnr-ffi:2.1.11
+  mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:copy -Dartifact=com.github.jnr:jnr-ffi:2.1.11 -DoutputDirectory=libs/substrate
 fi
 if [ ! -f libs/substrate/bcpkix-jdk15on-1.49.jar ]; then
-  wget -O libs/substrate/bcpkix-jdk15on-1.49.jar https://repo1.maven.org/maven2/org/bouncycastle/bcpkix-jdk15on/1.49/bcpkix-jdk15on-1.49.jar
+  mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:get -Dartifact=org.bouncycastle:bcpkix-jdk15on:1.49
+  mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:copy -Dartifact=org.bouncycastle:bcpkix-jdk15on:1.49 -DoutputDirectory=libs/substrate
 fi
 if [ ! -f libs/substrate/bcprov-jdk15on-1.49.jar ]; then
-  wget -O libs/substrate/bcprov-jdk15on-1.49.jar https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk15on/1.49/bcprov-jdk15on-1.49.jar
+  mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:get -Dartifact=org.bouncycastle:bcprov-jdk15on:1.49
+  mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:copy -Dartifact=org.bouncycastle:bcprov-jdk15on:1.49 -DoutputDirectory=libs/substrate
 fi
 echo "Downloading substrate dependencies completed!"
 
