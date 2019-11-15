@@ -34,6 +34,7 @@ import com.gluonhq.substrate.target.DarwinTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
+import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
@@ -226,6 +227,7 @@ public class SubstrateDispatcher {
         switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX : return new LinuxTargetConfiguration();
             case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
+            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration();
             case Constants.OS_IOS: return new IosTargetConfiguration();
             default: return null;
         }
@@ -238,10 +240,13 @@ public class SubstrateDispatcher {
     private static boolean canCompileTo(Triplet host, Triplet target) {
         // if the host os and target os are the same, always return true
         if (host.getOs().equals(target.getOs())) return true;
+
         // if host is linux and target is ios, fail
-        if (Constants.OS_LINUX == host.getOs()) {
-            if (Constants.OS_IOS == target.getOs()) return false;
+        if ((Constants.OS_LINUX.equals(host.getOs()) || Constants.OS_WINDOWS.equals(host.getOs())) &&
+                Constants.OS_IOS.equals(target.getOs())) {
+            return false;
         }
+
         return true;
     }
 
