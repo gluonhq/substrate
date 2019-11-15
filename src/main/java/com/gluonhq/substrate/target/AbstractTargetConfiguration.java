@@ -142,6 +142,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             case Constants.OS_LINUX: return "LINUX_AMD64";
             case Constants.OS_IOS:return "DARWIN_AARCH64";
             case Constants.OS_DARWIN: return "DARWIN_AMD64";
+            case Constants.OS_ANDROID: return "LINUX_AARCH64";
             default: throw new IllegalArgumentException("No support yet for " + os);
         }
     }
@@ -197,13 +198,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
         linkBuilder.command().add("-ljava");
-        linkBuilder.command().add("-ljvm");
-        linkBuilder.command().add("-llibchelper");
         linkBuilder.command().add("-lnio");
         linkBuilder.command().add("-lzip");
         linkBuilder.command().add("-lnet");
-        linkBuilder.command().add("-lstrictmath");
-        linkBuilder.command().add("-lpthread");
         linkBuilder.command().add("-lz");
         linkBuilder.command().add("-ldl");
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
@@ -272,6 +269,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
             processBuilder.command().add(fileName);
         }
+        for( String fileName: getAdditionalHeaderFiles() ) {
+            FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
+            processBuilder.command().add(fileName);
+        }
         processBuilder.command().addAll(getTargetSpecificCCompileFlags());
         processBuilder.directory(workDir.toFile());
         String cmds = String.join(" ", processBuilder.command());
@@ -316,6 +317,30 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             return false;
         }
         return true;
+    }
+
+    /*
+     * Returns the path to an llc compiler
+     * First, the projectConfiguration is checked for llcPath.
+     * If that property is set, it will be used. If the property is set, but the llc compiler is not at the
+     * pointed location or is not working, an IllegalArgumentException will be thrown.
+     *
+     * If there is no llcPath property in the projectConfiguration, the file cache is checked for an llc version
+     * that works for the current architecture.
+     * If there is no llc in the file cache, it is retrieved from the download site, and added to the cache.
+     */
+    Path getLlcPath() throws IOException {
+        if (projectConfiguration.getLlcPath() != null) {
+            Path llcPath = Path.of(projectConfiguration.getLlcPath());
+            if (!Files.exists(llcPath)) {
+                throw new IllegalArgumentException("Configuration points to an llc that does not exist: "+llcPath);
+            } else {
+                return llcPath;
+            }
+        }
+        // there is no pre-configured llc, search it in the cache, or populare the cache
+        Path llcPath = FileDeps.getLlcPath(projectConfiguration);
+        return llcPath;
     }
 
     private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
@@ -479,6 +504,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     List<String> getAdditionalSourceFiles() {
         return defaultAdditionalSourceFiles;
+    }
+
+    List<String> getAdditionalHeaderFiles() {
+        return Collections.EMPTY_LIST;
     }
 
     String getCompiler() {

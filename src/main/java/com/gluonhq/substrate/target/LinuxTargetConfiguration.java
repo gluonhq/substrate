@@ -52,6 +52,9 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         checkLinker();
         return super.link(paths, projectConfiguration);
     }
+
+    private static final List<String> linuxLibs = Arrays.asList("-ljvm", "-llibchelper", "-lstrictmath", "-lpthread");
+
     private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
@@ -69,6 +72,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add("-rdynamic");
+        answer.addAll(linuxLibs);
         if (!useJavaFX) return answer;
 
         ProcessBuilder process = new ProcessBuilder("pkg-config", "--libs", "gtk+-3.0", "gthread-2.0", "xtst");

@@ -84,6 +84,11 @@ public class Triplet {
                 this.vendor = VENDOR_APPLE;
                 this.os = OS_IOS;
                 break;
+            case ANDROID:
+                this.arch = ARCH_AARCH64;
+                this.vendor = VENDOR_LINUX;
+                this.os = OS_ANDROID;
+                break;
             default:
                 throw new IllegalArgumentException("Triplet for profile "+profile+" is not supported yet");
         }
