@@ -30,6 +30,7 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.util.FileOps;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -95,8 +96,16 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
+                "-H:+UseOnlyWritableBootImageHeap",
                 "-H:CustomLD=" + ldlld.toAbsolutePath().toString(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+    }
+
+    @Override
+    List<String> getTargetSpecificObjectFiles() throws IOException {
+        Path gvmPath = paths.getGvmPath();
+        Path objectFile = FileOps.findFile(gvmPath, "llvm.o");
+        return Collections.singletonList(objectFile.toAbsolutePath().toString());
     }
 
     @Override
