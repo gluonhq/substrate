@@ -415,8 +415,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             writeSingleEntry(bw, projectConfiguration.getMainClassName(), false);
             for (String javaFile : getReflectionClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 bw.write(",\n");
-                List<String> lines = FileOps.readFileLines(AbstractTargetConfiguration.class
-                        .getResourceAsStream(Constants.CONFIG_FILES + javaFile),
+                InputStream inputStream = AbstractTargetConfiguration.class.getResourceAsStream(Constants.CONFIG_FILES + javaFile);
+                if (inputStream == null) {
+                    throw new IOException("Missing a reflection configuration file named "+javaFile);
+                }
+                List<String> lines = FileOps.readFileLines(inputStream,
                         line -> !line.startsWith("[") && !line.startsWith("]"));
                 for (String line : lines) {
                     bw.write(line + "\n");
@@ -447,8 +450,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
             for (String javaFile : getJNIClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 bw.write(",\n");
-                List<String> lines = FileOps.readFileLines(AbstractTargetConfiguration.class
-                        .getResourceAsStream(Constants.CONFIG_FILES + javaFile),
+                InputStream inputStream = AbstractTargetConfiguration.class.getResourceAsStream(Constants.CONFIG_FILES + javaFile);
+                if (inputStream == null) {
+                    throw new IOException("Missing a jni configuration file named "+javaFile);
+                }
+                List<String> lines = FileOps.readFileLines(inputStream,
                         line -> !line.startsWith("[") && !line.startsWith("]"));
                 for (String line : lines) {
                     bw.write(line + "\n");
