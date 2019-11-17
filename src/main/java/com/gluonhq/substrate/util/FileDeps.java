@@ -353,10 +353,27 @@ public class FileDeps {
         Logger.logDebug("Process zip javafx done");
     }
 
+    /**
+     * Download the zip file from the specified URL into the path provided by destination, and unpack it there
+     * Note the conventions for the url file (must contain .zip) and the destination (must not contain .zip,
+     * as it points to the ultimate directory that is the result of the unzip).
+     * @param urlZip the URL location of the zip file, e.g. https://download2.gluonhq.com/substrate/clibs/foo.zip
+     * @param destination the location where the zip file should be downloaded and unpacked,
+     *                    e.g. graalvm/libs/clibraries/foo
+     *                    The zip file will be installed in graalvm/libs/clibraries/foo.zip
+     *                    The contents of this zip file will be installed in graalvm/libs/clibraries/foo
+     * @throws IOException
+     */
+    public static void downloadZip(String urlZip, Path destination) throws IOException {
+        String zip = destination.toAbsolutePath().toString()+".zip";
+        Path zipPath = Paths.get(zip);
+        processZip(urlZip, zipPath, destination.getFileName().toString(), null, null);
+    }
+
     private static void processZip(String urlZip, Path zipPath, String folder, String version, ProjectConfiguration configuration) throws IOException {
-        String osArch = configuration.getTargetTriplet().getOsArch();
-        String name = folder+"-"+osArch+".md5";
-        System.err.println("PROCESSZIP, url = "+urlZip+", zp = "+zipPath+", folder = "+folder+", version = "+version+", name = "+name);
+        String osArch = configuration == null? null : configuration.getTargetTriplet().getOsArch();
+        String md5name = osArch == null? folder+".md5" : folder+"-"+osArch+".md5";
+        System.err.println("PROCESSZIP, url = "+urlZip+", zp = "+zipPath+", folder = "+folder+", version = "+version+", name = "+md5name);
         URL url = new URL(urlZip);
         url.openConnection();
         try (InputStream reader = url.openStream();
@@ -368,7 +385,12 @@ public class FileDeps {
                 buffer = new byte[8192];
             }
         }
-        Path zipDir = zipPath.getParent().resolve(folder).resolve(version).resolve(osArch);
+        Path zipDir =
+                version == null ?
+                osArch == null ?
+                        zipPath.getParent().resolve(folder) :
+                zipPath.getParent().resolve(folder).resolve(osArch) :
+                zipPath.getParent().resolve(folder).resolve(version).resolve(osArch);
         if (! zipPath.toFile().isDirectory()) {
             Files.createDirectories(zipDir);
         }
@@ -398,7 +420,7 @@ public class FileDeps {
         }
 
         try (FileOutputStream fos =
-                      new FileOutputStream(zipDir.toString() + File.separator + name);
+                      new FileOutputStream(zipDir.toString() + File.separator + md5name);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(hashes);
         }

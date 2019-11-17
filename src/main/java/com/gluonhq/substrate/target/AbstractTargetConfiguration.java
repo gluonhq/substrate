@@ -145,11 +145,26 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             default: throw new IllegalArgumentException("No support yet for " + os);
         }
     }
+    /*
+     * Make sure the clibaries needed for linking are available for this particular configuration.
+     * The clibraries path is available by default in GraalVM, but the directory for cross-platform libs may
+     * not exist. In that case, retrieve the libs from our download site.
+     */
+    void ensureClibs (ProjectConfiguration projectConfiguration) throws IOException {
+        Triplet target = projectConfiguration.getTargetTriplet();
+        Path clibPath = Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2());
+        if (!Files.exists(clibPath)) {
+            String url = "http://download2.gluonhq.com/substrate/clibs/"+target.getOsArch()+".zip";
+            FileDeps.downloadZip(url, clibPath,projectConfiguration);
+        }
+        if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
+    }
 
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
+        ensureClibs(projectConfiguration);
         Path javaSDKPath = FileDeps.getJavaSDKPath(projectConfiguration);
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
