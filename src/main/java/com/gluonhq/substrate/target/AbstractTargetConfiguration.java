@@ -146,7 +146,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
     }
 
-    static final private String CLIBURLROOT = "http://download2.gluonhq.com/substrate/clibs/"
+    static final private String URL_CLIBS_ZIP = "http://download2.gluonhq.com/substrate/clibs/${osarch}.zip";
+
     /*
      * Make sure the clibraries needed for linking are available for this particular configuration.
      * The clibraries path is available by default in GraalVM, but the directory for cross-platform libs may
@@ -156,7 +157,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Triplet target = projectConfiguration.getTargetTriplet();
         Path clibPath = Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2());
         if (!Files.exists(clibPath)) {
-            String url = CLIBURLROOT + target.getOsArch()+".zip";
+            String url = URL_CLIBS_ZIP.replace("${osarch}", target.getOsArch());
             FileDeps.downloadZip(url, clibPath);
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
