@@ -29,10 +29,13 @@ static const char *tag = "myapp";
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
 (JNIEnv *env, jobject activity) {
     LOGE(stderr, "Start GraalApp, env at %p pointing to %p\n", env, *env);
+LOGE(stderr, "PAGESIZE = %d\n", sysconf(_SC_PAGE_SIZE));
 int ev = (*env)->GetVersion(env);
-LOGE(stderr, "EV = %d\n", ev);
+LOGE(stderr, "EnvVersion = %d\n", ev);
     start_logger("GraalCompiled");
+    LOGE(stderr, "calling JavaMainWrapper_run\n");
     (*IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e)(1);
+    LOGE(stderr, "called JavaMainWrapper_run\n");
 }
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurface
