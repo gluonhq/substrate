@@ -33,6 +33,8 @@ import java.util.List;
 
 public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
 
+    private static final List<String> darwinLibs = Arrays.asList("-llibchelper", "-lpthread","-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
+
     @Override
     String getAdditionalSourceFileLocation() {
         return "/native/macosx/";
@@ -46,7 +48,7 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         if (!useJavaFX) {
-            return Arrays.asList("-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
+            return darwinLibs;
         }
         String libPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
         List<String> answer = new ArrayList<>(Arrays.asList(
