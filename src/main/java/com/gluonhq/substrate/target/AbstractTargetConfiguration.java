@@ -201,6 +201,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add("-lnio");
         linkBuilder.command().add("-lzip");
         linkBuilder.command().add("-lnet");
+        linkBuilder.command().add("-ljvm");
+        linkBuilder.command().add("-lstrictmath");
         linkBuilder.command().add("-lz");
         linkBuilder.command().add("-ldl");
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));

@@ -53,7 +53,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return super.link(paths, projectConfiguration);
     }
 
-    private static final List<String> linuxLibs = Arrays.asList("-ljvm", "-llibchelper", "-lstrictmath", "-lpthread");
+    private static final List<String> linuxLibs = Arrays.asList("-llibchelper", "-lpthread");
 
     private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",

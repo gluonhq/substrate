@@ -33,7 +33,7 @@ import java.util.List;
 
 public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
 
-    private static final List<String> darwinLibs = Arrays.asList("-ljvm", "-llibchelper", "-lstrictmath", "-lpthread","-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
+    private static final List<String> darwinLibs = Arrays.asList("-llibchelper", "-lpthread","-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
 
     @Override
     String getAdditionalSourceFileLocation() {
