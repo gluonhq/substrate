@@ -155,7 +155,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path clibPath = Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2());
         if (!Files.exists(clibPath)) {
             String url = "http://download2.gluonhq.com/substrate/clibs/"+target.getOsArch()+".zip";
-            FileDeps.downloadZip(url, clibPath,projectConfiguration);
+            FileDeps.downloadZip(url, clibPath);
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
     }
