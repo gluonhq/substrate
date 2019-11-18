@@ -151,45 +151,36 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
-        Path javaSDKPath = FileDeps.getJavaSDKPath(projectConfiguration);
+
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase() + "." + getObjectFileExtension();
-        Triplet target = projectConfiguration.getTargetTriplet();
         Path gvmPath = paths.getGvmPath();
         Path objectFile = FileOps.findFile(gvmPath, objectFilename);
         if (objectFile == null) {
             throw new IllegalArgumentException("Linking failed, since there is no objectfile named "+objectFilename+" under "
                     +gvmPath.toString());
         }
+
         ProcessBuilder linkBuilder = new ProcessBuilder(getLinker());
 
-        linkBuilder.command().add("-o");
-        linkBuilder.command().add(getAppPath(appName));
-
         Path gvmAppPath = gvmPath.resolve(appName);
-        getAdditionalSourceFiles()
-              .forEach( r -> linkBuilder.command().add(
-                      gvmAppPath.resolve(r.replaceAll("\\..*", "." + getObjectFileExtension())).toString()));
+        getAdditionalSourceFiles().forEach(sourceFile -> linkBuilder.command()
+                .add(gvmAppPath.resolve(sourceFile.replaceAll("\\..*", "." + getObjectFileExtension())).toString()));
 
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
-        linkBuilder.command().add("-L" + javaSDKPath);
-        if (projectConfiguration.isUseJavaFX()) {
-            Path javafxSDKPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
-            linkBuilder.command().add("-L" + javafxSDKPath);
-        }
-        linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
-        linkBuilder.command().add("-ljava");
-        linkBuilder.command().add("-ljvm");
-        linkBuilder.command().add("-llibchelper");
-        linkBuilder.command().add("-lnio");
-        linkBuilder.command().add("-lzip");
-        linkBuilder.command().add("-lnet");
-        linkBuilder.command().add("-lstrictmath");
-        linkBuilder.command().add("-lpthread");
-        linkBuilder.command().add("-lz");
-        linkBuilder.command().add("-ldl");
+
+        specifyLinkProcessLibraries(linkBuilder);
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
+
+        specifyLinkProcessOutput(linkBuilder, appName);
+
+        addGraalStaticLibsPathToLinkProcess(linkBuilder);
+        addJavaStaticLibsPathToLinkProcess(linkBuilder);
+        if (projectConfiguration.isUseJavaFX()) {
+            addJavaFXStaticLibsPathToLinkProcess(linkBuilder);
+        }
+
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
         System.err.println("cmd = "+cmds);
@@ -204,6 +195,21 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             return false;
         }
         return true;
+    }
+
+    private void addGraalStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) {
+        Triplet target = projectConfiguration.getTargetTriplet();
+        linkBuilder.command().add(getLinkLibraryPathOption() + Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
+    }
+
+    private void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
+        Path javaSDKPath = FileDeps.getJavaSDKPath(projectConfiguration);
+        linkBuilder.command().add(getLinkLibraryPathOption() + javaSDKPath);
+    }
+
+    private void addJavaFXStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
+        Path javafxSDKPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
+        linkBuilder.command().add(getLinkLibraryPathOption() + javafxSDKPath);
     }
 
     private void asynPrintFromInputStream (InputStream inputStream) {
@@ -459,7 +465,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "/native/linux/";
     }
 
-
     List<String> getAdditionalSourceFiles() {
         return defaultAdditionalSourceFiles;
     }
@@ -478,6 +483,28 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     String getObjectFileExtension() {
         return "o";
+    }
+
+    void specifyLinkProcessOutput(ProcessBuilder linkBuilder, String appName) {
+        linkBuilder.command().add("-o");
+        linkBuilder.command().add(getAppPath(appName));
+    }
+
+    void specifyLinkProcessLibraries(ProcessBuilder linkBuilder) {
+        linkBuilder.command().add("-ljava");
+        linkBuilder.command().add("-ljvm");
+        linkBuilder.command().add("-llibchelper");
+        linkBuilder.command().add("-lnio");
+        linkBuilder.command().add("-lzip");
+        linkBuilder.command().add("-lnet");
+        linkBuilder.command().add("-lstrictmath");
+        linkBuilder.command().add("-lpthread");
+        linkBuilder.command().add("-lz");
+        linkBuilder.command().add("-ldl");
+    }
+
+    String getLinkLibraryPathOption() {
+        return "-L";
     }
 
     /**
@@ -506,5 +533,4 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     List<String> getTargetSpecificObjectFiles() throws IOException {
         return Collections.emptyList();
     }
-
 }
