@@ -51,7 +51,7 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     private List<String> androidAdditionalHeaderFiles = Arrays.asList("grandroid.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
     private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-Wl,--gc-sections",
-            "-landroid", "-llog",  "-shared");
+            "-landroid", "-llog", "-lstdc++", "-shared");
 
     public AndroidTargetConfiguration() {
         // for now, we need to have an ANDROID_NDK
