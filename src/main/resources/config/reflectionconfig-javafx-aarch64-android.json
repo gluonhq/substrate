@@ -5,6 +5,10 @@
   }
 ,
   {
+    "name" : "com.sun.prism.es2.MonocleGLFactory"
+  }
+,
+  {
     "name" : "com.sun.prism.es2.ES2ResourceFactory"
   }
 ,
