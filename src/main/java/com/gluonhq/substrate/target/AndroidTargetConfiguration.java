@@ -55,7 +55,9 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     private List<String> androidAdditionalHeaderFiles = Arrays.asList("grandroid.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
     private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-Wl,--gc-sections",
-            "-landroid", "-llog", "-lstdc++", "-shared");
+            "-landroid", "-llog", "-shared");
+    private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
+            "-lprism_es2_monocle", "-Wl,--no-whole-archive", "-lGLESv2", "-lEGL");
 
     public AndroidTargetConfiguration() {
         // for now, we need to have an ANDROID_NDK
@@ -160,7 +162,11 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        return linkFlags;
+        if (!useJavaFX) return linkFlags;
+        List<String> answer = new ArrayList<>();
+        answer.addAll(linkFlags);
+        answer.addAll(javafxLinkFlags);
+        return answer;
     }
 
     @Override
