@@ -27,7 +27,107 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.model.Triplet;
+import com.gluonhq.substrate.util.FileDeps;
+import com.gluonhq.substrate.util.FileOps;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
+    @Override
+    String getAdditionalSourceFileLocation() {
+        return "/native/windows/";
+    }
 
+    @Override
+    List<String> getAdditionalSourceFiles() {
+        return Arrays.asList("launcher.c");
+    }
+
+    @Override
+    String getCompiler() {
+        return "cl";
+    }
+
+    @Override
+    String getLinker() {
+        return "link";
+    }
+
+    @Override
+    String getNativeImageCommand() {
+        return "native-image.cmd";
+    }
+
+    @Override
+    String getObjectFileExtension() {
+        return "obj";
+    }
+
+    @Override
+    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+        this.paths = paths;
+        this.projectConfiguration = projectConfiguration;
+
+        Path javaSDKPath = FileDeps.getJavaSDKPath(projectConfiguration);
+        String appName = projectConfiguration.getAppName() + ".exe";
+        String objectFilename = projectConfiguration.getMainClassName().toLowerCase() + "." + getObjectFileExtension();
+        Triplet target = projectConfiguration.getTargetTriplet();
+        Path gvmPath = paths.getGvmPath();
+        Path objectFile = FileOps.findFile(gvmPath, objectFilename);
+        if (objectFile == null) {
+            throw new IllegalArgumentException("Linking failed, since there is no objectfile named "+objectFilename+" under "
+                    +gvmPath.toString());
+        }
+        ProcessBuilder linkBuilder = new ProcessBuilder(getLinker());
+
+        linkBuilder.command().add("/OUT:" + getAppPath(appName));
+
+        Path gvmAppPath = gvmPath.resolve(appName);
+        getAdditionalSourceFiles()
+                .forEach( r -> linkBuilder.command().add(
+                        gvmAppPath.resolve(r.replaceAll("\\..*", "." + getObjectFileExtension())).toString()));
+
+        linkBuilder.command().add(objectFile.toString());
+        linkBuilder.command().addAll(getTargetSpecificObjectFiles());
+
+        linkBuilder.command().add("/LIBPATH:" + javaSDKPath);
+        if (projectConfiguration.isUseJavaFX()) {
+            Path javafxSDKPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
+            linkBuilder.command().add("/LIBPATH:" + javafxSDKPath);
+        }
+
+        linkBuilder.command().add("/LIBPATH:"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2()));
+//        linkBuilder.command().add("-ljava");
+//        linkBuilder.command().add("-ljvm");
+//        linkBuilder.command().add("-llibchelper");
+//        linkBuilder.command().add("-lnio");
+//        linkBuilder.command().add("-lzip");
+//        linkBuilder.command().add("-lnet");
+//        linkBuilder.command().add("-lstrictmath");
+//        linkBuilder.command().add("-lpthread");
+//        linkBuilder.command().add("-lz");
+//        linkBuilder.command().add("-ldl");
+//        linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
+        linkBuilder.redirectErrorStream(true);
+        String cmds = String.join(" ", linkBuilder.command());
+        System.err.println("cmd = "+cmds);
+        Process compileProcess = linkBuilder.start();
+        System.err.println("started linking");
+        int result = compileProcess.waitFor();
+        System.err.println("done linking");
+        if (result != 0) {
+            System.err.println("Linking failed. Details from linking below:");
+            System.err.println("Command was: "+cmds);
+            printFromInputStream(compileProcess.getInputStream());
+            return false;
+        }
+        return true;
+    }
 }

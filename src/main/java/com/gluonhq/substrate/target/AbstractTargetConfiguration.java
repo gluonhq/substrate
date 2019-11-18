@@ -119,7 +119,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         boolean failure = result != 0;
         String extraMessage = null;
         if (!failure) {
-            String nameSearch = mainClassName.toLowerCase()+".o";
+            String nameSearch = mainClassName.toLowerCase() + "." + getObjectFileExtension();
             Path p = FileOps.findFile(gvmPath, nameSearch);
             if (p == null) {
                 failure = true;
@@ -153,7 +153,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         this.projectConfiguration = projectConfiguration;
         Path javaSDKPath = FileDeps.getJavaSDKPath(projectConfiguration);
         String appName = projectConfiguration.getAppName();
-        String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
+        String objectFilename = projectConfiguration.getMainClassName().toLowerCase() + "." + getObjectFileExtension();
         Triplet target = projectConfiguration.getTargetTriplet();
         Path gvmPath = paths.getGvmPath();
         Path objectFile = FileOps.findFile(gvmPath, objectFilename);
@@ -169,7 +169,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path gvmAppPath = gvmPath.resolve(appName);
         getAdditionalSourceFiles()
               .forEach( r -> linkBuilder.command().add(
-                      gvmAppPath.resolve(r.replaceAll("\\..*", ".o")).toString()));
+                      gvmAppPath.resolve(r.replaceAll("\\..*", "." + getObjectFileExtension())).toString()));
 
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
@@ -217,7 +217,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         t.start();
     }
 
-    private void printFromInputStream(InputStream inputStream) throws IOException {
+    void printFromInputStream(InputStream inputStream) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
         String l = br.readLine();
         while (l != null) {
@@ -226,9 +226,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
     }
 
-    private static String getNativeImagePath (ProjectConfiguration configuration) {
+    private String getNativeImagePath(ProjectConfiguration configuration) {
         String graalPath = configuration.getGraalPath();
-        Path path = Path.of(graalPath, "bin", "native-image");
+        Path path = Path.of(graalPath, "bin", getNativeImageCommand());
         return path.toString();
     }
 
@@ -470,6 +470,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     String getLinker() {
         return "gcc";
+    }
+
+    String getNativeImageCommand() {
+        return "native-image";
+    }
+
+    String getObjectFileExtension() {
+        return "o";
     }
 
     /**

@@ -51,7 +51,7 @@ public class Triplet {
            return new Triplet(Constants.Profile.MACOS);
         } else if (osName.contains("nux")) {
             return new Triplet(Constants.Profile.LINUX);
-        } else if (osName.contains("Windows")) {
+        } else if (osName.contains("windows")) {
             return new Triplet(Constants.Profile.WINDOWS);
         } else {
            throw new IllegalArgumentException("OS " + osName + " not supported");

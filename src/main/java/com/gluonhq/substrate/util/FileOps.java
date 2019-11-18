@@ -52,7 +52,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -129,11 +128,11 @@ public class FileOps {
     }
 
     public static InputStream resourceAsStream(String res) throws IOException {
-        String actualResource = Objects.requireNonNull(res).startsWith(File.separator) ? res : File.separator + res;
+        String actualResource = Objects.requireNonNull(res).startsWith("/") ? res : "/" + res;
         Logger.logDebug("Looking for resource: " + res);
         InputStream answer = SubstrateDispatcher.class.getResourceAsStream(actualResource);
         if (answer == null) {
-            throw new IOException("Resource " + res + " not found");
+            throw new IOException("Resource " + actualResource + " not found");
         }
         return answer;
     }

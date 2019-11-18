@@ -19,9 +19,6 @@ mainClassName = "com.gluonhq.substrate.test.Main"
 def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
 
 task runScript(type: Exec) {
-    dependsOn 'clean'
-    dependsOn 'build'
-
     def graal_path = setupGraalDependencies(platform)
 
     if (java_home == null) {

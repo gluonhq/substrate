@@ -273,11 +273,13 @@ public class SubstrateDispatcher {
         String graalPathString = configuration.getGraalPath();
         if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
         Path graalPath = Path.of(graalPathString);
-        if (!graalPath.toFile().exists()) throw new IOException ("Path provided for GraalVM doesn't exist: "+graalPathString);
+        if (!graalPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPathString);
         Path binPath = graalPath.resolve("bin");
-        if (!binPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: "+graalPathString);
-        Path niPath = binPath.resolve("native-image");
-        if (!niPath.toFile().exists()) throw new IOException ("Path provided for GraalVM doesn't contain bin/native-image: "+graalPathString);
+        if (!binPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPathString);
+        Path niPath = Constants.OS_WINDOWS.equals(configuration.getHostTriplet().getOs()) ?
+                binPath.resolve("native-image.cmd") :
+                binPath.resolve("native-image");
+        if (!niPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPathString);
         Path javacmd = binPath.resolve("java");
         ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
         processBuilder.command().add("-version");
@@ -286,8 +288,8 @@ public class SubstrateDispatcher {
         InputStream is = process.getInputStream();
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String l = br.readLine();
-        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in "+graalPathString);
-        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in "+graalPathString+
+        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in " + graalPathString);
+        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in " + graalPathString+
                 " which uses Java version "+l+"\nUse GraalVM 19.3 or later");
     }
 }
