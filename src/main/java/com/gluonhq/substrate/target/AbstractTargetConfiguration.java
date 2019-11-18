@@ -535,7 +535,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     List<String> getCommonLinkLibraries() {
         return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet",
                 "-ljvm", "-lstrictmath", "-lz", "-ldl",
-                "-lj2pkcs11", "-lsunec", "-lstdc++");
+                "-lj2pkcs11", "-lsunec");
     }
 
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
