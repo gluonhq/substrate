@@ -913,9 +913,4 @@
     "name":"com.sun.javafx.logging.jfr.JFRPulseLogger",
     "methods":[{"name":"createInstance","parameterTypes":[] }]
   }
-,
-  {
-    "name":"com.sun.security.sasl.gsskerb.JdkSASL",
-    "methods":[{"name":"<init>","parameterTypes":[] }]
-  }
 ]

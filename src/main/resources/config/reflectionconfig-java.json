@@ -15,7 +15,6 @@
   },
   {
     "name":"java.lang.Object",
-    "allDeclaredFields":true,
     "allDeclaredMethods":true
   },
   {
