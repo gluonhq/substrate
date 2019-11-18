@@ -56,7 +56,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-lz", "-lstrictmath", "-llibchelper",
-            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstdc++");
+            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm");
 
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
@@ -66,6 +66,13 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,-framework,CoreGraphics", "-Wl,-framework,MobileCoreServices",
             "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
+
+    @Override
+    List<String> getCommonLinkLibraries() {
+        List<String> defaultLinkFlags = new ArrayList<>(super.getCommonLinkLibraries());
+        defaultLinkFlags.add("-lstdc++");
+        return defaultLinkFlags;
+    }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {

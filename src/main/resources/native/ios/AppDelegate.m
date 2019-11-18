@@ -118,3 +118,7 @@ int startGVM() {
     gvmlog(@"Finished running GVM, done with isolatehread");
     return 0;
 }
+
+void Java_jdk_net_MacOSXSocketOptions_keepAliveOptionsSupported0() {
+     fprintf(stderr, "MacOSXSocketOptions missing\n");
+}

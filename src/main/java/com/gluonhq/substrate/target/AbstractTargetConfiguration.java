@@ -96,6 +96,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-H:TempDirectory="+tmpDir);
         compileBuilder.command().add("-H:+SharedLibrary");
         compileBuilder.command().add("-H:+AddAllCharsets");
+        compileBuilder.command().add("-H:EnableURLProtocols=http,https");
         compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
         compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
         compileBuilder.command().addAll(getResources());
@@ -198,14 +199,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             linkBuilder.command().add("-L" + javafxSDKPath);
         }
         linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
-        linkBuilder.command().add("-ljava");
-        linkBuilder.command().add("-lnio");
-        linkBuilder.command().add("-lzip");
-        linkBuilder.command().add("-lnet");
-        linkBuilder.command().add("-ljvm");
-        linkBuilder.command().add("-lstrictmath");
-        linkBuilder.command().add("-lz");
-        linkBuilder.command().add("-ldl");
+        linkBuilder.command().addAll(getCommonLinkLibraries());
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
@@ -536,6 +530,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     String getAppPath(String appName) {
         return paths.getAppPath().resolve(appName).toString();
+    }
+
+    List<String> getCommonLinkLibraries() {
+        return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet",
+                "-ljvm", "-lstrictmath", "-lz", "-ldl",
+                "-lj2pkcs11", "-lsunec");
     }
 
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
