@@ -74,6 +74,8 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     void specifyLinkProcessLibraries(ProcessBuilder linkBuilder) {
+        linkBuilder.command().add("msvcrt.lib");
+
         linkBuilder.command().add("advapi32.lib");
         linkBuilder.command().add("iphlpapi.lib");
         linkBuilder.command().add("ws2_32.lib");
@@ -85,6 +87,14 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         linkBuilder.command().add("nio.lib");
         linkBuilder.command().add("strictmath.lib");
         linkBuilder.command().add("zip.lib");
+    }
+
+    @Override
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
+        return Arrays.asList(
+                "/NODEFAULTLIB:msvcrt.lib",
+                "/NODEFAULTLIB:libcmt.lib"
+        );
     }
 
     @Override
