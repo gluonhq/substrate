@@ -30,8 +30,10 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,6 +42,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
 
@@ -72,6 +76,35 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
             this.ldlld = null;
             this.clang = null;
         }
+    }
+    /**
+     * // TODO: this is 100% similar to what we do on iOS. We need something like CrossPlatformTools for this.
+     * If we are not using JavaFX, we immediately return the provided classpath, no further processing needed
+     * If we use JavaFX, we will first obtain the location of the JavaFX SDK for this configuration.
+     * This may throw an IOException.
+     * After the path to the JavaFX SDK is obtained, the JavaFX jars for the host platform are replaced by
+     * the JavaFX jars for the target platform.
+     * @param classPath The provided classpath
+     * @return A string with the modified classpath if JavaFX is used
+     * @throws IOException
+     */
+    @Override
+    String processClassPath(String classPath) throws IOException {
+        if (!projectConfiguration.isUseJavaFX()) {
+            return classPath;
+        }
+        Path javafxSDKLibsPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
+        return Stream.of(classPath.split(File.pathSeparator))
+                .map(s -> {
+                    if (s.indexOf("javafx-graphics") > 0) {
+                        return javafxSDKLibsPath.resolve("javafx.graphics.jar").toString();
+                    } else if (s.indexOf("javafx-controls") > 0) {
+                        return javafxSDKLibsPath.resolve("javafx.controls.jar").toString();
+                    } else {
+                        return s;
+                    }
+                })
+                .collect(Collectors.joining(File.pathSeparator));
     }
 
     @Override
