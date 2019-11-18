@@ -14,7 +14,9 @@
     "name":"java.lang.Long"
   },
   {
-    "name":"java.lang.Object"
+    "name":"java.lang.Object",
+    "allDeclaredFields":true,
+    "allDeclaredMethods":true
   },
   {
     "name":"java.lang.Runnable"
@@ -34,7 +36,23 @@
   },
   {
     "name":"java.lang.System"
-  },
+  }
+,
+  {
+    "name":"java.lang.System$Logger$Level",
+    "methods":[{"name":"values","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"java.util.logging.ConsoleHandler",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"java.util.logging.SimpleFormatter",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
   {
     "name":"java.lang.Thread",
     "fields":[
@@ -68,5 +86,49 @@
   {
     "name":"java.nio.ByteOrder",
     "methods":[{"name":"nativeOrder","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"java.nio.file.attribute.PosixFilePermission",
+    "methods":[{"name":"values","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"java.security.SecureRandomParameters"
+  }
+,
+  {
+    "name":"java.util.Random",
+    "fields":[{"name":"seed", "allowUnsafeAccess":true}]
+  }
+,
+  {
+    "name":"com.sun.crypto.provider.HmacSHA1",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"com.sun.security.sasl.gsskerb.JdkSASL",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"java.net.Inet6Address",
+    "fields":[{"name":"holder6", "allowUnsafeAccess":true}]
+  }
+,
+  {
+    "name":"java.net.Inet6AddressImpl",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"java.net.InetAddress",
+    "fields":[{"name":"holder", "allowUnsafeAccess":true}]
+  }
+,
+  {
+    "name":"java.net.InetSocketAddress",
+    "fields":[{"name":"holder", "allowUnsafeAccess":true}]
   }
 ]

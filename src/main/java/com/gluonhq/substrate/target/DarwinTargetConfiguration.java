@@ -64,6 +64,7 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
     private static final List<String> macoslibs = Arrays.asList("-lffi",
             "-lpthread", "-lz", "-ldl", "-lstrictmath", "-llibchelper",
             "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lobjc", "-lstdc++",
+            "-lextnet", "-lj2pkcs11", "-lsunec",
             "-Wl,-framework,Foundation", "-Wl,-framework,AppKit",
             "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");

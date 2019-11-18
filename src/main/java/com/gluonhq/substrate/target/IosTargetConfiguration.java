@@ -56,7 +56,8 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-lz", "-lstrictmath", "-llibchelper",
-            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstdc++");
+            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstdc++",
+            "-lextnet", "-lj2pkcs11", "-lsunec");
 
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
