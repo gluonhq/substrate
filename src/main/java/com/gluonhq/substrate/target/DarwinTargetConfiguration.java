@@ -33,7 +33,9 @@ import java.util.List;
 
 public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
 
-    private static final List<String> darwinLibs = Arrays.asList("-llibchelper", "-lpthread","-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
+    private static final List<String> darwinLibs = Arrays.asList(
+            "-llibchelper", "-lpthread",
+            "-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
 
     @Override
     String getAdditionalSourceFileLocation() {
@@ -61,10 +63,16 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
         return answer;
     }
 
+    @Override
+    List<String> getCommonLinkLibraries() {
+        List<String> defaultLinkFlags = new ArrayList<>(super.getCommonLinkLibraries());
+        defaultLinkFlags.add("-lextnet");
+        return defaultLinkFlags;
+    }
+
     private static final List<String> macoslibs = Arrays.asList("-lffi",
             "-lpthread", "-lz", "-ldl", "-lstrictmath", "-llibchelper",
-            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lobjc", "-lstdc++",
-            "-lextnet", "-lj2pkcs11", "-lsunec",
+            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lobjc",
             "-Wl,-framework,Foundation", "-Wl,-framework,AppKit",
             "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");

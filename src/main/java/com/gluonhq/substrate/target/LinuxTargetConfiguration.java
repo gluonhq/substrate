@@ -37,6 +37,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -62,12 +63,18 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
             "-lpangocairo-1.0", "-lpango-1.0", "-latk-1.0",
             "-lcairo-gobject", "-lcairo", "-lgdk_pixbuf-2.0",
             "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype", "-lpangoft2-1.0",
-            "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst",
-            "-lextnet", "-lj2pkcs11", "-lsunec"
+            "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst"
             );
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
             "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
+
+    @Override
+    List<String> getCommonLinkLibraries() {
+        List<String> defaultLinkFlags = new ArrayList<>(super.getCommonLinkLibraries());
+        defaultLinkFlags.add("-lextnet");
+        return defaultLinkFlags;
+    }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {

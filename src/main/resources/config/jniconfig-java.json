@@ -32,7 +32,8 @@
   }
 ,
   {
-    "name" : "java.lang.ClassNotFoundException"
+    "name" : "java.lang.ClassNotFoundException",
+    "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
   }
 ,
   {
@@ -251,5 +252,10 @@
       {"name":"port"},
       {"name":"serverSocket"}
     ]
+  }
+,
+  {
+    "name":"sun.nio.ch.FileChannelImpl",
+    "fields":[{"name":"fd"}]
   }
 ]
