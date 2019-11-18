@@ -113,3 +113,11 @@ fprintf(stderr, "NETPOLL\n");
 void NET_Connect() {
 fprintf(stderr, "NETCONNECT\n");
 }
+
+void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
+fprintf(stderr, "LINUXNATIVEDISPATCHER_INIT\n");
+}
+
+void  Java_sun_nio_fs_LinuxNativeDispatcher_fgetxattr0() {
+fprintf(stderr, "LINUXNATIVEDISPATCHER_GETXATTR\n");
+}
