@@ -95,6 +95,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-H:+ExitAfterRelocatableImageWrite");
         compileBuilder.command().add("-H:TempDirectory="+tmpDir);
         compileBuilder.command().add("-H:+SharedLibrary");
+        compileBuilder.command().add("-H:+AddAllCharsets");
         compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
         compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
         compileBuilder.command().addAll(getResources());
@@ -143,14 +144,34 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             case Constants.OS_IOS:return "DARWIN_AARCH64";
             case Constants.OS_DARWIN: return "DARWIN_AMD64";
             case Constants.OS_WINDOWS: return "WINDOWS_AMD64";
+            case Constants.OS_ANDROID: return "LINUX_AARCH64";
             default: throw new IllegalArgumentException("No support yet for " + os);
         }
+    }
+
+    static final private String URL_CLIBS_ZIP = "http://download2.gluonhq.com/substrate/clibs/${osarch}.zip";
+
+    /*
+     * Make sure the clibraries needed for linking are available for this particular configuration.
+     * The clibraries path is available by default in GraalVM, but the directory for cross-platform libs may
+     * not exist. In that case, retrieve the libs from our download site.
+     */
+    private void ensureClibs (ProjectConfiguration projectConfiguration) throws IOException {
+        Triplet target = projectConfiguration.getTargetTriplet();
+        Path clibPath = Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2());
+        if (!Files.exists(clibPath)) {
+            String url = URL_CLIBS_ZIP.replace("${osarch}", target.getOsArch());
+            FileDeps.downloadZip(url, clibPath);
+        }
+        if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
     }
 
     @Override
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
+
+        ensureClibs(projectConfiguration);
 
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase() + "." + getObjectFileExtension();
@@ -261,6 +282,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
             processBuilder.command().add(fileName);
         }
+        for( String fileName: getAdditionalHeaderFiles() ) {
+            FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
+            processBuilder.command().add(fileName);
+        }
         processBuilder.command().addAll(getTargetSpecificCCompileFlags());
         processBuilder.directory(workDir.toFile());
         String cmds = String.join(" ", processBuilder.command());
@@ -305,6 +330,30 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             return false;
         }
         return true;
+    }
+
+    /*
+     * Returns the path to an llc compiler
+     * First, the projectConfiguration is checked for llcPath.
+     * If that property is set, it will be used. If the property is set, but the llc compiler is not at the
+     * pointed location or is not working, an IllegalArgumentException will be thrown.
+     *
+     * If there is no llcPath property in the projectConfiguration, the file cache is checked for an llc version
+     * that works for the current architecture.
+     * If there is no llc in the file cache, it is retrieved from the download site, and added to the cache.
+     */
+    Path getLlcPath() throws IOException {
+        if (projectConfiguration.getLlcPath() != null) {
+            Path llcPath = Path.of(projectConfiguration.getLlcPath());
+            if (!Files.exists(llcPath)) {
+                throw new IllegalArgumentException("Configuration points to an llc that does not exist: "+llcPath);
+            } else {
+                return llcPath;
+            }
+        }
+        // there is no pre-configured llc, search it in the cache, or populare the cache
+        Path llcPath = FileDeps.getLlcPath(projectConfiguration);
+        return llcPath;
     }
 
     private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
@@ -379,8 +428,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             writeSingleEntry(bw, projectConfiguration.getMainClassName(), false);
             for (String javaFile : getReflectionClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 bw.write(",\n");
-                List<String> lines = FileOps.readFileLines(AbstractTargetConfiguration.class
-                        .getResourceAsStream(Constants.CONFIG_FILES + javaFile),
+                InputStream inputStream = AbstractTargetConfiguration.class.getResourceAsStream(Constants.CONFIG_FILES + javaFile);
+                if (inputStream == null) {
+                    throw new IOException("Missing a reflection configuration file named "+javaFile);
+                }
+                List<String> lines = FileOps.readFileLines(inputStream,
                         line -> !line.startsWith("[") && !line.startsWith("]"));
                 for (String line : lines) {
                     bw.write(line + "\n");
@@ -411,8 +463,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
             for (String javaFile : getJNIClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
                 bw.write(",\n");
-                List<String> lines = FileOps.readFileLines(AbstractTargetConfiguration.class
-                        .getResourceAsStream(Constants.CONFIG_FILES + javaFile),
+                InputStream inputStream = AbstractTargetConfiguration.class.getResourceAsStream(Constants.CONFIG_FILES + javaFile);
+                if (inputStream == null) {
+                    throw new IOException("Missing a jni configuration file named "+javaFile);
+                }
+                List<String> lines = FileOps.readFileLines(inputStream,
                         line -> !line.startsWith("[") && !line.startsWith("]"));
                 for (String line : lines) {
                     bw.write(line + "\n");
@@ -469,6 +524,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return defaultAdditionalSourceFiles;
     }
 
+    List<String> getAdditionalHeaderFiles() {
+        return Collections.EMPTY_LIST;
+    }
+
     String getCompiler() {
         return "gcc";
     }
@@ -492,13 +551,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     void specifyLinkProcessLibraries(ProcessBuilder linkBuilder) {
         linkBuilder.command().add("-ljava");
-        linkBuilder.command().add("-ljvm");
-        linkBuilder.command().add("-llibchelper");
         linkBuilder.command().add("-lnio");
         linkBuilder.command().add("-lzip");
         linkBuilder.command().add("-lnet");
+        linkBuilder.command().add("-ljvm");
         linkBuilder.command().add("-lstrictmath");
-        linkBuilder.command().add("-lpthread");
         linkBuilder.command().add("-lz");
         linkBuilder.command().add("-ldl");
     }

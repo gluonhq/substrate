@@ -40,6 +40,7 @@ public class Constants {
      */
     public static final String ARCH_AMD64 = "x86_64";
     public static final String ARCH_ARM64 = "arm64";
+    public static final String ARCH_AARCH64 = "aarch64";
 
     /**
      * Triplet vendor
@@ -55,6 +56,7 @@ public class Constants {
     public static final String OS_IOS = "ios";
     public static final String OS_LINUX = "linux";
     public static final String OS_WINDOWS = "windows";
+    public static final String OS_ANDROID = "android";
 
     /**
      * Predefined Profiles
@@ -64,7 +66,8 @@ public class Constants {
         MACOS, // (x86_64-apple-darwin)
         WINDOWS, // (x86_64-windows-windows)
         IOS,   // (aarch64-apple-ios)
-        IOS_SIM;   // (x86_64-apple-ios)
+        IOS_SIM,   // (x86_64-apple-ios)
+        ANDROID // (aarch64-linux-android);
     };
 
     /**
@@ -79,11 +82,22 @@ public class Constants {
      * Supported targets
      *
      */
-    public static final String TARGET_HOST = "host"; // either mac or linux, based on host
-    public static final String TARGET_MAC = "macos";
-    public static final String TARGET_LINUX = "linux";
-    public static final String TARGET_IOS = "ios";
-    public static final String TARGET_IOS_SIM = "ios-sim";
+    @Deprecated public static final String TARGET_HOST = "host"; // either mac or linux, based on host
+    @Deprecated public static final String TARGET_MAC = "macos";
+    @Deprecated public static final String TARGET_LINUX = "linux";
+    @Deprecated public static final String TARGET_IOS = "ios";
+    @Deprecated public static final String TARGET_IOS_SIM = "ios-sim";
+
+    /**
+     * Supported profiles
+     *
+     */
+    public static final String PROFILE_HOST = "host"; // either mac or linux, based on host
+    public static final String PROFILE_MAC = "macos";
+    public static final String PROFILE_LINUX = "linux";
+    public static final String PROFILE_IOS = "ios";
+    public static final String PROFILE_IOS_SIM = "ios-sim";
+    public static final String PROFILE_ANDROID = "android";
 
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "14-ea+3";
     public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "14-ea+gvm1";

@@ -30,6 +30,7 @@ package com.gluonhq.substrate;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
+import com.gluonhq.substrate.target.AndroidTargetConfiguration;
 import com.gluonhq.substrate.target.DarwinTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
@@ -229,6 +230,7 @@ public class SubstrateDispatcher {
             case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
             case Constants.OS_WINDOWS: return new WindowsTargetConfiguration();
             case Constants.OS_IOS: return new IosTargetConfiguration();
+            case Constants.OS_ANDROID: return new AndroidTargetConfiguration();
             default: return null;
         }
     }

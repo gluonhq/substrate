@@ -56,7 +56,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-lz", "-lstrictmath", "-llibchelper",
-            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm");
+            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstdc++");
 
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
@@ -101,29 +101,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
 
-    /*
-     * Returns the path to an llc compiler
-     * First, the projectConfiguration is checked for llcPath.
-     * If that property is set, it will be used. If the property is set, but the llc compiler is not at the
-     * pointed location or is not working, an IllegalArgumentException will be thrown.
-     *
-     * If there is no llcPath property in the projectConfiguration, the file cache is checked for an llc version
-     * that works for the current architecture.
-     * If there is no llc in the file cache, it is retrieved from the download site, and added to the cache.
-     */
-    Path getLlcPath() throws IOException {
-        if (projectConfiguration.getLlcPath() != null) {
-            Path llcPath = Path.of(projectConfiguration.getLlcPath());
-            if (!Files.exists(llcPath)) {
-                throw new IllegalArgumentException("Configuration points to an llc that does not exist: "+llcPath);
-            } else {
-                return llcPath;
-            }
-        }
-        // there is no pre-configured llc, search it in the cache, or populare the cache
-        Path llcPath = FileDeps.getLlcPath(projectConfiguration);
-        return llcPath;
-    }
 
     @Override
     public String getAdditionalSourceFileLocation() {
