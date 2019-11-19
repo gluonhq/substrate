@@ -39,6 +39,7 @@ matrix:
         - tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $TRAVIS_BUILD_DIR
         - export PATH="$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
         - export JAVA_HOME=$(/usr/libexec/java_home)
+    - os: windows
 
 before_script:
   - echo $JAVA_OPTS
