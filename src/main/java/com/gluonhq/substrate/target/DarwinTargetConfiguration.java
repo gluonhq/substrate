@@ -64,8 +64,8 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getCommonLinkLibraries() {
-        List<String> defaultLinkFlags = new ArrayList<>(super.getCommonLinkLibraries());
+    List<String> getTargetSpecificLinkLibraries() {
+        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
         defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
         return defaultLinkFlags;
     }

@@ -68,8 +68,8 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
 
     @Override
-    List<String> getCommonLinkLibraries() {
-        List<String> defaultLinkFlags = new ArrayList<>(super.getCommonLinkLibraries());
+    List<String> getTargetSpecificLinkLibraries() {
+        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
         defaultLinkFlags.add("-lstdc++");
         return defaultLinkFlags;
     }
