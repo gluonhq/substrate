@@ -129,3 +129,19 @@ fprintf(stderr, "LINUXNATIVEDISPATCHER_INIT\n");
 void  Java_sun_nio_fs_LinuxNativeDispatcher_fgetxattr0() {
 fprintf(stderr, "LINUXNATIVEDISPATCHER_GETXATTR\n");
 }
+
+JNIEXPORT jint JNICALL 
+JNI_OnLoad_javafx_font(JavaVM *vm, void * reserved) {
+fprintf(stderr, "In dummy JNI_OnLoad_javafx_font\n");
+#ifdef JNI_VERSION_1_8
+    //min. returned JNI_VERSION required by JDK8 for builtin libraries
+    JNIEnv *env;
+    if ((*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_8) != JNI_OK) {
+        return JNI_VERSION_1_4;
+    }
+    return JNI_VERSION_1_8;
+#else
+    return JNI_VERSION_1_4;
+#endif
+}
+

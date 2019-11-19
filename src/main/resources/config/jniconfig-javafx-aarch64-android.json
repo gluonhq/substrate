@@ -1,5 +1,69 @@
 [
- {
-    "name" : "com.sun.glass.ui.Application"
- }
+  {
+    "name" : "com.sun.javafx.font.FontConfigManager$FcCompFont",
+    "fields" : [
+      {"name":"fcName" },
+      {"name":"firstFont" },
+      {"name":"allFonts" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.FontConfigManager$FontConfigFont",
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"familyName" },
+      {"name":"styleStr" },
+      {"name":"fullName" },
+      {"name":"fontFile" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.freetype.FT_Bitmap",
+    "fields" : [
+      {"name":"rows" },
+      {"name":"width" },
+      {"name":"pitch" },
+      {"name":"buffer" },
+      {"name":"num_grays" },
+      {"name":"pixel_mode" },
+      {"name":"palette_mode" },
+      {"name":"palette" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.freetype.FT_GlyphSlotRec",
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"metrics" },
+      {"name":"linearHoriAdvance" },
+      {"name":"linearVertAdvance" },
+      {"name":"advance_x" },
+      {"name":"advance_y" },
+      {"name":"format" },
+      {"name":"bitmap" },
+      {"name":"bitmap_left" },
+      {"name":"bitmap_top" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.freetype.FT_Glyph_Metrics",
+    "fields" : [
+      {"name":"width" },
+      {"name":"height" },
+      {"name":"horiBearingX" },
+      {"name":"horiBearingY" },
+      {"name":"horiAdvance" },
+      {"name":"vertBearingX" },
+      {"name":"vertBearingY" },
+      {"name":"vertAdvance" }
+    ]
+  }
 ]

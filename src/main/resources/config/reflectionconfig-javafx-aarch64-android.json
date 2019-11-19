@@ -15,6 +15,11 @@
   }
 ,
   {
+    "name" : "com.sun.glass.ui.monocle.MonoclePlatformFactory",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
     "name" : "com.sun.prism.es2.ES2ResourceFactory"
   }
 ,
