@@ -96,7 +96,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-H:TempDirectory="+tmpDir);
         compileBuilder.command().add("-H:+SharedLibrary");
         compileBuilder.command().add("-H:+AddAllCharsets");
-        compileBuilder.command().add("-H:EnableURLProtocols=http,https");
+        if (!Constants.OS_WINDOWS.equals(projectConfiguration.getTargetTriplet().getOs())) {
+            compileBuilder.command().add("-H:EnableURLProtocols=http,https");
+        }
         compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
         compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
         compileBuilder.command().addAll(getResources());
