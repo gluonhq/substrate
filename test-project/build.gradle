@@ -3,7 +3,7 @@ plugins {
 }
 
 def setupGraalDependencies(String platform) {
-    if ("$platform" != "mac" && "$platform" != "linux") {
+    if (platform != "mac" && platform != "linux" && platform != "win") {
         throw new GradleException("Platform $platform not supported")
     }
 
@@ -12,7 +12,7 @@ def setupGraalDependencies(String platform) {
         graalVM.mkdirs()
     }
     def graalFolder = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev")
-    def name = "mac" == "$platform" ? "darwin-amd64" : "linux-x86_64"
+    def name = "mac" == platform ? "darwin-amd64" : ("linux" == platform ? "linux-x86_64" : "windows-x86_64")
     def graalZip = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev-gvm-3-${name}.zip")
     if (!graalZip.exists()) {
         println "Downloading graalZip..."
@@ -23,7 +23,7 @@ def setupGraalDependencies(String platform) {
             into graalVM
         }
     }
-    return "mac" == "$platform" ? "$graalFolder/Contents/Home" : "$graalFolder"
+    return "mac" == platform ? "$graalFolder/Contents/Home" : "$graalFolder"
 }
 
 def setupJavaFXDependencies(String platform, String target) {
@@ -33,14 +33,16 @@ def setupJavaFXDependencies(String platform, String target) {
     }
     def version = "14-ea+gvm1"
     def name
-    if ("linux" == "$platform") {
+    if ("linux" == platform) {
         name = "linux-x86_64"
-    } else if ("mac" == "$platform") {
+    } else if ("mac" == platform) {
         if ("ios" == "$target") {
             name = "ios-arm64"
         } else {
             name = "darwin-x86_64"
         }
+    } else if ("win" == platform) {
+        name = "windows-x86_64"
     } else {
         throw new GradleException("Platform $platform or Target $target not supported")
     }

@@ -50,6 +50,14 @@ class SubstrateTest {
     }
 
     @Test
+    void testWindowsTriplet() {
+        Triplet triplet = new Triplet(Constants.Profile.WINDOWS);
+        assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
+        assertEquals(triplet.getVendor(), Constants.VENDOR_MICROSOFT);
+        assertEquals(triplet.getOs(), Constants.OS_WINDOWS);
+    }
+
+    @Test
     void testIOSTriplet() {
         Triplet triplet = new Triplet(Constants.Profile.IOS);
         Triplet me = Triplet.fromCurrentOS();

@@ -112,7 +112,7 @@ public class ProjectConfiguration {
 
     /**
      * Sets the location for the static JDK libs (e.g. libjava.a)
-     * When this method is used, subsecquent calls to
+     * When this method is used, subsequent calls to
      * <code>getStaticLibsPath</code> will override the default
      * location
      * @param location the location of the directory where

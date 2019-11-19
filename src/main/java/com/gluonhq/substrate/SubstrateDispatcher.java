@@ -35,7 +35,7 @@ import com.gluonhq.substrate.target.DarwinTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
-import com.gluonhq.substrate.util.FileDeps;
+import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.Logger;
 
 import java.io.BufferedReader;
@@ -53,13 +53,9 @@ import java.util.stream.Stream;
 
 public class SubstrateDispatcher {
 
-    private static Path omegaPath;
-    private static Path gvmPath;
-
     private static volatile boolean run = true;
 
     public static void main(String[] args) throws Exception {
-
         String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
@@ -227,6 +223,7 @@ public class SubstrateDispatcher {
         switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX : return new LinuxTargetConfiguration();
             case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
+            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration();
             case Constants.OS_IOS: return new IosTargetConfiguration();
             case Constants.OS_ANDROID: return new AndroidTargetConfiguration();
             default: return null;
@@ -240,22 +237,14 @@ public class SubstrateDispatcher {
     private static boolean canCompileTo(Triplet host, Triplet target) {
         // if the host os and target os are the same, always return true
         if (host.getOs().equals(target.getOs())) return true;
+
         // if host is linux and target is ios, fail
-        if (Constants.OS_LINUX == host.getOs()) {
-            if (Constants.OS_IOS == target.getOs()) return false;
+        if ((Constants.OS_LINUX.equals(host.getOs()) || Constants.OS_WINDOWS.equals(host.getOs())) &&
+                Constants.OS_IOS.equals(target.getOs())) {
+            return false;
         }
+
         return true;
-    }
-
-    private static String prepareDirs(Path buildRoot) throws IOException {
-
-        omegaPath = buildRoot != null? buildRoot : Paths.get(System.getProperty("user.dir"),"build", "client");
-        String rootDir = omegaPath.toAbsolutePath().toString();
-
-        gvmPath = Paths.get(rootDir, "gvm");
-        gvmPath = Files.createDirectories(gvmPath);
-        return  gvmPath.toAbsolutePath().toString();
-
     }
 
     /**
@@ -270,11 +259,13 @@ public class SubstrateDispatcher {
         String graalPathString = configuration.getGraalPath();
         if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
         Path graalPath = Path.of(graalPathString);
-        if (!graalPath.toFile().exists()) throw new IOException ("Path provided for GraalVM doesn't exist: "+graalPathString);
+        if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPathString);
         Path binPath = graalPath.resolve("bin");
-        if (!binPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: "+graalPathString);
-        Path niPath = binPath.resolve("native-image");
-        if (!niPath.toFile().exists()) throw new IOException ("Path provided for GraalVM doesn't contain bin/native-image: "+graalPathString);
+        if (!Files.exists(binPath)) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPathString);
+        Path niPath = Constants.OS_WINDOWS.equals(configuration.getHostTriplet().getOs()) ?
+                binPath.resolve("native-image.cmd") :
+                binPath.resolve("native-image");
+        if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPathString);
         Path javacmd = binPath.resolve("java");
         ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
         processBuilder.command().add("-version");
@@ -283,8 +274,8 @@ public class SubstrateDispatcher {
         InputStream is = process.getInputStream();
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String l = br.readLine();
-        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in "+graalPathString);
-        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in "+graalPathString+
+        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in " + graalPathString);
+        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in " + graalPathString+
                 " which uses Java version "+l+"\nUse GraalVM 19.3 or later");
     }
 }

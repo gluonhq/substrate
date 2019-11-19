@@ -70,8 +70,8 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
 
     @Override
-    List<String> getCommonLinkLibraries() {
-        List<String> defaultLinkFlags = new ArrayList<>(super.getCommonLinkLibraries());
+    List<String> getTargetSpecificLinkLibraries() {
+        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
         defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
         return defaultLinkFlags;
     }

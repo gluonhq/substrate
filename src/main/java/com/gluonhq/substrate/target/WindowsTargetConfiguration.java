@@ -27,53 +27,68 @@
  */
 package com.gluonhq.substrate.target;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
-
-    private static final List<String> darwinLibs = Arrays.asList(
-            "-llibchelper", "-lpthread",
-            "-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
+public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     String getAdditionalSourceFileLocation() {
-        return "/native/macosx/";
+        return "/native/windows/";
     }
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        return Arrays.asList("AppDelegate.m", "launcher.c");
+        return Arrays.asList("launcher.c");
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        if (!useJavaFX) {
-            return darwinLibs;
-        }
-        String libPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
-        List<String> answer = new ArrayList<>(Arrays.asList(
-                libPath + "libprism_es2.a", libPath + "libglass.a",
-                libPath + "libjavafx_font.a", libPath + "libjavafx_iio.a"));
-        if (usePrismSW) {
-            answer.add(libPath + "libprism_sw.a");
-        }
-        answer.addAll(macoslibs);
-        return answer;
+    List<String> getTargetSpecificCCompileFlags() {
+        return Arrays.asList("/MT");
+    }
+
+    @Override
+    String getCompiler() {
+        return "cl";
+    }
+
+    @Override
+    String getLinker() {
+        return "link";
+    }
+
+    @Override
+    String getNativeImageCommand() {
+        return "native-image.cmd";
+    }
+
+    @Override
+    String getObjectFileExtension() {
+        return "obj";
+    }
+
+    @Override
+    List<String> getTargetSpecificLinkOutputFlags() {
+        String appName = projectConfiguration.getAppName();
+        return Arrays.asList("/OUT:" + getAppPath(appName + ".exe"));
     }
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
-        return defaultLinkFlags;
+        return Arrays.asList("msvcrt.lib", "advapi32.lib", "iphlpapi.lib", "ws2_32.lib", "java.lib", "jvm.lib",
+                "libchelper.lib", "net.lib", "nio.lib", "strictmath.lib", "zip.lib", "j2pkcs11.lib", "sunec.lib");
     }
 
-    private static final List<String> macoslibs = Arrays.asList("-lffi",
-            "-lpthread", "-lz", "-ldl", "-lstrictmath", "-llibchelper",
-            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lobjc",
-            "-Wl,-framework,Foundation", "-Wl,-framework,AppKit",
-            "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
-            "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");
+    @Override
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
+        return Arrays.asList(
+                "/NODEFAULTLIB:msvcrt.lib",
+                "/NODEFAULTLIB:libcmt.lib"
+        );
+    }
+
+    @Override
+    String getLinkLibraryPathOption() {
+        return "/LIBPATH:";
+    }
 }
