@@ -28,7 +28,8 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.attach.AttachResolver;
+import com.gluonhq.substrate.gluon.AttachResolver;
+import com.gluonhq.substrate.gluon.GlistenResolver;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
@@ -61,6 +62,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private List<String> attachList = Collections.emptyList();
     private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
+    private boolean useGlisten = false;
 
     String processClassPath(String cp) throws IOException {
         return cp;
@@ -88,6 +90,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             throw new IllegalArgumentException("No classpath specified. Cannot compile");
         }
         attachList = AttachResolver.attachServices(cp);
+        useGlisten = GlistenResolver.useGlisten(cp);
         String nativeImage = getNativeImagePath(config);
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
         compileBuilder.command().add("--report-unsupported-elements-at-runtime");
@@ -349,6 +352,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     .replace("${archOs}", suffix));
             if (usePrismSW) {
                 answer.add(Constants.REFLECTION_JAVAFXSW_FILE);
+            }
+            if (useGlisten) {
+                answer.add(Constants.REFLECTION_GLISTEN_FILE);
             }
         }
         return answer;
