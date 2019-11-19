@@ -56,6 +56,14 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
 
 // == expose window functionality to JavaFX native code == //
 
+ANativeWindow* _GLUON_getNativeWindow() {
+    return window;
+}
+
+float _GLUON_getDensity() {
+    return density;
+}
+
 ANativeWindow* getNativeWindow() {
     return window;
 }
