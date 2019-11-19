@@ -68,25 +68,15 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    void specifyLinkProcessOutput(ProcessBuilder linkBuilder, String appName) {
-        linkBuilder.command().add("/OUT:" + getAppPath(appName + ".exe"));
+    List<String> getTargetSpecificLinkOutputFlags() {
+        String appName = projectConfiguration.getAppName();
+        return Arrays.asList("/OUT:" + getAppPath(appName + ".exe"));
     }
 
     @Override
-    void specifyLinkProcessLibraries(ProcessBuilder linkBuilder) {
-        linkBuilder.command().add("msvcrt.lib");
-
-        linkBuilder.command().add("advapi32.lib");
-        linkBuilder.command().add("iphlpapi.lib");
-        linkBuilder.command().add("ws2_32.lib");
-
-        linkBuilder.command().add("java.lib");
-        linkBuilder.command().add("jvm.lib");
-        linkBuilder.command().add("libchelper.lib");
-        linkBuilder.command().add("net.lib");
-        linkBuilder.command().add("nio.lib");
-        linkBuilder.command().add("strictmath.lib");
-        linkBuilder.command().add("zip.lib");
+    List<String> getTargetSpecificLinkLibraries() {
+        return Arrays.asList("msvcrt.lib", "advapi32.lib", "iphlpapi.lib", "ws2_32.lib", "java.lib", "jvm.lib",
+                "libchelper.lib", "net.lib", "nio.lib", "strictmath.lib", "zip.lib");
     }
 
     @Override

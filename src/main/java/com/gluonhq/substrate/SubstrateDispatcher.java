@@ -36,7 +36,6 @@ import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
-import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.Logger;
 
 import java.io.BufferedReader;
@@ -54,13 +53,9 @@ import java.util.stream.Stream;
 
 public class SubstrateDispatcher {
 
-    private static Path omegaPath;
-    private static Path gvmPath;
-
     private static volatile boolean run = true;
 
     public static void main(String[] args) throws Exception {
-
         String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
@@ -252,17 +247,6 @@ public class SubstrateDispatcher {
         return true;
     }
 
-    private static String prepareDirs(Path buildRoot) throws IOException {
-
-        omegaPath = buildRoot != null? buildRoot : Paths.get(System.getProperty("user.dir"),"build", "client");
-        String rootDir = omegaPath.toAbsolutePath().toString();
-
-        gvmPath = Paths.get(rootDir, "gvm");
-        gvmPath = Files.createDirectories(gvmPath);
-        return  gvmPath.toAbsolutePath().toString();
-
-    }
-
     /**
      * check if the GraalVM provided by the configuration is capable of running native-image
      * @param configuration
@@ -275,13 +259,13 @@ public class SubstrateDispatcher {
         String graalPathString = configuration.getGraalPath();
         if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
         Path graalPath = Path.of(graalPathString);
-        if (!graalPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPathString);
+        if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPathString);
         Path binPath = graalPath.resolve("bin");
-        if (!binPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPathString);
+        if (!Files.exists(binPath)) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPathString);
         Path niPath = Constants.OS_WINDOWS.equals(configuration.getHostTriplet().getOs()) ?
                 binPath.resolve("native-image.cmd") :
                 binPath.resolve("native-image");
-        if (!niPath.toFile().exists()) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPathString);
+        if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPathString);
         Path javacmd = binPath.resolve("java");
         ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
         processBuilder.command().add("-version");

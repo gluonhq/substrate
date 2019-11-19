@@ -191,10 +191,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
 
-        specifyLinkProcessLibraries(linkBuilder);
+        getTargetSpecificLinkLibraries().forEach(linkBuilder.command()::add);
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
 
-        specifyLinkProcessOutput(linkBuilder, appName);
+        getTargetSpecificLinkOutputFlags().forEach(linkBuilder.command()::add);
 
         addGraalStaticLibsPathToLinkProcess(linkBuilder);
         addJavaStaticLibsPathToLinkProcess(linkBuilder);
@@ -244,7 +244,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         t.start();
     }
 
-    void printFromInputStream(InputStream inputStream) throws IOException {
+    private void printFromInputStream(InputStream inputStream) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
         String l = br.readLine();
         while (l != null) {
@@ -525,7 +525,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     List<String> getAdditionalHeaderFiles() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     String getCompiler() {
@@ -544,22 +544,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "o";
     }
 
-    void specifyLinkProcessOutput(ProcessBuilder linkBuilder, String appName) {
-        linkBuilder.command().add("-o");
-        linkBuilder.command().add(getAppPath(appName));
-    }
-
-    void specifyLinkProcessLibraries(ProcessBuilder linkBuilder) {
-        linkBuilder.command().add("-ljava");
-        linkBuilder.command().add("-lnio");
-        linkBuilder.command().add("-lzip");
-        linkBuilder.command().add("-lnet");
-        linkBuilder.command().add("-ljvm");
-        linkBuilder.command().add("-lstrictmath");
-        linkBuilder.command().add("-lz");
-        linkBuilder.command().add("-ldl");
-    }
-
     String getLinkLibraryPathOption() {
         return "-L";
     }
@@ -573,6 +557,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     String getAppPath(String appName) {
         return paths.getAppPath().resolve(appName).toString();
+    }
+
+    List<String> getTargetSpecificLinkLibraries() {
+        return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstrictmath", "-lz", "-ldl");
+    }
+
+    List<String> getTargetSpecificLinkOutputFlags() {
+        String appName = projectConfiguration.getAppName();
+        return Arrays.asList("-o", getAppPath(appName));
     }
 
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
