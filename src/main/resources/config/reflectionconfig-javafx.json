@@ -257,6 +257,11 @@
   }
 ,
   {
+    "name":"com.sun.javafx.beans.IDProperty",
+    "allDeclaredMethods":true
+  }
+,
+  {
     "name" : "com.sun.javafx.reflect.Trampoline",
     "methods":[{"name":"invoke","parameterTypes":["java.lang.reflect.Method","java.lang.Object","java.lang.Object[]"] }]
   }
