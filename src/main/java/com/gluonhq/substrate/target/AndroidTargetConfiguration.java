@@ -57,7 +57,8 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-Wl,--gc-sections",
             "-landroid", "-llog", "-shared");
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
-            "-lprism_es2_monocle", "-Wl,--no-whole-archive", "-lGLESv2", "-lEGL");
+            "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-Wl,--no-whole-archive",
+            "-lGLESv2", "-lEGL", "-lfreetype");
 
     public AndroidTargetConfiguration() {
         // for now, we need to have an ANDROID_NDK
