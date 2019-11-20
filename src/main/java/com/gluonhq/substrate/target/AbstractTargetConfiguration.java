@@ -395,7 +395,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     private static final List<String> resourcesList = Arrays.asList(
-            "frag", "fxml", "css", "gls", "ttf",
+            "frag", "fxml", "css", "gls", "ttf", "xml",
             "png", "jpg", "jpeg", "gif", "bmp",
             "license", "json");
 
