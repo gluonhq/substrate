@@ -99,7 +99,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-H:TempDirectory="+tmpDir);
         compileBuilder.command().add("-H:+SharedLibrary");
         compileBuilder.command().add("-H:+AddAllCharsets");
-        compileBuilder.command().add("-H:EnableURLProtocols=http,https");
+        // TODO: verify if java.net is still an issue on windows with GraalVM 19.3.0
+        if (!Constants.OS_WINDOWS.equals(projectConfiguration.getTargetTriplet().getOs())) {
+            compileBuilder.command().add("-H:EnableURLProtocols=http,https");
+        }
         compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
         compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
         compileBuilder.command().addAll(getResources());
@@ -124,7 +127,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         boolean failure = result != 0;
         String extraMessage = null;
         if (!failure) {
-            String nameSearch = mainClassName.toLowerCase()+".o";
+            String nameSearch = mainClassName.toLowerCase() + "." + getObjectFileExtension();
             Path p = FileOps.findFile(gvmPath, nameSearch);
             if (p == null) {
                 failure = true;
@@ -147,6 +150,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             case Constants.OS_LINUX: return "LINUX_AMD64";
             case Constants.OS_IOS:return "DARWIN_AARCH64";
             case Constants.OS_DARWIN: return "DARWIN_AMD64";
+            case Constants.OS_WINDOWS: return "WINDOWS_AMD64";
             case Constants.OS_ANDROID: return "LINUX_AARCH64";
             default: throw new IllegalArgumentException("No support yet for " + os);
         }
@@ -173,37 +177,38 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
+
         ensureClibs(projectConfiguration);
-        Path javaSDKPath = FileDeps.getJavaSDKPath(projectConfiguration);
+
         String appName = projectConfiguration.getAppName();
-        String objectFilename = projectConfiguration.getMainClassName().toLowerCase()+".o";
-        Triplet target = projectConfiguration.getTargetTriplet();
+        String objectFilename = projectConfiguration.getMainClassName().toLowerCase() + "." + getObjectFileExtension();
         Path gvmPath = paths.getGvmPath();
         Path objectFile = FileOps.findFile(gvmPath, objectFilename);
         if (objectFile == null) {
             throw new IllegalArgumentException("Linking failed, since there is no objectfile named "+objectFilename+" under "
                     +gvmPath.toString());
         }
+
         ProcessBuilder linkBuilder = new ProcessBuilder(getLinker());
 
-        linkBuilder.command().add("-o");
-        linkBuilder.command().add(getAppPath(appName));
-
         Path gvmAppPath = gvmPath.resolve(appName);
-        getAdditionalSourceFiles()
-              .forEach( r -> linkBuilder.command().add(
-                      gvmAppPath.resolve(r.replaceAll("\\..*", ".o")).toString()));
+        getAdditionalSourceFiles().forEach(sourceFile -> linkBuilder.command()
+                .add(gvmAppPath.resolve(sourceFile.replaceAll("\\..*", "." + getObjectFileExtension())).toString()));
 
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
-        linkBuilder.command().add("-L" + javaSDKPath);
-        if (projectConfiguration.isUseJavaFX()) {
-            Path javafxSDKPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
-            linkBuilder.command().add("-L" + javafxSDKPath);
-        }
-        linkBuilder.command().add("-L"+ Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
-        linkBuilder.command().addAll(getCommonLinkLibraries());
+
+        getTargetSpecificLinkLibraries().forEach(linkBuilder.command()::add);
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
+
+        getTargetSpecificLinkOutputFlags().forEach(linkBuilder.command()::add);
+
+        addGraalStaticLibsPathToLinkProcess(linkBuilder);
+        addJavaStaticLibsPathToLinkProcess(linkBuilder);
+        if (projectConfiguration.isUseJavaFX()) {
+            addJavaFXStaticLibsPathToLinkProcess(linkBuilder);
+        }
+
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
         System.err.println("cmd = "+cmds);
@@ -218,6 +223,21 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             return false;
         }
         return true;
+    }
+
+    private void addGraalStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) {
+        Triplet target = projectConfiguration.getTargetTriplet();
+        linkBuilder.command().add(getLinkLibraryPathOption() + Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
+    }
+
+    private void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
+        Path javaSDKPath = FileDeps.getJavaSDKPath(projectConfiguration);
+        linkBuilder.command().add(getLinkLibraryPathOption() + javaSDKPath);
+    }
+
+    private void addJavaFXStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
+        Path javafxSDKPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
+        linkBuilder.command().add(getLinkLibraryPathOption() + javafxSDKPath);
     }
 
     private void asynPrintFromInputStream (InputStream inputStream) {
@@ -240,9 +260,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
     }
 
-    private static String getNativeImagePath (ProjectConfiguration configuration) {
+    private String getNativeImagePath(ProjectConfiguration configuration) {
         String graalPath = configuration.getGraalPath();
-        Path path = Path.of(graalPath, "bin", "native-image");
+        Path path = Path.of(graalPath, "bin", getNativeImageCommand());
         return path.toString();
     }
 
@@ -510,13 +530,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "/native/linux/";
     }
 
-
     List<String> getAdditionalSourceFiles() {
         return defaultAdditionalSourceFiles;
     }
 
     List<String> getAdditionalHeaderFiles() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     String getCompiler() {
@@ -525,6 +544,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     String getLinker() {
         return "gcc";
+    }
+
+    String getNativeImageCommand() {
+        return "native-image";
+    }
+
+    String getObjectFileExtension() {
+        return "o";
+    }
+
+    String getLinkLibraryPathOption() {
+        return "-L";
     }
 
     /**
@@ -538,10 +569,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return paths.getAppPath().resolve(appName).toString();
     }
 
-    List<String> getCommonLinkLibraries() {
-        return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet",
-                "-ljvm", "-lstrictmath", "-lz", "-ldl",
+    List<String> getTargetSpecificLinkLibraries() {
+        return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstrictmath", "-lz", "-ldl",
                 "-lj2pkcs11", "-lsunec");
+    }
+
+    List<String> getTargetSpecificLinkOutputFlags() {
+        String appName = projectConfiguration.getAppName();
+        return Arrays.asList("-o", getAppPath(appName));
     }
 
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
@@ -559,5 +594,4 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     List<String> getTargetSpecificObjectFiles() throws IOException {
         return Collections.emptyList();
     }
-
 }

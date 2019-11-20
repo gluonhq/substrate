@@ -47,6 +47,7 @@ public class Constants {
      */
     public static final String VENDOR_APPLE = "apple";
     public static final String VENDOR_LINUX = "linux";
+    public static final String VENDOR_MICROSOFT = "microsoft";
 
     /**
      * Triplet OS
@@ -54,6 +55,7 @@ public class Constants {
     public static final String OS_DARWIN = "darwin";
     public static final String OS_IOS = "ios";
     public static final String OS_LINUX = "linux";
+    public static final String OS_WINDOWS = "windows";
     public static final String OS_ANDROID = "android";
 
     /**
@@ -62,6 +64,7 @@ public class Constants {
     public enum Profile {
         LINUX, // (x86_64-linux-linux)
         MACOS, // (x86_64-apple-darwin)
+        WINDOWS, // (x86_64-windows-windows)
         IOS,   // (aarch64-apple-ios)
         IOS_SIM,   // (x86_64-apple-ios)
         ANDROID // (aarch64-linux-android);
@@ -73,6 +76,7 @@ public class Constants {
      */
     public static final String HOST_MAC = "macos";
     public static final String HOST_LINUX = "linux";
+    public static final String HOST_WINDOWS = "windows";
 
     /**
      * Supported targets

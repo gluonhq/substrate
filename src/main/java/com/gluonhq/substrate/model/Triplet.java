@@ -50,7 +50,9 @@ public class Triplet {
         if (osName.contains("mac")) {
            return new Triplet(Constants.Profile.MACOS);
         } else if (osName.contains("nux")) {
-           return new Triplet(Constants.Profile.LINUX);
+            return new Triplet(Constants.Profile.LINUX);
+        } else if (osName.contains("windows")) {
+            return new Triplet(Constants.Profile.WINDOWS);
         } else {
            throw new IllegalArgumentException("OS " + osName + " not supported");
         }
@@ -73,6 +75,11 @@ public class Triplet {
                 this.arch = ARCH_AMD64;
                 this.vendor = VENDOR_APPLE;
                 this.os = OS_DARWIN;
+                break;
+            case WINDOWS:
+                this.arch = ARCH_AMD64;
+                this.vendor = VENDOR_MICROSOFT;
+                this.os = OS_WINDOWS;
                 break;
             case IOS:
                 this.arch = ARCH_ARM64;
