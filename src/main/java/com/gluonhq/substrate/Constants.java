@@ -130,6 +130,7 @@ public class Constants {
     public static final String REFLECTION_JAVA_FILE = "reflectionconfig-java.json";
     public static final String REFLECTION_JAVAFX_FILE = "reflectionconfig-javafx.json";
     public static final String REFLECTION_JAVAFXSW_FILE = "reflectionconfig-javafxsw.json";
+    public static final String REFLECTION_GLISTEN_FILE = "reflectionconfig-glisten.json";
     public static final String REFLECTION_JAVAFX_ARCH_FILE = "reflectionconfig-javafx-${archOs}.json";
     public static final String REFLECTION_ARCH_FILE = "reflectionconfig-${archOs}.json";
 

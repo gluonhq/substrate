@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.attach;
+package com.gluonhq.substrate.gluon;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,9 +50,9 @@ public class AttachResolver {
      * @return a list of Service classes, that can be added
      *          to reflection and jni lists
      */
-    public static List<String> attachServices(String classpath) {
+    public static List<String> attachServices(String classpath) throws IOException {
         return attachServices(Stream.of(classpath.split(File.pathSeparator))
-                .map(s -> Path.of(s))
+                .map(Path::of)
                 .collect(Collectors.toList()));
     }
 
@@ -63,29 +63,25 @@ public class AttachResolver {
      * @return a list of Service classes, that can be added
      *          to reflection and jni lists
      */
-    public static List<String> attachServices(List<Path> paths) {
+    private static List<String> attachServices(List<Path> paths) throws IOException {
         List<String> list = new ArrayList<>();
-        paths.stream()
+        List<Path> jars = paths.stream()
                 .filter(p -> {
                     String s = p.toString();
                     return s.contains(DEPENDENCY_GROUP) || s.contains(DEPENDENCY_M2_GROUP);
-                 })
-                .forEach(jar -> {
-                    try {
-                        ZipFile zf = new ZipFile(jar.toFile());
-                        zf.stream()
-                                .map(ZipEntry::getName)
-                                .filter(ze -> ze.endsWith("Service.class"))
-                                .filter(ze -> ze.contains("impl") && ! ze.contains("Dummy")
-                                        && ! ze.contains("Default"))
-                                .forEach(ze -> list.add(ze
-                                        .replaceAll("/", ".")
-                                        .replace(".class", "")));
-                    } catch (IOException ex) {
-                        System.err.println("Error: " + ex);
-ex.printStackTrace();
-                    }
-                });
+                })
+                .collect(Collectors.toList());
+        for (Path jar : jars) {
+            ZipFile zf = new ZipFile(jar.toFile());
+            zf.stream()
+                    .map(ZipEntry::getName)
+                    .filter(ze -> ze.endsWith("Service.class"))
+                    .filter(ze -> ze.contains("impl") && ! ze.contains("Dummy")
+                            && ! ze.contains("Default"))
+                    .forEach(ze -> list.add(ze
+                            .replaceAll("/", ".")
+                            .replace(".class", "")));
+        }
         return list.stream()
                 .distinct()
                 .collect(Collectors.toList());
