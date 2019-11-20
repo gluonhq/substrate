@@ -66,4 +66,14 @@
       {"name":"vertAdvance" }
     ]
   }
+,
+  {
+    "name" : "com.sun.javafx.font.freetype.FT_Matrix",
+    "fields" : [
+      {"name":"xx" },
+      {"name":"xy" },
+      {"name":"yx" },
+      {"name":"yy" }
+    ]
+  }
 ]

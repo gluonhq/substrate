@@ -36,4 +36,9 @@
     "name" : "com.sun.javafx.font.freetype.FTFactory",
     "methods":[{"name":"getFactory","parameterTypes":[] }]
   }
+,
+  {
+    "name" : "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
 ]
