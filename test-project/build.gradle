@@ -69,7 +69,7 @@ subprojects {
     apply plugin: 'com.google.osdetector'
     apply plugin: 'application'
 
-    ext.substrateVersion = "0.0.3-SNAPSHOT"
+    ext.substrateVersion = "0.0.3"
 
     ext.platform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
 
