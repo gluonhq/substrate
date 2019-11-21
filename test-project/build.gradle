@@ -74,8 +74,8 @@ subprojects {
     if (propFile.canRead()) {
         def props = new Properties()
         props.load(new FileInputStream(propFile))
-        if (props.containsKey('substrateVersion')) {
-            ext.substrateVersion = props['substrateVersion']
+        if (props.containsKey('version')) {
+            ext.substrateVersion = props['version']
         }
     }
     ext.platform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
