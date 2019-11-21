@@ -21,9 +21,6 @@
     "name":"java.lang.Runnable"
   },
   {
-    "name" : "java.net.InetAddress"
-  },
-  {
     "name":"java.lang.String",
     "fields":[
       {"name":"coder"},
