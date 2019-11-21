@@ -70,7 +70,7 @@ subprojects {
     apply plugin: 'application'
 
     ext.substrateVersion = "0.0.3"
-    def propFile = file('../../gradle.properties')
+    def propFile = file("$project.rootDir/../gradle.properties")
     if (propFile.canRead()) {
         def props = new Properties()
         props.load(new FileInputStream(propFile))
