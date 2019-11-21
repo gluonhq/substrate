@@ -74,7 +74,7 @@ class SubstrateTest {
     @Test
     void testAssertGraal() {
         ProjectConfiguration config = new ProjectConfiguration();
-        assertThrows(NullPointerException.class, () -> SubstrateDispatcher.assertGraal(null));
-        assertThrows(IllegalArgumentException.class, () -> SubstrateDispatcher.assertGraal(config));
+        assertThrows(NullPointerException.class, () -> SubstrateDispatcher.assertGraalVM(null));
+        assertThrows(IllegalArgumentException.class, () -> SubstrateDispatcher.assertGraalVM(config));
     }
 }
