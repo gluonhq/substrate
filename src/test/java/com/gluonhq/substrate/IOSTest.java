@@ -106,7 +106,7 @@ class IOSTest {
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
                 .withArguments(":helloWorld:clean", ":helloWorld:build",
-                        "-DskipGraalvmHome=true",
+                        "-PskipGraalvmHome",
                         "-Dsubstrate.target=ios", "-Dskipsigning=" + skipSigning,
                         ":helloWorld:run", ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()

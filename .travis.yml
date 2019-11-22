@@ -35,8 +35,8 @@ matrix:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
         - wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0/graalvm-ce-java11-linux-amd64-19.3.0.tar.gz
         - tar xf graalvm-ce-java11-linux-amd64-19.3.0.tar.gz && cd $TRAVIS_BUILD_DIR
-        - export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0/Contents/Home
-        - ${GRAALVM_HOME}/bin/gu install native-imagea
+        - export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0
+        - ${GRAALVM_HOME}/bin/gu install native-image
     - os: osx
       osx_image: xcode10.2
       before_script:
