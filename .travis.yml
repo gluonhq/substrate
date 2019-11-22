@@ -46,7 +46,7 @@ before_script:
 
 install: true
 
-script: ./gradlew --info build
+script: ./gradlew -Dorg.gradle.java.home=$JAVA_HOME --info build
 
 deploy:
   # Deploy snapshots on every commit pushed to master
