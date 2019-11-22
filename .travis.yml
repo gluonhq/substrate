@@ -31,6 +31,12 @@ matrix:
             - build-essential
             - libgtk-3-dev
             - libxtst-dev
+      before_script:
+        - mkdir -p $HOME/graalvm && cd $HOME/graalvm
+        - wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0/graalvm-ce-java11-linux-amd64-19.3.0.tar.gz
+        - tar xf graalvm-ce-java11-linux-amd64-19.3.0.tar.gz && cd $TRAVIS_BUILD_DIR
+        - export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0/Contents/Home
+        - ${GRAALVM_HOME}/bin/gu install native-imagea
     - os: osx
       osx_image: xcode10.2
       before_script:
@@ -38,6 +44,11 @@ matrix:
         - wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
         - tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $TRAVIS_BUILD_DIR
         - export PATH="$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
+        - mkdir -p $HOME/graalvm && cd $HOME/graalvm
+        - wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0/graalvm-ce-java11-darwin-amd64-19.3.0.tar.gz
+        - tar xf graalvm-ce-java11-darwin-amd64-19.3.0.tar.gz && cd $TRAVIS_BUILD_DIR
+        - export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0/Contents/Home
+        - ${GRAALVM_HOME}/bin/gu install native-image
 
 before_script:
   - echo $JAVA_OPTS

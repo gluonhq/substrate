@@ -7,6 +7,14 @@ def setupGraalDependencies(String platform) {
         throw new GradleException("Platform $platform not supported")
     }
 
+    def skipGraalvmHome = Boolean.getBoolean("skipGraalvmHome")
+    if (!skipGraalvmHome) {
+        def gvmHome = System.getenv("GRAALVM_HOME")
+        if (gvmHome != null && new File(gvmHome).exists()) {
+            return gvmHome
+        }
+    }
+
     def graalVM = new File("${System.properties['user.home']}/.gluon/substrate/graalvm")
     if (!graalVM.exists()) {
         graalVM.mkdirs()
