@@ -124,7 +124,7 @@ class IOSTest {
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
                 .withArguments(":helloFX:clean", ":helloFX:build",
-                        "-DskipGraalvmHome=true",
+                        "-PskipGraalvmHome",
                         "-Dsubstrate.target=ios", ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
