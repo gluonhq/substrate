@@ -172,7 +172,7 @@ public class SubstrateDispatcher {
      */
     public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
         Objects.requireNonNull(config,  "Project configuration can't be null");
-        assertGraal(config);
+        assertGraalVM(config);
         if (classPath != null) {
             boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
                     .anyMatch(s -> s.contains("javafx"));
@@ -254,7 +254,7 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
      * @throws IOException when the path to bin/native-image doesn't exist
      */
-    static void assertGraal(ProjectConfiguration configuration) throws IOException {
+    static void assertGraalVM(ProjectConfiguration configuration) throws IOException {
         Objects.requireNonNull(configuration);
         String graalPathString = configuration.getGraalPath();
         if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
@@ -265,7 +265,8 @@ public class SubstrateDispatcher {
         Path niPath = Constants.OS_WINDOWS.equals(configuration.getHostTriplet().getOs()) ?
                 binPath.resolve("native-image.cmd") :
                 binPath.resolve("native-image");
-        if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPathString);
+        if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPathString + "\n" +
+                "You can use gu to install it running: \n${GRAALVM_HOME}/bin/gu install native-image");
         Path javacmd = binPath.resolve("java");
         ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
         processBuilder.command().add("-version");
