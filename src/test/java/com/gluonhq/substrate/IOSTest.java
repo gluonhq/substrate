@@ -106,6 +106,7 @@ class IOSTest {
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
                 .withArguments(":helloWorld:clean", ":helloWorld:build",
+                        "-PskipGraalvmHome",
                         "-Dsubstrate.target=ios", "-Dskipsigning=" + skipSigning,
                         ":helloWorld:run", ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
@@ -123,6 +124,7 @@ class IOSTest {
                 .withProjectDir(new File("test-project"))
                 .withGradleVersion("5.3")
                 .withArguments(":helloFX:clean", ":helloFX:build",
+                        "-PskipGraalvmHome",
                         "-Dsubstrate.target=ios", ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
