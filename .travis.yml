@@ -38,7 +38,7 @@ matrix:
         - wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
         - tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $TRAVIS_BUILD_DIR
         - export PATH="$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
-        - export JAVA_HOME=$(/usr/libexec/java_home)
+        - export JAVA_HOME=$HOME/openjdk11/Contents/Home
 
 before_script:
   - echo $JAVA_OPTS
@@ -46,7 +46,7 @@ before_script:
 
 install: true
 
-script: ./gradlew -Dorg.gradle.java.home=$JAVA_HOME --info build
+script: ./gradlew --info build
 
 deploy:
   # Deploy snapshots on every commit pushed to master
