@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
@@ -415,7 +416,8 @@ public class ProjectConfiguration {
      * @param mainClassName the FQN of the mainclass
      */
     public void setMainClassName(String mainClassName) {
-        this.mainClassName = mainClassName;
+        this.mainClassName = Objects.requireNonNull(mainClassName, "Main class name can't be null").contains("/") ?
+                mainClassName.substring(mainClassName.indexOf("/") + 1) : mainClassName;
     }
 
     public IosSigningConfiguration getIosSigningConfiguration() {

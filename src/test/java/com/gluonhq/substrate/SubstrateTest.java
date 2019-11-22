@@ -77,4 +77,14 @@ class SubstrateTest {
         assertThrows(NullPointerException.class, () -> SubstrateDispatcher.assertGraalVM(null));
         assertThrows(IllegalArgumentException.class, () -> SubstrateDispatcher.assertGraalVM(config));
     }
+
+    @Test
+    void testMainClassName() {
+        ProjectConfiguration config = new ProjectConfiguration();
+        assertThrows(NullPointerException.class, () -> config.setMainClassName(null));
+        config.setMainClassName("a.b.Foo");
+        assertEquals("a.b.Foo", config.getMainClassName());
+        config.setMainClassName("name/a.b.Foo");
+        assertEquals("a.b.Foo", config.getMainClassName());
+    }
 }
