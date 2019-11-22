@@ -82,9 +82,9 @@ class SubstrateTest {
     void testMainClassName() {
         ProjectConfiguration config = new ProjectConfiguration();
         assertThrows(NullPointerException.class, () -> config.setMainClassName(null));
-        config.setMainClassName("a.b.foo");
-        assertEquals("a.b.foo", config.getMainClassName());
-        config.setMainClassName("name/a.b.foo");
-        assertEquals("a.b.foo", config.getMainClassName());
+        config.setMainClassName("a.b.Foo");
+        assertEquals("a.b.Foo", config.getMainClassName());
+        config.setMainClassName("name/a.b.Foo");
+        assertEquals("a.b.Foo", config.getMainClassName());
     }
 }
