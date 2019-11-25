@@ -239,7 +239,7 @@ public class CodeSigning {
         runner.addArg(appPath.toString());
         String codesignAllocate = XcodeUtils.getCommandForSdk("codesign_allocate", "iphoneos");
         runner.addToEnv(CODESIGN_ALLOCATE_ENV, codesignAllocate);
-        if (!runner.runTimedProcess("codesign", 10)) {
+        if (!runner.runTimedProcess("codesign", 30)) {
             Logger.logSevere("Codesign process failed");
             return false;
         }
