@@ -56,6 +56,14 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
 
 // == expose window functionality to JavaFX native code == //
 
+ANativeWindow* _GLUON_getNativeWindow() {
+    return window;
+}
+
+float _GLUON_getDensity() {
+    return density;
+}
+
 ANativeWindow* getNativeWindow() {
     return window;
 }
@@ -113,3 +121,36 @@ fprintf(stderr, "NETPOLL\n");
 void NET_Connect() {
 fprintf(stderr, "NETCONNECT\n");
 }
+
+void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
+fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_INIT\n");
+}
+
+void  Java_sun_nio_fs_LinuxNativeDispatcher_fgetxattr0() {
+fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_GETXATTR\n");
+}
+
+void Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0() {
+fprintf(stderr, "\n\n\nLINUXSOCKETOPTIONS_KEEPALIVESUP0\n");
+}
+
+void Java_jdk_net_LinuxSocketOptions_quickAckSupported0() {
+fprintf(stderr, "\n\n\nLINUXSOCKETOPTIONS_QUICK0\n");
+}
+
+
+JNIEXPORT jint JNICALL 
+JNI_OnLoad_javafx_font(JavaVM *vm, void * reserved) {
+fprintf(stderr, "In dummy JNI_OnLoad_javafx_font\n");
+#ifdef JNI_VERSION_1_8
+    //min. returned JNI_VERSION required by JDK8 for builtin libraries
+    JNIEnv *env;
+    if ((*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_8) != JNI_OK) {
+        return JNI_VERSION_1_4;
+    }
+    return JNI_VERSION_1_8;
+#else
+    return JNI_VERSION_1_4;
+#endif
+}
+
