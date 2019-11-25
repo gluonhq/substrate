@@ -67,6 +67,7 @@ public class CodeSigning {
 
     private static final String CODESIGN_ALLOCATE_ENV = "CODESIGN_ALLOCATE";
     private static final String EMBEDDED_PROVISIONING_PROFILE = "embedded.mobileprovision";
+    private static String ERRLINK = "Please check https://docs.gluonhq.com/client/ for more information.";
 
     private static MobileProvision mobileProvision = null;
     private static Identity identity = null;
@@ -96,10 +97,10 @@ public class CodeSigning {
     }
 
     public boolean signApp() throws IOException, InterruptedException {
+        assertValidIdentity();
         MobileProvision mobileProvision = getProvisioningProfile();
         if (mobileProvision == null) {
-            throw new RuntimeException("Provisioning profile not found.\n" +
-                    "Please check https://docs.gluonhq.com/client/ for more information.");
+            throw new RuntimeException("Provisioning profile not found.\n" +ERRLINK);
         }
         Path provisioningProfilePath = mobileProvision.getProvisioningPath();
         Path embeddedPath = appPath.resolve(EMBEDDED_PROVISIONING_PROFILE);
@@ -109,6 +110,12 @@ public class CodeSigning {
         return sign(entitlementsPath, appPath);
     }
 
+    private void assertValidIdentity() {
+        List<Identity> identities = getIdentity();
+        if ((identities == null) || identities.isEmpty()) {
+            throw new RuntimeException("No valid Identity (Certificate) found for iOS development.\n"+ERRLINK);
+        }
+     }
     private MobileProvision getProvisioningProfile() throws IOException {
         if (bundleId == null) {
             bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
