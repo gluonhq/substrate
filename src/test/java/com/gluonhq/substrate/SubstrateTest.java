@@ -31,6 +31,8 @@ import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -59,23 +61,21 @@ class SubstrateTest {
 
     @Test
     void testIOSTriplet() {
-        Triplet triplet = new Triplet(Constants.Profile.IOS);
-        Triplet me = Triplet.fromCurrentOS();
+        Triplet iosTriplet = new Triplet(Constants.Profile.IOS);
+        Triplet currentOsTriplet = Triplet.fromCurrentOS();
         ProjectConfiguration config = new ProjectConfiguration();
-        config.setTarget(triplet);
+        config.setTarget(iosTriplet);
         // when on linux, nativeCompile should throw an illegalArgumentException
-        if (me.getOs().indexOf("nux") > 0) {
-            assertThrows(IllegalArgumentException.class, () -> {
-                SubstrateDispatcher.nativeCompile(null, config, null);
-            });
+        if (currentOsTriplet.getOs().indexOf("nux") > 0) {
+            var dispatcher = new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config);
+            assertThrows(IllegalArgumentException.class, () -> dispatcher.nativeCompile(null));
         }
     }
 
     @Test
     void testAssertGraal() {
         ProjectConfiguration config = new ProjectConfiguration();
-        assertThrows(NullPointerException.class, () -> SubstrateDispatcher.assertGraalVM(null));
-        assertThrows(IllegalArgumentException.class, () -> SubstrateDispatcher.assertGraalVM(config));
+        assertThrows(IllegalArgumentException.class, config::canRunNativeImage);
     }
 
     @Test

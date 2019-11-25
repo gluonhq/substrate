@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.target.*;
 
 import java.util.Locale;
 
@@ -99,6 +100,31 @@ public class Triplet {
             default:
                 throw new IllegalArgumentException("Triplet for profile "+profile+" is not supported yet");
         }
+    }
+
+    public TargetConfiguration getConfiguration() {
+        switch (getOs()) {
+            case Constants.OS_LINUX : return new LinuxTargetConfiguration();
+            case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
+            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration();
+            case Constants.OS_IOS: return new IosTargetConfiguration();
+            case Constants.OS_ANDROID: return new AndroidTargetConfiguration();
+            default: return null;
+        }
+    }
+
+
+    /*
+     * check if this host can be used to provide binaries for this target.
+     * host and target should not be null.
+     */
+    public boolean canCompileTo(Triplet target) {
+        // if the host os and target os are the same, always return true
+        if (getOs().equals(target.getOs())) return true;
+
+        // if host is linux and target is ios, fail
+        return (!Constants.OS_LINUX.equals(getOs()) && !Constants.OS_WINDOWS.equals(getOs())) ||
+                !Constants.OS_IOS.equals(target.getOs());
     }
 
     public String getArch() {
