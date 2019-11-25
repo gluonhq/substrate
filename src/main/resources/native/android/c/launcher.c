@@ -123,12 +123,21 @@ fprintf(stderr, "NETCONNECT\n");
 }
 
 void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
-fprintf(stderr, "LINUXNATIVEDISPATCHER_INIT\n");
+fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_INIT\n");
 }
 
 void  Java_sun_nio_fs_LinuxNativeDispatcher_fgetxattr0() {
-fprintf(stderr, "LINUXNATIVEDISPATCHER_GETXATTR\n");
+fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_GETXATTR\n");
 }
+
+void Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0() {
+fprintf(stderr, "\n\n\nLINUXSOCKETOPTIONS_KEEPALIVESUP0\n");
+}
+
+void Java_jdk_net_LinuxSocketOptions_quickAckSupported0() {
+fprintf(stderr, "\n\n\nLINUXSOCKETOPTIONS_QUICK0\n");
+}
+
 
 JNIEXPORT jint JNICALL 
 JNI_OnLoad_javafx_font(JavaVM *vm, void * reserved) {
