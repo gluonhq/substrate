@@ -27,8 +27,8 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.model.InternalConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
@@ -48,7 +48,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
 
     @Override
-    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+    public boolean link(ProcessPaths paths, InternalConfiguration projectConfiguration) throws IOException, InterruptedException {
         checkCompiler();
         checkLinker();
         return super.link(paths, projectConfiguration);

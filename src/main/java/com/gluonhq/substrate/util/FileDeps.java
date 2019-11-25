@@ -29,7 +29,7 @@ package com.gluonhq.substrate.util;
 
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.model.InternalConfiguration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -86,7 +86,7 @@ public class FileDeps {
      * @return the location of the JavaFX SDK for the arch-os for this configuration
      * @throws IOException in case anything goes wrong.
      */
-    public static Path getJavaSDKPath(ProjectConfiguration configuration) throws IOException {
+    public static Path getJavaSDKPath(InternalConfiguration configuration) throws IOException {
         return resolvePath(configuration,
                 configuration.getJavaStaticLibsPath(),
                 "Fatal error, could not install Java SDK ");
@@ -100,7 +100,7 @@ public class FileDeps {
      * @return the location of the JavaFX SDK for the arch-os for this configuration
      * @throws IOException in case anything goes wrong.
      */
-    public static Path getJavaFXSDKLibsPath(ProjectConfiguration configuration) throws IOException {
+    public static Path getJavaFXSDKLibsPath(InternalConfiguration configuration) throws IOException {
         return resolvePath(configuration,
                 configuration.getJavafxStaticLibsPath(),
                 "Fatal error, could not install JavaFX SDK ");
@@ -115,7 +115,7 @@ public class FileDeps {
      * @return the location of the path for this configuration
      * @throws IOException in case anything goes wrong.
      */
-    private static Path resolvePath(ProjectConfiguration configuration, Path path, String errorMessage) throws IOException {
+    private static Path resolvePath(InternalConfiguration configuration, Path path, String errorMessage) throws IOException {
         if (Files.exists(Objects.requireNonNull(path))) {
             return path;
         }
@@ -143,7 +143,7 @@ public class FileDeps {
      * @return true if the processed ended succesfully, false otherwise
      * @throws IOException in case default path for Substrate dependencies can't be created
      */
-    private static boolean setupDependencies(ProjectConfiguration configuration) throws IOException {
+    private static boolean setupDependencies(InternalConfiguration configuration) throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
 
         if (!Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
@@ -161,7 +161,6 @@ public class FileDeps {
         System.err.println("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
         Logger.logDebug("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
 
-        if (configuration.isUseJNI()) {
             if (! Files.isDirectory(javaStaticLibs)) {
                 System.err.println("Not a dir");
                 if (customJavaLocation) {
@@ -195,7 +194,7 @@ public class FileDeps {
                     }
                 }
             }
-        }
+
 
         // JavaFX Static
         if (configuration.isUseJavaFX()) {
@@ -272,7 +271,7 @@ public class FileDeps {
      * @return the path to a working llc compiler.
      * @throws IOException in case the required directories can't be created or navigated into.
      */
-    public static Path getLlcPath(ProjectConfiguration configuration) throws IOException {
+    public static Path getLlcPath(InternalConfiguration configuration) throws IOException {
         Path llcRootPath = Constants.USER_SUBSTRATE_PATH.resolve(Constants.LLC_NAME);
         String archos = configuration.getHostTriplet().getArchOs();
         Path archosPath = llcRootPath.resolve(archos).resolve(Constants.LLC_VERSION);
@@ -330,7 +329,7 @@ public class FileDeps {
         return unpacked.getParent().resolve( String.format("%s-%s.md5", name, osArch) ).toString();
     }
 
-    private static void downloadJavaZip(String target, Path substratePath, ProjectConfiguration configuration) throws IOException {
+    private static void downloadJavaZip(String target, Path substratePath, InternalConfiguration configuration) throws IOException {
         Logger.logDebug("Process zip javaStaticSdk, target = "+target);
         String javaZip = JAVA_STATIC_ZIP
                 .replace("${version}", configuration.getJavaStaticSdkVersion())
@@ -341,7 +340,7 @@ public class FileDeps {
         Logger.logDebug("Processing zip java done");
     }
 
-    private static void downloadJavaFXZip(String osarch, Path substratePath, ProjectConfiguration configuration) throws IOException {
+    private static void downloadJavaFXZip(String osarch, Path substratePath, InternalConfiguration configuration) throws IOException {
         Logger.logDebug("Process zip javafxStaticSdk");
         String javafxZip = JAVAFX_STATIC_ZIP
                 .replace("${version}", configuration.getJavafxStaticSdkVersion())
@@ -370,7 +369,7 @@ public class FileDeps {
         processZip(urlZip, zipPath, destination.getFileName().toString(), null, null);
     }
 
-    private static void processZip(String urlZip, Path zipPath, String folder, String version, ProjectConfiguration configuration) throws IOException {
+    private static void processZip(String urlZip, Path zipPath, String folder, String version, InternalConfiguration configuration) throws IOException {
         String osArch = configuration == null? null : configuration.getTargetTriplet().getOsArch();
         String md5name = osArch == null? folder+".md5" : folder+"-"+osArch+".md5";
         System.err.println("PROCESSZIP, url = "+urlZip+", zp = "+zipPath+", folder = "+folder+", version = "+version+", name = "+md5name);

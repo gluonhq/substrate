@@ -27,51 +27,30 @@
  */
 package com.gluonhq.substrate.model;
 
-import com.gluonhq.substrate.Constants;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 /**
- * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
- *
- * This class allows to specify where the Java core libs are located. If <code>setJavaStaticLibs</code> is called,
- * the libraries are expected to be found in the location provided by the location passed to
- * <code>setJavaStaticLibs</code>
- *
- * If this method has not been called, getJavaStaticLibsPath() will return the default location, taking into account
- * the value of javaStaticSdkVersion. If that value is not set, the default value is used.
+ * This class contains all public configuration info about the current project (not about the current OS/Arch/vendor etc)
+ * Instances of this class give hints to where real values should be contained from.
  */
 public class ProjectConfiguration {
 
     private String graalPath;
-    private String javaStaticSdkVersion = Constants.DEFAULT_JAVA_STATIC_SDK_VERSION;
-    private String javaStaticLibs;
-    private String javaFXStaticSDK;
 
     private String javafxStaticSdkVersion;
+    private String javaStaticSdkVersion;
 
-    private String llcPath;
-    private String StaticRoot;
-    private boolean useJNI = true;
-    private boolean useJavaFX = false;
     private boolean usePrismSW = false;
-    private boolean enableCheckHash = true;
     private boolean verbose = false;
 
     private Triplet targetTriplet;
     private Triplet hostTriplet;
-    private String backend;
     private List<String> bundlesList = Collections.emptyList();
     private List<String> resourcesList = Collections.emptyList();
     private List<String> reflectionList = Collections.emptyList();
     private List<String> jniList = Collections.emptyList();
-    private List<String> delayInitList;
-    private List<String> runtimeArgsList;
-    private List<String> releaseSymbolsList;
 
     private String appName;
     private String mainClassName;
@@ -88,122 +67,17 @@ public class ProjectConfiguration {
         this.graalPath = path;
     }
 
-    /**
-     * Returns the version string for the static JDK libs.
-     * If this has not been specified before, the default will be
-     * returned.
-     * @return the specified JavaStaticSDK version, or the default
-     */
-    public String getJavaStaticSdkVersion() {
-        return javaStaticSdkVersion;
-    }
 
     /**
      * Sets the Java static SDK version
-     * This is only relevant when no specific custom location
-     * for the Java static libs is provided via
-     * <code>setJavaStaticLibs</code>
-     * If this method is not called, calls to
-     * <code>getJavaStaticSdkVersion</code> will return a default value.
      * @param javaStaticSdkVersion the Java static SDK version
      */
     public void setJavaStaticSdkVersion(String javaStaticSdkVersion) {
         this.javaStaticSdkVersion = javaStaticSdkVersion;
     }
 
-    /**
-     * Sets the location for the static JDK libs (e.g. libjava.a)
-     * When this method is used, subsequent calls to
-     * <code>getStaticLibsPath</code> will override the default
-     * location
-     * @param location the location of the directory where
-     *                 the static libs are expected.
-     */
-    public void setJavaStaticLibs(String location) {
-        this.javaStaticLibs = location;
-    }
-
-    /**
-     * Returns the Path containing the location of the
-     * static libraries. If the <code>setJavaStaticLibs</code>
-     * method has been called before, the Path pointed to
-     * by the argument to <code>setJavaStaticLibs</code> will be returned.
-     * Otherwise, the default location of the static libs will be returned.
-     * There is no guarantee that the libraries in the returned directory actually exist.
-     * @return the path to the location where the static JDK libraries are expected.
-     */
-    public Path getJavaStaticLibsPath() {
-        return javaStaticLibs != null ? Paths.get(javaStaticLibs) : getDefaultJavaStaticLibsPath();
-    }
-
-    /**
-     * Check whether a custom path to static Java libs is
-     * provided
-     * @return true if a custom path is provided, false otherwise.
-     */
-    public boolean useCustomJavaStaticLibs() {
-        return this.javaStaticLibs != null;
-    }
-
-    /**
-     * Return the default path where the static JDK is installed for the os-arch combination of this configuration, and for
-     * the version in <code>javaStaticSdkVersion</code>
-     * @return the path to the Java SDK (including at least the libs)
-     */
-    public Path getDefaultJavaStaticPath() {
-        Path answer = Constants.USER_SUBSTRATE_PATH
-                .resolve("javaStaticSdk")
-                .resolve(getJavaStaticSdkVersion())
-                .resolve(targetTriplet.getOsArch())
-                .resolve("labs-staticjdk");
-        return answer;
-    }
-
-    private Path getDefaultJavaStaticLibsPath() {
-        return getDefaultJavaStaticPath().resolve("lib").resolve("static");
-    }
-
-    /**
-     * Sets the location for the JavaFX static SDK
-     * At this moment, the JavaFX static SDK contains
-     * platform-specific jars and platform-specific static native libraries.
-     * When this method is used, subsequent calls to
-     * <code>getJavaFXStaticLibsPath</code> and <code>getJavaFXStaticPath</code> will override the default
-     * location
-     * @param location the location of the directory where
-     *                 the JavaFX static SDK expected.
-     */
-    public void setJavaFXStaticSDK(String location) {
-        this.javaFXStaticSDK = location;
-    }
-
-    /**
-     * Return the path where the static JavaFX SDK is installed for the os-arch combination of this configuration, and for
-     * the version in <code>javafxStaticSdkVersion</code>.
-     * If the location of the JavaFX SDK has previously been set using
-     * <code>setJavaFXStaticSDK</code>, that SDK will be used.
-     * @return the path to the JavaFX SDK
-     */
-    public Path getJavafxStaticPath() {
-        return javaFXStaticSDK != null? Paths.get(javaFXStaticSDK): getDefaultJavafxStaticPath();
-
-    }
-
-     Path getDefaultJavafxStaticPath() {
-            Path answer = Constants.USER_SUBSTRATE_PATH
-                .resolve("javafxStaticSdk")
-                .resolve(getJavafxStaticSdkVersion())
-                .resolve(targetTriplet.getOsArch())
-                .resolve("sdk");
-        return answer;
-    }
-
-    public Path getJavafxStaticLibsPath() {
-        return getJavafxStaticPath().resolve("lib");
-    }
-
-    public String getJavafxStaticSdkVersion() {
-        return javafxStaticSdkVersion;
+    String getJavaStaticSdkVersion() {
+        return this.javaStaticSdkVersion;
     }
 
     /**
@@ -214,33 +88,10 @@ public class ProjectConfiguration {
         this.javafxStaticSdkVersion = javafxStaticSdkVersion;
     }
 
-    public String getLlcPath() {
-        return llcPath;
+    String getJavafxStaticSdkVersion() {
+        return this.javafxStaticSdkVersion;
     }
 
-    /**
-     * Sets the LLC directory by the user
-     * @param llcPath the directory (e.g "$user/Downloads/llclib") that contains LLC
-     */
-    public void setLlcPath(String llcPath) {
-        this.llcPath = llcPath;
-    }
-
-    public boolean isUseJNI() {
-        return useJNI;
-    }
-
-    public void setUseJNI(boolean useJNI) {
-        this.useJNI = useJNI;
-    }
-
-    public boolean isUseJavaFX() {
-        return useJavaFX;
-    }
-
-    public void setUseJavaFX(boolean useJavaFX) {
-        this.useJavaFX = useJavaFX;
-    }
 
     public boolean isUsePrismSW() {
         return usePrismSW;
@@ -250,24 +101,12 @@ public class ProjectConfiguration {
         this.usePrismSW = usePrismSW;
     }
 
-    public boolean isEnableCheckHash() {
-        return enableCheckHash;
-    }
-
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
 
     public boolean isVerbose() {
         return verbose;
-    }
-
-    /**
-     * Enables hash checking to verify integrity of Graal and Java/JavaFX files
-     * @param enableCheckHash boolean to enable hash checking
-     */
-    public void setEnableCheckHash(boolean enableCheckHash) {
-        this.enableCheckHash = enableCheckHash;
     }
 
     public Triplet getTargetTriplet() {
@@ -297,18 +136,6 @@ public class ProjectConfiguration {
 
     public void setHostTriplet(Triplet hostTriplet) {
         this.hostTriplet = hostTriplet;
-    }
-
-    public String getBackend() {
-        return backend;
-    }
-
-    public void setBackend(String backend) {
-        this.backend = backend;
-    }
-
-    public boolean isUseLLVM() {
-        return "llvm".equals(backend);
     }
 
     public List<String> getBundlesList() {
@@ -359,42 +186,6 @@ public class ProjectConfiguration {
         this.jniList = jniList;
     }
 
-    public List<String> getDelayInitList() {
-        return delayInitList;
-    }
-
-    /**
-     * Sets additional lists
-     * @param delayInitList a list of classes that will be added to the default delayed list
-     */
-    public void setDelayInitList(List<String> delayInitList) {
-        this.delayInitList = delayInitList;
-    }
-
-    public List<String> getRuntimeArgsList() {
-        return runtimeArgsList;
-    }
-
-    /**
-     * Sets additional lists of release symbols, like _Java_com_gluonhq*
-     * @param releaseSymbolsList a list of classes that will be added to the default release symbols list
-     */
-    public void setReleaseSymbolsList(List<String> releaseSymbolsList) {
-        this.releaseSymbolsList = releaseSymbolsList;
-    }
-
-    public List<String> getReleaseSymbolsList() {
-        return releaseSymbolsList;
-    }
-
-    /**
-     * Sets additional lists
-     * @param runtimeArgsList a list of classes that will be added to the default runtime args list
-     */
-    public void setRuntimeArgsList(List<String> runtimeArgsList) {
-        this.runtimeArgsList = runtimeArgsList;
-    }
-
     public String getAppName() {
         return appName;
     }
@@ -438,23 +229,14 @@ public class ProjectConfiguration {
                 "graalPath='" + graalPath + '\'' +
                 ", javaStaticSdkVersion='" + javaStaticSdkVersion + '\'' +
                 ", javafxStaticSdkVersion='" + javafxStaticSdkVersion + '\'' +
-                ", llcPath='" + llcPath + '\'' +
-                ", StaticRoot='" + StaticRoot + '\'' +
-                ", useJNI=" + useJNI +
-                ", useJavaFX=" + useJavaFX +
                 ", usePrismSW=" + usePrismSW +
-                ", enableCheckHash=" + enableCheckHash +
                 ", verbose=" + verbose +
                 ", targetTriplet=" + targetTriplet +
                 ", hostTriplet=" + hostTriplet +
-                ", backend='" + backend + '\'' +
                 ", bundlesList=" + bundlesList +
                 ", resourcesList=" + resourcesList +
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
-                ", delayInitList=" + delayInitList +
-                ", runtimeArgsList=" + runtimeArgsList +
-                ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + appName + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +

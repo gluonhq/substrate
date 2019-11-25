@@ -30,8 +30,8 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.gluon.AttachResolver;
 import com.gluonhq.substrate.gluon.GlistenResolver;
+import com.gluonhq.substrate.model.InternalConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
-    ProjectConfiguration projectConfiguration;
+    InternalConfiguration projectConfiguration;
     ProcessPaths paths;
 
     private List<String> attachList = Collections.emptyList();
@@ -69,7 +69,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     @Override
-    public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
+    public boolean compile(ProcessPaths paths, InternalConfiguration config, String cp) throws IOException, InterruptedException {
         this.projectConfiguration = config;
         this.paths = paths;
         String classPath = processClassPath(cp);
@@ -163,7 +163,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * The clibraries path is available by default in GraalVM, but the directory for cross-platform libs may
      * not exist. In that case, retrieve the libs from our download site.
      */
-    private void ensureClibs (ProjectConfiguration projectConfiguration) throws IOException {
+    private void ensureClibs (InternalConfiguration projectConfiguration) throws IOException {
         Triplet target = projectConfiguration.getTargetTriplet();
         Path clibPath = Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2());
         if (!Files.exists(clibPath)) {
@@ -174,7 +174,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     @Override
-    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+    public boolean link(ProcessPaths paths, InternalConfiguration projectConfiguration) throws IOException, InterruptedException {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
 
@@ -260,7 +260,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
     }
 
-    private String getNativeImagePath(ProjectConfiguration configuration) {
+    private String getNativeImagePath(InternalConfiguration configuration) {
         String graalPath = configuration.getGraalPath();
         Path path = Path.of(graalPath, "bin", getNativeImageCommand());
         return path.toString();
@@ -327,7 +327,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     @Override
-    public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+    public boolean runUntilEnd(ProcessPaths paths, InternalConfiguration projectConfiguration) throws IOException, InterruptedException {
         Process runProcess = startAppProcess(paths.getAppPath(), projectConfiguration.getAppName());
         InputStream is = runProcess.getInputStream();
         asynPrintFromInputStream(is);
@@ -360,6 +360,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         // there is no pre-configured llc, search it in the cache, or populare the cache
         Path llcPath = FileDeps.getLlcPath(projectConfiguration);
+        projectConfiguration.setLlcPath(llcPath.toAbsolutePath().toString());
         return llcPath;
     }
 

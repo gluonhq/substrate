@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate;
 
+import com.gluonhq.substrate.model.InternalConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
@@ -75,24 +76,23 @@ public class SubstrateDispatcher {
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
                 :Triplet.fromCurrentOS();
 
-        ProjectConfiguration config = new ProjectConfiguration();
-        config.setGraalPath(graalVM);
-        config.setMainClassName(mainClass);
-        config.setAppName(appName);
-        config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
-        config.setTarget(targetTriplet);
-        config.setUsePrismSW(usePrismSW);
-        config.getIosSigningConfiguration().setSkipSigning(skipSigning);
-        Optional.ofNullable(staticLibs).ifPresent(config::setJavaStaticLibs);
-        Optional.ofNullable(staticJavaFXSDK).ifPresent(config::setJavaFXStaticSDK);
+        ProjectConfiguration publicConfig = new ProjectConfiguration();
+
+        publicConfig.setGraalPath(graalVM);
+        publicConfig.setMainClassName(mainClass);
+        publicConfig.setAppName(appName);
+        publicConfig.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
+        publicConfig.setTarget(targetTriplet);
+        publicConfig.setUsePrismSW(usePrismSW);
+        publicConfig.getIosSigningConfiguration().setSkipSigning(skipSigning);
         if (reflectionList != null && !reflectionList.trim().isEmpty()) {
-            config.setReflectionList(Arrays.asList(reflectionList.split(",")));
+            publicConfig.setReflectionList(Arrays.asList(reflectionList.split(",")));
         }
         if (jniList != null && !jniList.trim().isEmpty()) {
-            config.setJniList(Arrays.asList(jniList.split(",")));
+            publicConfig.setJniList(Arrays.asList(jniList.split(",")));
         }
         if (bundlesList != null && !bundlesList.trim().isEmpty()) {
-            config.setBundlesList(Arrays.asList(bundlesList.split(",")));
+            publicConfig.setBundlesList(Arrays.asList(bundlesList.split(",")));
         }
         TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was null");
@@ -113,7 +113,7 @@ public class SubstrateDispatcher {
         timer.setDaemon(true);
         timer.start();
 
-        boolean nativeCompileSucceeded = nativeCompile(buildRoot, config, classPath);
+        boolean nativeCompileSucceeded = nativeCompile(buildRoot, publicConfig, classPath);
         run = false;
         if (!nativeCompileSucceeded) {
             System.err.println("Compiling failed");
@@ -122,7 +122,7 @@ public class SubstrateDispatcher {
 
         try {
             System.err.println("Linking...");
-            if (!nativeLink(buildRoot, config)) {
+            if (!nativeLink(buildRoot, publicConfig)) {
                 System.err.println("Linking failed");
                 System.exit(1);
             }
@@ -141,7 +141,7 @@ public class SubstrateDispatcher {
                 System.exit(1);
             }
         } else {
-            nativeRun(buildRoot, config);
+            nativeRun(buildRoot, publicConfig);
         }
     }
 
@@ -164,14 +164,15 @@ public class SubstrateDispatcher {
      * The result of compilation is a at least one native file (2 files in case LLVM backend is used).
      * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails
      * @param buildRoot the root, relative to which the compilation step can create objectfiles and temporary files
-     * @param config the ProjectConfiguration, including the target triplet
+     * @param publicConfig the InternalConfiguration, including the target triplet
      * @param classPath the classpath needed to compile the application (this is not the classpath for native-image)
      * @return true if compilation succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
-    public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
-        Objects.requireNonNull(config,  "Project configuration can't be null");
+    public static boolean nativeCompile(Path buildRoot, ProjectConfiguration publicConfig, String classPath) throws Exception {
+        Objects.requireNonNull(publicConfig,  "Project configuration can't be null");
+        InternalConfiguration config = new InternalConfiguration(publicConfig);
         assertGraalVM(config);
         if (classPath != null) {
             boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
@@ -200,8 +201,9 @@ public class SubstrateDispatcher {
         return compile;
     }
 
-    public static boolean nativeLink(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
-        Objects.requireNonNull(config,  "Project configuration can't be null");
+    public static boolean nativeLink(Path buildRoot, ProjectConfiguration publicConfig) throws IOException, InterruptedException {
+        Objects.requireNonNull(publicConfig,  "Project configuration can't be null");
+        InternalConfiguration config = new InternalConfiguration(publicConfig);
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
         if (targetConfiguration == null) {
@@ -211,8 +213,9 @@ public class SubstrateDispatcher {
         return targetConfiguration.link(paths, config);
     }
 
-    public static void nativeRun(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
-        Objects.requireNonNull(config,  "Project configuration can't be null");
+    public static void nativeRun(Path buildRoot, ProjectConfiguration publicConfig) throws IOException, InterruptedException {
+        Objects.requireNonNull(publicConfig,  "Project configuration can't be null");
+        InternalConfiguration config = new InternalConfiguration(publicConfig);
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet), "Target Configuration was null");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());

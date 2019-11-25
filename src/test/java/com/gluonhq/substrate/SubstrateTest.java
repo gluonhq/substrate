@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.model.InternalConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +61,7 @@ class SubstrateTest {
     void testIOSTriplet() {
         Triplet triplet = new Triplet(Constants.Profile.IOS);
         Triplet me = Triplet.fromCurrentOS();
-        ProjectConfiguration config = new ProjectConfiguration();
+        InternalConfiguration config = new InternalConfiguration();
         config.setTarget(triplet);
         // when on linux, nativeCompile should throw an illegalArgumentException
         if (me.getOs().indexOf("nux") > 0) {
@@ -73,7 +73,8 @@ class SubstrateTest {
 
     @Test
     void testAssertGraal() {
-        ProjectConfiguration config = new ProjectConfiguration();
+        ProjectConfiguration publicConfig = new ProjectConfiguration();
+        InternalConfiguration config = new InternalConfiguration(publicConfig);
         assertThrows(NullPointerException.class, () -> SubstrateDispatcher.assertGraalVM(null));
         assertThrows(IllegalArgumentException.class, () -> SubstrateDispatcher.assertGraalVM(config));
     }

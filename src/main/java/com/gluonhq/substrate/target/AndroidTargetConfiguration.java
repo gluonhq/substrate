@@ -28,15 +28,14 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.InternalConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -75,7 +74,7 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    public boolean compile(ProcessPaths paths, ProjectConfiguration config, String classPath) throws IOException, InterruptedException {
+    public boolean compile(ProcessPaths paths, InternalConfiguration config, String classPath) throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no ld.lld in android_ndk, we should not start compiling
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (ldlld == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/ldlld");
@@ -84,7 +83,7 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+    public boolean link(ProcessPaths paths, InternalConfiguration projectConfiguration) throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");

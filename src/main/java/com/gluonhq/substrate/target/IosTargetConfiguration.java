@@ -28,8 +28,8 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.InternalConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
@@ -132,7 +132,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+    public boolean link(ProcessPaths paths, InternalConfiguration projectConfiguration) throws IOException, InterruptedException {
         boolean result = super.link(paths, projectConfiguration);
 
         if (result) {
@@ -149,7 +149,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+    public boolean runUntilEnd(ProcessPaths paths, InternalConfiguration projectConfiguration) throws IOException, InterruptedException {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
         Deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
@@ -223,7 +223,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
-    private void createInfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration) {
+    private void createInfoPlist(ProcessPaths paths, InternalConfiguration projectConfiguration) {
         try {
             InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
                     XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);

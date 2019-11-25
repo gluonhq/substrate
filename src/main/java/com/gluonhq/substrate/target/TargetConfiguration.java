@@ -27,8 +27,8 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.model.InternalConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,11 +43,11 @@ public interface TargetConfiguration {
      * @return true if compilation succeeded, false if it failed
      * @throws Exception
      */
-    boolean compile(ProcessPaths paths, ProjectConfiguration config, String classPath) throws Exception;
+    boolean compile(ProcessPaths paths, InternalConfiguration config, String classPath) throws Exception;
 
-    boolean link(ProcessPaths paths, ProjectConfiguration config) throws IOException, InterruptedException;
+    boolean link(ProcessPaths paths, InternalConfiguration config) throws IOException, InterruptedException;
 
-    boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException;
+    boolean runUntilEnd(ProcessPaths paths, InternalConfiguration projectConfiguration) throws IOException, InterruptedException;
 
     /**
      * Runs the application at the given path, and if successful, returns the last line
