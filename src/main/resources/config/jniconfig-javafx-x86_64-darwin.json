@@ -8,7 +8,8 @@
   }
 ,
   {
-    "name" : "com.sun.glass.ui.mac.MacCommonDialogs"
+    "name" : "com.sun.glass.ui.mac.MacCommonDialogs",
+    "methods":[{"name":"isFileNSURLEnabled","parameterTypes":[] }]
   }
 ,
   {

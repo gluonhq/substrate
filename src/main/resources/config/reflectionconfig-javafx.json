@@ -1,6 +1,10 @@
 [
   {
-    "name" : "javafx.geometry.Pos"
+    "name":"javafx.geometry.Pos",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -8,7 +12,11 @@
   }
 ,
   {
-    "name" : "javafx.geometry.Insets"
+    "name":"javafx.geometry.Insets",
+    "methods":[
+      {"name":"<init>","parameterTypes":["double"] },
+      {"name":"<init>","parameterTypes":["double","double","double","double"] }
+    ]
   }
 ,
   {
@@ -35,7 +43,24 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.BorderPane"
+    "name" : "javafx.scene.layout.BorderPane",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["javafx.scene.Node"] },
+      {"name":"<init>","parameterTypes":["javafx.scene.Node","javafx.scene.Node","javafx.scene.Node","javafx.scene.Node","javafx.scene.Node"] },
+      {"name":"setAlignment","parameterTypes":["javafx.scene.Node","javafx.geometry.Pos"] },
+      {"name":"getAlignment","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setCenter","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getCenter","parameterTypes":[] },
+      {"name":"setTop","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getTop","parameterTypes":[] },
+      {"name":"setBottom","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getBottom","parameterTypes":[] },
+      {"name":"setLeft","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getLeft","parameterTypes":[] },
+      {"name":"setRight","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getRight","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -51,7 +76,15 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.HBox"
+    "name" : "javafx.scene.layout.HBox",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"setAlignment","parameterTypes":["javafx.geometry.Pos"] },
+      {"name":"getAlignment","parameterTypes":[] },
+      {"name":"setSpacing","parameterTypes":["double"] },
+      {"name":"getSpacing","parameterTypes":[] }
+    ]
+
   }
 ,
   {
@@ -84,7 +117,13 @@
 ,
   {
     "name" : "javafx.scene.layout.VBox",
-    "methods":[{"name":"<init>","parameterTypes":[] }]
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"setAlignment","parameterTypes":["javafx.geometry.Pos"] },
+      {"name":"getAlignment","parameterTypes":[] },
+      {"name":"setSpacing","parameterTypes":["double"] },
+      {"name":"getSpacing","parameterTypes":[] }
+    ]
   }
 ,
   {
