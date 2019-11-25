@@ -85,6 +85,7 @@ public class CodeSigning {
     private final Path appPath;
     private final Path tmpPath;
 
+    private String errLink = "Please check https://docs.gluonhq.com/client/ for more information.";
     public CodeSigning(ProcessPaths paths, ProjectConfiguration projectConfiguration) {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
@@ -96,10 +97,10 @@ public class CodeSigning {
     }
 
     public boolean signApp() throws IOException, InterruptedException {
+        assertValidIdentity();
         MobileProvision mobileProvision = getProvisioningProfile();
         if (mobileProvision == null) {
-            throw new RuntimeException("Provisioning profile not found.\n" +
-                    "Please check https://docs.gluonhq.com/client/ for more information.");
+            throw new RuntimeException("Provisioning profile not found.\n" +errLink);
         }
         Path provisioningProfilePath = mobileProvision.getProvisioningPath();
         Path embeddedPath = appPath.resolve(EMBEDDED_PROVISIONING_PROFILE);
@@ -109,6 +110,12 @@ public class CodeSigning {
         return sign(entitlementsPath, appPath);
     }
 
+    private void assertValidIdentity() {
+        List<Identity> identities = getIdentity();
+        if ((identities == null) || identities.isEmpty()) {
+            throw new RuntimeException("No valid Identity (Certificate) found for iOS development.\n"+errLink);
+        }
+     }
     private MobileProvision getProvisioningProfile() throws IOException {
         if (bundleId == null) {
             bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
