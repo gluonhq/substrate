@@ -190,7 +190,7 @@ public class CodeSigning {
 
     private static List<MobileProvision> retrieveValidMobileProvisions() {
         final LocalDate now = LocalDate.now();
-        if (mobileProvision == null) {
+        if (mobileProvisions == null) {
             mobileProvisions = retrieveAllMobileProvisions();
         }
         return mobileProvisions.stream()
