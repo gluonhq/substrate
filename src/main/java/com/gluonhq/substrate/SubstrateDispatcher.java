@@ -257,7 +257,7 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
      * @throws IOException when the path to bin/native-image doesn't exist
      */
-    static void assertGraalVM(ProjectConfiguration configuration) throws IOException {
+    static void assertGraalVM(InternalConfiguration configuration) throws IOException {
         Objects.requireNonNull(configuration);
         String graalPathString = configuration.getGraalPath();
         if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
