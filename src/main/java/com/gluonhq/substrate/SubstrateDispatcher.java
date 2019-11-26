@@ -176,7 +176,7 @@ public class SubstrateDispatcher {
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
-     boolean nativeCompile(String classPath) throws Exception {
+     public boolean nativeCompile(String classPath) throws Exception {
          config.canRunNativeImage();
         if (classPath != null) {
             boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
@@ -205,7 +205,7 @@ public class SubstrateDispatcher {
         return compile;
     }
 
-    boolean nativeLink() throws IOException, InterruptedException {
+    public boolean nativeLink() throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = targetTriplet.getConfiguration();
         if (targetConfiguration == null) {
@@ -215,7 +215,7 @@ public class SubstrateDispatcher {
         return targetConfiguration.link(paths, config);
     }
 
-    void nativeRun() throws IOException, InterruptedException {
+    public void nativeRun() throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = Objects.requireNonNull(targetTriplet.getConfiguration(), "Target Configuration was null");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
