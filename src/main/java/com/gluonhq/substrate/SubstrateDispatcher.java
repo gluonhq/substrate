@@ -208,6 +208,8 @@ public class SubstrateDispatcher {
             throw new IllegalArgumentException("We don't have a configuration to link " + targetTriplet);
         }
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
+        Logger.logInit(paths.getLogPath().toString(), "==================== LINK TASK ====================",
+                config.isVerbose());
         return targetConfiguration.link(paths, config);
     }
 
@@ -216,6 +218,8 @@ public class SubstrateDispatcher {
         Triplet targetTriplet  = config.getTargetTriplet();
         TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet), "Target Configuration was null");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
+        Logger.logInit(paths.getLogPath().toString(), "==================== RUN TASK ====================",
+                config.isVerbose());
         targetConfiguration.runUntilEnd(paths, config);
     }
 
