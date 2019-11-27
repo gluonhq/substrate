@@ -30,20 +30,11 @@ package com.gluonhq.substrate;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
-import com.gluonhq.substrate.target.AndroidTargetConfiguration;
-import com.gluonhq.substrate.target.DarwinTargetConfiguration;
-import com.gluonhq.substrate.target.IosTargetConfiguration;
-import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
-import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.Logger;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -56,6 +47,7 @@ public class SubstrateDispatcher {
     private static volatile boolean run = true;
 
     public static void main(String[] args) throws Exception {
+
         String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
@@ -94,7 +86,7 @@ public class SubstrateDispatcher {
         if (bundlesList != null && !bundlesList.trim().isEmpty()) {
             config.setBundlesList(Arrays.asList(bundlesList.split(",")));
         }
-        TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
+        TargetConfiguration targetConfiguration = Objects.requireNonNull(targetTriplet.getConfiguration(),
                 "Error: Target Configuration was null");
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
@@ -113,7 +105,9 @@ public class SubstrateDispatcher {
         timer.setDaemon(true);
         timer.start();
 
-        boolean nativeCompileSucceeded = nativeCompile(buildRoot, config, classPath);
+        var dispatcher = new SubstrateDispatcher(buildRoot, config);
+
+        boolean nativeCompileSucceeded = dispatcher.nativeCompile(classPath);
         run = false;
         if (!nativeCompileSucceeded) {
             System.err.println("Compiling failed");
@@ -122,7 +116,7 @@ public class SubstrateDispatcher {
 
         try {
             System.err.println("Linking...");
-            if (!nativeLink(buildRoot, config)) {
+            if (!dispatcher.nativeLink()) {
                 System.err.println("Linking failed");
                 System.exit(1);
             }
@@ -141,7 +135,7 @@ public class SubstrateDispatcher {
                 System.exit(1);
             }
         } else {
-            nativeRun(buildRoot, config);
+            dispatcher.nativeRun();
         }
     }
 
@@ -158,21 +152,32 @@ public class SubstrateDispatcher {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
+
+    private final Path buildRoot;
+    private final ProjectConfiguration config;
+
+    /**
+     * Dispatches calls to different process steps. Uses shared build root path and project configuration
+     * @param buildRoot the root, relative to which the compilation step can create object files and temporary files
+     * @param config the ProjectConfiguration, including the target triplet
+     */
+    public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) {
+        this.buildRoot = Objects.requireNonNull(buildRoot);
+        this.config = Objects.requireNonNull(config);
+    }
+
     /**
      * This method will start native compilation for the specified configuration. The classpath and the buildroot need
      * to be provided separately.
      * The result of compilation is a at least one native file (2 files in case LLVM backend is used).
      * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails
-     * @param buildRoot the root, relative to which the compilation step can create objectfiles and temporary files
-     * @param config the ProjectConfiguration, including the target triplet
      * @param classPath the classpath needed to compile the application (this is not the classpath for native-image)
      * @return true if compilation succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
-    public static boolean nativeCompile(Path buildRoot, ProjectConfiguration config, String classPath) throws Exception {
-        Objects.requireNonNull(config,  "Project configuration can't be null");
-        assertGraalVM(config);
+     public boolean nativeCompile(String classPath) throws Exception {
+         config.canRunNativeImage();
         if (classPath != null) {
             boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
                     .anyMatch(s -> s.contains("javafx"));
@@ -180,10 +185,10 @@ public class SubstrateDispatcher {
         }
 
         Triplet targetTriplet  = config.getTargetTriplet();
-        if (! canCompileTo(config.getHostTriplet(), config.getTargetTriplet())) {
+        if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
             throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
         }
-        TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
+        TargetConfiguration targetConfiguration = targetTriplet.getConfiguration();
         if (targetConfiguration == null) {
             throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
         }
@@ -200,10 +205,9 @@ public class SubstrateDispatcher {
         return compile;
     }
 
-    public static boolean nativeLink(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
-        Objects.requireNonNull(config,  "Project configuration can't be null");
+    public boolean nativeLink() throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
-        TargetConfiguration targetConfiguration = getTargetConfiguration(targetTriplet);
+        TargetConfiguration targetConfiguration = targetTriplet.getConfiguration();
         if (targetConfiguration == null) {
             throw new IllegalArgumentException("We don't have a configuration to link " + targetTriplet);
         }
@@ -213,74 +217,13 @@ public class SubstrateDispatcher {
         return targetConfiguration.link(paths, config);
     }
 
-    public static void nativeRun(Path buildRoot, ProjectConfiguration config) throws IOException, InterruptedException {
-        Objects.requireNonNull(config,  "Project configuration can't be null");
+    public void nativeRun() throws IOException, InterruptedException {
         Triplet targetTriplet  = config.getTargetTriplet();
-        TargetConfiguration targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet), "Target Configuration was null");
+        TargetConfiguration targetConfiguration = Objects.requireNonNull(targetTriplet.getConfiguration(), "Target Configuration was null");
         ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         Logger.logInit(paths.getLogPath().toString(), "==================== RUN TASK ====================",
                 config.isVerbose());
         targetConfiguration.runUntilEnd(paths, config);
     }
 
-    private static TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
-        switch (targetTriplet.getOs()) {
-            case Constants.OS_LINUX : return new LinuxTargetConfiguration();
-            case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
-            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration();
-            case Constants.OS_IOS: return new IosTargetConfiguration();
-            case Constants.OS_ANDROID: return new AndroidTargetConfiguration();
-            default: return null;
-        }
-    }
-
-    /*
-     * check if this host can be used to provide binaries for this target.
-     * host and target should not be null.
-     */
-    private static boolean canCompileTo(Triplet host, Triplet target) {
-        // if the host os and target os are the same, always return true
-        if (host.getOs().equals(target.getOs())) return true;
-
-        // if host is linux and target is ios, fail
-        if ((Constants.OS_LINUX.equals(host.getOs()) || Constants.OS_WINDOWS.equals(host.getOs())) &&
-                Constants.OS_IOS.equals(target.getOs())) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * check if the GraalVM provided by the configuration is capable of running native-image
-     * @param configuration
-     * @throws NullPointerException when the configuration is null
-     * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
-     * @throws IOException when the path to bin/native-image doesn't exist
-     */
-    static void assertGraalVM(ProjectConfiguration configuration) throws IOException {
-        Objects.requireNonNull(configuration);
-        String graalPathString = configuration.getGraalPath();
-        if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
-        Path graalPath = Path.of(graalPathString);
-        if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPathString);
-        Path binPath = graalPath.resolve("bin");
-        if (!Files.exists(binPath)) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPathString);
-        Path niPath = Constants.OS_WINDOWS.equals(configuration.getHostTriplet().getOs()) ?
-                binPath.resolve("native-image.cmd") :
-                binPath.resolve("native-image");
-        if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPathString + "\n" +
-                "You can use gu to install it running: \n${GRAALVM_HOME}/bin/gu install native-image");
-        Path javacmd = binPath.resolve("java");
-        ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
-        processBuilder.command().add("-version");
-        processBuilder.redirectErrorStream(true);
-        Process process = processBuilder.start();
-        InputStream is = process.getInputStream();
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String l = br.readLine();
-        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in " + graalPathString);
-        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in " + graalPathString+
-                " which uses Java version "+l+"\nUse GraalVM 19.3 or later");
-    }
 }

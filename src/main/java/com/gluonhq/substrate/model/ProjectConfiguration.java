@@ -29,6 +29,11 @@ package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -430,6 +435,37 @@ public class ProjectConfiguration {
      */
     public void setIosSigningConfiguration(IosSigningConfiguration iosSigningConfiguration) {
         this.iosSigningConfiguration = iosSigningConfiguration;
+    }
+
+    /**
+     * check if the GraalVM provided by the configuration is capable of running native-image
+     * @throws NullPointerException when the configuration is null
+     * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
+     * @throws IOException when the path to bin/native-image doesn't exist
+     */
+    public void canRunNativeImage() throws IOException {
+        String graalPathString = getGraalPath();
+        if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
+        Path graalPath = Path.of(graalPathString);
+        if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPathString);
+        Path binPath = graalPath.resolve("bin");
+        if (!Files.exists(binPath)) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPathString);
+        Path niPath = Constants.OS_WINDOWS.equals(getHostTriplet().getOs()) ?
+                binPath.resolve("native-image.cmd") :
+                binPath.resolve("native-image");
+        if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPathString + "\n" +
+                "You can use gu to install it running: \n${GRAALVM_HOME}/bin/gu install native-image");
+        Path javacmd = binPath.resolve("java");
+        ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
+        processBuilder.command().add("-version");
+        processBuilder.redirectErrorStream(true);
+        Process process = processBuilder.start();
+        InputStream is = process.getInputStream();
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        String l = br.readLine();
+        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in " + graalPathString);
+        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in " + graalPathString+
+                " which uses Java version "+l+"\nUse GraalVM 19.3 or later");
     }
 
     @Override
