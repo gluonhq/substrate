@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate.target;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -66,13 +67,15 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkLibraries() {
         List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
+        defaultLinkFlags.addAll(Arrays.asList("-Wl,-force_load," +
+                Path.of(projectConfiguration.getGraalPath(), "lib", "libnet.a").toString(),
+                "-lextnet", "-lstdc++"));
         return defaultLinkFlags;
     }
 
     private static final List<String> macoslibs = Arrays.asList("-lffi",
             "-lpthread", "-lz", "-ldl", "-lstrictmath", "-llibchelper",
-            "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lobjc",
+            "-ljava", "-lnio", "-lzip", "-ljvm", "-lobjc",
             "-Wl,-framework,Foundation", "-Wl,-framework,AppKit",
             "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");
