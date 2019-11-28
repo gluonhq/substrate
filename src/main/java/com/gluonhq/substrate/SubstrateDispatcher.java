@@ -30,7 +30,7 @@ package com.gluonhq.substrate;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
-import com.gluonhq.substrate.target.TargetConfiguration;
+import com.gluonhq.substrate.target.*;
 import com.gluonhq.substrate.util.Logger;
 
 import java.io.File;
@@ -150,7 +150,6 @@ public class SubstrateDispatcher {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
-
     private final Path buildRoot;
     private final ProjectConfiguration config;
     private final ProcessPaths paths;
@@ -166,8 +165,18 @@ public class SubstrateDispatcher {
         this.buildRoot = Objects.requireNonNull(buildRoot);
         this.config = Objects.requireNonNull(config);
         this.paths = new ProcessPaths(buildRoot, config.getTargetTriplet().getArchOs());
-        this.targetConfiguration = Objects.requireNonNull(config.getTargetTriplet().getConfiguration(paths, config),
+        this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),
                 "Error: Target Configuration was null");
+    }
+    private TargetConfiguration getTargetConfiguration( Triplet targetTriplet ) {
+        switch (targetTriplet.getOs()) {
+            case Constants.OS_LINUX : return new LinuxTargetConfiguration(paths, config);
+            case Constants.OS_DARWIN: return new DarwinTargetConfiguration(paths, config);
+            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config);
+            case Constants.OS_IOS: return new IosTargetConfiguration(paths, config);
+            case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config);
+            default: return null;
+        }
     }
 
 

@@ -102,18 +102,6 @@ public class Triplet {
         }
     }
 
-    public TargetConfiguration getConfiguration(ProcessPaths paths, ProjectConfiguration configuration) {
-        switch (getOs()) {
-            case Constants.OS_LINUX : return new LinuxTargetConfiguration(paths, configuration);
-            case Constants.OS_DARWIN: return new DarwinTargetConfiguration(paths, configuration);
-            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, configuration);
-            case Constants.OS_IOS: return new IosTargetConfiguration(paths, configuration);
-            case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, configuration);
-            default: return null;
-        }
-    }
-
-
     /*
      * check if this host can be used to provide binaries for this target.
      * host and target should not be null.
