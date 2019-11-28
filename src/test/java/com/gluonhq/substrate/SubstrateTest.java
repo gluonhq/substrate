@@ -31,6 +31,7 @@ import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,7 +61,7 @@ class SubstrateTest {
     }
 
     @Test
-    void testIOSTriplet() {
+    void testIOSTriplet() throws IOException {
         Triplet iosTriplet = new Triplet(Constants.Profile.IOS);
         Triplet currentOsTriplet = Triplet.fromCurrentOS();
         ProjectConfiguration config = new ProjectConfiguration();
