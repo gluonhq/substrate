@@ -150,7 +150,6 @@ public class SubstrateDispatcher {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
-    private final Path buildRoot;
     private final ProjectConfiguration config;
     private final ProcessPaths paths;
     private final TargetConfiguration targetConfiguration;
@@ -162,9 +161,8 @@ public class SubstrateDispatcher {
      * @param config the ProjectConfiguration, including the target triplet
      */
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
-        this.buildRoot = Objects.requireNonNull(buildRoot);
         this.config = Objects.requireNonNull(config);
-        this.paths = new ProcessPaths(buildRoot, config.getTargetTriplet().getArchOs());
+        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),
                 "Error: Target Configuration was null");
     }
