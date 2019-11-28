@@ -67,6 +67,10 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
 
+    public IosTargetConfiguration(ProcessPaths paths, ProjectConfiguration configuration ) {
+        super(paths, configuration);
+    }
+
     @Override
     List<String> getTargetSpecificLinkLibraries() {
         List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
@@ -132,8 +136,8 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
-        boolean result = super.link(paths, projectConfiguration);
+    public boolean link() throws IOException, InterruptedException {
+        boolean result = super.link();
 
         if (result) {
             createInfoPlist(paths, projectConfiguration);
@@ -149,9 +153,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
-        this.paths = paths;
-        this.projectConfiguration = projectConfiguration;
+    public boolean runUntilEnd() throws IOException, InterruptedException {
         Deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
         String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
         if (isSimulator()) {
@@ -196,7 +198,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
-        Path javafxSDKLibsPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
+        Path javafxSDKLibsPath = fileDeps.getJavaFXSDKLibsPath();
         return Stream.of(classPath.split(File.pathSeparator))
                 .map(s -> {
                     if (s.indexOf("javafx-graphics") > 0) {

@@ -37,17 +37,15 @@ public interface TargetConfiguration {
 
     /**
      * Compiles the classes to objectcode for this TargetConfiguration.
-     * @param paths
-     * @param config
      * @param classPath
      * @return true if compilation succeeded, false if it failed
      * @throws Exception
      */
-    boolean compile(ProcessPaths paths, ProjectConfiguration config, String classPath) throws Exception;
+    boolean compile(String classPath) throws Exception;
 
-    boolean link(ProcessPaths paths, ProjectConfiguration config) throws IOException, InterruptedException;
+    boolean link() throws IOException, InterruptedException;
 
-    boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException;
+    boolean runUntilEnd() throws IOException, InterruptedException;
 
     /**
      * Runs the application at the given path, and if successful, returns the last line

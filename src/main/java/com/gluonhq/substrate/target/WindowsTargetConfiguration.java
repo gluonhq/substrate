@@ -27,10 +27,19 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.model.ProjectConfiguration;
+
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
+
+
+    public WindowsTargetConfiguration(ProcessPaths paths, ProjectConfiguration configuration ) {
+        super(paths, configuration);
+    }
 
     @Override
     String getAdditionalSourceFileLocation() {
@@ -39,12 +48,12 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        return Arrays.asList("launcher.c");
+        return Collections.singletonList("launcher.c");
     }
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
-        return Arrays.asList("/MT");
+        return Collections.singletonList("/MT");
     }
 
     @Override
@@ -70,7 +79,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkOutputFlags() {
         String appName = projectConfiguration.getAppName();
-        return Arrays.asList("/OUT:" + getAppPath(appName + ".exe"));
+        return Collections.singletonList("/OUT:" + getAppPath(appName + ".exe"));
     }
 
     @Override

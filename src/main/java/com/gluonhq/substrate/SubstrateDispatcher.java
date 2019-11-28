@@ -86,10 +86,8 @@ public class SubstrateDispatcher {
         if (bundlesList != null && !bundlesList.trim().isEmpty()) {
             config.setBundlesList(Arrays.asList(bundlesList.split(",")));
         }
-        TargetConfiguration targetConfiguration = Objects.requireNonNull(targetTriplet.getConfiguration(),
-                "Error: Target Configuration was null");
+
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
-        ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
 
         Thread timer = new Thread(() -> {
             int counter = 1;
@@ -127,7 +125,7 @@ public class SubstrateDispatcher {
         }
         System.err.println("Running...");
         if (expected != null) {
-            String response = targetConfiguration.run(paths.getAppPath(), appName);
+            String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(), appName);
             if (expected.equals(response)) {
                 System.err.println("Run ended successfully, the output: " + expected + " matched the expected result.");
             } else {
@@ -155,16 +153,23 @@ public class SubstrateDispatcher {
 
     private final Path buildRoot;
     private final ProjectConfiguration config;
+    private final ProcessPaths paths;
+    private final TargetConfiguration targetConfiguration;
+
 
     /**
      * Dispatches calls to different process steps. Uses shared build root path and project configuration
      * @param buildRoot the root, relative to which the compilation step can create object files and temporary files
      * @param config the ProjectConfiguration, including the target triplet
      */
-    public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) {
+    public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
         this.buildRoot = Objects.requireNonNull(buildRoot);
         this.config = Objects.requireNonNull(config);
+        this.paths = new ProcessPaths(buildRoot, config.getTargetTriplet().getArchOs());
+        this.targetConfiguration = Objects.requireNonNull(config.getTargetTriplet().getConfiguration(paths, config),
+                "Error: Target Configuration was null");
     }
+
 
     /**
      * This method will start native compilation for the specified configuration. The classpath and the buildroot need
@@ -188,15 +193,13 @@ public class SubstrateDispatcher {
         if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
             throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
         }
-        TargetConfiguration targetConfiguration = targetTriplet.getConfiguration();
         if (targetConfiguration == null) {
             throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
         }
-        ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         Logger.logInit(paths.getLogPath().toString(), "==================== COMPILE TASK ====================",
                 config.isVerbose());
         System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
-        boolean compile = targetConfiguration.compile(paths, config, classPath);
+        boolean compile = targetConfiguration.compile(classPath);
         if (compile) {
             System.err.println("Compilation succeeded.");
         } else {
@@ -206,24 +209,18 @@ public class SubstrateDispatcher {
     }
 
     public boolean nativeLink() throws IOException, InterruptedException {
-        Triplet targetTriplet  = config.getTargetTriplet();
-        TargetConfiguration targetConfiguration = targetTriplet.getConfiguration();
-        if (targetConfiguration == null) {
-            throw new IllegalArgumentException("We don't have a configuration to link " + targetTriplet);
-        }
-        ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         Logger.logInit(paths.getLogPath().toString(), "==================== LINK TASK ====================",
                 config.isVerbose());
-        return targetConfiguration.link(paths, config);
+        if (targetConfiguration == null) {
+            throw new IllegalArgumentException("We don't have a configuration to link " + config.getTargetTriplet());
+        }
+        return targetConfiguration.link();
     }
 
     public void nativeRun() throws IOException, InterruptedException {
-        Triplet targetTriplet  = config.getTargetTriplet();
-        TargetConfiguration targetConfiguration = Objects.requireNonNull(targetTriplet.getConfiguration(), "Target Configuration was null");
-        ProcessPaths paths = new ProcessPaths(buildRoot, targetTriplet.getArchOs());
         Logger.logInit(paths.getLogPath().toString(), "==================== RUN TASK ====================",
                 config.isVerbose());
-        targetConfiguration.runUntilEnd(paths, config);
+        targetConfiguration.runUntilEnd();
     }
 
 }

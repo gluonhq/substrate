@@ -102,13 +102,13 @@ public class Triplet {
         }
     }
 
-    public TargetConfiguration getConfiguration() {
+    public TargetConfiguration getConfiguration(ProcessPaths paths, ProjectConfiguration configuration) {
         switch (getOs()) {
-            case Constants.OS_LINUX : return new LinuxTargetConfiguration();
-            case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
-            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration();
-            case Constants.OS_IOS: return new IosTargetConfiguration();
-            case Constants.OS_ANDROID: return new AndroidTargetConfiguration();
+            case Constants.OS_LINUX : return new LinuxTargetConfiguration(paths, configuration);
+            case Constants.OS_DARWIN: return new DarwinTargetConfiguration(paths, configuration);
+            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, configuration);
+            case Constants.OS_IOS: return new IosTargetConfiguration(paths, configuration);
+            case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, configuration);
             default: return null;
         }
     }

@@ -51,8 +51,8 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     private final Path ldlld;
     private final Path clang;
 
-    private List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c");
-    private List<String> androidAdditionalHeaderFiles = Arrays.asList("grandroid.h");
+    private List<String> androidAdditionalSourceFiles = Collections.singletonList("launcher.c");
+    private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
     private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-Wl,--gc-sections",
             "-landroid", "-llog", "-shared");
@@ -60,7 +60,9 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-Wl,--no-whole-archive",
             "-lGLESv2", "-lEGL", "-lfreetype");
 
-    public AndroidTargetConfiguration() {
+
+    public AndroidTargetConfiguration( ProcessPaths paths, ProjectConfiguration configuration ) {
+        super(paths,configuration);
         // for now, we need to have an ANDROID_NDK
         // we will fail fast whenever a method is invoked that uses it (e.g. compile)
         String sysndk = System.getenv("ANDROID_NDK");
@@ -96,7 +98,7 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
         if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
-        Path javafxSDKLibsPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
+        Path javafxSDKLibsPath = fileDeps.getJavaFXSDKLibsPath();
         return Stream.of(classPath.split(File.pathSeparator))
                 .map(s -> {
                     if (s.indexOf("javafx-graphics") > 0) {
@@ -111,20 +113,20 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    public boolean compile(ProcessPaths paths, ProjectConfiguration config, String classPath) throws IOException, InterruptedException {
+    public boolean compile(String classPath) throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no ld.lld in android_ndk, we should not start compiling
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (ldlld == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/ldlld");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");
-        return super.compile(paths, config, classPath);
+        return super.compile(classPath);
     }
 
     @Override
-    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+    public boolean link() throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");
-        return super.link(paths, projectConfiguration);
+        return super.link();
     }
 
     @Override

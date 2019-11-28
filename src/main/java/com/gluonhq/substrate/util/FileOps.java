@@ -29,11 +29,7 @@ package com.gluonhq.substrate.util;
 
 import com.gluonhq.substrate.SubstrateDispatcher;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -42,14 +38,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -239,5 +231,45 @@ public class FileOps {
             }
         }
         return lines;
+    }
+
+    /**
+     * Return the hashmap associated with this nameFile.
+     * If a file named <code>nameFile</code> exists, and it contains  a serialized version of a Map, this
+     * Map will be returned.
+     * If the file doesn't exist or is corrupt, this method returns null
+     * @param nameFile
+     * @return the Map contained in the file named nameFile, or null in all other cases.
+     */
+    static Map<String, String> getHashMap(String nameFile) {
+        Map<String, String> hashes = null;
+        if (!Files.exists(Paths.get(nameFile))) {
+            return null;
+        }
+        try (FileInputStream fis = new FileInputStream(new File(nameFile));
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            hashes = (Map<String, String>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            Logger.logDebug("Exception trying to get hashmap for "+nameFile+": "+e);
+            return null;
+        }
+        return hashes;
+    }
+
+    static String calculateCheckSum(File file) {
+        try {
+            // not looking for security, just a checksum. MD5 should be faster than SHA
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            try (final InputStream stream = new FileInputStream(file);
+                 final DigestInputStream dis = new DigestInputStream(stream, md5)) {
+                md5.reset();
+                byte[] buffer = new byte[4096];
+                while (dis.read(buffer) != -1) { /* empty loop body is intentional */ }
+                return Arrays.toString(md5.digest());
+            }
+
+        } catch (IllegalArgumentException | NoSuchAlgorithmException | IOException | SecurityException e) {
+            return "";
+        }
     }
 }
