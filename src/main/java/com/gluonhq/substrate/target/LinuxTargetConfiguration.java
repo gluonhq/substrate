@@ -73,7 +73,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkLibraries() {
         List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.addAll(Arrays.asList("-Wl,--whole-archive" +
+        defaultLinkFlags.addAll(Arrays.asList("-Wl,--whole-archive",
                 Path.of(projectConfiguration.getGraalPath(), "lib", "libnet.a").toString(),
                 "-Wl,--no-whole-archive", "-lextnet", "-lstdc++"));
         return defaultLinkFlags;
