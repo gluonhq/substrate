@@ -114,14 +114,6 @@ int start_logger(const char *app_name)
     return 0;
 }
 
-void NET_Poll() {
-fprintf(stderr, "NETPOLL\n");
-}
-
-void NET_Connect() {
-fprintf(stderr, "NETCONNECT\n");
-}
-
 void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
 fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_INIT\n");
 }

@@ -1,7 +1,10 @@
 [
   {
     "name" : "com.sun.prism.es2.ES2Pipeline",
-    "methods":[{"name":"getInstance","parameterTypes":[] }]
+    "methods":[
+      {"name":"getInstance","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":[] }
+    ]
   }
 ,
   {
