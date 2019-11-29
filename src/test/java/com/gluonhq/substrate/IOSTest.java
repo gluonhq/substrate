@@ -40,7 +40,6 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
 
 import static com.gluonhq.substrate.TestUtils.isCIMacOS;
 import static com.gluonhq.substrate.TestUtils.isLocalMacOS;
@@ -53,12 +52,23 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class IOSTest {
 
+    private Deploy deploy;
+
+    IOSTest() {
+        try {
+            deploy = new Deploy();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     @BeforeEach
     void notForTravis() {
         if (!isTravis()) {
             assumeTrue(isLocalMacOS());
-            String[] devices = Deploy.connectedDevices();
-            assumeTrue((devices != null && devices.length > 0));
+            assumeTrue(deploy.getIosDeployPath() != null);
+//            String[] devices = deploy.connectedDevices();
+//            assumeTrue((devices != null && devices.length > 0));
         } else {
             assumeTrue(isCIMacOS());
         }
@@ -67,20 +77,16 @@ class IOSTest {
     @Test
     void iosDeployTest() {
         assumeTrue(!isTravis());
-        try {
-            assertNotNull(Deploy.getIOSDeployPath());
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        assertNotNull(deploy.getIosDeployPath());
     }
 
-    @Test
-    void deviceConnected() {
-        assumeTrue(!isTravis());
-        String[] devices = Deploy.connectedDevices();
-        assertNotNull(devices);
-        assertTrue(devices.length > 0);
-    }
+//    @Test
+//    void deviceConnected() {
+//        assumeTrue(!isTravis());
+//        String[] devices = deploy.connectedDevices();
+//        assertNotNull(devices);
+//        assertTrue(devices.length > 0);
+//    }
 
     @Test
     void testSigning() {

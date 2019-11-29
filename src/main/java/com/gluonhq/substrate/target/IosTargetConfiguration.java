@@ -154,13 +154,14 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
-        Deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
+        Deploy deploy = new Deploy();
+        deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
         String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
         if (isSimulator()) {
             // TODO: launchOnSimulator(appPath);
             return false;
         } else if (!projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
-            return Deploy.install(appPath);
+            return deploy.install(appPath);
         }
         return true;
     }

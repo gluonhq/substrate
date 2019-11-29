@@ -45,69 +45,126 @@ import static com.gluonhq.substrate.util.XcodeUtils.XCODE_PRODUCTS_PATH;
 public class Deploy {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-    private static MobileDeviceBridge bridge;
+    private String usbLib;
 
-    public static Path getIOSDeployPath() throws IOException, InterruptedException {
+    private Path iosDeployPath;
+
+    public Deploy() throws IOException, InterruptedException {
+        checkPrerequisites();
+    }
+
+    public Path getIosDeployPath() {
+        return iosDeployPath;
+    }
+
+    private void checkPrerequisites() throws IOException, InterruptedException {
+        iosDeployPath = null;
+
         // Check for Homebrew installed
         String response = ProcessRunner.runProcessForSingleOutput("check brew","which", "brew");
-        if (response == null || response.isEmpty()) {
+        if (response == null || response.isEmpty() || !Files.exists(Path.of(response))) {
             Logger.logSevere("Homebrew not found");
             throw new RuntimeException("Open a terminal and run the following command to install Homebrew: \n\n" +
                     "ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"");
         }
         Logger.logDebug("Brew found at " + response);
 
+        // Check for usbmuxd installed
+        String usbPath = ProcessRunner.runProcessForSingleOutput("libusbmuxd","/bin/sh", "-c", "find $(brew --cellar) -name libusbmuxd.dylib");
+        if (usbPath == null || usbPath.isEmpty() || !Files.exists(Path.of(usbPath))) {
+            Logger.logSevere("Error finding libusbmuxd.dylib");
+            throw new RuntimeException("Open a terminal and run the following command to install libusbmuxd.dylib: \n\n" +
+                    "brew install --HEAD usbmuxd");
+        }
+        Logger.logDebug("libusbmuxd.dylib found in: " + usbPath);
+
+        // retrieve usbmuxd linked library
+        usbLib = ProcessRunner.runProcessForSingleOutput("readlink libusbmuxd", "readlink", usbPath);
+        Logger.logDebug("libusbmuxd.dylib link of: " + usbLib);
+        if (usbLib == null || usbLib.isEmpty()) {
+            throw new RuntimeException("Error finding libusbmuxd.dylib version");
+        }
+
+        // Check for libimobiledevice installed
+        String libiPath = ProcessRunner.runProcessForSingleOutput("libimobiledevice","/bin/sh", "-c", "find $(brew --cellar) -name libimobiledevice.dylib");
+        if (libiPath == null || libiPath.isEmpty() || !Files.exists(Path.of(libiPath))) {
+            Logger.logSevere("Error finding libimobiledevice.dylib");
+            throw new RuntimeException("Open a terminal and run the following command to install libimobiledevice.dylib: \n\n" +
+                    "brew install --HEAD libimobiledevice");
+        }
+        Logger.logDebug("libimobiledevice.dylib found in: " + libiPath);
+
+        ProcessRunner runner = new ProcessRunner("otool", "-L", libiPath);
+        if (runner.runProcess("otool") == 0) {
+            if (runner.getResponses().stream().noneMatch(d -> d.contains(usbLib))) {
+                Logger.logSevere("Error: there is a mismatch in the dependencies required by libimobiledevice.dylib");
+                throw new RuntimeException("Open a terminal and run the following command to reinstall the required libraries: \n\n" +
+                        "brew reinstall usbmuxd & brew reinstall libimobiledevice");
+            }
+        }
+
+        Logger.logInfo("Loading libimobiledevice.dylib ...");
+
         // Check for ios-deploy installed
         response = ProcessRunner.runProcessForSingleOutput("check ios-deploy","which", "ios-deploy");
-        if (response == null || response.isEmpty()) {
+        if (response == null || response.isEmpty() || !Files.exists(Path.of(response))) {
             Logger.logSevere("ios-deploy not found. It will be installed now");
-            ProcessRunner runner = new ProcessRunner("brew", "install", "ios-deploy");
+            runner = new ProcessRunner("brew", "install", "ios-deploy");
             if (runner.runProcess("ios-deploy") == 0) {
                 Logger.logDebug("ios-deploy installed");
-                return getIOSDeployPath();
+                checkPrerequisites();
             } else {
                 Logger.logDebug("Error installing ios-deploy");
-                return null;
+                return;
             }
-        } else {
-            Logger.logDebug("ios-deploy found at " + response);
-        }
-        return Path.of(response);
-    }
-
-    public static String[] connectedDevices() {
-        if (bridge == null) {
-            bridge = MobileDeviceBridge.instance;
         }
 
-        return bridge.getDeviceIds();
+        Logger.logDebug("ios-deploy found at " + response);
+        iosDeployPath = Path.of(response);
     }
 
-    public static boolean install(String app) throws IOException, InterruptedException {
-        Path deploy = getIOSDeployPath();
-        if (deploy != null) {
-            String[] devices = Deploy.connectedDevices();
-            if (devices == null || devices.length == 0) {
-                Logger.logSevere("No iOS devices connected to this system. Exit install procedure");
-                return false;
-            }
-            if (devices.length > 1) {
-                Logger.logSevere("Multiple iOS devices connected to this system: " + String.join(", ", devices ) + ". We'll use the first one.");
-            }
-            String deviceId = devices[0];
-
-            ProcessRunner runner = new ProcessRunner(deploy.toString(),
-                    "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
-            runner.addToEnv("PATH", "/usr/bin/:$PATH");
-            runner.setInfo(true);
-            boolean result = runner.runTimedProcess("run", 60);
-            Logger.logInfo("result = " + result);
-            return result;
+    public String[] connectedDevices() throws IOException, InterruptedException {
+        if (iosDeployPath == null) {
+            return new String[] {};
         }
-        return false;
+        ProcessRunner runner = new ProcessRunner("ios-deploy", "-c");
+        if (!runner.runTimedProcess("connected devices", 10L)) {
+            Logger.logSevere("Error finding connected devices");
+            return new String[] {};
+        }
+        List<String> devices = runner.getResponses();
+        return devices.stream()
+                .filter(line -> line.startsWith("[....] Found"))
+                .map(line -> line.substring("[....] Found ".length()).split("\\s")[0])
+                .toArray(String[]::new);
     }
 
-    public static void addDebugSymbolInfo(Path appPath, String appName) throws IOException, InterruptedException {
+    public boolean install(String app) throws IOException, InterruptedException {
+        if (iosDeployPath == null) {
+            Logger.logSevere("Error: ios-deploy was not found");
+            return false;
+        }
+
+        String[] devices = connectedDevices();
+        if (devices == null || devices.length == 0) {
+            Logger.logSevere("No iOS devices connected to this system. Exit install procedure");
+            return false;
+        }
+        if (devices.length > 1) {
+            Logger.logSevere("Multiple iOS devices connected to this system: " + String.join(", ", devices ) + ". We'll use the first one.");
+        }
+        String deviceId = devices[0];
+
+        ProcessRunner runner = new ProcessRunner(iosDeployPath.toString(),
+                "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
+        runner.addToEnv("PATH", "/usr/bin/:$PATH");
+        runner.setInfo(true);
+        boolean result = runner.runTimedProcess("run", 60);
+        Logger.logInfo("result = " + result);
+        return result;
+    }
+
+    public void addDebugSymbolInfo(Path appPath, String appName) throws IOException, InterruptedException {
         Path applicationPath = appPath.resolve(appName + ".app");
         Path debugSymbolsPath = Path.of(applicationPath.toString() + ".dSYM");
         if (Files.exists(debugSymbolsPath)) {
@@ -124,7 +181,7 @@ public class Deploy {
         }
     }
 
-    private static void copyAppToProducts(Path debugSymbolsPath, Path executablePath, String appName) throws IOException {
+    private void copyAppToProducts(Path debugSymbolsPath, Path executablePath, String appName) throws IOException {
         if (Files.exists(XCODE_PRODUCTS_PATH)) {
             List<Path> oldAppsPaths = Files.walk(XCODE_PRODUCTS_PATH, 1)
                     .filter(Objects::nonNull)
