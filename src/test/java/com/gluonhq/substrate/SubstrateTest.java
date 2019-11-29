@@ -71,7 +71,7 @@ class SubstrateTest {
         // when on linux, nativeCompile should throw an illegalArgumentException
         if (currentOsTriplet.getOs().indexOf("nux") > 0) {
             var dispatcher = new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config);
-            assertThrows(IllegalArgumentException.class, () -> dispatcher.nativeCompile(null));
+            assertThrows(NullPointerException.class, () -> dispatcher.nativeCompile(null));
         }
     }
 
