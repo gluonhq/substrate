@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.model.PrivateProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import org.junit.jupiter.api.Test;
 
@@ -64,8 +64,10 @@ class SubstrateTest {
     void testIOSTriplet() throws IOException {
         Triplet iosTriplet = new Triplet(Constants.Profile.IOS);
         Triplet currentOsTriplet = Triplet.fromCurrentOS();
-        ProjectConfiguration config = new ProjectConfiguration();
-        config.setTarget(iosTriplet);
+        ProjectConfiguration publicConfig = new ProjectConfiguration("");
+        publicConfig.setTarget(iosTriplet);
+        PrivateProjectConfiguration config = new PrivateProjectConfiguration(publicConfig);
+
         // when on linux, nativeCompile should throw an illegalArgumentException
         if (currentOsTriplet.getOs().indexOf("nux") > 0) {
             var dispatcher = new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config);
@@ -75,17 +77,17 @@ class SubstrateTest {
 
     @Test
     void testAssertGraal() {
-        ProjectConfiguration config = new ProjectConfiguration();
-        assertThrows(IllegalArgumentException.class, config::canRunNativeImage);
+        ProjectConfiguration publicConfig = new ProjectConfiguration("");
+        PrivateProjectConfiguration config = new PrivateProjectConfiguration(publicConfig);
+        assertThrows(NullPointerException.class, config::canRunNativeImage);
     }
 
     @Test
     void testMainClassName() {
-        ProjectConfiguration config = new ProjectConfiguration();
-        assertThrows(NullPointerException.class, () -> config.setMainClassName(null));
-        config.setMainClassName("a.b.Foo");
+        assertThrows(NullPointerException.class, () -> new ProjectConfiguration(null));;
+        var config = new PrivateProjectConfiguration( new ProjectConfiguration("a.b.Foo"));
         assertEquals("a.b.Foo", config.getMainClassName());
-        config.setMainClassName("name/a.b.Foo");
+        config = new PrivateProjectConfiguration( new ProjectConfiguration("name/a.b.Foo"));
         assertEquals("a.b.Foo", config.getMainClassName());
     }
 }

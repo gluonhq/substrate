@@ -28,7 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.model.PrivateProjectConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
@@ -48,7 +48,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
 
-    public LinuxTargetConfiguration( ProcessPaths paths, ProjectConfiguration configuration ) {
+    public LinuxTargetConfiguration( ProcessPaths paths, PrivateProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 
@@ -78,7 +78,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     List<String> getTargetSpecificLinkLibraries() {
         List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
         defaultLinkFlags.addAll(Arrays.asList("-Wl,--whole-archive",
-                Path.of(projectConfiguration.getGraalPath(), "lib", "libnet.a").toString(),
+                projectConfiguration.getGraalPath().resolve("lib").resolve("libnet.a").toString(),
                 "-Wl,--no-whole-archive", "-lextnet", "-lstdc++"));
         return defaultLinkFlags;
     }

@@ -28,7 +28,7 @@
 package com.gluonhq.substrate;
 
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.model.PrivateProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.target.*;
 import com.gluonhq.substrate.util.Logger;
@@ -37,9 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class SubstrateDispatcher {
@@ -67,25 +65,21 @@ public class SubstrateDispatcher {
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
                 :Triplet.fromCurrentOS();
 
-        ProjectConfiguration config = new ProjectConfiguration();
-        config.setGraalPath(graalVM);
-        config.setMainClassName(mainClass);
-        config.setAppName(appName);
-        config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
-        config.setTarget(targetTriplet);
+        ProjectConfiguration publicConfig = new ProjectConfiguration(mainClass);
+        publicConfig.setGraalPath(graalVM);
+        publicConfig.setAppName(appName);
+        publicConfig.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
+        publicConfig.setTarget(targetTriplet);
+
+        PrivateProjectConfiguration config = new PrivateProjectConfiguration(publicConfig);
+
         config.setUsePrismSW(usePrismSW);
         config.getIosSigningConfiguration().setSkipSigning(skipSigning);
-        Optional.ofNullable(staticLibs).ifPresent(config::setJavaStaticLibs);
-        Optional.ofNullable(staticJavaFXSDK).ifPresent(config::setJavaFXStaticSDK);
-        if (reflectionList != null && !reflectionList.trim().isEmpty()) {
-            config.setReflectionList(Arrays.asList(reflectionList.split(",")));
-        }
-        if (jniList != null && !jniList.trim().isEmpty()) {
-            config.setJniList(Arrays.asList(jniList.split(",")));
-        }
-        if (bundlesList != null && !bundlesList.trim().isEmpty()) {
-            config.setBundlesList(Arrays.asList(bundlesList.split(",")));
-        }
+        config.setJavaStaticLibs(staticLibs);
+        config.setJavaFXStaticSDK(staticJavaFXSDK);
+        config.setReflectionList(splitString(reflectionList));
+        config.setJniList(splitString(jniList));
+        config.setBundlesList(splitString(bundlesList));
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
 
@@ -137,6 +131,10 @@ public class SubstrateDispatcher {
         }
     }
 
+    private static List<String> splitString( String s ) {
+        return s == null || s.trim().isEmpty()? Collections.emptyList() : Arrays.asList(s.split(","));
+    }
+
     private static String requireArg(String argName, String errorMessage ) {
         String arg = System.getProperty(argName);
         if (arg == null || arg.trim().isEmpty()) {
@@ -150,7 +148,7 @@ public class SubstrateDispatcher {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
-    private final ProjectConfiguration config;
+    private final PrivateProjectConfiguration config;
     private final ProcessPaths paths;
     private final TargetConfiguration targetConfiguration;
 
@@ -160,7 +158,7 @@ public class SubstrateDispatcher {
      * @param buildRoot the root, relative to which the compilation step can create object files and temporary files
      * @param config the ProjectConfiguration, including the target triplet
      */
-    public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
+    public SubstrateDispatcher(Path buildRoot, PrivateProjectConfiguration config) throws IOException {
         this.config = Objects.requireNonNull(config);
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),

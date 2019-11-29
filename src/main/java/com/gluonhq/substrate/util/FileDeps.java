@@ -29,7 +29,7 @@ package com.gluonhq.substrate.util;
 
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.model.PrivateProjectConfiguration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -74,9 +74,9 @@ public final class FileDeps {
             "libglass.a"
     );
 
-    private final ProjectConfiguration configuration;
+    private final PrivateProjectConfiguration configuration;
 
-    public FileDeps( ProjectConfiguration config ) {
+    public FileDeps( PrivateProjectConfiguration config ) {
         this.configuration = Objects.requireNonNull(config);
     }
 

@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.ProjectConfiguration;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
@@ -50,9 +52,8 @@ import java.util.Objects;
  * If this method has not been called, getJavaStaticLibsPath() will return the default location, taking into account
  * the value of javaStaticSdkVersion. If that value is not set, the default value is used.
  */
-public class ProjectConfiguration {
+public class PrivateProjectConfiguration {
 
-    private String graalPath;
     private String javaStaticSdkVersion = Constants.DEFAULT_JAVA_STATIC_SDK_VERSION;
     private String javaStaticLibs;
     private String javaFXStaticSDK;
@@ -83,14 +84,18 @@ public class ProjectConfiguration {
 
     private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
 
-    public ProjectConfiguration() {}
+    private ProjectConfiguration publicConfig;
 
-    public String getGraalPath() {
-        return this.graalPath;
+    /**
+     * Private projects configuration, which includes everythign, including public settings
+     * @param config public project configuration
+     */
+    public PrivateProjectConfiguration( ProjectConfiguration config ) {
+        this.publicConfig = Objects.requireNonNull(config);
     }
 
-    public void setGraalPath(String path) {
-        this.graalPath = path;
+    public Path getGraalPath() {
+        return this.publicConfig.getGraalPath();
     }
 
     /**
@@ -100,20 +105,7 @@ public class ProjectConfiguration {
      * @return the specified JavaStaticSDK version, or the default
      */
     public String getJavaStaticSdkVersion() {
-        return javaStaticSdkVersion;
-    }
-
-    /**
-     * Sets the Java static SDK version
-     * This is only relevant when no specific custom location
-     * for the Java static libs is provided via
-     * <code>setJavaStaticLibs</code>
-     * If this method is not called, calls to
-     * <code>getJavaStaticSdkVersion</code> will return a default value.
-     * @param javaStaticSdkVersion the Java static SDK version
-     */
-    public void setJavaStaticSdkVersion(String javaStaticSdkVersion) {
-        this.javaStaticSdkVersion = javaStaticSdkVersion;
+        return publicConfig.getJavaStaticSdkVersion();
     }
 
     /**
@@ -208,15 +200,7 @@ public class ProjectConfiguration {
     }
 
     public String getJavafxStaticSdkVersion() {
-        return javafxStaticSdkVersion;
-    }
-
-    /**
-     * Sets the JavaFX static SDK version
-     * @param javafxStaticSdkVersion the JavaFX static SDK version
-     */
-    public void setJavafxStaticSdkVersion(String javafxStaticSdkVersion) {
-        this.javafxStaticSdkVersion = javafxStaticSdkVersion;
+        return publicConfig.getJavafxStaticSdkVersion();
     }
 
     public String getLlcPath() {
@@ -276,16 +260,9 @@ public class ProjectConfiguration {
     }
 
     public Triplet getTargetTriplet() {
-        return targetTriplet;
+        return publicConfig.getTargetTriplet();
     }
 
-    /**
-     * Sets the target triplet
-     * @param targetTriplet the target triplet
-     */
-    public void setTarget(Triplet targetTriplet) {
-        this.targetTriplet = targetTriplet;
-    }
 
     /**
      * Retrieve the host triplet for this configuration.
@@ -294,15 +271,9 @@ public class ProjectConfiguration {
      * @throws IllegalArgumentException in case the current operating system is not supported
      */
     public Triplet getHostTriplet() throws IllegalArgumentException {
-        if (hostTriplet == null) {
-            hostTriplet = Triplet.fromCurrentOS();
-        }
-        return hostTriplet;
+        return publicConfig.getHostTriplet();
     }
 
-    public void setHostTriplet(Triplet hostTriplet) {
-        this.hostTriplet = hostTriplet;
-    }
 
     public String getBackend() {
         return backend;
@@ -401,28 +372,12 @@ public class ProjectConfiguration {
     }
 
     public String getAppName() {
-        return appName;
+        return publicConfig.getAppName();
     }
 
-    /**
-     * Sets the app name
-     * @param appName the name of the application (e.g. demo)
-     */
-    public void setAppName(String appName) {
-        this.appName = appName;
-    }
 
     public String getMainClassName() {
-        return mainClassName;
-    }
-
-    /**
-     * Sets the FQN of the mainclass (e.g. com.gluonhq.demo.Application)
-     * @param mainClassName the FQN of the mainclass
-     */
-    public void setMainClassName(String mainClassName) {
-        this.mainClassName = Objects.requireNonNull(mainClassName, "Main class name can't be null").contains("/") ?
-                mainClassName.substring(mainClassName.indexOf("/") + 1) : mainClassName;
+        return publicConfig.getMainClassName();
     }
 
     public IosSigningConfiguration getIosSigningConfiguration() {
@@ -444,16 +399,15 @@ public class ProjectConfiguration {
      * @throws IOException when the path to bin/native-image doesn't exist
      */
     public void canRunNativeImage() throws IOException {
-        String graalPathString = getGraalPath();
-        if (graalPathString == null) throw new IllegalArgumentException("There is no GraalVM in the projectConfiguration");
-        Path graalPath = Path.of(graalPathString);
-        if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPathString);
+
+        Path graalPath = getGraalPath();//Path.of(graalPathString);
+        if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
         Path binPath = graalPath.resolve("bin");
-        if (!Files.exists(binPath)) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPathString);
+        if (!Files.exists(binPath)) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPath);
         Path niPath = Constants.OS_WINDOWS.equals(getHostTriplet().getOs()) ?
                 binPath.resolve("native-image.cmd") :
                 binPath.resolve("native-image");
-        if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPathString + "\n" +
+        if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPath + "\n" +
                 "You can use gu to install it running: \n${GRAALVM_HOME}/bin/gu install native-image");
         Path javacmd = binPath.resolve("java");
         ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
@@ -463,15 +417,15 @@ public class ProjectConfiguration {
         InputStream is = process.getInputStream();
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String l = br.readLine();
-        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in " + graalPathString);
-        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in " + graalPathString+
+        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in " + graalPath);
+        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in " + graalPath +
                 " which uses Java version "+l+"\nUse GraalVM 19.3 or later");
     }
 
     @Override
     public String toString() {
         return "ProjectConfiguration{" +
-                "graalPath='" + graalPath + '\'' +
+                "graalPath='" + publicConfig.getGraalPath() + '\'' +
                 ", javaStaticSdkVersion='" + javaStaticSdkVersion + '\'' +
                 ", javafxStaticSdkVersion='" + javafxStaticSdkVersion + '\'' +
                 ", llcPath='" + llcPath + '\'' +

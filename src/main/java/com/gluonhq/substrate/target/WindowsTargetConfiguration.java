@@ -27,8 +27,8 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.model.PrivateProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,7 +37,7 @@ import java.util.List;
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
 
-    public WindowsTargetConfiguration(ProcessPaths paths, ProjectConfiguration configuration ) {
+    public WindowsTargetConfiguration(ProcessPaths paths, PrivateProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 

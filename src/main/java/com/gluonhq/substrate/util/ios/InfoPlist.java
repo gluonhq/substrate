@@ -33,7 +33,7 @@ import com.dd.plist.NSString;
 import com.dd.plist.PropertyListParser;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.model.PrivateProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -71,7 +71,7 @@ public class InfoPlist {
     ));
 
     private final XcodeUtils.SDKS sdk;
-    private final ProjectConfiguration projectConfiguration;
+    private final PrivateProjectConfiguration projectConfiguration;
     private final ProcessPaths paths;
     private final String sourceOS;
     private final XcodeUtils xcodeUtil;
@@ -84,7 +84,7 @@ public class InfoPlist {
     private String bundleId;
     private String minOSVersion = "11.0";
 
-    public InfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration, XcodeUtils.SDKS sdk) throws IOException {
+    public InfoPlist(ProcessPaths paths, PrivateProjectConfiguration projectConfiguration, XcodeUtils.SDKS sdk) throws IOException {
         this.paths = Objects.requireNonNull(paths);
         this.projectConfiguration = Objects.requireNonNull(projectConfiguration);
         this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
