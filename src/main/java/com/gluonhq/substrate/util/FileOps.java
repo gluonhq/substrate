@@ -53,18 +53,17 @@ public class FileOps {
      * Find the file with the provided name in the provided directory.
      * @param workDir
      * @param name
-     * @return the path to the file, or <code>null</code> if no such file is found
+     * @return Optional path of the file
      * @throws IOException
      */
-    public static Path findFile(Path workDir, String name) throws IOException {
-        List<Path> answers = new LinkedList<>();
-        Optional<Path> objectPath;
+    public static Optional<Path> findFile(Path workDir, String name) throws IOException {
+        Path[] paths = {null};
         SimpleFileVisitor<Path> visitor = new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 Path fileName = file.getFileName();
                 if (fileName != null && fileName.toString().endsWith(name)) {
-                    answers.add(file);
+                    paths[0] = file;
                     return FileVisitResult.TERMINATE;
                 }
                 return FileVisitResult.CONTINUE;
@@ -77,8 +76,7 @@ public class FileOps {
         };
 
         Files.walkFileTree(workDir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, visitor);
-        if (answers.size() < 1) return null;
-        return answers.get(0);
+        return Optional.ofNullable(paths[0]);
     }
 
     /**

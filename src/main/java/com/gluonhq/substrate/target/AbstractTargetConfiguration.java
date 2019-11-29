@@ -134,8 +134,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         String extraMessage = null;
         if (!failure) {
             String nameSearch = mainClassName.toLowerCase() + "." + getObjectFileExtension();
-            Path p = FileOps.findFile(gvmPath, nameSearch);
-            if (p == null) {
+            if (FileOps.findFile(gvmPath, nameSearch).isEmpty()) {
                 failure = true;
                 extraMessage = "Objectfile should be called "+nameSearch+" but we didn't find that under "+gvmPath.toString();
             }
@@ -187,11 +186,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase() + "." + getObjectFileExtension();
         Path gvmPath = paths.getGvmPath();
-        Path objectFile = FileOps.findFile(gvmPath, objectFilename);
-        if (objectFile == null) {
-            throw new IllegalArgumentException("Linking failed, since there is no objectfile named "+objectFilename+" under "
-                    +gvmPath.toString());
-        }
+        Path objectFile = FileOps.findFile(gvmPath, objectFilename).orElseThrow( () ->
+            new IllegalArgumentException(
+                    "Linking failed, since there is no objectfile named " + objectFilename + " under " + gvmPath.toString())
+        );
 
         ProcessBuilder linkBuilder = new ProcessBuilder(getLinker());
 

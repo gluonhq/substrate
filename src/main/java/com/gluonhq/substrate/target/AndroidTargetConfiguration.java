@@ -142,9 +142,9 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
-        Path gvmPath = paths.getGvmPath();
-        Path objectFile = FileOps.findFile(gvmPath, "llvm.o");
-        return Collections.singletonList(objectFile.toAbsolutePath().toString());
+       return FileOps.findFile( paths.getGvmPath(), "llvm.o").map( objectFile ->
+           Collections.singletonList(objectFile.toAbsolutePath().toString())
+       ).orElseThrow();
     }
 
     @Override
