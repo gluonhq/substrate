@@ -105,7 +105,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-H:TempDirectory="+tmpDir);
         compileBuilder.command().add("-H:+SharedLibrary");
         compileBuilder.command().add("-H:+AddAllCharsets");
-        // TODO: verify if java.net is still an issue on windows with GraalVM 19.3.0
         if (allowHttps()) {
             compileBuilder.command().add("-H:EnableURLProtocols=http,https");
         }
