@@ -57,23 +57,29 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
-    ProjectConfiguration projectConfiguration;
-    ProcessPaths paths;
+    final FileDeps fileDeps;
+    final ProjectConfiguration projectConfiguration;
+    final ProcessPaths paths;
 
     private List<String> attachList = Collections.emptyList();
     private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private boolean useGlisten = false;
+
+    public AbstractTargetConfiguration( ProcessPaths paths, ProjectConfiguration configuration ) {
+        this.projectConfiguration = configuration;
+        this.fileDeps = new FileDeps(configuration);
+        this.paths = paths;
+    }
+
 
     String processClassPath(String cp) throws IOException {
         return cp;
     }
 
     @Override
-    public boolean compile(ProcessPaths paths, ProjectConfiguration config, String cp) throws IOException, InterruptedException {
-        this.projectConfiguration = config;
-        this.paths = paths;
+    public boolean compile(String cp) throws IOException, InterruptedException {
         String classPath = processClassPath(cp);
-        Triplet target =  config.getTargetTriplet();
+        Triplet target =  projectConfiguration.getTargetTriplet();
         String suffix = target.getArchOs();
         String jniPlatform = getJniPlatform(target.getOs());
         if (!compileAdditionalSources()) {
@@ -82,7 +88,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path gvmPath = paths.getGvmPath();
         FileOps.rmdir(paths.getTmpPath());
         String tmpDir = paths.getTmpPath().toFile().getAbsolutePath();
-        String mainClassName = config.getMainClassName();
+        String mainClassName = projectConfiguration.getMainClassName();
         if (mainClassName == null || mainClassName.isEmpty()) {
             throw new IllegalArgumentException("No main class is supplied. Cannot compile.");
         }
@@ -91,7 +97,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         attachList = AttachResolver.attachServices(cp);
         useGlisten = GlistenResolver.useGlisten(cp);
-        String nativeImage = getNativeImagePath(config);
+        String nativeImage = getNativeImagePath();
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
         compileBuilder.command().add("--report-unsupported-elements-at-runtime");
         compileBuilder.command().add("-Djdk.internal.lambda.eagerlyInitialize=false");
@@ -128,8 +134,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         String extraMessage = null;
         if (!failure) {
             String nameSearch = mainClassName.toLowerCase() + "." + getObjectFileExtension();
-            Path p = FileOps.findFile(gvmPath, nameSearch);
-            if (p == null) {
+            if (FileOps.findFile(gvmPath, nameSearch).isEmpty()) {
                 failure = true;
                 extraMessage = "Objectfile should be called "+nameSearch+" but we didn't find that under "+gvmPath.toString();
             }
@@ -163,31 +168,28 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * The clibraries path is available by default in GraalVM, but the directory for cross-platform libs may
      * not exist. In that case, retrieve the libs from our download site.
      */
-    private void ensureClibs (ProjectConfiguration projectConfiguration) throws IOException {
+    private void ensureClibs() throws IOException {
         Triplet target = projectConfiguration.getTargetTriplet();
         Path clibPath = Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2());
         if (!Files.exists(clibPath)) {
             String url = URL_CLIBS_ZIP.replace("${osarch}", target.getOsArch());
-            FileDeps.downloadZip(url, clibPath);
+            fileDeps.downloadZip(url, clibPath);
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
     }
 
     @Override
-    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
-        this.paths = paths;
-        this.projectConfiguration = projectConfiguration;
+    public boolean link() throws IOException, InterruptedException {
 
-        ensureClibs(projectConfiguration);
+        ensureClibs();
 
         String appName = projectConfiguration.getAppName();
         String objectFilename = projectConfiguration.getMainClassName().toLowerCase() + "." + getObjectFileExtension();
         Path gvmPath = paths.getGvmPath();
-        Path objectFile = FileOps.findFile(gvmPath, objectFilename);
-        if (objectFile == null) {
-            throw new IllegalArgumentException("Linking failed, since there is no objectfile named "+objectFilename+" under "
-                    +gvmPath.toString());
-        }
+        Path objectFile = FileOps.findFile(gvmPath, objectFilename).orElseThrow( () ->
+            new IllegalArgumentException(
+                    "Linking failed, since there is no objectfile named " + objectFilename + " under " + gvmPath.toString())
+        );
 
         ProcessBuilder linkBuilder = new ProcessBuilder(getLinker());
 
@@ -231,12 +233,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     private void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
-        Path javaSDKPath = FileDeps.getJavaSDKPath(projectConfiguration);
+        Path javaSDKPath = fileDeps.getJavaSDKPath();
         linkBuilder.command().add(getLinkLibraryPathOption() + javaSDKPath);
     }
 
     private void addJavaFXStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
-        Path javafxSDKPath = FileDeps.getJavaFXSDKLibsPath(projectConfiguration);
+        Path javafxSDKPath = fileDeps.getJavaFXSDKLibsPath();
         linkBuilder.command().add(getLinkLibraryPathOption() + javafxSDKPath);
     }
 
@@ -260,8 +262,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
     }
 
-    private String getNativeImagePath(ProjectConfiguration configuration) {
-        String graalPath = configuration.getGraalPath();
+    private String getNativeImagePath() {
+        String graalPath = projectConfiguration.getGraalPath();
         Path path = Path.of(graalPath, "bin", getNativeImageCommand());
         return path.toString();
     }
@@ -327,7 +329,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     @Override
-    public boolean runUntilEnd(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+    public boolean runUntilEnd() throws IOException, InterruptedException {
         Process runProcess = startAppProcess(paths.getAppPath(), projectConfiguration.getAppName());
         InputStream is = runProcess.getInputStream();
         asynPrintFromInputStream(is);
@@ -359,7 +361,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             }
         }
         // there is no pre-configured llc, search it in the cache, or populare the cache
-        Path llcPath = FileDeps.getLlcPath(projectConfiguration);
+        Path llcPath = fileDeps.getLlcPath();
         return llcPath;
     }
 
@@ -429,11 +431,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path gvmPath = paths.getGvmPath();
         Path reflectionPath = gvmPath.resolve(Constants.REFLECTION_ARCH_FILE
                 .replace("${archOs}", suffix));
-        File f = reflectionPath.toFile();
-        if (f.exists()) {
-            f.delete();
-        }
-        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
+        Files.deleteIfExists(reflectionPath);
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(reflectionPath.toFile())))) {
             bw.write("[\n");
             writeSingleEntry(bw, projectConfiguration.getMainClassName(), false);
             for (String javaFile : getReflectionClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {

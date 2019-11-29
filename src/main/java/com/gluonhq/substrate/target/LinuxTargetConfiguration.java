@@ -48,11 +48,15 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
 
+    public LinuxTargetConfiguration( ProcessPaths paths, ProjectConfiguration configuration ) {
+        super(paths, configuration);
+    }
+
     @Override
-    public boolean link(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException, InterruptedException {
+    public boolean link() throws IOException, InterruptedException {
         checkCompiler();
         checkLinker();
-        return super.link(paths, projectConfiguration);
+        return super.link();
     }
 
     private static final List<String> linuxLibs = Arrays.asList("-llibchelper", "-lpthread");

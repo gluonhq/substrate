@@ -29,11 +29,7 @@ package com.gluonhq.substrate.util;
 
 import com.gluonhq.substrate.SubstrateDispatcher;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -42,14 +38,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -61,18 +53,17 @@ public class FileOps {
      * Find the file with the provided name in the provided directory.
      * @param workDir
      * @param name
-     * @return the path to the file, or <code>null</code> if no such file is found
+     * @return Optional path of the file
      * @throws IOException
      */
-    public static Path findFile(Path workDir, String name) throws IOException {
-        List<Path> answers = new LinkedList<>();
-        Optional<Path> objectPath;
+    public static Optional<Path> findFile(Path workDir, String name) throws IOException {
+        Path[] paths = {null};
         SimpleFileVisitor<Path> visitor = new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 Path fileName = file.getFileName();
                 if (fileName != null && fileName.toString().endsWith(name)) {
-                    answers.add(file);
+                    paths[0] = file;
                     return FileVisitResult.TERMINATE;
                 }
                 return FileVisitResult.CONTINUE;
@@ -85,8 +76,7 @@ public class FileOps {
         };
 
         Files.walkFileTree(workDir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, visitor);
-        if (answers.size() < 1) return null;
-        return answers.get(0);
+        return Optional.ofNullable(paths[0]);
     }
 
     /**
@@ -102,6 +92,13 @@ public class FileOps {
                     .forEach(File::delete);
     }
 
+    /**
+     * Copies resource into destination path
+     * @param resource
+     * @param destination
+     * @return destination path
+     * @throws IOException
+     */
     public static Path copyResource(String resource, Path destination) throws IOException {
         InputStream is = resourceAsStream(resource);
         if (is == null) {
@@ -110,6 +107,13 @@ public class FileOps {
         return copyStream(is, destination);
     }
 
+    /**
+     * Copies source stream to a destination path
+     * @param sourceStream
+     * @param destination
+     * @return destination path
+     * @throws IOException
+     */
     public static Path copyStream(InputStream sourceStream, Path destination) throws IOException {
         Path parent = destination.getParent();
         if (!parent.toFile().exists()) {
@@ -127,6 +131,12 @@ public class FileOps {
         return destination;
     }
 
+    /**
+     * Represents resource as InputStream
+     * @param res resource
+     * @return InputStream representing given resource
+     * @throws IOException
+     */
     public static InputStream resourceAsStream(String res) throws IOException {
         String actualResource = Objects.requireNonNull(res).startsWith("/") ? res : "/" + res;
         Logger.logDebug("Looking for resource: " + res);
@@ -137,13 +147,24 @@ public class FileOps {
         return answer;
     }
 
+    /**
+     * Copies given resource to temp directory
+     * @param resource
+     * @return path of the copied resource
+     * @throws IOException
+     */
     public static Path copyResourceToTmp(String resource) throws IOException {
         String tmpDir = System.getProperty("java.io.tmpdir");
         Path target = Paths.get(tmpDir,resource);
         return copyResource(resource, target);
     }
 
-    // Copies source to destination, ensuring that destination exists
+    /**
+     * Copies source to destination, ensuring that destination exists
+     * @param source source path
+     * @param destination destination path
+     * @return destination path
+     */
     public static Path copyFile(Path source, Path destination)  {
         try {
             Files.createDirectories(destination.getParent());
@@ -239,5 +260,51 @@ public class FileOps {
             }
         }
         return lines;
+    }
+
+    /**
+     * Return the hashmap associated with this nameFile.
+     * If a file named <code>nameFile</code> exists, and it contains  a serialized version of a Map, this
+     * Map will be returned.
+     * If the file doesn't exist or is corrupt, this method returns null
+     * @param nameFile
+     * @return the Map contained in the file named nameFile, or null in all other cases.
+     */
+    static Map<String, String> getHashMap(String nameFile) {
+        Map<String, String> hashes = null;
+        if (!Files.exists(Paths.get(nameFile))) {
+            return null;
+        }
+        try (FileInputStream fis = new FileInputStream(new File(nameFile));
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            hashes = (Map<String, String>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            Logger.logDebug("Exception trying to get hashmap for "+nameFile+": "+e);
+            return null;
+        }
+        return hashes;
+    }
+
+    /**
+     * Calculates checksum of the file content.
+     * Currently uses MD5 as it is faster them SHA
+     * @param file file for which checksum is calculated
+     * @return checksum as a string
+     */
+    public static String calculateCheckSum(File file) {
+        try {
+            // not looking for security, just a checksum. MD5 should be faster than SHA
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            try (final InputStream stream = new FileInputStream(file);
+                 final DigestInputStream dis = new DigestInputStream(stream, md5)) {
+                md5.reset();
+                byte[] buffer = new byte[4096];
+                while (dis.read(buffer) != -1) { /* empty loop body is intentional */ }
+                return Arrays.toString(md5.digest());
+            }
+
+        } catch (IllegalArgumentException | NoSuchAlgorithmException | IOException | SecurityException e) {
+            return "";
+        }
     }
 }

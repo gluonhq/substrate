@@ -36,7 +36,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -46,9 +45,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,7 +55,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class FileDeps {
+public final class FileDeps {
 
     private static final String URL_GRAAL_LIBS = "http://download2.gluonhq.com/omega/graallibs/graalvm-svm-${host}-${version}.zip";
     private static final String JAVA_STATIC_ZIP = "labs-staticjdk-${target}-gvm-${version}.zip";
@@ -78,55 +74,53 @@ public class FileDeps {
             "libglass.a"
     );
 
-    /**
-     * Return the path to the JavaFX SDK for this configuration.
-     * The path is cached on the provided configuration.
-     * If it is not there yet, all dependencies are retrieved.
-     * @param configuration the project configuration
-     * @return the location of the JavaFX SDK for the arch-os for this configuration
-     * @throws IOException in case anything goes wrong.
-     */
-    public static Path getJavaSDKPath(ProjectConfiguration configuration) throws IOException {
-        return resolvePath(configuration,
-                configuration.getJavaStaticLibsPath(),
-                "Fatal error, could not install Java SDK ");
+    private final ProjectConfiguration configuration;
+
+    public FileDeps( ProjectConfiguration config ) {
+        this.configuration = Objects.requireNonNull(config);
     }
 
     /**
      * Return the path to the JavaFX SDK for this configuration.
      * The path is cached on the provided configuration.
      * If it is not there yet, all dependencies are retrieved.
-     * @param configuration the project configuration
      * @return the location of the JavaFX SDK for the arch-os for this configuration
      * @throws IOException in case anything goes wrong.
      */
-    public static Path getJavaFXSDKLibsPath(ProjectConfiguration configuration) throws IOException {
-        return resolvePath(configuration,
-                configuration.getJavafxStaticLibsPath(),
-                "Fatal error, could not install JavaFX SDK ");
+    public Path getJavaSDKPath() throws IOException {
+        return resolvePath( configuration.getJavaStaticLibsPath(),"Fatal error, could not install Java SDK ");
+    }
+
+    /**
+     * Return the path to the JavaFX SDK for this configuration.
+     * The path is cached on the provided configuration.
+     * If it is not there yet, all dependencies are retrieved.
+     * @return the location of the JavaFX SDK for the arch-os for this configuration
+     * @throws IOException in case anything goes wrong.
+     */
+    public Path getJavaFXSDKLibsPath() throws IOException {
+        return resolvePath( configuration.getJavafxStaticLibsPath(),"Fatal error, could not install JavaFX SDK ");
     }
 
     /**
      * For a given path, it verifies that the path exists, or else it tries
      * to install it. After that, it returns the path for this configuration.
-     * @param configuration the project configuration
      * @param path the initial path
      * @param errorMessage a message that will be displayed in case of error
      * @return the location of the path for this configuration
      * @throws IOException in case anything goes wrong.
      */
-    private static Path resolvePath(ProjectConfiguration configuration, Path path, String errorMessage) throws IOException {
+    private Path resolvePath(Path path, String errorMessage) throws IOException {
         if (Files.exists(Objects.requireNonNull(path))) {
             return path;
         }
-        if (!setupDependencies(Objects.requireNonNull(configuration))) {
-            throw new IOException("Error setting up dependencies");
+        if (!setupDependencies()) {
+            throw new IOException(errorMessage); //"Error setting up dependencies"
         }
         return path;
     }
 
     /**
-     *
      * First, this method searches for a valid location of the java static libraries
      * (e.g. libjava.a). When a user-supplied location is present, this location will be
      * used to check for the presence of those libraries. If the user-supplied location is
@@ -139,11 +133,10 @@ public class FileDeps {
      * the default location, and contain an unmodified set of files.
      * If this is not the case, the correct SDK is downloaded and unzipped.
      *
-     * @param configuration Project configuration with the paths of the static SDKs
      * @return true if the processed ended succesfully, false otherwise
      * @throws IOException in case default path for Substrate dependencies can't be created
      */
-    private static boolean setupDependencies(ProjectConfiguration configuration) throws IOException {
+    private boolean setupDependencies() throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
 
         if (!Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
@@ -182,14 +175,14 @@ public class FileDeps {
                 } else if (!customJavaLocation && configuration.isEnableCheckHash()) {
                     // when the directory for the libs is found, and it is not a user-supplied one, check for its validity
                     Logger.logDebug("Checking java static sdk hashes");
-                    String md5File = getChecksumFile(defaultJavaStaticPath, "javaStaticSdk", target);
-                    Map<String, String> hashes = getHashMap(md5File);
+                    String md5File = getChecksumFileName(defaultJavaStaticPath, "javaStaticSdk", target);
+                    Map<String, String> hashes = FileOps.getHashMap(md5File);
                     if (hashes == null) {
                         Logger.logDebug(md5File+" not found");
                         downloadJavaStatic = true;
                     } else if (JAVA_FILES.stream()
                             .map(s -> new File(path, s))
-                            .anyMatch(f -> !hashes.get(f.getName()).equals(calculateCheckSum(f)))) {
+                            .anyMatch(f -> !hashes.get(f.getName()).equals(FileOps.calculateCheckSum(f)))) {
                         Logger.logDebug("jar file has invalid hashcode");
                         downloadJavaStatic = true;
                     }
@@ -214,14 +207,14 @@ public class FileDeps {
                     downloadJavaFXStatic = true;
                 } else if (configuration.isEnableCheckHash()) {
                     Logger.logDebug("Checking javafx static sdk hashes");
-                    String md5File = getChecksumFile(javafxStatic.getParent(), "javafxStaticSdk", target);
-                    Map<String, String> hashes = getHashMap(md5File);
+                    String md5File = getChecksumFileName(javafxStatic.getParent(), "javafxStaticSdk", target);
+                    Map<String, String> hashes = FileOps.getHashMap(md5File);
                     if (hashes == null) {
                         Logger.logDebug(md5File + " md5 not found");
                         downloadJavaFXStatic = true;
                     } else if (JAVAFX_FILES.stream()
                             .map(s -> new File(path, s))
-                            .anyMatch(f -> !hashes.get(f.getName()).equals(calculateCheckSum(f)))) {
+                            .anyMatch(f -> !hashes.get(f.getName()).equals(FileOps.calculateCheckSum(f)))) {
                         Logger.logDebug("jar file has invalid hashcode");
                         downloadJavaFXStatic = true;
                     }
@@ -234,11 +227,11 @@ public class FileDeps {
 //            }
 
             if (downloadJavaStatic) {
-                downloadJavaZip(target, Constants.USER_SUBSTRATE_PATH, configuration);
+                downloadJavaZip(target, Constants.USER_SUBSTRATE_PATH);
             }
 
             if (downloadJavaFXStatic) {
-                downloadJavaFXZip(target, Constants.USER_SUBSTRATE_PATH, configuration);
+                downloadJavaFXZip(target, Constants.USER_SUBSTRATE_PATH);
             }
 
         } catch (IOException e) {
@@ -268,11 +261,10 @@ public class FileDeps {
      *     Substrate. If the developer wants a specific flavour of llc, it is recommended to
      *     use <code>configuration.setLlcPath()</code> which takes precedence over calling this method.
      * </p>
-     * @param configuration
      * @return the path to a working llc compiler.
      * @throws IOException in case the required directories can't be created or navigated into.
      */
-    public static Path getLlcPath(ProjectConfiguration configuration) throws IOException {
+    public Path getLlcPath() throws IOException {
         Path llcRootPath = Constants.USER_SUBSTRATE_PATH.resolve(Constants.LLC_NAME);
         String archos = configuration.getHostTriplet().getArchOs();
         Path archosPath = llcRootPath.resolve(archos).resolve(Constants.LLC_VERSION);
@@ -291,9 +283,9 @@ public class FileDeps {
              FileOutputStream fileOutputStream = new FileOutputStream(llcPath.toFile());
              FileChannel fileChannel = fileOutputStream.getChannel()) {
             fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-            readableByteChannel.close();
+            //readableByteChannel.close();
         } catch (IOException e) {
-            throw new IOException("Error downloading LLC from " + url + ": " + e.getMessage() + ", " + e.getSuppressed());
+            throw new IOException("Error downloading LLC from " + url + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
         }
         Set<PosixFilePermission> perms = new HashSet<>();
         perms.add(PosixFilePermission.OWNER_READ);
@@ -304,51 +296,35 @@ public class FileDeps {
     }
 
     /**
-     * Return the hashmap associated with this nameFile.
-     * If a file named <code>nameFile</code> exists, and it contains  a serialized version of a Map, this
-     * Map will be returned.
-     * If the file doesn't exist or is corrupt, this method returns null
-     * @param nameFile
-     * @return the Map contained in the file named nameFile, or null in all other cases.
+     * Generates standardized checksum file name for a given os architecture
+     * @param base base path, parent of which will be used
+     * @param customPart custom part of the name
+     * @param osArch os architecture
+     * @return
      */
-    private static Map<String, String> getHashMap(String nameFile) {
-        Map<String, String> hashes = null;
-        if (!Files.exists(Paths.get(nameFile))) {
-            return null;
-        }
-        try (FileInputStream fis = new FileInputStream(new File(nameFile));
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
-            hashes = (Map<String, String>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            Logger.logDebug("Exception trying to get hashmap for "+nameFile+": "+e);
-            return null;
-        }
-        return hashes;
+    private static String getChecksumFileName(Path base, String customPart, String osArch) {
+        return base.getParent().resolve( String.format("%s-%s.md5", customPart, osArch) ).toString();
     }
 
-    private static String getChecksumFile(Path unpacked, String name, String osArch) {
-        return unpacked.getParent().resolve( String.format("%s-%s.md5", name, osArch) ).toString();
-    }
-
-    private static void downloadJavaZip(String target, Path substratePath, ProjectConfiguration configuration) throws IOException {
+    private void downloadJavaZip(String target, Path substratePath) throws IOException {
         Logger.logDebug("Process zip javaStaticSdk, target = "+target);
         String javaZip = JAVA_STATIC_ZIP
                 .replace("${version}", configuration.getJavaStaticSdkVersion())
                 .replace("${target}", target);
         processZip(JAVA_STATIC_URL + javaZip,
                 substratePath.resolve(javaZip),
-                "javaStaticSdk", configuration.getJavaStaticSdkVersion(), configuration);
+                "javaStaticSdk", configuration.getJavaStaticSdkVersion());
         Logger.logDebug("Processing zip java done");
     }
 
-    private static void downloadJavaFXZip(String osarch, Path substratePath, ProjectConfiguration configuration) throws IOException {
+    private void downloadJavaFXZip(String osarch, Path substratePath ) throws IOException {
         Logger.logDebug("Process zip javafxStaticSdk");
         String javafxZip = JAVAFX_STATIC_ZIP
                 .replace("${version}", configuration.getJavafxStaticSdkVersion())
                 .replace("${target}", osarch);
         processZip(JAVAFX_STATIC_URL + javafxZip,
                 substratePath.resolve(javafxZip),
-                "javafxStaticSdk", configuration.getJavafxStaticSdkVersion(), configuration);
+                "javafxStaticSdk", configuration.getJavafxStaticSdkVersion());
 
         Logger.logDebug("Process zip javafx done");
     }
@@ -364,16 +340,16 @@ public class FileDeps {
      *                    The contents of this zip file will be installed in graalvm/libs/clibraries/foo
      * @throws IOException
      */
-    public static void downloadZip(String urlZip, Path destination) throws IOException {
+    public void downloadZip(String urlZip, Path destination) throws IOException {
         String zip = destination.toAbsolutePath().toString()+".zip";
         Path zipPath = Paths.get(zip);
-        processZip(urlZip, zipPath, destination.getFileName().toString(), null, null);
+        processZip(urlZip, zipPath, destination.getFileName().toString(), null);
     }
 
-    private static void processZip(String urlZip, Path zipPath, String folder, String version, ProjectConfiguration configuration) throws IOException {
+    private void processZip(String urlZip, Path zipPath, String folder, String version) throws IOException {
         String osArch = configuration == null? null : configuration.getTargetTriplet().getOsArch();
         String md5name = osArch == null? folder+".md5" : folder+"-"+osArch+".md5";
-        System.err.println("PROCESSZIP, url = "+urlZip+", zp = "+zipPath+", folder = "+folder+", version = "+version+", name = "+md5name);
+        System.err.println("PROCESS ZIP, url = "+urlZip+", zp = "+zipPath+", folder = "+folder+", version = "+version+", name = "+md5name);
         URL url = new URL(urlZip);
         url.openConnection();
         try (InputStream reader = url.openStream();
@@ -411,7 +387,7 @@ public class FileDeps {
                             fos.write(buffer, 0, len);
                         }
                     }
-                    String sum = calculateCheckSum(destFile);
+                    String sum = FileOps.calculateCheckSum(destFile);
                     hashes.put(destFile.getName(), sum);
                 }
                 zipEntry = zis.getNextEntry();
@@ -423,23 +399,6 @@ public class FileDeps {
                       new FileOutputStream(zipDir.toString() + File.separator + md5name);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(hashes);
-        }
-    }
-
-    private static String calculateCheckSum(File file) {
-        try {
-            // not looking for security, just a checksum. MD5 should be faster than SHA
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
-            try (final InputStream stream = new FileInputStream(file);
-                 final DigestInputStream dis = new DigestInputStream(stream, md5)) {
-                md5.reset();
-                byte[] buffer = new byte[4096];
-                while (dis.read(buffer) != -1) { /* empty loop body is intentional */ }
-                return Arrays.toString(md5.digest());
-            }
-
-        } catch (IllegalArgumentException | NoSuchAlgorithmException | IOException | SecurityException e) {
-            return "";
         }
     }
 

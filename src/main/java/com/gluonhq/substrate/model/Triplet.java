@@ -102,18 +102,6 @@ public class Triplet {
         }
     }
 
-    public TargetConfiguration getConfiguration() {
-        switch (getOs()) {
-            case Constants.OS_LINUX : return new LinuxTargetConfiguration();
-            case Constants.OS_DARWIN: return new DarwinTargetConfiguration();
-            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration();
-            case Constants.OS_IOS: return new IosTargetConfiguration();
-            case Constants.OS_ANDROID: return new AndroidTargetConfiguration();
-            default: return null;
-        }
-    }
-
-
     /*
      * check if this host can be used to provide binaries for this target.
      * host and target should not be null.
