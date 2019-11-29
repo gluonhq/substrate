@@ -103,6 +103,8 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
                 .map(s -> {
                     if (s.indexOf("javafx-graphics") > 0) {
                         return javafxSDKLibsPath.resolve("javafx.graphics.jar").toString();
+                    } else if (s.indexOf("javafx-base") > 0) {
+                        return javafxSDKLibsPath.resolve("javafx.base.jar").toString();
                     } else if (s.indexOf("javafx-controls") > 0) {
                         return javafxSDKLibsPath.resolve("javafx.controls.jar").toString();
                     } else {
