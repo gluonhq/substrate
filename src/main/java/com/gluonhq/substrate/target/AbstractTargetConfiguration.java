@@ -106,7 +106,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-H:+SharedLibrary");
         compileBuilder.command().add("-H:+AddAllCharsets");
         // TODO: verify if java.net is still an issue on windows with GraalVM 19.3.0
-        if (!Constants.OS_WINDOWS.equals(projectConfiguration.getTargetTriplet().getOs())) {
+        if (allowHttps()) {
             compileBuilder.command().add("-H:EnableURLProtocols=http,https");
         }
         compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
@@ -148,6 +148,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             }
         }
         return !failure;
+    }
+
+    // by default, we allow the HTTPS protocol, but subclasses can decide against it.
+    boolean allowHttps() {
+        return true;
     }
 
     private String getJniPlatform( String os ) {
