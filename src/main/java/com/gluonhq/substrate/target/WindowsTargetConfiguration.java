@@ -57,6 +57,11 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    boolean allowHttps() {
+        return false;
+    }
+
+    @Override
     String getCompiler() {
         return "cl";
     }

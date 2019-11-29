@@ -55,7 +55,7 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
     private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-Wl,--gc-sections",
-            "-landroid", "-llog", "-shared");
+            "-landroid", "-llog", "-lnet", "-shared");
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-Wl,--no-whole-archive",
             "-lGLESv2", "-lEGL", "-lfreetype");
@@ -127,6 +127,11 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");
         return super.link();
+    }
+
+    @Override
+    boolean allowHttps() {
+        return false;
     }
 
     @Override
