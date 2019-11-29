@@ -94,6 +94,13 @@ public class FileOps {
                     .forEach(File::delete);
     }
 
+    /**
+     * Copies resource into destination path
+     * @param resource
+     * @param destination
+     * @return destination path
+     * @throws IOException
+     */
     public static Path copyResource(String resource, Path destination) throws IOException {
         InputStream is = resourceAsStream(resource);
         if (is == null) {
@@ -102,6 +109,13 @@ public class FileOps {
         return copyStream(is, destination);
     }
 
+    /**
+     * Copies source stream to a destination path
+     * @param sourceStream
+     * @param destination
+     * @return destination path
+     * @throws IOException
+     */
     public static Path copyStream(InputStream sourceStream, Path destination) throws IOException {
         Path parent = destination.getParent();
         if (!parent.toFile().exists()) {
@@ -119,6 +133,12 @@ public class FileOps {
         return destination;
     }
 
+    /**
+     * Represents resource as InputStream
+     * @param res resource
+     * @return InputStream representing given resource
+     * @throws IOException
+     */
     public static InputStream resourceAsStream(String res) throws IOException {
         String actualResource = Objects.requireNonNull(res).startsWith("/") ? res : "/" + res;
         Logger.logDebug("Looking for resource: " + res);
@@ -129,13 +149,24 @@ public class FileOps {
         return answer;
     }
 
+    /**
+     * Copies given resource to temp directory
+     * @param resource
+     * @return path of the copied resource
+     * @throws IOException
+     */
     public static Path copyResourceToTmp(String resource) throws IOException {
         String tmpDir = System.getProperty("java.io.tmpdir");
         Path target = Paths.get(tmpDir,resource);
         return copyResource(resource, target);
     }
 
-    // Copies source to destination, ensuring that destination exists
+    /**
+     * Copies source to destination, ensuring that destination exists
+     * @param source source path
+     * @param destination destination path
+     * @return destination path
+     */
     public static Path copyFile(Path source, Path destination)  {
         try {
             Files.createDirectories(destination.getParent());
