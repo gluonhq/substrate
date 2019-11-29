@@ -36,7 +36,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -45,7 +49,8 @@ import static com.gluonhq.substrate.util.XcodeUtils.XCODE_PRODUCTS_PATH;
 public class Deploy {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-    private String usbLib;
+    private static final List<String> LIBIMOBILEDEVICE_DEPENDENCIES = Arrays.asList(
+            "libssl", "libcrypto", "libusbmuxd", "libplist");
 
     private Path iosDeployPath;
 
@@ -69,41 +74,32 @@ public class Deploy {
         }
         Logger.logDebug("Brew found at " + response);
 
-        // Check for usbmuxd installed
-        String usbPath = ProcessRunner.runProcessForSingleOutput("libusbmuxd","/bin/sh", "-c", "find $(brew --cellar) -name libusbmuxd.dylib");
-        if (usbPath == null || usbPath.isEmpty() || !Files.exists(Path.of(usbPath))) {
-            Logger.logSevere("Error finding libusbmuxd.dylib");
-            throw new RuntimeException("Open a terminal and run the following command to install libusbmuxd.dylib: \n\n" +
-                    "brew install --HEAD usbmuxd");
-        }
-        Logger.logDebug("libusbmuxd.dylib found in: " + usbPath);
-
-        // retrieve usbmuxd linked library
-        usbLib = ProcessRunner.runProcessForSingleOutput("readlink libusbmuxd", "readlink", usbPath);
-        Logger.logDebug("libusbmuxd.dylib link of: " + usbLib);
-        if (usbLib == null || usbLib.isEmpty()) {
-            throw new RuntimeException("Error finding libusbmuxd.dylib version");
+        // Check if dependencies of libimobiledevice are installed and retrieve linked versions
+        Map<String, List<String>> map = new HashMap<>();
+        for (String nameLib : LIBIMOBILEDEVICE_DEPENDENCIES) {
+            List<String> pathLibs = checkDependencyPaths(nameLib);
+            List<String> linkLibs = checkDependencyLinks(nameLib, pathLibs);
+            map.put(nameLib, linkLibs);
         }
 
         // Check for libimobiledevice installed
-        String libiPath = ProcessRunner.runProcessForSingleOutput("libimobiledevice","/bin/sh", "-c", "find $(brew --cellar) -name libimobiledevice.dylib");
-        if (libiPath == null || libiPath.isEmpty() || !Files.exists(Path.of(libiPath))) {
+        List<String> libiPath = checkDependencyPaths("libimobiledevice");
+        if (libiPath == null || libiPath.isEmpty() || !Files.exists(Path.of(libiPath.get(0)))) {
             Logger.logSevere("Error finding libimobiledevice.dylib");
-            throw new RuntimeException("Open a terminal and run the following command to install libimobiledevice.dylib: \n\n" +
-                    "brew install --HEAD libimobiledevice");
+            return;
         }
-        Logger.logDebug("libimobiledevice.dylib found in: " + libiPath);
 
-        ProcessRunner runner = new ProcessRunner("otool", "-L", libiPath);
+        ProcessRunner runner = new ProcessRunner("otool", "-L", libiPath.get(0));
         if (runner.runProcess("otool") == 0) {
-            if (runner.getResponses().stream().noneMatch(d -> d.contains(usbLib))) {
-                Logger.logSevere("Error: there is a mismatch in the dependencies required by libimobiledevice.dylib");
-                throw new RuntimeException("Open a terminal and run the following command to reinstall the required libraries: \n\n" +
-                        "brew reinstall usbmuxd & brew reinstall libimobiledevice");
+            for (String key : map.keySet()) {
+                if (runner.getResponses().stream()
+                        .noneMatch(link -> map.get(key).stream().anyMatch(link::contains))) {
+                    Logger.logSevere("Error: there is a mismatch in the dependency (" + key + ") required by libimobiledevice.dylib: " + map.get(key) + "is required but it wasn't found");
+                    throw new RuntimeException("Open a terminal and run the following command to reinstall the required libraries: \n\n" +
+                            "brew reinstall " + key);
+                }
             }
         }
-
-        Logger.logInfo("Loading libimobiledevice.dylib ...");
 
         // Check for ios-deploy installed
         response = ProcessRunner.runProcessForSingleOutput("check ios-deploy","which", "ios-deploy");
@@ -136,6 +132,7 @@ public class Deploy {
         return devices.stream()
                 .filter(line -> line.startsWith("[....] Found"))
                 .map(line -> line.substring("[....] Found ".length()).split("\\s")[0])
+                .peek(id -> Logger.logDebug("ID found: " + id))
                 .toArray(String[]::new);
     }
 
@@ -204,5 +201,39 @@ public class Deploy {
         Path productDebugSymbolsPath = productAppPath.resolve(debugSymbolsPath.getFileName());
         Files.createDirectories(productDebugSymbolsPath);
         FileOps.copyDirectory(debugSymbolsPath, productDebugSymbolsPath);
+    }
+
+    private List<String> checkDependencyPaths(String nameLib) throws IOException, InterruptedException {
+        ProcessRunner runner = new ProcessRunner("/bin/sh", "-c", "find $(brew --cellar) -name " + nameLib + ".dylib");
+        if (runner.runProcess(nameLib) != 0) {
+            Logger.logDebug("Error finding " + nameLib);
+            return new ArrayList<>();
+        }
+        return runner.getResponses().stream()
+                .map(libPath -> {
+                    Logger.logInfo("lib " + nameLib + " found at " + libPath);
+                    if (libPath == null || libPath.isEmpty() || !Files.exists(Path.of(libPath))) {
+                        Logger.logSevere("Error finding " + nameLib + ".dylib");
+                        throw new RuntimeException("Open a terminal and run the following command to install " + nameLib + ".dylib: \n\n" +
+                                "brew install --HEAD " + nameLib);
+                    }
+                    Logger.logDebug(nameLib + ".dylib found in: " + libPath);
+                    return libPath;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private List<String> checkDependencyLinks(String nameLib, List<String> libPaths) throws IOException, InterruptedException {
+        List<String> libLinks = new ArrayList<>();
+        for (String libPath : libPaths) {
+            // retrieve name of linked library
+            String linkedLib = ProcessRunner.runProcessForSingleOutput("readlink " + nameLib, "readlink", libPath);
+            Logger.logDebug(nameLib + ".dylib link of: " + linkedLib);
+            if (linkedLib == null || linkedLib.isEmpty()) {
+                throw new RuntimeException("Error finding " + nameLib + ".dylib version");
+            }
+            libLinks.add(linkedLib);
+        }
+        return libLinks;
     }
 }
