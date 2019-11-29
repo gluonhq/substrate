@@ -16,6 +16,8 @@
 
 extern void *IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e();
 
+extern void requestGlassToRedraw();
+
 ANativeWindow *window;
 jfloat density;
 
@@ -29,7 +31,7 @@ static const char *tag = "myapp";
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
 (JNIEnv *env, jobject activity) {
     LOGE(stderr, "Start GraalApp, env at %p pointing to %p\n", env, *env);
-LOGE(stderr, "PAGESIZE = %d\n", sysconf(_SC_PAGE_SIZE));
+LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
 int ev = (*env)->GetVersion(env);
 LOGE(stderr, "EnvVersion = %d\n", ev);
     start_logger("GraalCompiled");
@@ -54,6 +56,11 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
     return (jlong)window;
 }
 
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSurfaceRedrawNeeded
+(JNIEnv *env, jobject activity) {
+    LOGE(stderr, "launcher, nativeSurfaceRedrawNeeded called. Invoke method on glass_monocle\n");
+    requestGlassToRedraw();
+}
 // == expose window functionality to JavaFX native code == //
 
 ANativeWindow* _GLUON_getNativeWindow() {
