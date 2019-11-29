@@ -256,7 +256,13 @@ public class FileOps {
         return hashes;
     }
 
-    static String calculateCheckSum(File file) {
+    /**
+     * Calculates checksum of the file content.
+     * Currently uses MD5 as it is faster them SHA
+     * @param file file for which checksum is calculated
+     * @return checksum as a string
+     */
+    public static String calculateCheckSum(File file) {
         try {
             // not looking for security, just a checksum. MD5 should be faster than SHA
             MessageDigest md5 = MessageDigest.getInstance("MD5");

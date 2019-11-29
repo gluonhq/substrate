@@ -121,7 +121,6 @@ public final class FileDeps {
     }
 
     /**
-     *
      * First, this method searches for a valid location of the java static libraries
      * (e.g. libjava.a). When a user-supplied location is present, this location will be
      * used to check for the presence of those libraries. If the user-supplied location is
@@ -176,7 +175,7 @@ public final class FileDeps {
                 } else if (!customJavaLocation && configuration.isEnableCheckHash()) {
                     // when the directory for the libs is found, and it is not a user-supplied one, check for its validity
                     Logger.logDebug("Checking java static sdk hashes");
-                    String md5File = getChecksumFile(defaultJavaStaticPath, "javaStaticSdk", target);
+                    String md5File = getChecksumFileName(defaultJavaStaticPath, "javaStaticSdk", target);
                     Map<String, String> hashes = FileOps.getHashMap(md5File);
                     if (hashes == null) {
                         Logger.logDebug(md5File+" not found");
@@ -208,7 +207,7 @@ public final class FileDeps {
                     downloadJavaFXStatic = true;
                 } else if (configuration.isEnableCheckHash()) {
                     Logger.logDebug("Checking javafx static sdk hashes");
-                    String md5File = getChecksumFile(javafxStatic.getParent(), "javafxStaticSdk", target);
+                    String md5File = getChecksumFileName(javafxStatic.getParent(), "javafxStaticSdk", target);
                     Map<String, String> hashes = FileOps.getHashMap(md5File);
                     if (hashes == null) {
                         Logger.logDebug(md5File + " md5 not found");
@@ -296,8 +295,15 @@ public final class FileDeps {
         return llcPath;
     }
 
-    private static String getChecksumFile(Path unpacked, String name, String osArch) {
-        return unpacked.getParent().resolve( String.format("%s-%s.md5", name, osArch) ).toString();
+    /**
+     * Generates standardized checksum file name for a given os architecture
+     * @param base base path, parent of which will be used
+     * @param customPart custom part of the name
+     * @param osArch os architecture
+     * @return
+     */
+    private static String getChecksumFileName(Path base, String customPart, String osArch) {
+        return base.getParent().resolve( String.format("%s-%s.md5", customPart, osArch) ).toString();
     }
 
     private void downloadJavaZip(String target, Path substratePath) throws IOException {
