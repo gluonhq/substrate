@@ -222,7 +222,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
-        Logger.logDebug("link command: "+String.join(" ",cmds));
+        Logger.logDebug("link command: "+cmds);
         Process compileProcess = linkBuilder.start();
         System.err.println("started linking");
         int result = compileProcess.waitFor();
