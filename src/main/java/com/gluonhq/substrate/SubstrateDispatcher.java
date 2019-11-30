@@ -68,7 +68,6 @@ public class SubstrateDispatcher {
         ProjectConfiguration publicConfig = new ProjectConfiguration(mainClass);
         publicConfig.setGraalPath(graalVM);
         publicConfig.setAppName(appName);
-        publicConfig.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         publicConfig.setTarget(targetTriplet);
 
         PrivateProjectConfiguration config = new PrivateProjectConfiguration(publicConfig);

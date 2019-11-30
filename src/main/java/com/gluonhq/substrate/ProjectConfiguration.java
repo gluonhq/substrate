@@ -88,7 +88,7 @@ public class ProjectConfiguration {
     }
 
     public String getJavaStaticSdkVersion() {
-        return Objects.requireNonNull( this.javaStaticSdkVersion, "Java Static SDK version is required" );
+        return Optional.ofNullable(this.javaStaticSdkVersion).orElse(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
     }
 
     /**
@@ -100,7 +100,7 @@ public class ProjectConfiguration {
     }
 
     public String getJavafxStaticSdkVersion() {
-        return Objects.requireNonNull( this.javafxStaticSdkVersion, "JavaFX Static SDK version is required" );
+        return Optional.ofNullable(this.javaStaticSdkVersion).orElse(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
     }
 
 
