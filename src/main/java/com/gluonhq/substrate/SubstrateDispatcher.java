@@ -31,7 +31,6 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.PrivateProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.target.*;
-import com.gluonhq.substrate.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +38,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
+
+import static com.gluonhq.substrate.util.Logger.*;
 
 public class SubstrateDispatcher {
 
@@ -178,7 +179,7 @@ public class SubstrateDispatcher {
         if (targetConfiguration == null) {
             throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
         }
-        Logger.logInit(paths.getLogPath().toString(), "==================== COMPILE TASK ====================",
+        logInit(paths.getLogPath().toString(), title("COMPILE TASK"),
                 config.isVerbose());
         System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
         boolean compile = targetConfiguration.compile(classPath);
@@ -191,7 +192,7 @@ public class SubstrateDispatcher {
     }
 
     public boolean nativeLink() throws IOException, InterruptedException {
-        Logger.logInit(paths.getLogPath().toString(), "==================== LINK TASK ====================",
+        logInit(paths.getLogPath().toString(), title("LINK TASK"),
                 config.isVerbose());
         if (targetConfiguration == null) {
             throw new IllegalArgumentException("We don't have a configuration to link " + config.getTargetTriplet());
@@ -200,7 +201,7 @@ public class SubstrateDispatcher {
     }
 
     public void nativeRun() throws IOException, InterruptedException {
-        Logger.logInit(paths.getLogPath().toString(), "==================== RUN TASK ====================",
+        logInit(paths.getLogPath().toString(), title("RUN TASK"),
                 config.isVerbose());
         targetConfiguration.runUntilEnd();
     }
