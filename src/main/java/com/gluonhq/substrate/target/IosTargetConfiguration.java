@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -79,7 +80,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) throws IOException {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
                 "-arch", Constants.ARCH_ARM64,
                 "-mios-version-min=11.0",
@@ -88,15 +89,6 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             String javafxSDK = projectConfiguration.getJavafxStaticLibsPath().toString();
             javafxLibs.forEach(name ->
                     linkFlags.add("-Wl,-force_load," + javafxSDK + "/lib" + name + ".a"));
-        }
-        Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
-        if (Files.exists(libPath)) {
-            linkFlags.add("-L" + libPath.toString());
-            try (Stream<Path> files = Files.list(libPath)) {
-                    files.map(p -> p.getFileName().toString())
-                        .filter(s -> s.startsWith("lib") && s.endsWith(".a"))
-                        .forEach(s -> linkFlags.add("-Wl,-force_load," + libPath.resolve(s)));
-            }
         }
         linkFlags.addAll(ioslibs);
         linkFlags.addAll(iosFrameworks);
@@ -121,6 +113,10 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
 
+    @Override
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return this::lipoMatch;
+    }
 
     @Override
     public String getAdditionalSourceFileLocation() {
@@ -159,6 +155,13 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             }
         }
         return result;
+    }
+
+    @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        return libs.stream()
+                .map(s -> "-Wl,-force_load," + libPath.resolve(s))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -204,21 +207,11 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
      */
     @Override
     String processClassPath(String classPath) throws IOException {
-        Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
-        Logger.logDebug("Extracting native libs to: " + libPath);
-        String[] split = classPath.split(File.pathSeparator);
-        List<String> jars = Stream.of(split)
-                .filter(s -> s.endsWith(".jar"))
-                .collect(Collectors.toList());
-        for (String jar : jars) {
-            FileOps.extractFilesFromJar(".a", Path.of(jar), libPath, this::lipoMatch);
-        }
-
         if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
         Path javafxSDKLibsPath = fileDeps.getJavaFXSDKLibsPath();
-        return Stream.of(split)
+        return Stream.of(classPath.split(File.pathSeparator))
                 .map(s -> {
                     if (s.indexOf("javafx-graphics") > 0) {
                         return javafxSDKLibsPath.resolve("javafx.graphics.jar").toString();
