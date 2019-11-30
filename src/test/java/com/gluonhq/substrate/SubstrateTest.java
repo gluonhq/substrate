@@ -64,9 +64,8 @@ class SubstrateTest {
     void testIOSTriplet() throws IOException {
         Triplet iosTriplet = new Triplet(Constants.Profile.IOS);
         Triplet currentOsTriplet = Triplet.fromCurrentOS();
-        ProjectConfiguration publicConfig = new ProjectConfiguration("");
-        publicConfig.setTarget(iosTriplet);
-        PrivateProjectConfiguration config = new PrivateProjectConfiguration(publicConfig);
+        ProjectConfiguration config = new ProjectConfiguration("");
+        config.setTarget(iosTriplet);
 
         // when on linux, nativeCompile should throw an illegalArgumentException
         if (currentOsTriplet.getOs().indexOf("nux") > 0) {
