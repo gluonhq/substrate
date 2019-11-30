@@ -109,11 +109,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (allowHttps()) {
             compileBuilder.command().add("-H:EnableURLProtocols=http,https");
         }
-        if (projectConfiguration.isVerbose()) {
-            compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
-        }
+        compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
         compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
-        compileBuilder.command().add("-H:+PrintAnalysisCallTree");
+        if (projectConfiguration.isVerbose()) {
+            compileBuilder.command().add("-H:+PrintAnalysisCallTree");
+        }
         compileBuilder.command().addAll(getResources());
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
