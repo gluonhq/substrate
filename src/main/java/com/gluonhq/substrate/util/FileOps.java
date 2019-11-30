@@ -335,8 +335,11 @@ public class FileOps {
      * @throws IOException
      */
     public static void extractFilesFromJar(String extension, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
-        if  (!Files.exists(sourceJar) || !Files.exists(target)) {
+        if  (!Files.exists(sourceJar)) {
             return;
+        }
+        if  (!Files.exists(target)) {
+            Files.createDirectories(target);
         }
         ZipFile zf = new ZipFile(sourceJar.toFile());
         List<? extends ZipEntry> entries = zf.stream()

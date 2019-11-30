@@ -582,7 +582,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return Arrays.asList("-o", getAppPath(appName));
     }
 
-    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) throws IOException {
         return Collections.emptyList();
     }
 
