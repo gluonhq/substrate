@@ -68,8 +68,6 @@ public class PrivateProjectConfiguration {
     private boolean enableCheckHash = true;
     private boolean verbose = false;
 
-    private Triplet targetTriplet;
-    private Triplet hostTriplet;
     private String backend;
     private List<String> bundlesList = Collections.emptyList();
     private List<String> resourcesList = Collections.emptyList();
@@ -151,7 +149,7 @@ public class PrivateProjectConfiguration {
         Path answer = Constants.USER_SUBSTRATE_PATH
                 .resolve("javaStaticSdk")
                 .resolve(getJavaStaticSdkVersion())
-                .resolve(targetTriplet.getOsArch())
+                .resolve(getTargetTriplet().getOsArch())
                 .resolve("labs-staticjdk");
         return answer;
     }
@@ -190,7 +188,7 @@ public class PrivateProjectConfiguration {
             Path answer = Constants.USER_SUBSTRATE_PATH
                 .resolve("javafxStaticSdk")
                 .resolve(getJavafxStaticSdkVersion())
-                .resolve(targetTriplet.getOsArch())
+                .resolve(getTargetTriplet().getOsArch())
                 .resolve("sdk");
         return answer;
     }
@@ -435,8 +433,8 @@ public class PrivateProjectConfiguration {
                 ", usePrismSW=" + usePrismSW +
                 ", enableCheckHash=" + enableCheckHash +
                 ", verbose=" + verbose +
-                ", targetTriplet=" + targetTriplet +
-                ", hostTriplet=" + hostTriplet +
+                ", targetTriplet=" + getTargetTriplet() +
+                ", hostTriplet=" + getHostTriplet() +
                 ", backend='" + backend + '\'' +
                 ", bundlesList=" + bundlesList +
                 ", resourcesList=" + resourcesList +
