@@ -48,37 +48,20 @@ public class SubstrateDispatcher {
 
         String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
+
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
-        String reflectionList = System.getProperty("reflectionlist");
-        String jniList = System.getProperty("jnilist");
-        String bundlesList = System.getProperty("bundleslist");
         String targetProfile = System.getProperty("targetProfile");
-        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
-        boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
-        boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
-        String staticLibs = System.getProperty("javalibspath");
-        String staticJavaFXSDK = System.getProperty("javafxsdk");
-
-        String expected  = System.getProperty("expected");
 
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
                 :Triplet.fromCurrentOS();
 
-        ProjectConfiguration publicConfig = new ProjectConfiguration(mainClass);
-        publicConfig.setGraalPath(graalVM);
-        publicConfig.setAppName(appName);
-        publicConfig.setTarget(targetTriplet);
+        String expected  = System.getProperty("expected");
 
-        PrivateProjectConfiguration config = new PrivateProjectConfiguration(publicConfig);
-
-        config.setUsePrismSW(usePrismSW);
-        config.getIosSigningConfiguration().setSkipSigning(skipSigning);
-        config.setJavaStaticLibs(staticLibs);
-        config.setJavaFXStaticSDK(staticJavaFXSDK);
-        config.setReflectionList(splitString(reflectionList));
-        config.setJniList(splitString(jniList));
-        config.setBundlesList(splitString(bundlesList));
+        ProjectConfiguration config = new ProjectConfiguration(mainClass);
+        config.setGraalPath(graalVM);
+        config.setAppName(appName);
+        config.setTarget(targetTriplet);
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
 
@@ -129,11 +112,6 @@ public class SubstrateDispatcher {
             dispatcher.nativeRun();
         }
     }
-
-    private static List<String> splitString( String s ) {
-        return s == null || s.trim().isEmpty()? Collections.emptyList() : Arrays.asList(s.split(","));
-    }
-
     private static String requireArg(String argName, String errorMessage ) {
         String arg = System.getProperty(argName);
         if (arg == null || arg.trim().isEmpty()) {
@@ -157,20 +135,20 @@ public class SubstrateDispatcher {
      * @param buildRoot the root, relative to which the compilation step can create object files and temporary files
      * @param config the ProjectConfiguration, including the target triplet
      */
-    public SubstrateDispatcher(Path buildRoot, PrivateProjectConfiguration config) throws IOException {
-        this.config = Objects.requireNonNull(config);
+    public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
+        this.config = new PrivateProjectConfiguration(config);
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),
                 "Error: Target Configuration was null");
     }
     private TargetConfiguration getTargetConfiguration( Triplet targetTriplet ) {
         switch (targetTriplet.getOs()) {
-            case Constants.OS_LINUX : return new LinuxTargetConfiguration(paths, config);
-            case Constants.OS_DARWIN: return new DarwinTargetConfiguration(paths, config);
+            case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
+            case Constants.OS_DARWIN : return new DarwinTargetConfiguration(paths, config);
             case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config);
-            case Constants.OS_IOS: return new IosTargetConfiguration(paths, config);
+            case Constants.OS_IOS    : return new IosTargetConfiguration(paths, config);
             case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config);
-            default: return null;
+            default                  : return null;
         }
     }
 

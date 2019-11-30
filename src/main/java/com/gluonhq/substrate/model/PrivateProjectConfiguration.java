@@ -37,10 +37,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
@@ -54,14 +51,11 @@ import java.util.Optional;
  */
 public class PrivateProjectConfiguration {
 
-    private String javaStaticSdkVersion = Constants.DEFAULT_JAVA_STATIC_SDK_VERSION;
     private String javaStaticLibs;
     private String javaFXStaticSDK;
 
-    private String javafxStaticSdkVersion;
-
     private String llcPath;
-    private String StaticRoot;
+    private String staticRoot;
     private boolean useJNI = true;
     private boolean useJavaFX = false;
     private boolean usePrismSW = false;
@@ -77,9 +71,6 @@ public class PrivateProjectConfiguration {
     private List<String> runtimeArgsList;
     private List<String> releaseSymbolsList;
 
-    private String appName;
-    private String mainClassName;
-
     private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
 
     private ProjectConfiguration publicConfig;
@@ -89,7 +80,27 @@ public class PrivateProjectConfiguration {
      * @param config public project configuration
      */
     public PrivateProjectConfiguration( ProjectConfiguration config ) {
+
         this.publicConfig = Objects.requireNonNull(config);
+
+        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
+        boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
+        boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
+
+        setUsePrismSW(usePrismSW);
+        getIosSigningConfiguration().setSkipSigning(skipSigning);
+
+        setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
+        setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
+
+        setReflectionList(splitString(System.getProperty("reflectionlist")));
+        setJniList(splitString(System.getProperty("jnilist")));
+        setBundlesList(splitString(System.getProperty("bundleslist")));
+
+    }
+
+    private static List<String> splitString( String s ) {
+        return s == null || s.trim().isEmpty()? Collections.emptyList() : Arrays.asList(s.split(","));
     }
 
     public Path getGraalPath() {
@@ -424,10 +435,10 @@ public class PrivateProjectConfiguration {
     public String toString() {
         return "ProjectConfiguration{" +
                 "graalPath='" + publicConfig.getGraalPath() + '\'' +
-                ", javaStaticSdkVersion='" + javaStaticSdkVersion + '\'' +
-                ", javafxStaticSdkVersion='" + javafxStaticSdkVersion + '\'' +
+                ", javaStaticSdkVersion='" + getJavaStaticSdkVersion() + '\'' +
+                ", javafxStaticSdkVersion='" + getJavafxStaticSdkVersion() + '\'' +
                 ", llcPath='" + llcPath + '\'' +
-                ", StaticRoot='" + StaticRoot + '\'' +
+                ", StaticRoot='" + staticRoot + '\'' +
                 ", useJNI=" + useJNI +
                 ", useJavaFX=" + useJavaFX +
                 ", usePrismSW=" + usePrismSW +
@@ -443,9 +454,9 @@ public class PrivateProjectConfiguration {
                 ", delayInitList=" + delayInitList +
                 ", runtimeArgsList=" + runtimeArgsList +
                 ", releaseSymbolsList=" + releaseSymbolsList +
-                ", appName='" + appName + '\'' +
+                ", appName='" + getAppName() + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
-                ", mainClassName='" + mainClassName + '\'' +
+                ", mainClassName='" + getMainClassName() + '\'' +
                 '}';
     }
 }
