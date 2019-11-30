@@ -29,7 +29,13 @@ package com.gluonhq.substrate.util;
 
 import com.gluonhq.substrate.SubstrateDispatcher;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -41,9 +47,19 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -307,4 +323,45 @@ public class FileOps {
             return "";
         }
     }
+
+    /**
+     * Extracts the files that match a given extension found in a jar to a target patch,
+     * providing that the file passes a given filter, and it doesn't exist yet in the target path
+     *
+     * @param extension the extension of the files in the jar that will be extracted
+     * @param sourceJar the path to the jar that will be inspected
+     * @param target the path of the folder where the files will be extracted
+     * @param filter a predicate that the files in the jar should match.
+     * @throws IOException
+     */
+    public static void extractFilesFromJar(String extension, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
+        if  (!Files.exists(sourceJar) || !Files.exists(target)) {
+            return;
+        }
+        ZipFile zf = new ZipFile(sourceJar.toFile());
+        List<? extends ZipEntry> entries = zf.stream()
+                .filter(ze -> ze.getName().endsWith(extension))
+                .collect(Collectors.toList());
+        if (entries.isEmpty()) {
+            return;
+        }
+
+        List<String> uniqueObjectFileNames = Files.list(target)
+                .map(p -> p.getFileName().toString())
+                .collect(Collectors.toList());
+
+        for (ZipEntry ze : entries) {
+            String uniqueName = new File(ze.getName()).getName();
+            if (!uniqueObjectFileNames.contains(uniqueName)) {
+                Path filePath = FileOps.copyStream(zf.getInputStream(ze), target.resolve(uniqueName));
+                if (filter == null || filter.test(filePath)) {
+                    uniqueObjectFileNames.add(uniqueName);
+                } else {
+                    Logger.logDebug("File not copied, doesn't pass filter: " + uniqueName);
+                    Files.delete(filePath);
+                }
+            }
+        }
+    }
+
 }

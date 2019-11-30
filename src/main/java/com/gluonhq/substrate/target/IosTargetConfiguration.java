@@ -30,9 +30,9 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ProjectConfiguration;
-import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
@@ -195,11 +195,22 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
      */
     @Override
     String processClassPath(String classPath) throws IOException {
+        Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
+        Files.createDirectories(libPath);
+        Logger.logDebug("Extracting native libs to: " + libPath);
+        String[] split = classPath.split(File.pathSeparator);
+        List<String> jars = Stream.of(split)
+                .filter(s -> s.endsWith(".jar"))
+                .collect(Collectors.toList());
+        for (String jar : jars) {
+            FileOps.extractFilesFromJar(".a", Path.of(jar), libPath, this::lipoMatch);
+        }
+
         if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
         Path javafxSDKLibsPath = fileDeps.getJavaFXSDKLibsPath();
-        return Stream.of(classPath.split(File.pathSeparator))
+        return Stream.of(split)
                 .map(s -> {
                     if (s.indexOf("javafx-graphics") > 0) {
                         return javafxSDKLibsPath.resolve("javafx.graphics.jar").toString();
@@ -225,18 +236,27 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
-    private void createInfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration) {
-        try {
-            InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
-                    XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
-            Path plist = infoPlist.processInfoPlist();
-            if (plist != null) {
-                Logger.logDebug("Plist at " + plist.toString());
-                FileOps.copyStream(new FileInputStream(plist.toFile()),
-                        paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
-            }
-        } catch (IOException e) {
-            Logger.logFatal(e, "Error creating info.plist");
+    private void createInfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException {
+        InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
+                XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
+        Path plist = infoPlist.processInfoPlist();
+        if (plist != null) {
+            Logger.logDebug("Plist at " + plist.toString());
+            FileOps.copyStream(new FileInputStream(plist.toFile()),
+                    paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
         }
+    }
+
+    private boolean lipoMatch(Path path) {
+        try {
+            return lipoInfo(path).indexOf(getArch()) > 0;
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Error processing lipo for " + path);
+        }
+        return false;
+    }
+
+    private String lipoInfo(Path path) throws IOException, InterruptedException {
+        return ProcessRunner.runProcessForSingleOutput("lipo", "lipo", "-info", path.toFile().getAbsolutePath());
     }
 }
