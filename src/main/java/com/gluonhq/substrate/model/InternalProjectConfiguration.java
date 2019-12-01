@@ -76,7 +76,7 @@ public class InternalProjectConfiguration {
     private ProjectConfiguration publicConfig;
 
     /**
-     * Private projects configuration, which includes everythign, including public settings
+     * Private projects configuration, which includes everything, including public settings
      * @param config public project configuration
      */
     public InternalProjectConfiguration(ProjectConfiguration config ) {
