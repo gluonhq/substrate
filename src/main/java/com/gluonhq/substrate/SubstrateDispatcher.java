@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.PrivateProjectConfiguration;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.target.AndroidTargetConfiguration;
@@ -133,7 +133,7 @@ public class SubstrateDispatcher {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
-    private final PrivateProjectConfiguration config;
+    private final InternalProjectConfiguration config;
     private final ProcessPaths paths;
     private final TargetConfiguration targetConfiguration;
 
@@ -144,7 +144,7 @@ public class SubstrateDispatcher {
      * @param config the ProjectConfiguration, including the target triplet
      */
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
-        this.config = new PrivateProjectConfiguration(config);
+        this.config = new InternalProjectConfiguration(config);
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),
                 "Error: Target Configuration was null");

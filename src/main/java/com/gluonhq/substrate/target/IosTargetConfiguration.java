@@ -28,7 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.model.PrivateProjectConfiguration;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
@@ -66,7 +66,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
 
-    public IosTargetConfiguration(ProcessPaths paths, PrivateProjectConfiguration configuration ) {
+    public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 
@@ -224,7 +224,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
-    private void createInfoPlist(ProcessPaths paths, PrivateProjectConfiguration projectConfiguration) {
+    private void createInfoPlist(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
         try {
             InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
                     XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);

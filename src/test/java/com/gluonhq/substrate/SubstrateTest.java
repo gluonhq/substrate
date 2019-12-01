@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.PrivateProjectConfiguration;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import org.junit.jupiter.api.Test;
 
@@ -77,16 +77,16 @@ class SubstrateTest {
     @Test
     void testAssertGraal() {
         ProjectConfiguration publicConfig = new ProjectConfiguration("");
-        PrivateProjectConfiguration config = new PrivateProjectConfiguration(publicConfig);
+        InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
         assertThrows(NullPointerException.class, config::canRunNativeImage);
     }
 
     @Test
     void testMainClassName() {
         assertThrows(NullPointerException.class, () -> new ProjectConfiguration(null));;
-        var config = new PrivateProjectConfiguration( new ProjectConfiguration("a.b.Foo"));
+        var config = new InternalProjectConfiguration( new ProjectConfiguration("a.b.Foo"));
         assertEquals("a.b.Foo", config.getMainClassName());
-        config = new PrivateProjectConfiguration( new ProjectConfiguration("name/a.b.Foo"));
+        config = new InternalProjectConfiguration( new ProjectConfiguration("name/a.b.Foo"));
         assertEquals("a.b.Foo", config.getMainClassName());
     }
 }

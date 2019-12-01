@@ -28,7 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.PrivateProjectConfiguration;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
@@ -37,7 +37,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -48,7 +47,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
 
-    public LinuxTargetConfiguration( ProcessPaths paths, PrivateProjectConfiguration configuration ) {
+    public LinuxTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 

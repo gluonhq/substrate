@@ -49,7 +49,7 @@ import java.util.*;
  * If this method has not been called, getJavaStaticLibsPath() will return the default location, taking into account
  * the value of javaStaticSdkVersion. If that value is not set, the default value is used.
  */
-public class PrivateProjectConfiguration {
+public class InternalProjectConfiguration {
 
     private String javaStaticLibs;
     private String javaFXStaticSDK;
@@ -79,7 +79,7 @@ public class PrivateProjectConfiguration {
      * Private projects configuration, which includes everythign, including public settings
      * @param config public project configuration
      */
-    public PrivateProjectConfiguration( ProjectConfiguration config ) {
+    public InternalProjectConfiguration(ProjectConfiguration config ) {
 
         this.publicConfig = Objects.requireNonNull(config);
 

@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate.util.ios;
 
-import com.gluonhq.substrate.model.PrivateProjectConfiguration;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
@@ -79,13 +79,13 @@ public class CodeSigning {
 
     private String bundleId;
     private final ProcessPaths paths;
-    private final PrivateProjectConfiguration projectConfiguration;
+    private final InternalProjectConfiguration projectConfiguration;
     private final String sourceOS;
 
     private final Path appPath;
     private final Path tmpPath;
 
-    public CodeSigning(ProcessPaths paths, PrivateProjectConfiguration projectConfiguration) {
+    public CodeSigning(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
         this.sourceOS = projectConfiguration.getTargetTriplet().getOs();

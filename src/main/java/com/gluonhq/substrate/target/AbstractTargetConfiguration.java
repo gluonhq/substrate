@@ -30,7 +30,7 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.gluon.AttachResolver;
 import com.gluonhq.substrate.gluon.GlistenResolver;
-import com.gluonhq.substrate.model.PrivateProjectConfiguration;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileDeps;
@@ -58,14 +58,14 @@ import java.util.stream.Collectors;
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
     final FileDeps fileDeps;
-    final PrivateProjectConfiguration projectConfiguration;
+    final InternalProjectConfiguration projectConfiguration;
     final ProcessPaths paths;
 
     private List<String> attachList = Collections.emptyList();
     private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private boolean useGlisten = false;
 
-    public AbstractTargetConfiguration( ProcessPaths paths, PrivateProjectConfiguration configuration ) {
+    public AbstractTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         this.projectConfiguration = configuration;
         this.fileDeps = new FileDeps(configuration);
         this.paths = paths;
