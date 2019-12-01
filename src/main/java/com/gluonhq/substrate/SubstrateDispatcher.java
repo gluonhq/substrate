@@ -27,19 +27,26 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.PrivateProjectConfiguration;
+import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
-import com.gluonhq.substrate.target.*;
+import com.gluonhq.substrate.target.AndroidTargetConfiguration;
+import com.gluonhq.substrate.target.DarwinTargetConfiguration;
+import com.gluonhq.substrate.target.IosTargetConfiguration;
+import com.gluonhq.substrate.target.LinuxTargetConfiguration;
+import com.gluonhq.substrate.target.TargetConfiguration;
+import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.gluonhq.substrate.util.Logger.*;
+import static com.gluonhq.substrate.util.Logger.logInit;
+import static com.gluonhq.substrate.util.Logger.title;
 
 public class SubstrateDispatcher {
 
