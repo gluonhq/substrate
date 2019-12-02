@@ -104,14 +104,17 @@ public class Deploy {
         // Check for ios-deploy installed
         response = ProcessRunner.runProcessForSingleOutput("check ios-deploy","which", "ios-deploy");
         if (response == null || response.isEmpty() || !Files.exists(Path.of(response))) {
-            Logger.logSevere("ios-deploy not found. It will be installed now");
-            runner = new ProcessRunner("brew", "install", "ios-deploy");
-            if (runner.runProcess("ios-deploy") == 0) {
-                Logger.logDebug("ios-deploy installed");
+            if (installIOSDeploy()) {
                 checkPrerequisites();
-            } else {
-                Logger.logDebug("Error installing ios-deploy");
-                return;
+            }
+        } else {
+            // Check for ios-deploy version installed (it should be 1.10+)
+            String version = ProcessRunner.runProcessForSingleOutput("ios-deploy version","ios-deploy", "-V");
+            if (version != null && !version.isEmpty() && (version.startsWith("1.8") || version.startsWith("1.9"))) {
+                Logger.logSevere("ios-deploy version (" + version + ") is outdated");
+                if (installIOSDeploy()) {
+                    checkPrerequisites();
+                }
             }
         }
 
@@ -119,7 +122,7 @@ public class Deploy {
         iosDeployPath = Path.of(response);
     }
 
-    public String[] connectedDevices() throws IOException, InterruptedException {
+    private String[] connectedDevices() throws IOException, InterruptedException {
         if (iosDeployPath == null) {
             return new String[] {};
         }
@@ -156,9 +159,22 @@ public class Deploy {
                 "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
         runner.addToEnv("PATH", "/usr/bin/:$PATH");
         runner.setInfo(true);
-        boolean result = runner.runTimedProcess("run", 60);
-        Logger.logInfo("result = " + result);
-        return result;
+        boolean keepTrying = true;
+        while (keepTrying) {
+            keepTrying = false;
+            boolean result = runner.runTimedProcess("run", 60);
+            Logger.logInfo("result = " + result);
+            if (result) {
+                if (runner.getResponses().stream().anyMatch(l -> "Error: The device is locked.".equals(l))) {
+                    Logger.logSevere("Device locked! Please, unlock and press ENTER to try again");
+                    System.in.read();
+                    keepTrying = true;
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void addDebugSymbolInfo(Path appPath, String appName) throws IOException, InterruptedException {
@@ -235,5 +251,18 @@ public class Deploy {
             libLinks.add(linkedLib);
         }
         return libLinks;
+    }
+
+    private boolean installIOSDeploy() throws IOException, InterruptedException {
+        Logger.logSevere("ios-deploy not found. It will be installed now");
+        Path tmpDeploy = FileOps.copyResourceToTmp("/thirdparty/ios-deploy.rb");
+
+        ProcessRunner runner = new ProcessRunner("brew", "install", "--HEAD", tmpDeploy.toString());
+        if (runner.runProcess("ios-deploy") == 0) {
+            Logger.logDebug("ios-deploy installed");
+            return true;
+        }
+        Logger.logDebug("Error installing ios-deploy");
+        return false;
     }
 }
