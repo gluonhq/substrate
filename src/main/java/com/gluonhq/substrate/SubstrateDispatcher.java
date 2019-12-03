@@ -41,8 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.gluonhq.substrate.util.Logger.logInit;
@@ -70,6 +69,10 @@ public class SubstrateDispatcher {
         config.setGraalPath(graalVM);
         config.setAppName(appName);
         config.setTarget(targetTriplet);
+        config.setReflectionList(splitString(System.getProperty("reflectionlist")));
+        config.setJniList(splitString(System.getProperty("jnilist")));
+        config.setBundlesList(splitString(System.getProperty("bundleslist")));
+
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
 
@@ -87,7 +90,7 @@ public class SubstrateDispatcher {
         timer.setDaemon(true);
         timer.start();
 
-        var dispatcher = new SubstrateDispatcher(buildRoot, config);
+        SubstrateDispatcher dispatcher = new SubstrateDispatcher(buildRoot, config);
 
         boolean nativeCompileSucceeded = dispatcher.nativeCompile(classPath);
         run = false;
@@ -132,6 +135,11 @@ public class SubstrateDispatcher {
     private static void printUsage() {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
+
+    private static List<String> splitString(String s ) {
+        return s == null || s.trim().isEmpty()? Collections.emptyList() : Arrays.asList(s.split(","));
+    }
+
 
     private final InternalProjectConfiguration config;
     private final ProcessPaths paths;

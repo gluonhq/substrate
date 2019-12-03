@@ -93,14 +93,6 @@ public class InternalProjectConfiguration {
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
         setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
 
-        setReflectionList(splitString(System.getProperty("reflectionlist")));
-        setJniList(splitString(System.getProperty("jnilist")));
-        setBundlesList(splitString(System.getProperty("bundleslist")));
-
-    }
-
-    private static List<String> splitString( String s ) {
-        return s == null || s.trim().isEmpty()? Collections.emptyList() : Arrays.asList(s.split(","));
     }
 
     public Path getGraalPath() {
@@ -297,43 +289,19 @@ public class InternalProjectConfiguration {
     }
 
     public List<String> getBundlesList() {
-        return bundlesList;
-    }
-
-    /**
-     * Sets additional bundles
-     * @param bundlesList a list of classes that will be added to the default bundlesList list
-     */
-    public void setBundlesList(List<String> bundlesList) {
-        this.bundlesList = bundlesList;
-    }
-
-    /**
-     * Set additional resources to be included
-     * @param resourcesList a list of resource patterns that will be included
-     */
-    public void setResourcesList(List<String> resourcesList) {
-        this.resourcesList = resourcesList;
+        return publicConfig.getBundlesList();
     }
 
     public List<String> getResourcesList() {
-        return resourcesList;
+        return publicConfig.getResourcesList();
     }
 
     public List<String> getReflectionList() {
-        return reflectionList;
-    }
-
-    /**
-     * Sets additional lists
-     * @param reflectionList a list of classes that will be added to the default reflection list
-     */
-    public void setReflectionList(List<String> reflectionList) {
-        this.reflectionList = reflectionList;
+        return publicConfig.getReflectionList();
     }
 
     public List<String> getJniList() {
-        return jniList;
+        return publicConfig.getJniList();
     }
 
     /**
