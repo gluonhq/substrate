@@ -96,7 +96,7 @@ public class InternalProjectConfiguration {
     }
 
     public Path getGraalPath() {
-        return this.publicConfig.getGraalPath();
+        return Objects.requireNonNull( this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
     }
 
     /**
@@ -106,7 +106,8 @@ public class InternalProjectConfiguration {
      * @return the specified JavaStaticSDK version, or the default
      */
     public String getJavaStaticSdkVersion() {
-        return publicConfig.getJavaStaticSdkVersion();
+        return Optional.ofNullable(publicConfig.getJavaStaticSdkVersion())
+                       .orElse(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
     }
 
     /**
@@ -201,7 +202,8 @@ public class InternalProjectConfiguration {
     }
 
     public String getJavafxStaticSdkVersion() {
-        return publicConfig.getJavafxStaticSdkVersion();
+        return Optional.ofNullable(publicConfig.getJavafxStaticSdkVersion())
+                       .orElse(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
     }
 
     public String getLlcPath() {
@@ -261,7 +263,7 @@ public class InternalProjectConfiguration {
     }
 
     public Triplet getTargetTriplet() {
-        return publicConfig.getTargetTriplet();
+        return Objects.requireNonNull( publicConfig.getTargetTriplet(), "Target triplet is required");
     }
 
 
@@ -272,7 +274,8 @@ public class InternalProjectConfiguration {
      * @throws IllegalArgumentException in case the current operating system is not supported
      */
     public Triplet getHostTriplet() throws IllegalArgumentException {
-        return publicConfig.getHostTriplet();
+        return Optional.ofNullable(publicConfig.getHostTriplet())
+                       .orElse(Triplet.fromCurrentOS());
     }
 
 
@@ -289,27 +292,23 @@ public class InternalProjectConfiguration {
     }
 
     public List<String> getBundlesList() {
-        return publicConfig.getBundlesList();
+        return Optional.ofNullable(publicConfig.getBundlesList())
+                       .orElse(Collections.emptyList());
     }
 
     public List<String> getResourcesList() {
-        return publicConfig.getResourcesList();
+        return Optional.ofNullable(publicConfig.getResourcesList())
+                .orElse(Collections.emptyList());
     }
 
     public List<String> getReflectionList() {
-        return publicConfig.getReflectionList();
+        return Optional.ofNullable(publicConfig.getReflectionList())
+                .orElse(Collections.emptyList());
     }
 
     public List<String> getJniList() {
-        return publicConfig.getJniList();
-    }
-
-    /**
-     * Sets additional lists
-     * @param jniList a list of classes that will be added to the default jni list
-     */
-    public void setJniList(List<String> jniList) {
-        this.jniList = jniList;
+        return Optional.ofNullable(publicConfig.getJniList())
+                .orElse(Collections.emptyList());
     }
 
     public List<String> getDelayInitList() {
@@ -349,7 +348,7 @@ public class InternalProjectConfiguration {
     }
 
     public String getAppName() {
-        return publicConfig.getAppName();
+        return Objects.requireNonNull(publicConfig.getAppName(), "App name is required");
     }
 
 
@@ -358,15 +357,7 @@ public class InternalProjectConfiguration {
     }
 
     public IosSigningConfiguration getIosSigningConfiguration() {
-        return iosSigningConfiguration;
-    }
-
-    /**
-     * Sets some iOS specific parameters
-     * @param iosSigningConfiguration iOS configuration
-     */
-    public void setIosSigningConfiguration(IosSigningConfiguration iosSigningConfiguration) {
-        this.iosSigningConfiguration = iosSigningConfiguration;
+        return Optional.ofNullable(publicConfig.getIosSigningConfiguration()).orElse(new IosSigningConfiguration());
     }
 
     /**

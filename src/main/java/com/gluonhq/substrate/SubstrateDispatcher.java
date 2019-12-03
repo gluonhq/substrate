@@ -66,7 +66,7 @@ public class SubstrateDispatcher {
         String expected  = System.getProperty("expected");
 
         ProjectConfiguration config = new ProjectConfiguration(mainClass);
-        config.setGraalPath(graalVM);
+        config.setGraalPath( Path.of(graalVM) );
         config.setAppName(appName);
         config.setTarget(targetTriplet);
         config.setReflectionList(splitString(System.getProperty("reflectionlist")));
