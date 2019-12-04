@@ -291,7 +291,7 @@ public class FileOps {
         }
         try (FileInputStream fis = new FileInputStream(new File(nameFile));
              ObjectInputStream ois = new ObjectInputStream(fis)) {
-            hashes = (Map<String, String>) ois.readObject();
+             hashes = (Map<String, String>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             Logger.logDebug("Exception trying to get hashmap for "+nameFile+": "+e);
             return null;
