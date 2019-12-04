@@ -616,6 +616,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     private void extractNativeLibs(String classPath) throws IOException {
         Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
+        if (Files.exists(libPath)) {
+            FileOps.deleteDirectory(libPath);
+        }
         Logger.logDebug("Extracting native libs to: " + libPath);
         String[] split = classPath.split(File.pathSeparator);
         List<String> jars = Stream.of(split)
