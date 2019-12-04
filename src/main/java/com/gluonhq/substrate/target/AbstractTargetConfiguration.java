@@ -54,7 +54,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
@@ -80,6 +82,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     @Override
     public boolean compile(String cp) throws IOException, InterruptedException {
         String classPath = processClassPath(cp);
+        extractNativeLibs(cp);
         Triplet target =  projectConfiguration.getTargetTriplet();
         String suffix = target.getArchOs();
         String jniPlatform = getJniPlatform(target.getOs());
@@ -219,6 +222,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (projectConfiguration.isUseJavaFX()) {
             addJavaFXStaticLibsPathToLinkProcess(linkBuilder);
         }
+        linkBuilder.command().addAll(getNativeLibsLinkFlags());
 
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
@@ -601,5 +605,72 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     List<String> getTargetSpecificObjectFiles() throws IOException {
         return Collections.emptyList();
+    }
+
+    /**
+     * For every jar in the classpath, checks for native libraries (*.a)
+     * and if found, extracts them to a folder, for later link
+     *
+     * @param classPath The classpath of the project
+     * @throws IOException
+     */
+    private void extractNativeLibs(String classPath) throws IOException {
+        Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
+        if (Files.exists(libPath)) {
+            FileOps.deleteDirectory(libPath);
+        }
+        Logger.logDebug("Extracting native libs to: " + libPath);
+        String[] split = classPath.split(File.pathSeparator);
+        List<String> jars = Stream.of(split)
+                .filter(s -> s.endsWith(".jar") && !s.contains("javafx-"))
+                .collect(Collectors.toList());
+        for (String jar : jars) {
+            FileOps.extractFilesFromJar(".a", Path.of(jar), libPath, getTargetSpecificNativeLibsFilter());
+        }
+    }
+
+    /**
+     * A filter can be used to verify if the native library matches certain
+     * criteria, like being available for a given architecture
+     *
+     * @return a predicate, default is null (no filter applied)
+     */
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return null;
+    }
+
+    /**
+     * Adds the possible native libraries found in the project to
+     * the link commands
+     *
+     * @return a list with command line options to include native libraries,
+     * like the path and how to link them
+     * @throws IOException
+     */
+    private List<String> getNativeLibsLinkFlags() throws IOException {
+        List<String> linkFlags = new ArrayList<>();
+        Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
+        if (Files.exists(libPath)) {
+            linkFlags.add("-L" + libPath.toString());
+            List<String> libs;
+            try (Stream<Path> files = Files.list(libPath)) {
+                libs = files.map(p -> p.getFileName().toString())
+                        .filter(s -> s.startsWith("lib") && s.endsWith(".a"))
+                        .collect(Collectors.toList());
+            }
+            linkFlags.addAll(getTargetSpecificNativeLibsFlags(libPath, libs));
+        }
+        return linkFlags;
+    }
+
+    /**
+     * It generates the link flags for a given list of native libraries,
+     * at a given location
+     * @param libPath the path to the folder with the native libraries
+     * @param libs the list of names of native libraries
+     * @return a list with link flag options
+     */
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        return new ArrayList<>();
     }
 }

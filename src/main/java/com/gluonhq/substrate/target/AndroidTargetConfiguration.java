@@ -180,6 +180,17 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        List<String> linkFlags = new ArrayList<>();
+        linkFlags.add("-Wl,--whole-archive");
+        linkFlags.addAll(libs.stream()
+                .map(s -> libPath.resolve(s).toString())
+                .collect(Collectors.toList()));
+        linkFlags.add("-Wl,--no-whole-archive");
+        return linkFlags;
+    }
+
+    @Override
     public String getAdditionalSourceFileLocation() {
         return "/native/android/c/";
     }
