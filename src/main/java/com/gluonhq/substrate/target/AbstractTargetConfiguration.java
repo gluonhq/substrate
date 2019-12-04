@@ -35,6 +35,7 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.BufferedReader;
@@ -110,6 +111,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
         compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
+        if (projectConfiguration.isVerbose()) {
+            compileBuilder.command().add("-H:+PrintAnalysisCallTree");
+        }
         compileBuilder.command().addAll(getResources());
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
@@ -120,6 +124,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-cp");
         compileBuilder.command().add(classPath);
         compileBuilder.command().add(mainClassName);
+        Logger.logDebug("compile command: "+String.join(" ",compileBuilder.command()));
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
         compileBuilder.directory(workDir.toFile());
         compileBuilder.redirectErrorStream(true);
@@ -227,7 +232,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
-        System.err.println("cmd = "+cmds);
+        Logger.logDebug("link command: "+cmds);
         Process compileProcess = linkBuilder.start();
         System.err.println("started linking");
         int result = compileProcess.waitFor();
@@ -583,7 +588,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     List<String> getTargetSpecificLinkLibraries() {
-        return Arrays.asList("-ljava", "-lnio", "-lzip", "-ljvm", "-lstrictmath", "-lz", "-ldl",
+        return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstrictmath", "-lz", "-ldl",
                 "-lj2pkcs11", "-lsunec");
     }
 
