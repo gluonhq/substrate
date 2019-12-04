@@ -37,7 +37,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -77,9 +76,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkLibraries() {
         List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.addAll(Arrays.asList("-Wl,--whole-archive",
-                Path.of(projectConfiguration.getGraalPath(), "lib", "libnet.a").toString(),
-                "-Wl,--no-whole-archive", "-lextnet", "-lstdc++"));
+        defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
         return defaultLinkFlags;
     }
 

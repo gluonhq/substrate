@@ -578,7 +578,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     List<String> getTargetSpecificLinkLibraries() {
-        return Arrays.asList("-ljava", "-lnio", "-lzip", "-ljvm", "-lstrictmath", "-lz", "-ldl",
+        return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstrictmath", "-lz", "-ldl",
                 "-lj2pkcs11", "-lsunec");
     }
 
