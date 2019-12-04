@@ -28,8 +28,8 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -68,7 +68,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
 
-    public IosTargetConfiguration(ProcessPaths paths, ProjectConfiguration configuration ) {
+    public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 
@@ -145,7 +145,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         boolean result = super.link();
 
         if (result) {
-            createInfoPlist(paths, projectConfiguration);
+            createInfoPlist(paths);
 
             if (!isSimulator() && !projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
                 CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
@@ -237,7 +237,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
-    private void createInfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException {
+    private void createInfoPlist(ProcessPaths paths) throws IOException {
         InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
                 XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
         Path plist = infoPlist.processInfoPlist();

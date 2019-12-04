@@ -29,8 +29,7 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
-import com.gluonhq.substrate.util.FileDeps;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 
 import java.io.File;
@@ -61,7 +60,7 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
             "-lGLESv2", "-lEGL", "-lfreetype");
 
 
-    public AndroidTargetConfiguration( ProcessPaths paths, ProjectConfiguration configuration ) {
+    public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths,configuration);
         // for now, we need to have an ANDROID_NDK
         // we will fail fast whenever a method is invoked that uses it (e.g. compile)

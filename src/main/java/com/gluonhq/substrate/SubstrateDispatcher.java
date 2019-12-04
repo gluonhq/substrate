@@ -27,20 +27,25 @@
  */
 package com.gluonhq.substrate;
 
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
-import com.gluonhq.substrate.target.*;
-import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.target.AndroidTargetConfiguration;
+import com.gluonhq.substrate.target.DarwinTargetConfiguration;
+import com.gluonhq.substrate.target.IosTargetConfiguration;
+import com.gluonhq.substrate.target.LinuxTargetConfiguration;
+import com.gluonhq.substrate.target.TargetConfiguration;
+import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
+
+import static com.gluonhq.substrate.util.Logger.logInit;
+import static com.gluonhq.substrate.util.Logger.title;
 
 public class SubstrateDispatcher {
 
@@ -50,42 +55,24 @@ public class SubstrateDispatcher {
 
         String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
+
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
-        String reflectionList = System.getProperty("reflectionlist");
-        String jniList = System.getProperty("jnilist");
-        String bundlesList = System.getProperty("bundleslist");
         String targetProfile = System.getProperty("targetProfile");
-        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
-        boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
-        boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
-        String staticLibs = System.getProperty("javalibspath");
-        String staticJavaFXSDK = System.getProperty("javafxsdk");
-
-        String expected  = System.getProperty("expected");
 
         Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
                 :Triplet.fromCurrentOS();
 
-        ProjectConfiguration config = new ProjectConfiguration();
-        config.setGraalPath(graalVM);
-        config.setMainClassName(mainClass);
+        String expected  = System.getProperty("expected");
+
+        ProjectConfiguration config = new ProjectConfiguration(mainClass);
+        config.setGraalPath( Path.of(graalVM) );
         config.setAppName(appName);
-        config.setJavafxStaticSdkVersion(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
         config.setTarget(targetTriplet);
-        config.setUsePrismSW(usePrismSW);
-        config.getIosSigningConfiguration().setSkipSigning(skipSigning);
-        Optional.ofNullable(staticLibs).ifPresent(config::setJavaStaticLibs);
-        Optional.ofNullable(staticJavaFXSDK).ifPresent(config::setJavaFXStaticSDK);
-        if (reflectionList != null && !reflectionList.trim().isEmpty()) {
-            config.setReflectionList(Arrays.asList(reflectionList.split(",")));
-        }
-        if (jniList != null && !jniList.trim().isEmpty()) {
-            config.setJniList(Arrays.asList(jniList.split(",")));
-        }
-        if (bundlesList != null && !bundlesList.trim().isEmpty()) {
-            config.setBundlesList(Arrays.asList(bundlesList.split(",")));
-        }
+        config.setReflectionList(splitString(System.getProperty("reflectionlist")));
+        config.setJniList(splitString(System.getProperty("jnilist")));
+        config.setBundlesList(splitString(System.getProperty("bundleslist")));
+
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
 
@@ -103,7 +90,7 @@ public class SubstrateDispatcher {
         timer.setDaemon(true);
         timer.start();
 
-        var dispatcher = new SubstrateDispatcher(buildRoot, config);
+        SubstrateDispatcher dispatcher = new SubstrateDispatcher(buildRoot, config);
 
         boolean nativeCompileSucceeded = dispatcher.nativeCompile(classPath);
         run = false;
@@ -136,7 +123,6 @@ public class SubstrateDispatcher {
             dispatcher.nativeRun();
         }
     }
-
     private static String requireArg(String argName, String errorMessage ) {
         String arg = System.getProperty(argName);
         if (arg == null || arg.trim().isEmpty()) {
@@ -150,7 +136,12 @@ public class SubstrateDispatcher {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
-    private final ProjectConfiguration config;
+    private static List<String> splitString(String s ) {
+        return s == null || s.trim().isEmpty()? Collections.emptyList() : Arrays.asList(s.split(","));
+    }
+
+
+    private final InternalProjectConfiguration config;
     private final ProcessPaths paths;
     private final TargetConfiguration targetConfiguration;
 
@@ -161,19 +152,19 @@ public class SubstrateDispatcher {
      * @param config the ProjectConfiguration, including the target triplet
      */
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
-        this.config = Objects.requireNonNull(config);
+        this.config = new InternalProjectConfiguration(config);
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),
                 "Error: Target Configuration was null");
     }
     private TargetConfiguration getTargetConfiguration( Triplet targetTriplet ) {
         switch (targetTriplet.getOs()) {
-            case Constants.OS_LINUX : return new LinuxTargetConfiguration(paths, config);
-            case Constants.OS_DARWIN: return new DarwinTargetConfiguration(paths, config);
+            case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
+            case Constants.OS_DARWIN : return new DarwinTargetConfiguration(paths, config);
             case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config);
-            case Constants.OS_IOS: return new IosTargetConfiguration(paths, config);
+            case Constants.OS_IOS    : return new IosTargetConfiguration(paths, config);
             case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config);
-            default: return null;
+            default                  : return null;
         }
     }
 
@@ -203,7 +194,7 @@ public class SubstrateDispatcher {
         if (targetConfiguration == null) {
             throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
         }
-        Logger.logInit(paths.getLogPath().toString(), "==================== COMPILE TASK ====================",
+        logInit(paths.getLogPath().toString(), title("COMPILE TASK"),
                 config.isVerbose());
         System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
         boolean compile = targetConfiguration.compile(classPath);
@@ -216,7 +207,7 @@ public class SubstrateDispatcher {
     }
 
     public boolean nativeLink() throws IOException, InterruptedException {
-        Logger.logInit(paths.getLogPath().toString(), "==================== LINK TASK ====================",
+        logInit(paths.getLogPath().toString(), title("LINK TASK"),
                 config.isVerbose());
         if (targetConfiguration == null) {
             throw new IllegalArgumentException("We don't have a configuration to link " + config.getTargetTriplet());
@@ -225,7 +216,7 @@ public class SubstrateDispatcher {
     }
 
     public void nativeRun() throws IOException, InterruptedException {
-        Logger.logInit(paths.getLogPath().toString(), "==================== RUN TASK ====================",
+        logInit(paths.getLogPath().toString(), title("RUN TASK"),
                 config.isVerbose());
         targetConfiguration.runUntilEnd();
     }

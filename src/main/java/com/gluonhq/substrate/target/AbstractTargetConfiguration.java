@@ -30,8 +30,8 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.gluon.AttachResolver;
 import com.gluonhq.substrate.gluon.GlistenResolver;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
@@ -61,14 +61,14 @@ import java.util.stream.Stream;
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
     final FileDeps fileDeps;
-    final ProjectConfiguration projectConfiguration;
+    final InternalProjectConfiguration projectConfiguration;
     final ProcessPaths paths;
 
     private List<String> attachList = Collections.emptyList();
     private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private boolean useGlisten = false;
 
-    public AbstractTargetConfiguration( ProcessPaths paths, ProjectConfiguration configuration ) {
+    public AbstractTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         this.projectConfiguration = configuration;
         this.fileDeps = new FileDeps(configuration);
         this.paths = paths;
@@ -181,13 +181,23 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * not exist. In that case, retrieve the libs from our download site.
      */
     private void ensureClibs() throws IOException {
+
         Triplet target = projectConfiguration.getTargetTriplet();
-        Path clibPath = Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2());
+        Path clibPath = getCLibPath();
         if (!Files.exists(clibPath)) {
             String url = URL_CLIBS_ZIP.replace("${osarch}", target.getOsArch());
             fileDeps.downloadZip(url, clibPath);
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
+    }
+
+    private Path getCLibPath( ) {
+        Triplet target = projectConfiguration.getTargetTriplet();
+        return projectConfiguration.getGraalPath()
+                .resolve("lib")
+                .resolve("svm")
+                .resolve("clibraries")
+                .resolve(target.getOsArch2());
     }
 
     @Override
@@ -241,8 +251,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     private void addGraalStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) {
-        Triplet target = projectConfiguration.getTargetTriplet();
-        linkBuilder.command().add(getLinkLibraryPathOption() + Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
+        linkBuilder.command().add(getLinkLibraryPathOption() + getCLibPath());
     }
 
     private void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
@@ -276,9 +285,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     private String getNativeImagePath() {
-        String graalPath = projectConfiguration.getGraalPath();
-        Path path = Path.of(graalPath, "bin", getNativeImageCommand());
-        return path.toString();
+        return projectConfiguration.getGraalPath()
+                  .resolve("bin")
+                  .resolve(getNativeImageCommand())
+                  .toString();
     }
 
     private Process startAppProcess( Path appPath, String appName ) throws IOException {

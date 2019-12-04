@@ -27,9 +27,6 @@
  */
 package com.gluonhq.substrate.target;
 
-import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
-
 import java.io.IOException;
 import java.nio.file.Path;
 
