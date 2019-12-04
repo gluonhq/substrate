@@ -27,10 +27,9 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +40,7 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
             "-llibchelper", "-lpthread",
             "-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
 
-    public DarwinTargetConfiguration(ProcessPaths paths, ProjectConfiguration configuration ) {
+    public DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 
