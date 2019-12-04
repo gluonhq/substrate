@@ -28,10 +28,11 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -66,7 +68,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
 
-    public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
+    public IosTargetConfiguration(ProcessPaths paths, ProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 
@@ -111,6 +113,10 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
 
+    @Override
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return this::lipoMatch;
+    }
 
     @Override
     public String getAdditionalSourceFileLocation() {
@@ -149,6 +155,13 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             }
         }
         return result;
+    }
+
+    @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        return libs.stream()
+                .map(s -> "-Wl,-force_load," + libPath.resolve(s))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -224,18 +237,27 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
-    private void createInfoPlist(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
-        try {
-            InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
-                    XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
-            Path plist = infoPlist.processInfoPlist();
-            if (plist != null) {
-                Logger.logDebug("Plist at " + plist.toString());
-                FileOps.copyStream(new FileInputStream(plist.toFile()),
-                        paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
-            }
-        } catch (IOException e) {
-            Logger.logFatal(e, "Error creating info.plist");
+    private void createInfoPlist(ProcessPaths paths, ProjectConfiguration projectConfiguration) throws IOException {
+        InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
+                XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
+        Path plist = infoPlist.processInfoPlist();
+        if (plist != null) {
+            Logger.logDebug("Plist at " + plist.toString());
+            FileOps.copyStream(new FileInputStream(plist.toFile()),
+                    paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
         }
+    }
+
+    private boolean lipoMatch(Path path) {
+        try {
+            return lipoInfo(path).indexOf(getArch()) > 0;
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Error processing lipo for " + path);
+        }
+        return false;
+    }
+
+    private String lipoInfo(Path path) throws IOException, InterruptedException {
+        return ProcessRunner.runProcessForSingleOutput("lipo", "lipo", "-info", path.toFile().getAbsolutePath());
     }
 }
