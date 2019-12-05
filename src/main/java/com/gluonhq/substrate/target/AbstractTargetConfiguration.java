@@ -30,11 +30,12 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.gluon.AttachResolver;
 import com.gluonhq.substrate.gluon.GlistenResolver;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.BufferedReader;
@@ -53,19 +54,21 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
     final FileDeps fileDeps;
-    final ProjectConfiguration projectConfiguration;
+    final InternalProjectConfiguration projectConfiguration;
     final ProcessPaths paths;
 
     private List<String> attachList = Collections.emptyList();
     private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private boolean useGlisten = false;
 
-    public AbstractTargetConfiguration( ProcessPaths paths, ProjectConfiguration configuration ) {
+    public AbstractTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         this.projectConfiguration = configuration;
         this.fileDeps = new FileDeps(configuration);
         this.paths = paths;
@@ -79,6 +82,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     @Override
     public boolean compile(String cp) throws IOException, InterruptedException {
         String classPath = processClassPath(cp);
+        extractNativeLibs(cp);
         Triplet target =  projectConfiguration.getTargetTriplet();
         String suffix = target.getArchOs();
         String jniPlatform = getJniPlatform(target.getOs());
@@ -110,6 +114,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
         compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
+        if (projectConfiguration.isVerbose()) {
+            compileBuilder.command().add("-H:+PrintAnalysisCallTree");
+        }
         compileBuilder.command().addAll(getResources());
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
@@ -120,6 +127,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-cp");
         compileBuilder.command().add(classPath);
         compileBuilder.command().add(mainClassName);
+        Logger.logDebug("compile command: "+String.join(" ",compileBuilder.command()));
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
         compileBuilder.directory(workDir.toFile());
         compileBuilder.redirectErrorStream(true);
@@ -173,13 +181,23 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * not exist. In that case, retrieve the libs from our download site.
      */
     private void ensureClibs() throws IOException {
+
         Triplet target = projectConfiguration.getTargetTriplet();
-        Path clibPath = Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2());
+        Path clibPath = getCLibPath();
         if (!Files.exists(clibPath)) {
             String url = URL_CLIBS_ZIP.replace("${osarch}", target.getOsArch());
             fileDeps.downloadZip(url, clibPath);
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
+    }
+
+    private Path getCLibPath( ) {
+        Triplet target = projectConfiguration.getTargetTriplet();
+        return projectConfiguration.getGraalPath()
+                .resolve("lib")
+                .resolve("svm")
+                .resolve("clibraries")
+                .resolve(target.getOsArch2());
     }
 
     @Override
@@ -214,10 +232,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (projectConfiguration.isUseJavaFX()) {
             addJavaFXStaticLibsPathToLinkProcess(linkBuilder);
         }
+        linkBuilder.command().addAll(getNativeLibsLinkFlags());
 
         linkBuilder.redirectErrorStream(true);
         String cmds = String.join(" ", linkBuilder.command());
-        System.err.println("cmd = "+cmds);
+        Logger.logDebug("link command: "+cmds);
         Process compileProcess = linkBuilder.start();
         System.err.println("started linking");
         int result = compileProcess.waitFor();
@@ -232,8 +251,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     private void addGraalStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) {
-        Triplet target = projectConfiguration.getTargetTriplet();
-        linkBuilder.command().add(getLinkLibraryPathOption() + Path.of(projectConfiguration.getGraalPath(), "lib", "svm", "clibraries", target.getOsArch2())); // darwin-amd64");
+        linkBuilder.command().add(getLinkLibraryPathOption() + getCLibPath());
     }
 
     private void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
@@ -267,9 +285,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     private String getNativeImagePath() {
-        String graalPath = projectConfiguration.getGraalPath();
-        Path path = Path.of(graalPath, "bin", getNativeImageCommand());
-        return path.toString();
+        return projectConfiguration.getGraalPath()
+                  .resolve("bin")
+                  .resolve(getNativeImageCommand())
+                  .toString();
     }
 
     private Process startAppProcess( Path appPath, String appName ) throws IOException {
@@ -573,7 +592,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     List<String> getTargetSpecificLinkLibraries() {
-        return Arrays.asList("-ljava", "-lnio", "-lzip", "-ljvm", "-lstrictmath", "-lz", "-ldl",
+        return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstrictmath", "-lz", "-ldl",
                 "-lj2pkcs11", "-lsunec");
     }
 
@@ -596,5 +615,72 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     List<String> getTargetSpecificObjectFiles() throws IOException {
         return Collections.emptyList();
+    }
+
+    /**
+     * For every jar in the classpath, checks for native libraries (*.a)
+     * and if found, extracts them to a folder, for later link
+     *
+     * @param classPath The classpath of the project
+     * @throws IOException
+     */
+    private void extractNativeLibs(String classPath) throws IOException {
+        Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
+        if (Files.exists(libPath)) {
+            FileOps.deleteDirectory(libPath);
+        }
+        Logger.logDebug("Extracting native libs to: " + libPath);
+        String[] split = classPath.split(File.pathSeparator);
+        List<String> jars = Stream.of(split)
+                .filter(s -> s.endsWith(".jar") && !s.contains("javafx-"))
+                .collect(Collectors.toList());
+        for (String jar : jars) {
+            FileOps.extractFilesFromJar(".a", Path.of(jar), libPath, getTargetSpecificNativeLibsFilter());
+        }
+    }
+
+    /**
+     * A filter can be used to verify if the native library matches certain
+     * criteria, like being available for a given architecture
+     *
+     * @return a predicate, default is null (no filter applied)
+     */
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return null;
+    }
+
+    /**
+     * Adds the possible native libraries found in the project to
+     * the link commands
+     *
+     * @return a list with command line options to include native libraries,
+     * like the path and how to link them
+     * @throws IOException
+     */
+    private List<String> getNativeLibsLinkFlags() throws IOException {
+        List<String> linkFlags = new ArrayList<>();
+        Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
+        if (Files.exists(libPath)) {
+            linkFlags.add("-L" + libPath.toString());
+            List<String> libs;
+            try (Stream<Path> files = Files.list(libPath)) {
+                libs = files.map(p -> p.getFileName().toString())
+                        .filter(s -> s.startsWith("lib") && s.endsWith(".a"))
+                        .collect(Collectors.toList());
+            }
+            linkFlags.addAll(getTargetSpecificNativeLibsFlags(libPath, libs));
+        }
+        return linkFlags;
+    }
+
+    /**
+     * It generates the link flags for a given list of native libraries,
+     * at a given location
+     * @param libPath the path to the folder with the native libraries
+     * @param libs the list of names of native libraries
+     * @return a list with link flag options
+     */
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        return new ArrayList<>();
     }
 }

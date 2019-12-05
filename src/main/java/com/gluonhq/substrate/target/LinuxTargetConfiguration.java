@@ -27,8 +27,8 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
@@ -42,13 +42,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
 
-    public LinuxTargetConfiguration( ProcessPaths paths, ProjectConfiguration configuration ) {
+    public LinuxTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 
@@ -77,9 +78,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkLibraries() {
         List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.addAll(Arrays.asList("-Wl,--whole-archive",
-                Path.of(projectConfiguration.getGraalPath(), "lib", "libnet.a").toString(),
-                "-Wl,--no-whole-archive", "-lextnet", "-lstdc++"));
+        defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
         return defaultLinkFlags;
     }
 
@@ -110,6 +109,17 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
             answer.addAll(linuxfxSWlibs);
         }
         return answer;
+    }
+
+    @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        List<String> linkFlags = new ArrayList<>();
+        linkFlags.add("-Wl,--whole-archive");
+        linkFlags.addAll(libs.stream()
+                .map(s -> libPath.resolve(s).toString())
+                .collect(Collectors.toList()));
+        linkFlags.add("-Wl,--no-whole-archive");
+        return linkFlags;
     }
 
     private void checkCompiler() throws IOException, InterruptedException {

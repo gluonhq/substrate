@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.ProjectConfiguration;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 import org.junit.jupiter.api.Test;
 
@@ -64,28 +64,29 @@ class SubstrateTest {
     void testIOSTriplet() throws IOException {
         Triplet iosTriplet = new Triplet(Constants.Profile.IOS);
         Triplet currentOsTriplet = Triplet.fromCurrentOS();
-        ProjectConfiguration config = new ProjectConfiguration();
+        ProjectConfiguration config = new ProjectConfiguration("");
         config.setTarget(iosTriplet);
+
         // when on linux, nativeCompile should throw an illegalArgumentException
         if (currentOsTriplet.getOs().indexOf("nux") > 0) {
             var dispatcher = new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config);
-            assertThrows(IllegalArgumentException.class, () -> dispatcher.nativeCompile(null));
+            assertThrows(NullPointerException.class, () -> dispatcher.nativeCompile(null));
         }
     }
 
     @Test
     void testAssertGraal() {
-        ProjectConfiguration config = new ProjectConfiguration();
-        assertThrows(IllegalArgumentException.class, config::canRunNativeImage);
+        ProjectConfiguration publicConfig = new ProjectConfiguration("");
+        InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
+        assertThrows(NullPointerException.class, config::canRunNativeImage);
     }
 
     @Test
     void testMainClassName() {
-        ProjectConfiguration config = new ProjectConfiguration();
-        assertThrows(NullPointerException.class, () -> config.setMainClassName(null));
-        config.setMainClassName("a.b.Foo");
+        assertThrows(NullPointerException.class, () -> new ProjectConfiguration(null));;
+        var config = new InternalProjectConfiguration( new ProjectConfiguration("a.b.Foo"));
         assertEquals("a.b.Foo", config.getMainClassName());
-        config.setMainClassName("name/a.b.Foo");
+        config = new InternalProjectConfiguration( new ProjectConfiguration("name/a.b.Foo"));
         assertEquals("a.b.Foo", config.getMainClassName());
     }
 }

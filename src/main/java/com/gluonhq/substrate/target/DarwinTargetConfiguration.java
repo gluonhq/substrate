@@ -27,13 +27,14 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.ProjectConfiguration;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
 
@@ -41,7 +42,7 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
             "-llibchelper", "-lpthread",
             "-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
 
-    public DarwinTargetConfiguration(ProcessPaths paths, ProjectConfiguration configuration ) {
+    public DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 
@@ -74,10 +75,15 @@ public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkLibraries() {
         List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.addAll(Arrays.asList("-Wl,-force_load," +
-                Path.of(projectConfiguration.getGraalPath(), "lib", "libnet.a").toString(),
-                "-lextnet", "-lstdc++"));
+        defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
         return defaultLinkFlags;
+    }
+
+    @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        return libs.stream()
+                .map(s -> "-Wl,-force_load," + libPath.resolve(s))
+                .collect(Collectors.toList());
     }
 
     private static final List<String> macoslibs = Arrays.asList("-lffi",

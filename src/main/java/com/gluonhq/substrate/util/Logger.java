@@ -98,4 +98,8 @@ public class Logger {
         LOGGER.fine(message);
     }
 
+    public static String title( String text ) {
+        return "==================== " + (text == null? "": text) +" ====================";
+    }
+
 }
