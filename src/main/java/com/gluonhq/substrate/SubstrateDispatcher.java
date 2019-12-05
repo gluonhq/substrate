@@ -214,7 +214,7 @@ public class SubstrateDispatcher {
     /**
      * This method will start native linking for the specified configuration, after {@link #nativeCompile(String)}
      * was called and ended successfully.
-     * The classpath need to be provided separately.
+     * The classpath needs to be provided separately.
      * The result of linking is a at least an native image application file.
      * This method returns <code>true</code> on successful linking and <code>false</code> when linking fails
      * @param classPath the classpath needed to link the application (this is not the classpath for native-image)
