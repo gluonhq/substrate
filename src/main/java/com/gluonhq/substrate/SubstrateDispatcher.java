@@ -41,7 +41,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.gluonhq.substrate.util.Logger.logInit;
@@ -66,7 +70,7 @@ public class SubstrateDispatcher {
         String expected  = System.getProperty("expected");
 
         ProjectConfiguration config = new ProjectConfiguration(mainClass);
-        config.setGraalPath( Path.of(graalVM) );
+        config.setGraalPath(Path.of(graalVM));
         config.setAppName(appName);
         config.setTarget(targetTriplet);
         config.setReflectionList(splitString(System.getProperty("reflectionlist")));
@@ -101,7 +105,7 @@ public class SubstrateDispatcher {
 
         try {
             System.err.println("Linking...");
-            if (!dispatcher.nativeLink()) {
+            if (!dispatcher.nativeLink(classPath)) {
                 System.err.println("Linking failed");
                 System.exit(1);
             }
@@ -157,7 +161,8 @@ public class SubstrateDispatcher {
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),
                 "Error: Target Configuration was null");
     }
-    private TargetConfiguration getTargetConfiguration( Triplet targetTriplet ) {
+
+    private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
         switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
             case Constants.OS_DARWIN : return new DarwinTargetConfiguration(paths, config);
@@ -170,7 +175,7 @@ public class SubstrateDispatcher {
 
 
     /**
-     * This method will start native compilation for the specified configuration. The classpath and the buildroot need
+     * This method will start native compilation for the specified configuration. The classpath needs
      * to be provided separately.
      * The result of compilation is a at least one native file (2 files in case LLVM backend is used).
      * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails
@@ -179,8 +184,8 @@ public class SubstrateDispatcher {
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
-     public boolean nativeCompile(String classPath) throws Exception {
-         config.canRunNativeImage();
+    public boolean nativeCompile(String classPath) throws Exception {
+        config.canRunNativeImage();
         if (classPath != null) {
             boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
                     .anyMatch(s -> s.contains("javafx"));
@@ -206,18 +211,43 @@ public class SubstrateDispatcher {
         return compile;
     }
 
-    public boolean nativeLink() throws IOException, InterruptedException {
+    /**
+     * This method will start native linking for the specified configuration, after {@link #nativeCompile(String)}
+     * was called and ended successfully.
+     * The classpath needs to be provided separately.
+     * The result of linking is a at least an native image application file.
+     * This method returns <code>true</code> on successful linking and <code>false</code> when linking fails
+     * @param classPath the classpath needed to link the application (this is not the classpath for native-image)
+     * @return true if linking succeeded, false if it fails
+     * @throws Exception
+     * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
+     */
+    public boolean nativeLink(String classPath) throws IOException, InterruptedException {
         logInit(paths.getLogPath().toString(), title("LINK TASK"),
                 config.isVerbose());
         if (targetConfiguration == null) {
             throw new IllegalArgumentException("We don't have a configuration to link " + config.getTargetTriplet());
         }
+        if (classPath != null) {
+            boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
+                    .anyMatch(s -> s.contains("javafx"));
+            config.setUseJavaFX(useJavaFX);
+        }
         return targetConfiguration.link();
     }
 
+    /**
+     * This method runs the native image application, that was created after {@link #nativeLink(String)}
+     * was called and ended successfully.
+     * @throws IOException
+     * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
+     */
     public void nativeRun() throws IOException, InterruptedException {
         logInit(paths.getLogPath().toString(), title("RUN TASK"),
                 config.isVerbose());
+        if (targetConfiguration == null) {
+            throw new IllegalArgumentException("We don't have a configuration to run " + config.getTargetTriplet());
+        }
         targetConfiguration.runUntilEnd();
     }
 
