@@ -27,6 +27,8 @@
  */
 package com.gluonhq.substrate.gluon;
 
+import com.gluonhq.substrate.model.ClassPath;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -42,9 +44,7 @@ public class GlistenResolver {
      * @return true if Glisten is found in the classpath
      */
     public static boolean useGlisten(String classpath) {
-        return Stream.of(classpath.split(File.pathSeparator))
-                .map(Path::of)
-                .anyMatch(s -> s.toString().contains(GLISTEN_ARTIFACT_ID));
+        return new ClassPath(classpath).contains( s -> Path.of(s).toString().contains(GLISTEN_ARTIFACT_ID));
     }
 
 }

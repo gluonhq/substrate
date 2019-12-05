@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
@@ -81,6 +82,7 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
             this.clang = null;
         }
     }
+
     /**
      * // TODO: this is 100% similar to what we do on iOS. We need something like CrossPlatformTools for this.
      * If we are not using JavaFX, we immediately return the provided classpath, no further processing needed
@@ -97,20 +99,10 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
         if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
-        Path javafxSDKLibsPath = fileDeps.getJavaFXSDKLibsPath();
-        return Stream.of(classPath.split(File.pathSeparator))
-                .map(s -> {
-                    if (s.indexOf("javafx-graphics") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.graphics.jar").toString();
-                    } else if (s.indexOf("javafx-base") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.base.jar").toString();
-                    } else if (s.indexOf("javafx-controls") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.controls.jar").toString();
-                    } else {
-                        return s;
-                    }
-                })
-                .collect(Collectors.joining(File.pathSeparator));
+
+        return new ClassPath(classPath).mapWithJavaFxLibs(
+                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls" );
+
     }
 
     @Override
