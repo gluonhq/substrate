@@ -39,7 +39,6 @@ import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -50,7 +49,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
@@ -216,7 +214,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             return classPath;
         }
 
-        return new ClassPath(classPath).mapWithJavaFxLibs(
+        return new ClassPath(classPath).mapWithLibs(
                      fileDeps.getJavaFXSDKLibsPath(),"javafx-graphics","javafx-controls" );
     }
 

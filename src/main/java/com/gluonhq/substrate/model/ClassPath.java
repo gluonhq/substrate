@@ -20,7 +20,7 @@ public class ClassPath {
 
     /**
      * Creates the class path
-     * @param classPath standard java classpath, usually delimited with "pathSeparator"
+     * @param classPath standard java classpath, delimited with "pathSeparator". Should not be null.
      */
     public ClassPath(String classPath ) {
         this.classPath = Objects.requireNonNull(classPath);
@@ -33,7 +33,7 @@ public class ClassPath {
     /**
      * Returns whether any elements of this classpath match the provided
      * predicate.
-     * @param predicate predicate to apply to elements of this classpath
+     * @param predicate predicate to apply to elements of this classpath. Should not be null.
      * @return {@code true} if any elements of the stream match the provided
      *  predicate, otherwise {@code false}
      */
@@ -45,7 +45,7 @@ public class ClassPath {
     /**
      * Returns a list of strings consisting of the elements of this classpath that match
      * the given predicate.
-     * @param predicate predicate to apply to elements of this classpath
+     * @param predicate predicate to apply to elements of this classpath. Should not be null.
      * @return filtered list of elements of this classpath
      */
     public List<String> filter( Predicate<String> predicate ) {
@@ -60,7 +60,7 @@ public class ClassPath {
      * @param <T> The element type of the resulting List
      * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
      *               <a href="package-summary.html#Statelessness">stateless</a>
-     *               function to apply to each element
+     *               function to apply to each element. Should not be null.
      * @return the list
      */
     public <T> List<T> mapToList( Function<String, T> mapper) {
@@ -74,7 +74,7 @@ public class ClassPath {
      *
      * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
      *               <a href="package-summary.html#Statelessness">stateless</a>
-     *               function to apply to each element
+     *               function to apply to each element. Should not be null.
      * @return the string classpath
      */
     public String mapToString( Function<String, String> mapper) {
@@ -83,19 +83,18 @@ public class ClassPath {
     }
 
     /**
-     * Returns a String classpath consisting of the results of applying the given
-     * function to the elements of this classpath. Tries to find javafx libraries and replace them with full path to this library
-     * within provided JavaFX SDK
-     * @param javafxSDKLibsPath JavaFX SDK library path
-     * @param javafxLibs javafx library names to look for
+     * Returns a String classpath consisting existing class. Tries to find libraries by name
+     * and replace them with full path to this library within the given library path
+     * @param libsPath library path
+     * @param libNames library names to look for
      * @return the string classpath
      */
-    public String mapWithJavaFxLibs(Path javafxSDKLibsPath, String... javafxLibs ) {
-        Objects.requireNonNull(javafxSDKLibsPath);
-        return mapToString(s -> Arrays.stream(javafxLibs)
+    public String mapWithLibs(Path libsPath, String... libNames ) {
+        Objects.requireNonNull(libsPath);
+        return mapToString(s -> Arrays.stream(libNames)
                 .filter(s::contains)
                 .findFirst()
-                .map( d -> javafxSDKLibsPath.resolve(d + ".jar").toString())
+                .map( d -> libsPath.resolve(d + ".jar").toString())
                 .orElse(s));
     }
 

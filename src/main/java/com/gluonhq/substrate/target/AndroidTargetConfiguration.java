@@ -33,7 +33,6 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,7 +42,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
 
@@ -100,7 +98,7 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
             return classPath;
         }
 
-        return new ClassPath(classPath).mapWithJavaFxLibs(
+        return new ClassPath(classPath).mapWithLibs(
                 fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls" );
 
     }

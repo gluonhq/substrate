@@ -36,9 +36,9 @@ public class ClassPathTests {
     }
 
     @Test
-    public void mapWithJavaFxLibs() {
+    public void mapWithLibs() {
         var cp = new ClassPath("javafx-base:javafx-graphics");
-        String newCp =  cp.mapWithJavaFxLibs(Path.of("/aa/bb/"), "javafx-base", "javafx-graphics");
+        String newCp =  cp.mapWithLibs(Path.of("/aa/bb/"), "javafx-base", "javafx-graphics");
         assertEquals(newCp, "/aa/bb/javafx-base.jar:/aa/bb/javafx-graphics.jar");
     }
 
