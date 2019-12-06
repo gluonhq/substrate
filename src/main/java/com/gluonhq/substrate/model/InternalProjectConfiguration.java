@@ -246,12 +246,8 @@ public class InternalProjectConfiguration {
         return enableCheckHash;
     }
 
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
-    }
-
     public boolean isVerbose() {
-        return verbose;
+        return publicConfig.isVerbose();
     }
 
     /**
