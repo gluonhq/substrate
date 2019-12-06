@@ -262,7 +262,6 @@ public class Deploy {
             Logger.logDebug("ios-deploy installed");
             return true;
         }
-        Logger.logDebug("Error installing ios-deploy");
-        return false;
+        throw new RuntimeException("Error installing ios-deploy. See detailed message above on how to proceed. Then try to deploy again");
     }
 }
