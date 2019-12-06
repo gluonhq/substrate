@@ -16,5 +16,5 @@ newVersion=${TRAVIS_TAG%.*}.$((${TRAVIS_TAG##*.} + 1))
 # version = newVersion-SNAPSHOT
 sed -i -z "0,/version = $TRAVIS_TAG/s//version = $newVersion-SNAPSHOT/" gradle.properties
 
-git commit build.gradle -m "Upgrade version to $newVersion-SNAPSHOT" --author "Github Bot <githubbot@gluonhq.com>"
+git commit gradle.properties -m "Upgrade version to $newVersion-SNAPSHOT" --author "Github Bot <githubbot@gluonhq.com>"
 git push https://gluon-bot:$GITHUB_PASSWORD@github.com/gluonhq/substrate HEAD:master
