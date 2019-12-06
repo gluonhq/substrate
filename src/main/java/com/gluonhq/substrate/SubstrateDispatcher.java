@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate;
 
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
@@ -187,8 +188,7 @@ public class SubstrateDispatcher {
     public boolean nativeCompile(String classPath) throws Exception {
         config.canRunNativeImage();
         if (classPath != null) {
-            boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
-                    .anyMatch(s -> s.contains("javafx"));
+            boolean useJavaFX = new ClassPath(classPath).contains( s -> s.contains("javafx"));
             config.setUseJavaFX(useJavaFX);
         }
 
@@ -229,8 +229,7 @@ public class SubstrateDispatcher {
             throw new IllegalArgumentException("We don't have a configuration to link " + config.getTargetTriplet());
         }
         if (classPath != null) {
-            boolean useJavaFX = Stream.of(classPath.split(File.pathSeparator))
-                    .anyMatch(s -> s.contains("javafx"));
+            boolean useJavaFX = new ClassPath(classPath).contains(s -> s.contains("javafx"));
             config.setUseJavaFX(useJavaFX);
         }
         return targetConfiguration.link();
