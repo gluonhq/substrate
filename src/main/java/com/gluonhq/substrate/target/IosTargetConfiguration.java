@@ -166,16 +166,19 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
+        if (!isSimulator() && projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
+            // without signing, app can't be deployed
+            return true;
+        }
         Deploy deploy = new Deploy();
         deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
         String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
         if (isSimulator()) {
             // TODO: launchOnSimulator(appPath);
             return false;
-        } else if (!projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
+        } else {
             return deploy.install(appPath);
         }
-        return true;
     }
 
     @Override
