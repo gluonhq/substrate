@@ -24,7 +24,6 @@ test {
 
 dependencies {
     implementation 'com.googlecode.plist:dd-plist:1.22'
-    implementation 'com.github.jnr:jnr-ffi:2.1.10'
     implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
 
     testImplementation gradleTestKit()
