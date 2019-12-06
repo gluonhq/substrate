@@ -140,6 +140,7 @@ public class ProcessRunner {
             pb.directory(directory);
         }
         map.forEach((k, v) -> pb.environment().put(k, v));
+        answer.setLength(0);
         Logger.logDebug("Start process " + processName + "...");
         return pb.start();
     }

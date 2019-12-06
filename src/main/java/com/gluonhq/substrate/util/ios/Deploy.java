@@ -36,7 +36,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -45,69 +49,136 @@ import static com.gluonhq.substrate.util.XcodeUtils.XCODE_PRODUCTS_PATH;
 public class Deploy {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-    private static MobileDeviceBridge bridge;
+    private static final List<String> LIBIMOBILEDEVICE_DEPENDENCIES = Arrays.asList(
+            "libssl", "libcrypto", "libusbmuxd", "libplist");
 
-    public static Path getIOSDeployPath() throws IOException, InterruptedException {
+    private Path iosDeployPath;
+
+    public Deploy() throws IOException, InterruptedException {
+        checkPrerequisites();
+    }
+
+    public Path getIosDeployPath() {
+        return iosDeployPath;
+    }
+
+    private void checkPrerequisites() throws IOException, InterruptedException {
+        iosDeployPath = null;
+
         // Check for Homebrew installed
         String response = ProcessRunner.runProcessForSingleOutput("check brew","which", "brew");
-        if (response == null || response.isEmpty()) {
+        if (response == null || response.isEmpty() || !Files.exists(Path.of(response))) {
             Logger.logSevere("Homebrew not found");
             throw new RuntimeException("Open a terminal and run the following command to install Homebrew: \n\n" +
                     "ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"");
         }
         Logger.logDebug("Brew found at " + response);
 
+        // Check if dependencies of libimobiledevice are installed and retrieve linked versions
+        Map<String, List<String>> map = new HashMap<>();
+        for (String nameLib : LIBIMOBILEDEVICE_DEPENDENCIES) {
+            List<String> pathLibs = checkDependencyPaths(nameLib);
+            List<String> linkLibs = checkDependencyLinks(nameLib, pathLibs);
+            map.put(nameLib, linkLibs);
+        }
+
+        // Check for libimobiledevice installed
+        List<String> libiPath = checkDependencyPaths("libimobiledevice");
+        if (libiPath == null || libiPath.isEmpty() || !Files.exists(Path.of(libiPath.get(0)))) {
+            Logger.logSevere("Error finding libimobiledevice.dylib");
+            return;
+        }
+
+        ProcessRunner runner = new ProcessRunner("otool", "-L", libiPath.get(0));
+        if (runner.runProcess("otool") == 0) {
+            for (String key : map.keySet()) {
+                if (runner.getResponses().stream()
+                        .noneMatch(link -> map.get(key).stream().anyMatch(link::contains))) {
+                    Logger.logSevere("Error: there is a mismatch in the dependency (" + key + ") required by libimobiledevice.dylib: " + map.get(key) + "is required but it wasn't found");
+                    throw new RuntimeException("Open a terminal and run the following command to reinstall the required libraries: \n\n" +
+                            "brew reinstall " + key);
+                }
+            }
+        }
+
         // Check for ios-deploy installed
         response = ProcessRunner.runProcessForSingleOutput("check ios-deploy","which", "ios-deploy");
-        if (response == null || response.isEmpty()) {
-            Logger.logSevere("ios-deploy not found. It will be installed now");
-            ProcessRunner runner = new ProcessRunner("brew", "install", "ios-deploy");
-            if (runner.runProcess("ios-deploy") == 0) {
-                Logger.logDebug("ios-deploy installed");
-                return getIOSDeployPath();
-            } else {
-                Logger.logDebug("Error installing ios-deploy");
-                return null;
+        if (response == null || response.isEmpty() || !Files.exists(Path.of(response))) {
+            if (installIOSDeploy()) {
+                checkPrerequisites();
             }
         } else {
-            Logger.logDebug("ios-deploy found at " + response);
+            // Check for ios-deploy version installed (it should be 1.10+)
+            String version = ProcessRunner.runProcessForSingleOutput("ios-deploy version","ios-deploy", "-V");
+            if (version != null && !version.isEmpty() && (version.startsWith("1.8") || version.startsWith("1.9"))) {
+                Logger.logDebug("ios-deploy version (" + version + ") is outdated");
+                uninstallIOSDeploy();
+                if (installIOSDeploy()) {
+                    checkPrerequisites();
+                }
+            } else {
+                Logger.logDebug("ios-deploy found at " + response);
+                iosDeployPath = Path.of(response);
+            }
         }
-        return Path.of(response);
     }
 
-    public static String[] connectedDevices() {
-        if (bridge == null) {
-            bridge = MobileDeviceBridge.instance;
+    private String[] connectedDevices() throws IOException, InterruptedException {
+        if (iosDeployPath == null) {
+            return new String[] {};
         }
-
-        return bridge.getDeviceIds();
+        ProcessRunner runner = new ProcessRunner("ios-deploy", "-c");
+        if (!runner.runTimedProcess("connected devices", 10L)) {
+            Logger.logSevere("Error finding connected devices");
+            return new String[] {};
+        }
+        List<String> devices = runner.getResponses();
+        return devices.stream()
+                .filter(line -> line.startsWith("[....] Found"))
+                .map(line -> line.substring("[....] Found ".length()).split("\\s")[0])
+                .peek(id -> Logger.logDebug("ID found: " + id))
+                .toArray(String[]::new);
     }
 
-    public static boolean install(String app) throws IOException, InterruptedException {
-        Path deploy = getIOSDeployPath();
-        if (deploy != null) {
-            String[] devices = Deploy.connectedDevices();
-            if (devices == null || devices.length == 0) {
-                Logger.logSevere("No iOS devices connected to this system. Exit install procedure");
-                return false;
-            }
-            if (devices.length > 1) {
-                Logger.logSevere("Multiple iOS devices connected to this system: " + String.join(", ", devices ) + ". We'll use the first one.");
-            }
-            String deviceId = devices[0];
+    public boolean install(String app) throws IOException, InterruptedException {
+        if (iosDeployPath == null) {
+            Logger.logSevere("Error: ios-deploy was not found");
+            return false;
+        }
 
-            ProcessRunner runner = new ProcessRunner(deploy.toString(),
-                    "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
-            runner.addToEnv("PATH", "/usr/bin/:$PATH");
-            runner.setInfo(true);
+        String[] devices = connectedDevices();
+        if (devices == null || devices.length == 0) {
+            Logger.logInfo("No iOS devices connected to this system. Exit install procedure");
+            return false;
+        }
+        if (devices.length > 1) {
+            Logger.logInfo("Multiple iOS devices connected to this system: " + String.join(", ", devices ) + ". We'll use the first one.");
+        }
+        String deviceId = devices[0];
+
+        ProcessRunner runner = new ProcessRunner(iosDeployPath.toString(),
+                "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
+        runner.addToEnv("PATH", "/usr/bin/:$PATH");
+        runner.setInfo(true);
+        boolean keepTrying = true;
+        while (keepTrying) {
+            keepTrying = false;
             boolean result = runner.runTimedProcess("run", 60);
             Logger.logInfo("result = " + result);
-            return result;
+            if (result) {
+                if (runner.getResponses().stream().anyMatch(l -> "Error: The device is locked.".equals(l))) {
+                    Logger.logInfo("Device locked! Please, unlock and press ENTER to try again");
+                    System.in.read();
+                    keepTrying = true;
+                }
+            } else {
+                return false;
+            }
         }
-        return false;
+        return true;
     }
 
-    public static void addDebugSymbolInfo(Path appPath, String appName) throws IOException, InterruptedException {
+    public void addDebugSymbolInfo(Path appPath, String appName) throws IOException, InterruptedException {
         Path applicationPath = appPath.resolve(appName + ".app");
         Path debugSymbolsPath = Path.of(applicationPath.toString() + ".dSYM");
         if (Files.exists(debugSymbolsPath)) {
@@ -124,7 +195,7 @@ public class Deploy {
         }
     }
 
-    private static void copyAppToProducts(Path debugSymbolsPath, Path executablePath, String appName) throws IOException {
+    private void copyAppToProducts(Path debugSymbolsPath, Path executablePath, String appName) throws IOException {
         if (Files.exists(XCODE_PRODUCTS_PATH)) {
             List<Path> oldAppsPaths = Files.walk(XCODE_PRODUCTS_PATH, 1)
                     .filter(Objects::nonNull)
@@ -147,5 +218,64 @@ public class Deploy {
         Path productDebugSymbolsPath = productAppPath.resolve(debugSymbolsPath.getFileName());
         Files.createDirectories(productDebugSymbolsPath);
         FileOps.copyDirectory(debugSymbolsPath, productDebugSymbolsPath);
+    }
+
+    private List<String> checkDependencyPaths(String nameLib) throws IOException, InterruptedException {
+        ProcessRunner runner = new ProcessRunner("/bin/sh", "-c", "find $(brew --cellar) -name " + nameLib + ".dylib");
+        if (runner.runProcess(nameLib) != 0) {
+            Logger.logDebug("Error finding " + nameLib);
+            return new ArrayList<>();
+        }
+        return runner.getResponses().stream()
+                .map(libPath -> {
+                    Logger.logDebug("lib " + nameLib + " found at " + libPath);
+                    if (libPath == null || libPath.isEmpty() || !Files.exists(Path.of(libPath))) {
+                        Logger.logSevere("Error finding " + nameLib + ".dylib");
+                        throw new RuntimeException("Open a terminal and run the following command to install " + nameLib + ".dylib: \n\n" +
+                                "brew install --HEAD " + nameLib);
+                    }
+                    Logger.logDebug(nameLib + ".dylib found in: " + libPath);
+                    return libPath;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private List<String> checkDependencyLinks(String nameLib, List<String> libPaths) throws IOException, InterruptedException {
+        List<String> libLinks = new ArrayList<>();
+        for (String libPath : libPaths) {
+            // retrieve name of linked library
+            String linkedLib = ProcessRunner.runProcessForSingleOutput("readlink " + nameLib, "readlink", libPath);
+            Logger.logDebug(nameLib + ".dylib link of: " + linkedLib);
+            if (linkedLib == null || linkedLib.isEmpty()) {
+                throw new RuntimeException("Error finding " + nameLib + ".dylib version");
+            }
+            libLinks.add(linkedLib);
+        }
+        return libLinks;
+    }
+
+    private boolean uninstallIOSDeploy() throws IOException, InterruptedException {
+        ProcessRunner runner = new ProcessRunner("brew", "unlink", "ios-deploy");
+        if (runner.runProcess("ios-deploy unlink") == 0) {
+            Logger.logDebug("ios-deploy unlinked");
+        }
+        Logger.logDebug("Uninstalling ios-deploy");
+        runner = new ProcessRunner("brew", "uninstall", "ios-deploy");
+        if (runner.runProcess("ios-deploy uninstall") == 0) {
+            Logger.logDebug("ios-deploy uninstalled");
+            return true;
+        }
+        return false;
+    }
+
+    private boolean installIOSDeploy() throws IOException, InterruptedException {
+        Logger.logInfo("ios-deploy not found. It will be installed now");
+
+        ProcessRunner runner = new ProcessRunner("brew", "install", "--HEAD", "ios-deploy");
+        if (runner.runProcess("ios-deploy") == 0) {
+            Logger.logDebug("ios-deploy installed");
+            return true;
+        }
+        throw new RuntimeException("Error installing ios-deploy. See detailed message above on how to proceed. Then try to deploy again");
     }
 }
