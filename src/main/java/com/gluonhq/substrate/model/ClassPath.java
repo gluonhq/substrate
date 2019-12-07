@@ -20,7 +20,7 @@ public class ClassPath {
 
     /**
      * Creates the class path
-     * @param classPath standard java classpath, delimited with "pathSeparator". Should not be null.
+     * @param classPath standard java classpath, delimited with {@code File.pathSeparator}. Should not be null.
      */
     public ClassPath(String classPath ) {
         this.classPath = Objects.requireNonNull(classPath);
@@ -58,9 +58,7 @@ public class ClassPath {
      * function to the elements of this classpath.
      *
      * @param <T> The element type of the resulting List
-     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
-     *               <a href="package-summary.html#Statelessness">stateless</a>
-     *               function to apply to each element. Should not be null.
+     * @param mapper function to apply to each element. Should not be null.
      * @return the list
      */
     public <T> List<T> mapToList( Function<String, T> mapper) {
@@ -72,9 +70,7 @@ public class ClassPath {
      * Returns a String classpath consisting of the results of applying the given
      * function to the elements of this classpath.
      *
-     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
-     *               <a href="package-summary.html#Statelessness">stateless</a>
-     *               function to apply to each element. Should not be null.
+     * @param mapper function to apply to each element. Should not be null.
      * @return the string classpath
      */
     public String mapToString( Function<String, String> mapper) {
