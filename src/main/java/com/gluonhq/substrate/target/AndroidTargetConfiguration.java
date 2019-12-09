@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
+public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private final String ndk;
     private final Path ldlld;

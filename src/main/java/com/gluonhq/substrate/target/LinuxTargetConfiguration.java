@@ -44,7 +44,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
+public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
