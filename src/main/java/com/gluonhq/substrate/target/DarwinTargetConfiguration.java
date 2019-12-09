@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class DarwinTargetConfiguration extends AbstractTargetConfiguration {
+public class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
     private static final List<String> darwinLibs = Arrays.asList(
             "-llibchelper", "-lpthread",

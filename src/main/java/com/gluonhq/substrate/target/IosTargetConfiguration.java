@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class IosTargetConfiguration extends AbstractTargetConfiguration {
+public class IosTargetConfiguration extends PosixTargetConfiguration {
 
     private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
 
