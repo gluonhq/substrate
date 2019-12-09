@@ -1,6 +1,7 @@
 package com.gluonhq.substrate.model;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -85,12 +86,24 @@ public class ClassPath {
      * @param libNames library names to look for
      * @return the string classpath
      */
-    public String mapWithLibs(Path libsPath, String... libNames ) {
+    public String mapWithLibs(Path libsPath, String... libNames) {
         Objects.requireNonNull(libsPath);
         return mapToString(s -> Arrays.stream(libNames)
                 .filter(s::contains)
                 .findFirst()
-                .map( d -> libsPath.resolve(d + ".jar").toString())
+                .map(d -> {
+                    Path p = libsPath.resolve(d + ".jar");
+                    if (Files.exists(p)) {
+                        return p.toString();
+                    } else {
+                        p = libsPath.resolve(d.replace("-", ".") + ".jar");
+                        if (Files.exists(p)) {
+                            return p.toString();
+                        } else {
+                            throw new RuntimeException("Error, path for " + d + " not found");
+                        }
+                    }
+                })
                 .orElse(s));
     }
 
