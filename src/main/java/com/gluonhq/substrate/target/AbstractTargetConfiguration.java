@@ -190,7 +190,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             fileDeps.downloadZip(url, clibPath);
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
+        checkPlatformSpecificClibs(clibPath);
     }
+
+    /**
+     * Allow platforms to check if specific libraries (e.g. libjvm.a) are present in the specified clib path
+     * @param clibPath
+     */
+    void checkPlatformSpecificClibs(Path clibPath) throws IOException {}
 
     private Path getCLibPath( ) {
         Triplet target = projectConfiguration.getTargetTriplet();
@@ -201,6 +208,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .resolve(target.getOsArch2());
     }
 
+   /**
+    * Links a previously created objectfile with the required
+    * dependencies into a native executable.
+    * @return true if linking succeeded, false otherwise
+    */
     @Override
     public boolean link() throws IOException, InterruptedException {
 

@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'maven-publish'
     id 'signing'
+    id "de.marcphilipp.nexus-publish" version "0.4.0"
 }
 
 group = "com.gluonhq"
@@ -91,26 +92,18 @@ publishing {
             }
         }
     }
-    repositories {
-        maven {
-            if (project.hasProperty("repositoryUrl")) {
-              url = project.getProperty("repositoryUrl")
-            } else {
-              def releasesRepoUrl  = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-              def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
-              url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-            }
-            if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
-                credentials {
-                    username project.property('sonatypeUsername')
-                    password project.property('sonatypePassword')
-                }
-            }
-        }
-    }
 }
 
 signing {
     required = { gradle.taskGraph.hasTask(publish) && !version.endsWith("SNAPSHOT") }
     sign publishing.publications.maven
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
+            password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
+        }
+    }
 }
