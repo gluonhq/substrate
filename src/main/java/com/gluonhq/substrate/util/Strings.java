@@ -48,15 +48,4 @@ public final class Strings {
         return substitute(template,context::get);
     }
 
-    public static void main(String[] args) {
-
-        var vars = new HashMap<String,String>();
-        vars.put("var1", "VAR1");
-        vars.put("var2", "VAR2");
-
-        System.out.println("------------------------------------");
-        System.out.println(Strings.substitute( "123 ${var1} 456 ${var2} 789", vars::get));
-        System.out.println("------------------------------------");
-    }
-
 }
