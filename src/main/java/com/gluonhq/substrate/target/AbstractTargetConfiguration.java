@@ -30,6 +30,7 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.gluon.AttachResolver;
 import com.gluonhq.substrate.gluon.GlistenResolver;
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
@@ -630,10 +631,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             FileOps.deleteDirectory(libPath);
         }
         Logger.logDebug("Extracting native libs to: " + libPath);
-        String[] split = classPath.split(File.pathSeparator);
-        List<String> jars = Stream.of(split)
-                .filter(s -> s.endsWith(".jar") && !s.contains("javafx-"))
-                .collect(Collectors.toList());
+
+        List<String> jars = new ClassPath(classPath).filter(s -> s.endsWith(".jar") && !s.contains("javafx-"));
         for (String jar : jars) {
             FileOps.extractFilesFromJar(".a", Path.of(jar), libPath, getTargetSpecificNativeLibsFilter());
         }

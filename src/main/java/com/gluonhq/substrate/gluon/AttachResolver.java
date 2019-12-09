@@ -27,6 +27,8 @@
  */
 package com.gluonhq.substrate.gluon;
 
+import com.gluonhq.substrate.model.ClassPath;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -51,9 +53,7 @@ public class AttachResolver {
      *          to reflection and jni lists
      */
     public static List<String> attachServices(String classpath) throws IOException {
-        return attachServices(Stream.of(classpath.split(File.pathSeparator))
-                .map(Path::of)
-                .collect(Collectors.toList()));
+        return attachServices(new ClassPath(classpath).mapToList(Path::of));
     }
 
     /**

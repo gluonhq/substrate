@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
@@ -38,7 +39,6 @@ import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -49,7 +49,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class IosTargetConfiguration extends AbstractTargetConfiguration {
 
@@ -214,18 +213,9 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
-        Path javafxSDKLibsPath = fileDeps.getJavaFXSDKLibsPath();
-        return Stream.of(classPath.split(File.pathSeparator))
-                .map(s -> {
-                    if (s.indexOf("javafx-graphics") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.graphics.jar").toString();
-                    } else if (s.indexOf("javafx-controls") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.controls.jar").toString();
-                    } else {
-                        return s;
-                    }
-                })
-                .collect(Collectors.joining(File.pathSeparator));
+
+        return new ClassPath(classPath).mapWithLibs(
+                     fileDeps.getJavaFXSDKLibsPath(),"javafx-graphics","javafx-controls" );
     }
 
     private String getArch() {
