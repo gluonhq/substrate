@@ -91,19 +91,7 @@ public class ClassPath {
         return mapToString(s -> Arrays.stream(libNames)
                 .filter(s::contains)
                 .findFirst()
-                .map(d -> {
-                    Path p = libsPath.resolve(d + ".jar");
-                    if (Files.exists(p)) {
-                        return p.toString();
-                    } else {
-                        p = libsPath.resolve(d.replace("-", ".") + ".jar");
-                        if (Files.exists(p)) {
-                            return p.toString();
-                        } else {
-                            throw new RuntimeException("Error, path for " + d + " not found");
-                        }
-                    }
-                })
+                .map(d -> libsPath.resolve(d + ".jar").toString())
                 .orElse(s));
     }
 
