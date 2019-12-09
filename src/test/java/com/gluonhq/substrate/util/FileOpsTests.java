@@ -31,13 +31,17 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class FileOpsTests {
 
+    private static final String TEST_URL = "https://download2.gluonhq.com/substrate/test/";
 
     private Path getTempDir() throws IOException {
         return Files.createTempDirectory("substrate-tests");
@@ -108,4 +112,87 @@ class FileOpsTests {
         assertThrows( NullPointerException.class, () -> FileOps.copyStream(stream,null));
     }
 
+    //--- downloadFile ----------------
+
+    @Test
+    void downloadNullURL() {
+        assertThrows(NullPointerException.class, () -> FileOps.downloadFile(null, getTempDir().resolve("test.txt")));
+    }
+
+    @Test
+    void downloadNullPath() {
+        assertThrows(NullPointerException.class, () -> FileOps.downloadFile(new URL(TEST_URL), null));
+    }
+
+    @Test
+    void downloadFile() throws IOException {
+        Path testPath = getTempDir().resolve("test.txt");
+        assertDoesNotThrow(() -> FileOps.downloadFile(new URL(TEST_URL + "test.txt"), testPath));
+        assertTrue(Files.exists(testPath));
+        assertEquals("some dummy tekst test", Files.readAllLines(testPath).get(0));
+    }
+
+    @Test
+    void downloadZip() throws IOException {
+        Path testZipPath = getTempDir().resolve("test.zip");
+        assertDoesNotThrow(() -> FileOps.downloadFile(new URL(TEST_URL + "test.zip"), testZipPath));
+        assertTrue(Files.exists(testZipPath));
+    }
+
+    //--- unzipFile ----------------
+
+    @Test
+    void unzipNull() {
+        assertThrows(NullPointerException.class, () -> FileOps.unzipFile(null, getTempDir().resolve("test")));
+        assertThrows(NullPointerException.class, () -> FileOps.unzipFile(getTempDir().resolve("test"), null));
+    }
+
+    @Test
+    void unzipNotZip() throws IOException {
+        Path testPath = getTempDir().resolve("test.txt");
+        assertDoesNotThrow(() -> FileOps.downloadFile(new URL(TEST_URL + "test.txt"), testPath));
+        assertThrows(IOException.class, () -> FileOps.unzipFile(testPath, testPath));
+    }
+
+    @Test
+    void unzipNotDir() throws IOException {
+        Path testZipPath = getTempDir().resolve("test.zip");
+        assertDoesNotThrow(() -> FileOps.downloadFile(new URL(TEST_URL + "test.zip"), testZipPath));
+        assertThrows(IOException.class, () -> FileOps.unzipFile(testZipPath, testZipPath));
+    }
+
+    @Test
+    void unzipFile() throws IOException {
+        Path testZip = getTempDir().resolve("test.zip");
+        Path testPath = getTempDir().resolve("test");
+        assertDoesNotThrow(() -> FileOps.downloadFile(new URL(TEST_URL + "test.zip"), testZip));
+        assertTrue(Files.exists(testZip));
+        assertDoesNotThrow(() -> {
+            Map<String, String> sums = FileOps.unzipFile(testZip, testPath);
+            assertEquals(1, sums.size());
+            Path testFile = testPath.resolve("test.txt");
+            String fileSum = sums.get(testFile.getFileName().toString());
+            assertNotNull(fileSum);
+            assertEquals("[51, 87, -48, -48, 101, -83, 47, -61, 24, 12, 94, -43, -13, -19, 101, -57]", fileSum);
+            assertTrue(Files.exists(testFile));
+            assertEquals("some dummy tekst test", Files.readAllLines(testFile).get(0));
+        });
+    }
+
+    //--- processFile ----------------
+
+    @Test
+    void processFile() throws IOException {
+        Path testZip = getTempDir().resolve("test.zip");
+        assertDoesNotThrow(() -> {
+            FileOps.processZip(TEST_URL + "test.zip", testZip, "testZip", "1", "2");
+            Path testFile = Path.of(testZip.getParent().toString(), "testZip", "1", "2", "test.txt");
+            Path testMd5File = Path.of(testZip.getParent().toString(), "testZip", "1", "2", "testZip-2.md5");
+            assertTrue(Files.exists(testFile));
+            assertTrue(Files.exists(testMd5File));
+            Map<String, String> hashMap = FileOps.getHashMap(testMd5File.toString());
+            assertNotNull(hashMap);
+            assertEquals(hashMap.get(testFile.getFileName().toString()), FileOps.calculateCheckSum(testFile.toFile()));
+        });
+    }
 }
