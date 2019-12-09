@@ -68,6 +68,7 @@ public class SubstrateDispatcher {
                 :Triplet.fromCurrentOS();
 
         String expected  = System.getProperty("expected");
+        boolean verbose = System.getProperty("verbose") != null;
 
         ProjectConfiguration config = new ProjectConfiguration(mainClass);
         config.setGraalPath(Path.of(graalVM));
@@ -76,7 +77,7 @@ public class SubstrateDispatcher {
         config.setReflectionList(splitString(System.getProperty("reflectionlist")));
         config.setJniList(splitString(System.getProperty("jnilist")));
         config.setBundlesList(splitString(System.getProperty("bundleslist")));
-
+        config.setVerbose(verbose);
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
 
