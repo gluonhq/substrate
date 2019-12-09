@@ -34,16 +34,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public abstract  class PosixTargetConfiguration extends AbstractTargetConfiguration {
+public abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
 
-    public PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
+    public PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
     }
 
+    @Override
     void checkPlatformSpecificClibs(Path clibPath) throws IOException {
         Path libjvmPath = clibPath.resolve("libjvm.a");
         if (!Files.exists(libjvmPath)) throw new IOException("Missing library libjvm.a not in linkpath "+clibPath);
-
     }
 
 }
