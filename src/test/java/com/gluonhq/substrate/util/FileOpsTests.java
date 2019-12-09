@@ -183,11 +183,11 @@ class FileOpsTests {
 
     @Test
     void processFile() throws IOException {
-        Path testZip = getTempDir().resolve("test.zip");
+        Path tempDir = getTempDir();
         assertDoesNotThrow(() -> {
-            FileOps.processZip(TEST_URL + "test.zip", testZip, "testZip", "1", "2");
-            Path testFile = Path.of(testZip.getParent().toString(), "testZip", "1", "2", "test.txt");
-            Path testMd5File = Path.of(testZip.getParent().toString(), "testZip", "1", "2", "testZip-2.md5");
+            FileOps.processZip(TEST_URL + "test.zip", tempDir, "test.zip", "testZip", "1", "2");
+            Path testFile = Path.of(tempDir.toString(), "testZip", "1", "2", "test.txt");
+            Path testMd5File = Path.of(tempDir.toString(), "testZip", "1", "2", "testZip-2.md5");
             assertTrue(Files.exists(testFile));
             assertTrue(Files.exists(testMd5File));
             Map<String, String> hashMap = FileOps.getHashMap(testMd5File.toString());
