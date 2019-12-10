@@ -311,8 +311,8 @@ public final class FileDeps {
         Logger.logDebug("Process zip javaStaticSdk, target = "+target);
 
         String javaZip = Strings.substitute( JAVA_STATIC_ZIP, Map.of(
-            "version",  configuration.getJavaStaticSdkVersion(),
-            "target",  target
+            "version", configuration.getJavaStaticSdkVersion(),
+            "target", target
         ));
 
 
@@ -326,8 +326,8 @@ public final class FileDeps {
         Logger.logDebug("Process zip javafxStaticSdk");
 
         String javafxZip = Strings.substitute( JAVAFX_STATIC_ZIP, Map.of(
-            "version",  configuration.getJavafxStaticSdkVersion(),
-            "target",  osarch
+            "version", configuration.getJavafxStaticSdkVersion(),
+            "target", osarch
         ));
 
         processZip(JAVAFX_STATIC_URL + javafxZip,

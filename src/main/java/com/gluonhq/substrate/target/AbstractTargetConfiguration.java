@@ -188,7 +188,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Triplet target = projectConfiguration.getTargetTriplet();
         Path clibPath = getCLibPath();
         if (!Files.exists(clibPath)) {
-            String url = Strings.substitute(URL_CLIBS_ZIP, Map.of("osarch",target.getOsArch()));
+            String url = Strings.substitute(URL_CLIBS_ZIP, Map.of("osarch", target.getOsArch()));
             fileDeps.downloadZip(url, clibPath);
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
@@ -408,7 +408,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         answer.add(Constants.REFLECTION_JAVA_FILE);
         if (useJavaFX) {
             answer.add(Constants.REFLECTION_JAVAFX_FILE);
-            answer.add( Strings.substitute(Constants.REFLECTION_JAVAFX_ARCH_FILE,Map.of("archOs", suffix)));
+            answer.add(Strings.substitute(Constants.REFLECTION_JAVAFX_ARCH_FILE, Map.of("archOs", suffix)));
 
             if (usePrismSW) {
                 answer.add(Constants.REFLECTION_JAVAFXSW_FILE);
@@ -425,7 +425,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         answer.add(Constants.JNI_JAVA_FILE);
         if (useJavaFX) {
             answer.add(Constants.JNI_JAVAFX_FILE);
-            answer.add( Strings.substitute(Constants.JNI_JAVAFX_ARCH_FILE, Map.of("archOs", suffix)));
+            answer.add(Strings.substitute(Constants.JNI_JAVAFX_ARCH_FILE, Map.of("archOs", suffix)));
             if (usePrismSW) {
                 answer.add(Constants.JNI_JAVAFXSW_FILE);
             }
@@ -498,7 +498,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private Path createJNIConfig(String suffix) throws IOException {
         Path gvmPath = paths.getGvmPath();
-        Path jniPath = gvmPath.resolve( Strings.substitute(Constants.JNI_ARCH_FILE, Map.of("archOs", suffix)));
+        Path jniPath = gvmPath.resolve(Strings.substitute(Constants.JNI_ARCH_FILE, Map.of("archOs", suffix)));
         File f = jniPath.toFile();
         if (f.exists()) {
             f.delete();
