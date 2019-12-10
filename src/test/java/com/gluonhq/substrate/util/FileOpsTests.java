@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -151,7 +150,10 @@ class FileOpsTests {
     void unzipNotZip() throws IOException {
         Path testPath = getTempDir().resolve("test.txt");
         assertDoesNotThrow(() -> FileOps.downloadFile(new URL(TEST_URL + "test.txt"), testPath));
-        assertThrows(IOException.class, () -> FileOps.unzipFile(testPath, testPath));
+        assertDoesNotThrow(() -> {
+            Map<String, String> map = FileOps.unzipFile(testPath, testPath.getParent());
+            assertEquals(0, map.size());
+        });
     }
 
     @Test
@@ -185,7 +187,7 @@ class FileOpsTests {
     void processFile() throws IOException {
         Path tempDir = getTempDir();
         assertDoesNotThrow(() -> {
-            FileOps.processZip(TEST_URL + "test.zip", tempDir, "test.zip", "testZip", "1", "2");
+            FileOps.downloadAndUnzip(TEST_URL + "test.zip", tempDir, "test.zip", "testZip", "1", null, "2");
             Path testFile = Path.of(tempDir.toString(), "testZip", "1", "2", "test.txt");
             Path testMd5File = Path.of(tempDir.toString(), "testZip", "1", "2", "testZip-2.md5");
             assertTrue(Files.exists(testFile));

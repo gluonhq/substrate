@@ -186,11 +186,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path clibPath = getCLibPath();
         if (!Files.exists(clibPath)) {
             String url = URL_CLIBS_ZIP.replace("${osarch}", target.getOsArch());
-            FileOps.processZip(url,
+            FileOps.downloadAndUnzip(url,
                     clibPath.getParent().getParent(),
                     "clibraries.zip",
                     "clibraries",
-                    null,
                     target.getOsArch2());
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);

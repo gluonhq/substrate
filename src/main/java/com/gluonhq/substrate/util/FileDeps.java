@@ -286,7 +286,7 @@ public final class FileDeps {
         String javaZip = JAVA_STATIC_ZIP
                 .replace("${version}", configuration.getJavaStaticSdkVersion())
                 .replace("${target}", target);
-        FileOps.processZip(JAVA_STATIC_URL + javaZip,
+        FileOps.downloadAndUnzip(JAVA_STATIC_URL + javaZip,
                 substratePath,
                 javaZip,
                 "javaStaticSdk",
@@ -300,7 +300,7 @@ public final class FileDeps {
         String javafxZip = JAVAFX_STATIC_ZIP
                 .replace("${version}", configuration.getJavafxStaticSdkVersion())
                 .replace("${target}", osarch);
-        FileOps.processZip(JAVAFX_STATIC_URL + javafxZip,
+        FileOps.downloadAndUnzip(JAVAFX_STATIC_URL + javafxZip,
                 substratePath,
                 javafxZip,
                 "javafxStaticSdk",
