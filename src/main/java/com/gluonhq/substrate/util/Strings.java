@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 public final class Strings {
 
-    private static Pattern substitutionPattern = Pattern.compile("\\$\\{(.+?)}");
+    private static final Pattern substitutionPattern = Pattern.compile("\\$\\{(.+?)}");
     /**
      * Replaces keys within the template with values using context function
      * Throws IllegalArgumentException if the key found in the template has no corresponding value
