@@ -414,8 +414,8 @@ public class FileOps {
         }
         Map<String, String> hashes = new HashMap<>();
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(sourceZip.toFile()))) {
-            ZipEntry zipEntry = zis.getNextEntry();
-            while (zipEntry != null) {
+            ZipEntry zipEntry;
+            while ((zipEntry = zis.getNextEntry()) != null) {
                 Path destPath = targetDir.resolve(zipEntry.getName());
                 if (zipEntry.isDirectory()) {
                     if (!Files.exists(destPath)) {
@@ -431,9 +431,8 @@ public class FileOps {
                     }
                     hashes.put(destPath.getFileName().toString(), calculateCheckSum(destPath.toFile()));
                 }
-                zipEntry = zis.getNextEntry();
+                zis.closeEntry();
             }
-            zis.closeEntry();
         } catch (IOException e) {
             throw new IOException("Error unzipping from " + sourceZip + "into " + targetDir + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
         }
