@@ -314,7 +314,8 @@ public class InternalProjectConfiguration {
 
     /**
      * Sets additional lists
-     * @param initBuildTimeList a list of classes that will be added to the default delayed list
+     * @param initBuildTimeList a list of classes that will be added to the default
+     *                          initialize build time list
      */
     public void setInitBuildTimeList(List<String> initBuildTimeList) {
         this.initBuildTimeList = initBuildTimeList;
