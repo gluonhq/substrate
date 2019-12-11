@@ -650,7 +650,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return Collections.emptyList();
     }
 
-    // by default, false, but subclasses can decide against it.
+    /**
+     * This method can be used to make decisions based on
+     * if the target platform has native files that use JNI or not.
+     * By default is false, but subclasses can override it.
+     *
+     * @return true if the target platform has native files that use JNI,
+     *         false (by default) otherwise
+     */
     boolean hasJNI() {
         return false;
     }
