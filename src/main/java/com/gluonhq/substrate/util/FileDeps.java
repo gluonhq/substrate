@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -308,9 +309,13 @@ public final class FileDeps {
 
     private void downloadJavaZip(String target, Path substratePath) throws IOException {
         Logger.logDebug("Process zip javaStaticSdk, target = "+target);
-        String javaZip = JAVA_STATIC_ZIP
-                .replace("${version}", configuration.getJavaStaticSdkVersion())
-                .replace("${target}", target);
+
+        String javaZip = Strings.substitute( JAVA_STATIC_ZIP, Map.of(
+            "version", configuration.getJavaStaticSdkVersion(),
+            "target", target
+        ));
+
+
         processZip(JAVA_STATIC_URL + javaZip,
                 substratePath.resolve(javaZip),
                 "javaStaticSdk", configuration.getJavaStaticSdkVersion());
@@ -319,9 +324,12 @@ public final class FileDeps {
 
     private void downloadJavaFXZip(String osarch, Path substratePath ) throws IOException {
         Logger.logDebug("Process zip javafxStaticSdk");
-        String javafxZip = JAVAFX_STATIC_ZIP
-                .replace("${version}", configuration.getJavafxStaticSdkVersion())
-                .replace("${target}", osarch);
+
+        String javafxZip = Strings.substitute( JAVAFX_STATIC_ZIP, Map.of(
+            "version", configuration.getJavafxStaticSdkVersion(),
+            "target", osarch
+        ));
+
         processZip(JAVAFX_STATIC_URL + javafxZip,
                 substratePath.resolve(javafxZip),
                 "javafxStaticSdk", configuration.getJavafxStaticSdkVersion());
