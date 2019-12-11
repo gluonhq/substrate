@@ -57,10 +57,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-Wl,--no-whole-archive",
             "-lGLESv2", "-lEGL", "-lfreetype");
-    private List<String> capFiles = Arrays.asList("AArch64LibCHelperDirectives.cap",
+    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
             "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
-            "LLVMDirectives.cap", "PosixDirectives.cap");
+            "LLVMDirectives.cap", "PosixDirectives.cap"};
     private final String capLocation= "/native/android/cap/";
 
 
@@ -138,7 +138,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
-                "-H:CAPCacheDir=" + getCapCacheDir(),
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CustomLD=" + ldlld.toAbsolutePath().toString(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
@@ -205,7 +205,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     * Copies the .cap files from the jar resource and store them in
     * a directory. Return that directory
     */
-    private String getCapCacheDir() throws IOException {
+    private Path getCapCacheDir() throws IOException {
         Path capPath = paths.getGvmPath().resolve("capcache");
         if (!Files.exists(capPath)) {
             Files.createDirectory(capPath);
@@ -213,6 +213,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         for (String cap : capFiles) {
             FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
         }
-        return capPath.toString();
+        return capPath;
     }
 }
