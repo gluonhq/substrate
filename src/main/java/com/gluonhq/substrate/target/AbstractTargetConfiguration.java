@@ -184,12 +184,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * not exist. In that case, retrieve the libs from our download site.
      */
     private void ensureClibs() throws IOException {
-
         Triplet target = projectConfiguration.getTargetTriplet();
         Path clibPath = getCLibPath();
         if (!Files.exists(clibPath)) {
             String url = Strings.substitute(URL_CLIBS_ZIP, Map.of("osarch", target.getOsArch()));
-            fileDeps.downloadZip(url, clibPath);
+            FileOps.downloadAndUnzip(url,
+                    clibPath.getParent().getParent(),
+                    "clibraries.zip",
+                    "clibraries",
+                    target.getOsArch2());
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
         checkPlatformSpecificClibs(clibPath);
@@ -217,7 +220,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     */
     @Override
     public boolean link() throws IOException, InterruptedException {
-
         ensureClibs();
 
         String appName = projectConfiguration.getAppName();
