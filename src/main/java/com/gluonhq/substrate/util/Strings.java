@@ -27,6 +27,9 @@
  */
 package com.gluonhq.substrate.util;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -73,4 +76,12 @@ public final class Strings {
         return substitute(template, context::get);
     }
 
+    /**
+     * Converts a string of comma separated strings into an array of strings
+     * @param s a string that contains comma separated strings
+     * @return a list of strings
+     */
+    public static List<String> splitString(String s) {
+        return s == null || s.trim().isEmpty() ? Collections.emptyList() : Arrays.asList(s.split(","));
+    }
 }
