@@ -62,10 +62,12 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
 
     private static final List<String> iosFrameworks = Arrays.asList(
-            "-Wl,-framework,Foundation", "-Wl,-framework,UIKit",
-            "-Wl,-framework,CoreGraphics", "-Wl,-framework,MobileCoreServices",
-            "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
-            "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
+            "Foundation", "UIKit", "CoreGraphics", "MobileCoreServices",
+            "OpenGLES", "CoreText", "QuartzCore", "ImageIO",
+            "CoreBluetooth", "CoreImage", "CoreLocation", "CoreMedia", "CoreMotion", "CoreVideo",
+            "Accelerate", "AVFoundation", "AudioToolbox", "MediaPlayer", "UserNotifications",
+            "ARKit", "AVKit", "SceneKit", "StoreKit"
+    );
 
     public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
@@ -90,7 +92,9 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
                     linkFlags.add("-Wl,-force_load," + javafxSDK + "/lib" + name + ".a"));
         }
         linkFlags.addAll(ioslibs);
-        linkFlags.addAll(iosFrameworks);
+        linkFlags.addAll(iosFrameworks.stream()
+                .map(f -> "-Wl,-framework," + f)
+                .collect(Collectors.toList()));
         return linkFlags;
     }
 
