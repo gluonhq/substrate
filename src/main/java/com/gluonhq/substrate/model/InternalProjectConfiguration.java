@@ -29,6 +29,7 @@ package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.ProjectConfiguration;
+import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -67,7 +68,7 @@ public class InternalProjectConfiguration {
     private List<String> resourcesList = Collections.emptyList();
     private List<String> reflectionList = Collections.emptyList();
     private List<String> jniList = Collections.emptyList();
-    private List<String> delayInitList;
+    private List<String> initBuildTimeList;
     private List<String> runtimeArgsList;
     private List<String> releaseSymbolsList;
 
@@ -92,7 +93,7 @@ public class InternalProjectConfiguration {
 
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
         setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
-
+        setInitBuildTimeList(Strings.splitString(System.getProperty("initbuildtimelist")));
     }
 
     public Path getGraalPath() {
@@ -307,16 +308,16 @@ public class InternalProjectConfiguration {
                 .orElse(Collections.emptyList());
     }
 
-    public List<String> getDelayInitList() {
-        return delayInitList;
+    public List<String> getInitBuildTimeList() {
+        return initBuildTimeList;
     }
 
     /**
      * Sets additional lists
-     * @param delayInitList a list of classes that will be added to the default delayed list
+     * @param initBuildTimeList a list of classes that will be added to the default delayed list
      */
-    public void setDelayInitList(List<String> delayInitList) {
-        this.delayInitList = delayInitList;
+    public void setInitBuildTimeList(List<String> initBuildTimeList) {
+        this.initBuildTimeList = initBuildTimeList;
     }
 
     public List<String> getRuntimeArgsList() {
@@ -406,7 +407,7 @@ public class InternalProjectConfiguration {
                 ", resourcesList=" + resourcesList +
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
-                ", delayInitList=" + delayInitList +
+                ", initBuildTimeList=" + initBuildTimeList +
                 ", runtimeArgsList=" + runtimeArgsList +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + getAppName() + '\'' +

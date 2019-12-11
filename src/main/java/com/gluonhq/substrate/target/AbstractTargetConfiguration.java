@@ -106,6 +106,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         useGlisten = GlistenResolver.useGlisten(cp);
         String nativeImage = getNativeImagePath();
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
+        List<String> buildTimeList = getInitializeAtBuildTimeList(useGlisten);
+        if (!buildTimeList.isEmpty()) {
+            compileBuilder.command().add("--initialize-at-build-time=" + String.join(",", buildTimeList));
+        }
         compileBuilder.command().add("--report-unsupported-elements-at-runtime");
         compileBuilder.command().add("-Djdk.internal.lambda.eagerlyInitialize=false");
         compileBuilder.command().add("-H:+ExitAfterRelocatableImageWrite");
@@ -694,6 +698,17 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * @return a list with link flag options
      */
     List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
-        return new ArrayList<>();
+        return Collections.emptyList();
+    }
+
+    /**
+     * Generates a list with class names that should be added to the
+     * initialize in build time flag
+     *
+     * @param useGlisten true if Glisten is used
+     * @return a list with fully qualified class names
+     */
+    List<String> getInitializeAtBuildTimeList(boolean useGlisten) {
+        return projectConfiguration.getInitBuildTimeList();
     }
 }

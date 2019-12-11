@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.gluon.GlistenResolver;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
@@ -141,6 +142,15 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     @Override
     String getLinker() {
         return "clang";
+    }
+
+    @Override
+    List<String> getInitializeAtBuildTimeList(boolean useGlisten) {
+        List<String> classes = new ArrayList<>(super.getInitializeAtBuildTimeList(useGlisten));
+        if (useGlisten) {
+            classes.addAll(GlistenResolver.getGlistenBuildTimeClasses());
+        }
+        return classes;
     }
 
     @Override
