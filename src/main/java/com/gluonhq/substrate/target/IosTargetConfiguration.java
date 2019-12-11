@@ -154,6 +154,11 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
+    boolean hasJNI() {
+        return true;
+    }
+
+    @Override
     public boolean link() throws IOException, InterruptedException {
         boolean result = super.link();
 

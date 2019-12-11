@@ -524,6 +524,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     bw.write(line + "\n");
                 }
             }
+            if (hasJNI()) {
+                for (String attachClass : attachList) {
+                    bw.write(",\n");
+                    writeDeclaredMethodsEntry(bw, attachClass);
+                }
+            }
             for (String javaClass : projectConfiguration.getJniList()) {
                 writeEntry(bw, javaClass);
             }
@@ -562,6 +568,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         bw.write("  {\n");
         bw.write("    \"name\" : \"" + javaClass + "\",\n");
         bw.write("    \"methods\":[{\"name\":\"<init>\",\"parameterTypes\":[] }]\n");
+        bw.write("  }\n");
+    }
+
+    private static void writeDeclaredMethodsEntry(BufferedWriter bw, String javaClass) throws IOException {
+        bw.write("  {\n");
+        bw.write("    \"name\" : \"" + javaClass + "\"");
+        bw.write(",\n");
+        bw.write("    \"allDeclaredMethods\" : true\n");
         bw.write("  }\n");
     }
 
@@ -634,6 +648,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     List<String> getTargetSpecificObjectFiles() throws IOException {
         return Collections.emptyList();
+    }
+
+    // by default, false, but subclasses can decide against it.
+    boolean hasJNI() {
+        return false;
     }
 
     /**
