@@ -32,11 +32,13 @@ import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,8 +48,10 @@ import java.util.stream.Collectors;
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private final String ndk;
+    private final String sdk;
     private final Path ldlld;
     private final Path clang;
+    private final String java8Home;
 
     private List<String> androidAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
@@ -84,6 +88,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             this.ldlld = null;
             this.clang = null;
         }
+        this.java8Home = System.getenv("JAVA8_HOME");
+        this.sdk = System.getenv("ANDROID_SDK");
     }
 
     /**
@@ -122,7 +128,80 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         // we override compile as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");
-        return super.link();
+        if (java8Home == null) throw new IOException("You need an ancient JDK (1.8). Set the environment property JAVA8_HOME");
+
+        super.link();
+
+        Path sdkPath = Paths.get(sdk);
+        Path buildToolsPath = sdkPath.resolve("build-tools").resolve("27.0.3");
+
+        String androidJar = sdkPath.resolve("platforms").resolve("android-25").resolve("android.jar").toString();
+        String aaptCmd = buildToolsPath.resolve("aapt").toString();
+
+        Path dalvikPath = paths.getGvmPath().resolve("dalvik");
+        Files.createDirectories(dalvikPath);
+        Path dalvikSrcPath = dalvikPath.resolve("src");
+        Path dalvikClassPath = dalvikPath.resolve("class");
+        Path dalvikBinPath = dalvikPath.resolve("bin");
+
+        String unalignedApk = dalvikBinPath.resolve("hello.unanligned.apk").toString();
+        String alignedApk = dalvikBinPath.resolve("hello.apk").toString();
+
+        Files.createDirectories(dalvikSrcPath);
+        Files.createDirectories(dalvikClassPath);
+        Files.createDirectories(dalvikBinPath);
+        Path androidManifestPath = dalvikPath.resolve("AndroidManifest.xml");
+        FileOps.copyResource("/native/android/dalvik/MainActivity.java", dalvikSrcPath.resolve("MainActivity.java"));
+        FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
+
+        ProcessRunner processRunner = new ProcessRunner(java8Home + "/bin/javac", "-d", dalvikClassPath.toString(), "-source", "1.7",
+                "-target", "1.7", "-cp", dalvikSrcPath.toString(), "-bootclasspath", androidJar,
+                dalvikSrcPath.resolve("MainActivity.java").toString());
+        int res = processRunner.runProcess("dalvikCompilation");
+        ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
+                "--output="+dalvikBinPath.resolve("classes.dex"),dalvikClassPath.toString());
+        dx.runProcess("DX");
+
+        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package", "-f", "-m", "-F", unalignedApk,
+        "-M", androidManifestPath.toString(), "-I", androidJar);
+        aaptpackage.runProcess("AAPT-package");
+
+        ProcessRunner aaptAddClass = new ProcessRunner(aaptCmd, "add", unalignedApk,
+                dalvikBinPath.resolve("classes.dex").toString());
+        aaptAddClass.runProcess("AAPT-add classes");
+        Path libPath = paths.getAppPath().resolve(projectConfiguration.getAppName());
+        Path graalLibPath = dalvikBinPath.resolve("libmygraal.so");
+        Files.deleteIfExists(graalLibPath);
+        Files.copy(libPath, graalLibPath);
+        ProcessRunner aaptAddLibs = new ProcessRunner(aaptCmd, "add", unalignedApk,
+                graalLibPath.toString());
+        aaptAddLibs.runProcess("AAPT-add lib");
+
+        ProcessRunner zipAlign = new ProcessRunner(buildToolsPath.resolve("zipalign").toString(), "-f", "4", unalignedApk, alignedApk);
+        zipAlign.runProcess("zipalign");
+        return true;
+    }
+
+    @Override
+    public boolean runUntilEnd() throws IOException, InterruptedException {
+        Path sdkPath = Paths.get(sdk);
+        Path buildToolsPath = sdkPath.resolve("build-tools").resolve("27.0.3");
+
+        Path dalvikPath = paths.getGvmPath().resolve("dalvik");
+        Path dalvikSrcPath = dalvikPath.resolve("src");
+        Path dalvikClassPath = dalvikPath.resolve("class");
+        Path dalvikBinPath = dalvikPath.resolve("bin");
+
+        String unalignedApk = dalvikBinPath.resolve("hello.unanligned.apk").toString();
+        String alignedApk = dalvikBinPath.resolve("hello.apk").toString();
+        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(),"sign", "--ks",
+                "~/android.keystore" , alignedApk);
+        sign.runProcess("sign");
+
+        ProcessRunner install = new ProcessRunner(sdkPath.resolve("patform-tools").resolve("adb").toString(),
+                "install", "-r", alignedApk);
+        install.runProcess("install");
+        return true;
     }
 
     @Override
