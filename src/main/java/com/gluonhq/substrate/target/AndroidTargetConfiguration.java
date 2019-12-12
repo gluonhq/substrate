@@ -34,11 +34,18 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.ProcessRunner;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -129,13 +136,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");
         if (java8Home == null) throw new IOException("You need an ancient JDK (1.8). Set the environment property JAVA8_HOME");
-
+        if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
         super.link();
 
         Path sdkPath = Paths.get(sdk);
         Path buildToolsPath = sdkPath.resolve("build-tools").resolve("27.0.3");
 
-        String androidJar = sdkPath.resolve("platforms").resolve("android-25").resolve("android.jar").toString();
+        String androidJar = sdkPath.resolve("platforms").resolve("android-27").resolve("android.jar").toString();
         String aaptCmd = buildToolsPath.resolve("aapt").toString();
 
         Path dalvikPath = paths.getGvmPath().resolve("dalvik");
@@ -179,6 +186,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         ProcessRunner zipAlign = new ProcessRunner(buildToolsPath.resolve("zipalign").toString(), "-f", "4", unalignedApk, alignedApk);
         zipAlign.runProcess("zipalign");
+        createDevelopKeystore();
         return true;
     }
 
@@ -293,5 +301,22 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
         }
         return capPath;
+    }
+
+    private void createDevelopKeystore() {
+        try {
+            System.err.println("Create ks");
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            ks.load(null, null); //empty pwd
+            String storename = paths.getGvmPath().resolve("debugkeystore.jks").toString();
+            String pwd = "debug";
+            try (FileOutputStream fos = new FileOutputStream(storename)) {
+                ks.store(fos, pwd.toCharArray());
+            }
+            System.err.println("done creating ks");
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException kse) {
+            kse.printStackTrace();
+            throw new RuntimeException("fatal, can not create a keystore");
+        }
     }
 }
