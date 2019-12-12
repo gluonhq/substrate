@@ -94,11 +94,11 @@ public class StringsTests {
 
         assertIterableEquals(
                 Collections.emptyList(),
-                Strings.split( "", ":" ));
+                Strings.split( "" ));
 
         assertIterableEquals(
                 Collections.emptyList(),
-                Strings.split( null, ":" ));
+                Strings.split( null ));
 
     }
 
