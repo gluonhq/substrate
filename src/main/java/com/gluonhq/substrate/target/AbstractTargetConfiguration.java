@@ -106,6 +106,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         useGlisten = GlistenResolver.useGlisten(cp);
         String nativeImage = getNativeImagePath();
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
+        List<String> buildTimeList = getInitializeAtBuildTimeList(useGlisten);
+        if (!buildTimeList.isEmpty()) {
+            compileBuilder.command().add("--initialize-at-build-time=" + String.join(",", buildTimeList));
+        }
         compileBuilder.command().add("--report-unsupported-elements-at-runtime");
         compileBuilder.command().add("-Djdk.internal.lambda.eagerlyInitialize=false");
         compileBuilder.command().add("-H:+ExitAfterRelocatableImageWrite");
@@ -184,12 +188,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * not exist. In that case, retrieve the libs from our download site.
      */
     private void ensureClibs() throws IOException {
-
         Triplet target = projectConfiguration.getTargetTriplet();
         Path clibPath = getCLibPath();
         if (!Files.exists(clibPath)) {
             String url = Strings.substitute(URL_CLIBS_ZIP, Map.of("osarch", target.getOsArch()));
-            fileDeps.downloadZip(url, clibPath);
+            FileOps.downloadAndUnzip(url,
+                    clibPath.getParent().getParent(),
+                    "clibraries.zip",
+                    "clibraries",
+                    target.getOsArch2());
         }
         if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
         checkPlatformSpecificClibs(clibPath);
@@ -217,7 +224,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     */
     @Override
     public boolean link() throws IOException, InterruptedException {
-
         ensureClibs();
 
         String appName = projectConfiguration.getAppName();
@@ -692,6 +698,17 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * @return a list with link flag options
      */
     List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
-        return new ArrayList<>();
+        return Collections.emptyList();
+    }
+
+    /**
+     * Generates a list with class names that should be added to the
+     * initialize in build time flag
+     *
+     * @param useGlisten true if Glisten is used
+     * @return a list with fully qualified class names
+     */
+    List<String> getInitializeAtBuildTimeList(boolean useGlisten) {
+        return projectConfiguration.getInitBuildTimeList();
     }
 }

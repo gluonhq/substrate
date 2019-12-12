@@ -37,17 +37,13 @@ import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
+import com.gluonhq.substrate.util.Strings;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static com.gluonhq.substrate.util.Logger.logInit;
 import static com.gluonhq.substrate.util.Logger.title;
@@ -75,9 +71,9 @@ public class SubstrateDispatcher {
         config.setGraalPath(Path.of(graalVM));
         config.setAppName(appName);
         config.setTarget(targetTriplet);
-        config.setReflectionList(splitString(System.getProperty("reflectionlist")));
-        config.setJniList(splitString(System.getProperty("jnilist")));
-        config.setBundlesList(splitString(System.getProperty("bundleslist")));
+        config.setReflectionList(Strings.splitString(System.getProperty("reflectionlist")));
+        config.setJniList(Strings.splitString(System.getProperty("jnilist")));
+        config.setBundlesList(Strings.splitString(System.getProperty("bundleslist")));
         config.setVerbose(verbose);
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
@@ -141,11 +137,6 @@ public class SubstrateDispatcher {
     private static void printUsage() {
         System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
-
-    private static List<String> splitString(String s ) {
-        return s == null || s.trim().isEmpty()? Collections.emptyList() : Arrays.asList(s.split(","));
-    }
-
 
     private final InternalProjectConfiguration config;
     private final ProcessPaths paths;

@@ -29,10 +29,9 @@ package com.gluonhq.substrate.gluon;
 
 import com.gluonhq.substrate.model.ClassPath;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.stream.Stream;
+import java.util.Collections;
+import java.util.List;
 
 public class GlistenResolver {
 
@@ -44,7 +43,14 @@ public class GlistenResolver {
      * @return true if Glisten is found in the classpath
      */
     public static boolean useGlisten(String classpath) {
-        return new ClassPath(classpath).contains( s -> Path.of(s).toString().contains(GLISTEN_ARTIFACT_ID));
+        return new ClassPath(classpath).contains(s -> Path.of(s).toString().contains(GLISTEN_ARTIFACT_ID));
     }
 
+    /**
+     * List of Glisten classes that should be initialized at build time
+     * @return a list of classes
+     */
+    public static List<String> getGlistenBuildTimeClasses() {
+        return Collections.singletonList("com.gluonhq.charm.glisten.visual.MaterialDesignIcon");
+    }
 }

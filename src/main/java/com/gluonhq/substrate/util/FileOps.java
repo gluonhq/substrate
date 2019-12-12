@@ -32,10 +32,16 @@ import com.gluonhq.substrate.SubstrateDispatcher;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -51,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +67,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -365,4 +373,126 @@ public class FileOps {
         }
     }
 
+    /**
+     * Downloads a file from a given URL (non null) into a given path (non null)
+     * @param fileUrl the URL of the file
+     * @param filePath the absolute path of the file where the remote file be downloaded into
+     * @throws IOException
+     */
+    public static void downloadFile(URL fileUrl, Path filePath) throws IOException {
+        Objects.requireNonNull(fileUrl);
+        Objects.requireNonNull(filePath);
+        try (ReadableByteChannel readableByteChannel = Channels.newChannel(fileUrl.openStream());
+             FileOutputStream fileOutputStream = new FileOutputStream(filePath.toFile());
+             FileChannel fileChannel = fileOutputStream.getChannel()) {
+            fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+        } catch (IOException e) {
+            throw new IOException("Error downloading from " + fileUrl + "into " + filePath + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
+        }
+    }
+
+    /**
+     * Extracts the files from a given zip file into a target folder, and returns a map
+     * with the names of the files and their checksum values.
+     * In the case that the file is not a valid zip, the returned map will be empty.
+     * @param sourceZip the path of a non null zip file
+     * @param targetDir the path of a folder where the zip file will be extracted
+     * @return a map with the file names and their checksum values
+     * @throws IOException
+     */
+    public static Map<String, String> unzipFile(Path sourceZip, Path targetDir) throws IOException {
+        Objects.requireNonNull(sourceZip);
+        Objects.requireNonNull(targetDir);
+        if (!Files.exists(sourceZip)) {
+            throw new IOException("Error: " + sourceZip + " does not exist");
+        }
+        if (Files.isRegularFile(targetDir)) {
+            throw new IOException("Error: " + targetDir + " is not a directory");
+        }
+        if (!Files.exists(targetDir)) {
+            Files.createDirectories(targetDir);
+        }
+        Map<String, String> hashes = new HashMap<>();
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(sourceZip.toFile()))) {
+            ZipEntry zipEntry;
+            while ((zipEntry = zis.getNextEntry()) != null) {
+                Path destPath = targetDir.resolve(zipEntry.getName());
+                if (zipEntry.isDirectory()) {
+                    if (!Files.exists(destPath)) {
+                        Files.createDirectories(destPath);
+                    }
+                } else {
+                    byte[] buffer = new byte[1024];
+                    try (FileOutputStream fos = new FileOutputStream(destPath.toFile())) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                    hashes.put(destPath.getFileName().toString(), calculateCheckSum(destPath.toFile()));
+                }
+                zis.closeEntry();
+            }
+        } catch (IOException e) {
+            throw new IOException("Error unzipping from " + sourceZip + "into " + targetDir + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
+        }
+        return hashes;
+    }
+
+    /**
+     * Downloads a zip file from the specified sourceUrl into the destPath where a file
+     * named fileName will be created.
+     * Once the zip file is downloaded, it will be unpacked into the location that starts at
+     * the destPath, and is resolved under destPath/dirName/level1/...
+     * A file with the checksums of all the files in the zip will be generated with name
+     * "dirName-levelN.md5" under the final path: destPath/dirName/.../levelN/subDir-levelN.md5, or
+     * "dirName.md5" under the final path: destPath/dirName/subDir.md5, if levels are not provided.
+     *
+     * @param sourceUrl a string with the location of a zip file, e.g. https://download2.gluonhq.com/substrate/bar/foo.zip
+     * @param destPath the path where the file zip file will be downloaded, e.g. /opt/bar
+     * @param fileName the name of the file that will be downloaded, e.g. foo.zip
+     * @param dirName the folder under destPath, not null, e.g. foo1
+     * @param levels an optional number of folders under dirName
+     *               (null or empty values will be skipped),
+     *               e.g. foo2, foo3, so the zip file will be downloaded into /opt/bar/foo.zip
+     *              The contents of this zip file will be installed into
+     *              /opt/bar/foo1/foo2/foo3, and also the file
+     *               /opt/bar/foo1/foo2/foo3/foo1-foo3.md5 will be created
+     * @throws IOException
+     */
+    public static void downloadAndUnzip(String sourceUrl, Path destPath, String fileName,
+                                        String dirName, String... levels) throws IOException {
+        Objects.requireNonNull(dirName);
+
+        String md5name = levels == null ? dirName + ".md5" :
+                dirName + "-" + Arrays.asList(levels).get(levels.length - 1) + ".md5";
+        Path zipPath = destPath.resolve(fileName);
+        Logger.logDebug("Processing zip file: url = " + sourceUrl +
+                ", zip = " + zipPath +
+                ", subDir = " + dirName +
+                ", levels = " + Arrays.asList(levels) +
+                ", md5 = " + md5name);
+
+        // 1. Download zip from urlZip into zipPath
+        FileOps.downloadFile(new URL(sourceUrl), zipPath);
+
+        // 2. Set path where zip should be extracted
+        Path zipDir = destPath.resolve(dirName);
+        for (String level : levels) {
+            if (level != null && !level.isEmpty()) {
+                zipDir = zipDir.resolve(level);
+            }
+        }
+        Files.createDirectories(zipDir);
+
+        // 3. Extract zip from zipPath into zipDir
+        Map<String, String> hashes = FileOps.unzipFile(zipPath, zipDir);
+
+        // 4. Write hashes file into zipDir
+        try (FileOutputStream fos =
+                     new FileOutputStream(zipDir.resolve(md5name).toFile());
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(hashes);
+        }
+    }
 }
