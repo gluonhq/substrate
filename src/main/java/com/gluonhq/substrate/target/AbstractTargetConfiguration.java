@@ -439,22 +439,19 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return answer;
     }
 
-    private static final List<String> resourcesList = Arrays.asList(
+    private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "frag", "fxml", "css", "gls", "ttf", "xml",
             "png", "jpg", "jpeg", "gif", "bmp",
             "license", "json");
 
-    private  List<String> getResources() {
-        List<String> resources = new ArrayList<>(resourcesList);
+    private List<String> getResources() {
+        List<String> resources = RESOURCES_BY_EXTENSION.stream()
+                .map(extension -> "-H:IncludeResources=.*\\." + extension + "$")
+                .collect(Collectors.toList());
+
         resources.addAll(projectConfiguration.getResourcesList());
 
-        List<String> list = resources.stream()
-                .map(s -> "-H:IncludeResources=.*/.*" + s + "$")
-                .collect(Collectors.toList());
-        list.addAll(resources.stream()
-                .map(s -> "-H:IncludeResources=.*" + s + "$")
-                .collect(Collectors.toList()));
-        return list;
+        return resources;
     }
 
     private static final List<String> bundlesList = new ArrayList<>(Arrays.asList(
