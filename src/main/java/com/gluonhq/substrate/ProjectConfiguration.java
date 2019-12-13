@@ -60,6 +60,7 @@ public class ProjectConfiguration {
 
     private String appName;
     private String mainClassName;
+    private String compilerArgs;
 
     private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
 
@@ -208,6 +209,18 @@ public class ProjectConfiguration {
     public String getMainClassName() {
         // never null as it is required in constructor and there is no setter
         return mainClassName;
+    }
+
+    public String getCompilerArgs() {
+        return this.compilerArgs;
+    }
+
+    /**
+     * Sets compiler arguments
+     * @param compilerArgs optional compiler arguments
+     */
+    public void setCompilerArgs(String compilerArgs) {
+        this.compilerArgs = compilerArgs;
     }
 
     public IosSigningConfiguration getIosSigningConfiguration() {
