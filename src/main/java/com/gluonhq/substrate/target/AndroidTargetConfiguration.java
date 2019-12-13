@@ -150,6 +150,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path dalvikSrcPath = dalvikPath.resolve("src");
         Path dalvikClassPath = dalvikPath.resolve("class");
         Path dalvikBinPath = dalvikPath.resolve("bin");
+        Path dalvikLibPath = dalvikPath.resolve("lib");
+        Path dalvikLibArm64Path = dalvikLibPath.resolve("arm64-v8a");
 
         String unalignedApk = dalvikBinPath.resolve("hello.unanligned.apk").toString();
         String alignedApk = dalvikBinPath.resolve("hello.apk").toString();
@@ -157,6 +159,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Files.createDirectories(dalvikSrcPath);
         Files.createDirectories(dalvikClassPath);
         Files.createDirectories(dalvikBinPath);
+        Files.createDirectories(dalvikLibPath);
+        Files.createDirectories(dalvikLibArm64Path);
         Path androidManifestPath = dalvikPath.resolve("AndroidManifest.xml");
         FileOps.copyResource("/native/android/dalvik/MainActivity.java", dalvikSrcPath.resolve("MainActivity.java"));
         FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
@@ -174,15 +178,16 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         aaptpackage.runProcess("AAPT-package");
 
         ProcessRunner aaptAddClass = new ProcessRunner(aaptCmd, "add", unalignedApk,
-                dalvikBinPath.resolve("classes.dex").toString());
-        aaptAddClass.runProcess("AAPT-add classes");
+                "classes.dex");
+        aaptAddClass.runProcess("AAPT-add classes", dalvikBinPath.toFile());
         Path libPath = paths.getAppPath().resolve(projectConfiguration.getAppName());
-        Path graalLibPath = dalvikBinPath.resolve("libmygraal.so");
+        Path graalLibPath = dalvikLibArm64Path.resolve("libmygraal.so");
+ // TODO: add freetype
         Files.deleteIfExists(graalLibPath);
         Files.copy(libPath, graalLibPath);
         ProcessRunner aaptAddLibs = new ProcessRunner(aaptCmd, "add", unalignedApk,
-                graalLibPath.toString());
-        aaptAddLibs.runProcess("AAPT-add lib");
+                "lib/arm64-v8a/libmygraal.so");
+        aaptAddLibs.runProcess("AAPT-add lib", dalvikPath.toFile());
 
         ProcessRunner zipAlign = new ProcessRunner(buildToolsPath.resolve("zipalign").toString(), "-f", "4", unalignedApk, alignedApk);
         zipAlign.runProcess("zipalign");
