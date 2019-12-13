@@ -77,11 +77,24 @@ public final class Strings {
     }
 
     /**
-     * Converts a string of comma separated strings into an array of strings
+     * Safely converts a string of comma separated strings into an array of strings
+     * Returns empty list if the string is null or empty
      * @param s a string that contains comma separated strings
      * @return a list of strings
      */
-    public static List<String> splitString(String s) {
-        return s == null || s.trim().isEmpty() ? Collections.emptyList() : Arrays.asList(s.split(","));
+    public static List<String> split(String s) {
+        return split(s,",");
     }
+
+    /**
+     * Safely converts a string of 'delimiter' separated strings into an array of strings
+     * Returns empty list if the string is null or empty
+     * @param s a string that contains 'delimiter' separated strings
+     * @param delimiter delimiter used
+     * @return a list of strings
+     */
+    public static List<String> split(String s, String delimiter) {
+        return s == null || s.trim().isEmpty() ? Collections.emptyList() : Arrays.asList(s.split(delimiter));
+    }
+
 }
