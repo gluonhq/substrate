@@ -354,11 +354,9 @@ public class InternalProjectConfiguration {
         return Objects.requireNonNull(publicConfig.getAppName(), "App name is required");
     }
 
-
     public String getMainClassName() {
         return publicConfig.getMainClassName();
     }
-    
 
     public IosSigningConfiguration getIosSigningConfiguration() {
         return Optional.ofNullable(publicConfig.getIosSigningConfiguration()).orElse(new IosSigningConfiguration());
