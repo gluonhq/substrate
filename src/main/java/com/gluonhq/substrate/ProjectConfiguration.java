@@ -57,6 +57,7 @@ public class ProjectConfiguration {
     private List<String> resourcesList = Collections.emptyList();
     private List<String> reflectionList = Collections.emptyList();
     private List<String> jniList = Collections.emptyList();
+    private List<String> compilerArgs = Collections.emptyList();
 
     private String appName;
     private String mainClassName;
@@ -193,6 +194,18 @@ public class ProjectConfiguration {
         this.jniList = jniList;
     }
 
+    public List<String> getCompilerArgs() {
+        return compilerArgs;
+    }
+
+    /**
+     * Sets additional lists
+     * @param compilerArgs a list of optional compiler arguments
+     */
+    public void setCompilerArgs(List<String> compilerArgs) {
+        this.compilerArgs = compilerArgs;
+    }
+
     public String getAppName() {
         return this.appName;
     }
@@ -236,6 +249,7 @@ public class ProjectConfiguration {
                 ", resourcesList=" + resourcesList +
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
+                ", compilerArgs=" + compilerArgs +
                 ", appName='" + appName + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
