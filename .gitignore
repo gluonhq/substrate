@@ -26,3 +26,8 @@ hs_err_pid*
 build
 out
 libs
+bin
+.project
+.classpath
+.vscode
+.settings
