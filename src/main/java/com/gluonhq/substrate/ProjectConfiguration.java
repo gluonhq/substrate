@@ -57,10 +57,10 @@ public class ProjectConfiguration {
     private List<String> resourcesList = Collections.emptyList();
     private List<String> reflectionList = Collections.emptyList();
     private List<String> jniList = Collections.emptyList();
+    private List<String> compilerArgs = Collections.emptyList();
 
     private String appName;
     private String mainClassName;
-    private String compilerArgs;
 
     private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
 
@@ -194,6 +194,18 @@ public class ProjectConfiguration {
         this.jniList = jniList;
     }
 
+    public List<String> getCompilerArgs() {
+        return compilerArgs;
+    }
+
+    /**
+     * Sets additional lists
+     * @param compilerArgs a list of optional compiler arguments
+     */
+    public void setCompilerArgs(List<String> compilerArgs) {
+        this.compilerArgs = compilerArgs;
+    }
+
     public String getAppName() {
         return this.appName;
     }
@@ -209,18 +221,6 @@ public class ProjectConfiguration {
     public String getMainClassName() {
         // never null as it is required in constructor and there is no setter
         return mainClassName;
-    }
-
-    public String getCompilerArgs() {
-        return this.compilerArgs;
-    }
-
-    /**
-     * Sets compiler arguments
-     * @param compilerArgs optional compiler arguments
-     */
-    public void setCompilerArgs(String compilerArgs) {
-        this.compilerArgs = compilerArgs;
     }
 
     public IosSigningConfiguration getIosSigningConfiguration() {
@@ -249,6 +249,7 @@ public class ProjectConfiguration {
                 ", resourcesList=" + resourcesList +
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
+                ", compilerArgs=" + compilerArgs +
                 ", appName='" + appName + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +

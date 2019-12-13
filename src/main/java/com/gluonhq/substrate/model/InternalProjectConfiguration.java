@@ -308,6 +308,11 @@ public class InternalProjectConfiguration {
                 .orElse(Collections.emptyList());
     }
 
+    public List<String> getCompilerArgs() {
+        return Optional.ofNullable(publicConfig.getCompilerArgs())
+                .orElse(Collections.emptyList());
+    }
+
     public List<String> getInitBuildTimeList() {
         return initBuildTimeList;
     }
@@ -353,10 +358,7 @@ public class InternalProjectConfiguration {
     public String getMainClassName() {
         return publicConfig.getMainClassName();
     }
-
-    public String getCompilerArgs() {
-        return publicConfig.getCompilerArgs();
-    }
+    
 
     public IosSigningConfiguration getIosSigningConfiguration() {
         return Optional.ofNullable(publicConfig.getIosSigningConfiguration()).orElse(new IosSigningConfiguration());
