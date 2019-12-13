@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -80,6 +81,7 @@ public class ConfigResolver {
      */
     public List<String> getUserInitBuildTimeList(String archOs) throws IOException {
         Logger.logDebug("Scanning for init build time files");
+        Objects.requireNonNull(archOs, "archOs can't be null");
         return scanJars(USER_INIT_BUILD_TIME_FILE,
                 Strings.substitute(USER_INIT_BUILD_TIME_ARCHOS_FILE, Map.of("archOs", archOs)),
                 null,
@@ -99,6 +101,7 @@ public class ConfigResolver {
      */
     public List<String> getUserReflectionList(String archOs) throws IOException {
         Logger.logDebug("Scanning for reflection files");
+        Objects.requireNonNull(archOs, "archOs can't be null");
         return scanJars(USER_REFLECTION_FILE,
                 Strings.substitute(USER_REFLECTION_ARCHOS_FILE, Map.of("archOs", archOs)),
                 ",",
@@ -118,6 +121,7 @@ public class ConfigResolver {
      */
     public List<String> getUserJNIList(String archOs) throws IOException {
         Logger.logDebug("Scanning for JNI files");
+        Objects.requireNonNull(archOs, "archOs can't be null");
         return scanJars(USER_JNI_FILE,
                 Strings.substitute(USER_JNI_ARCHOS_FILE, Map.of("archOs", archOs)),
                 ",",
@@ -125,6 +129,8 @@ public class ConfigResolver {
     }
 
     private List<String> scanJars(String configName, String configArchosName, String initLine, Predicate<String> filter) throws IOException {
+        Objects.requireNonNull(configName, "configName can't be null");
+        Objects.requireNonNull(configArchosName, "configArchosName can't be null");
         List<String> list = new ArrayList<>();
         for (File jar : jars) {
             ZipFile zip = new ZipFile(jar);
