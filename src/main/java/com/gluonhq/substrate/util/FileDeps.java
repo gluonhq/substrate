@@ -32,33 +32,20 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectOutputStream;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 public final class FileDeps {
 
-    private static final String URL_GRAAL_LIBS = "http://download2.gluonhq.com/omega/graallibs/graalvm-svm-${host}-${version}.zip";
     private static final String JAVA_STATIC_ZIP = "labs-staticjdk-${target}-gvm-${version}.zip";
     private static final String JAVA_STATIC_URL = "http://download2.gluonhq.com/substrate/staticjdk/";
     private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static.zip";
@@ -77,7 +64,7 @@ public final class FileDeps {
 
     private final InternalProjectConfiguration configuration;
 
-    public FileDeps( InternalProjectConfiguration config ) {
+    public FileDeps(InternalProjectConfiguration config) {
         this.configuration = Objects.requireNonNull(config);
     }
 
@@ -89,7 +76,7 @@ public final class FileDeps {
      * @throws IOException in case anything goes wrong.
      */
     public Path getJavaSDKPath() throws IOException {
-        return resolvePath( configuration.getJavaStaticLibsPath(),"Fatal error, could not install Java SDK ");
+        return resolvePath(configuration.getJavaStaticLibsPath(),"Fatal error, could not install Java SDK ");
     }
 
     /**
@@ -100,7 +87,7 @@ public final class FileDeps {
      * @throws IOException in case anything goes wrong.
      */
     public Path getJavaFXSDKLibsPath() throws IOException {
-        return resolvePath( configuration.getJavafxStaticLibsPath(),"Fatal error, could not install JavaFX SDK ");
+        return resolvePath(configuration.getJavafxStaticLibsPath(),"Fatal error, could not install JavaFX SDK ");
     }
 
     /**
@@ -148,15 +135,13 @@ public final class FileDeps {
         Path defaultJavaStaticPath = configuration.getDefaultJavaStaticPath();
         boolean customJavaLocation = configuration.useCustomJavaStaticLibs();
 
-        boolean downloadGraalLibs = false, downloadJavaStatic = false, downloadJavaFXStatic = false;
-
+        boolean downloadJavaStatic = false, downloadJavaFXStatic = false;
 
         // Java Static
-        System.err.println("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
         Logger.logDebug("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
 
         if (configuration.isUseJNI()) {
-            if (! Files.isDirectory(javaStaticLibs)) {
+            if (!Files.isDirectory(javaStaticLibs)) {
                 System.err.println("Not a dir");
                 if (customJavaLocation) {
                     throw new IOException ("A location for the static sdk libs was supplied, but it doesn't exist: "+javaStaticLibs);
@@ -223,10 +208,6 @@ public final class FileDeps {
             }
         }
         try {
-//            if (downloadGraalLibs) {
-//                downloadGraalZip(SVMBridge.USER_OMEGA_PATH, configuration);
-//            }
-
             if (downloadJavaStatic) {
                 downloadJavaZip(target, Constants.USER_SUBSTRATE_PATH);
             }
@@ -280,14 +261,7 @@ public final class FileDeps {
         // we don't have the required llc. Download it and store it in llcPath.
 
         URL url = new URL(LLC_URL + llcname);
-        try (ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-             FileOutputStream fileOutputStream = new FileOutputStream(llcPath.toFile());
-             FileChannel fileChannel = fileOutputStream.getChannel()) {
-            fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-            //readableByteChannel.close();
-        } catch (IOException e) {
-            throw new IOException("Error downloading LLC from " + url + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
-        }
+        FileOps.downloadFile(url, llcPath);
         Set<PosixFilePermission> perms = new HashSet<>();
         perms.add(PosixFilePermission.OWNER_READ);
         perms.add(PosixFilePermission.OWNER_EXECUTE);
@@ -304,110 +278,39 @@ public final class FileDeps {
      * @return
      */
     private static String getChecksumFileName(Path base, String customPart, String osArch) {
-        return base.getParent().resolve( String.format("%s-%s.md5", customPart, osArch) ).toString();
+        return base.getParent().resolve(String.format("%s-%s.md5", customPart, osArch)).toString();
     }
 
     private void downloadJavaZip(String target, Path substratePath) throws IOException {
         Logger.logDebug("Process zip javaStaticSdk, target = "+target);
 
-        String javaZip = Strings.substitute( JAVA_STATIC_ZIP, Map.of(
+        String javaZip = Strings.substitute(JAVA_STATIC_ZIP, Map.of(
             "version", configuration.getJavaStaticSdkVersion(),
-            "target", target
-        ));
+            "target", target));
+        FileOps.downloadAndUnzip(JAVA_STATIC_URL + javaZip,
+                substratePath,
+                javaZip,
+                "javaStaticSdk",
+                configuration.getJavaStaticSdkVersion(),
+                configuration.getTargetTriplet().getOsArch());
 
-
-        processZip(JAVA_STATIC_URL + javaZip,
-                substratePath.resolve(javaZip),
-                "javaStaticSdk", configuration.getJavaStaticSdkVersion());
         Logger.logDebug("Processing zip java done");
     }
 
     private void downloadJavaFXZip(String osarch, Path substratePath ) throws IOException {
         Logger.logDebug("Process zip javafxStaticSdk");
 
-        String javafxZip = Strings.substitute( JAVAFX_STATIC_ZIP, Map.of(
+        String javafxZip = Strings.substitute(JAVAFX_STATIC_ZIP, Map.of(
             "version", configuration.getJavafxStaticSdkVersion(),
-            "target", osarch
-        ));
-
-        processZip(JAVAFX_STATIC_URL + javafxZip,
-                substratePath.resolve(javafxZip),
-                "javafxStaticSdk", configuration.getJavafxStaticSdkVersion());
+            "target", osarch));
+        FileOps.downloadAndUnzip(JAVAFX_STATIC_URL + javafxZip,
+                substratePath,
+                javafxZip,
+                "javafxStaticSdk",
+                configuration.getJavafxStaticSdkVersion(),
+                configuration.getTargetTriplet().getOsArch());
 
         Logger.logDebug("Process zip javafx done");
-    }
-
-    /**
-     * Download the zip file from the specified URL into the path provided by destination, and unpack it there
-     * Note the conventions for the url file (must contain .zip) and the destination (must not contain .zip,
-     * as it points to the ultimate directory that is the result of the unzip).
-     * @param urlZip the URL location of the zip file, e.g. https://download2.gluonhq.com/substrate/clibs/foo.zip
-     * @param destination the location where the zip file should be downloaded and unpacked,
-     *                    e.g. graalvm/libs/clibraries/foo
-     *                    The zip file will be installed in graalvm/libs/clibraries/foo.zip
-     *                    The contents of this zip file will be installed in graalvm/libs/clibraries/foo
-     * @throws IOException
-     */
-    public void downloadZip(String urlZip, Path destination) throws IOException {
-        String zip = destination.toAbsolutePath().toString()+".zip";
-        Path zipPath = Paths.get(zip);
-        processZip(urlZip, zipPath, destination.getFileName().toString(), null);
-    }
-
-    private void processZip(String urlZip, Path zipPath, String folder, String version) throws IOException {
-        String osArch = configuration == null? null : configuration.getTargetTriplet().getOsArch();
-        String md5name = osArch == null? folder+".md5" : folder+"-"+osArch+".md5";
-        System.err.println("PROCESS ZIP, url = "+urlZip+", zp = "+zipPath+", folder = "+folder+", version = "+version+", name = "+md5name);
-        URL url = new URL(urlZip);
-        url.openConnection();
-        try (InputStream reader = url.openStream();
-             FileOutputStream writer = new FileOutputStream(zipPath.toFile())) {
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = reader.read(buffer)) > 0) {
-                writer.write(buffer, 0, bytesRead);
-                buffer = new byte[8192];
-            }
-        }
-        Path zipDir =
-                version == null ?
-                osArch == null ?
-                        zipPath.getParent().resolve(folder) :
-                zipPath.getParent().resolve(folder).resolve(osArch) :
-                zipPath.getParent().resolve(folder).resolve(version).resolve(osArch);
-        if (! zipPath.toFile().isDirectory()) {
-            Files.createDirectories(zipDir);
-        }
-        Map<String, String> hashes = new HashMap<>();
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath.toFile()))) {
-            ZipEntry zipEntry = zis.getNextEntry();
-            while (zipEntry != null) {
-                File destFile = new File(zipDir.toFile(), zipEntry.getName());
-                if (zipEntry.isDirectory()) {
-                    if (! destFile.exists()) {
-                        Files.createDirectories(destFile.toPath());
-                    }
-                } else {
-                    byte[] buffer = new byte[1024];
-                    try (FileOutputStream fos = new FileOutputStream(destFile)) {
-                        int len;
-                        while ((len = zis.read(buffer)) > 0) {
-                            fos.write(buffer, 0, len);
-                        }
-                    }
-                    String sum = FileOps.calculateCheckSum(destFile);
-                    hashes.put(destFile.getName(), sum);
-                }
-                zipEntry = zis.getNextEntry();
-            }
-            zis.closeEntry();
-        }
-
-        try (FileOutputStream fos =
-                      new FileOutputStream(zipDir.toString() + File.separator + md5name);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(hashes);
-        }
     }
 
 }
