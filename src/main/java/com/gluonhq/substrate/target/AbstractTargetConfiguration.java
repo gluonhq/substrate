@@ -96,6 +96,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         FileOps.rmdir(paths.getTmpPath());
         String tmpDir = paths.getTmpPath().toFile().getAbsolutePath();
         String mainClassName = projectConfiguration.getMainClassName();
+        String compilerArgs = projectConfiguration.getCompilerArgs();
+
         if (mainClassName == null || mainClassName.isEmpty()) {
             throw new IllegalArgumentException("No main class is supplied. Cannot compile.");
         }
@@ -133,6 +135,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
         compileBuilder.command().add(classPath);
+        if (compilerArgs != null)
+            compileBuilder.command().add(compilerArgs);
         compileBuilder.command().add(mainClassName);
         Logger.logDebug("compile command: "+String.join(" ",compileBuilder.command()));
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());

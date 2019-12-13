@@ -354,6 +354,10 @@ public class InternalProjectConfiguration {
         return publicConfig.getMainClassName();
     }
 
+    public String getCompilerArgs() {
+        return publicConfig.getCompilerArgs();
+    }
+
     public IosSigningConfiguration getIosSigningConfiguration() {
         return Optional.ofNullable(publicConfig.getIosSigningConfiguration()).orElse(new IosSigningConfiguration());
     }
