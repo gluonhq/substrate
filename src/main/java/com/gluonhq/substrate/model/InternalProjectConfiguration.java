@@ -93,7 +93,7 @@ public class InternalProjectConfiguration {
 
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
         setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
-        setInitBuildTimeList(Strings.splitString(System.getProperty("initbuildtimelist")));
+        setInitBuildTimeList(Strings.split(System.getProperty("initbuildtimelist")));
     }
 
     public Path getGraalPath() {
