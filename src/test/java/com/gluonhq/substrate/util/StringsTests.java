@@ -27,13 +27,15 @@
  */
 package com.gluonhq.substrate.util;
 
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class StringsTests {
 
@@ -65,5 +67,40 @@ public class StringsTests {
         assertThrows( NullPointerException.class,
                 () -> Strings.substitute(template, (Map<String, String>) null) );
     }
+
+    @Test
+    void testSplit() {
+
+        assertIterableEquals(
+            Arrays.asList("aaa","bbb","ccc"),
+            Strings.split( "aaa:bbb:ccc", ":" ));
+
+        assertIterableEquals(
+                Collections.emptyList(),
+                Strings.split( "", ":" ));
+
+        assertIterableEquals(
+                Collections.emptyList(),
+                Strings.split( null, ":" ));
+
+    }
+
+    @Test
+    void testCommaSplit() {
+
+        assertIterableEquals(
+                Arrays.asList("aaa","bbb","ccc"),
+                Strings.split( "aaa,bbb,ccc"));
+
+        assertIterableEquals(
+                Collections.emptyList(),
+                Strings.split( "" ));
+
+        assertIterableEquals(
+                Collections.emptyList(),
+                Strings.split( null ));
+
+    }
+
 
 }
