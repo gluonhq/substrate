@@ -133,16 +133,20 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private void validateVersion(String[] processCommand, String processName, Version minimalVersion) throws InterruptedException, IOException {
         String versionLine = getFirstLineFromProcess(processCommand);
         if (versionLine == null) {
-            System.err.println("WARNING: we were unable to parse the version of your " + processName + ".\n" +
+            System.err.println(
+                    "WARNING: we were unable to parse the version of your " + processName + ".\n" +
                     "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is " + minimalVersion + ".");
         } else {
             VersionParser versionParser = new VersionParser();
             Version version = versionParser.parseVersion(versionLine);
             if (version == null) {
-                System.err.println("WARNING: we were unable to parse the version of your " + processName + ": \"" + versionLine + "\".\n" +
+                System.err.println(
+                        "WARNING: we were unable to parse the version of your " + processName + ": \"" + versionLine + "\".\n" +
                         "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is \"" + minimalVersion + "\".");
             } else if (version.compareTo(minimalVersion) < 0) {
-                System.err.println("ERROR: The version of your " + processName + ": \"" + version + "\", does not match the minimal required version: \"" + minimalVersion + "\".");
+                System.err.println(
+                        "ERROR: The version of your " + processName + ": \"" + version + "\", does not match the minimal required version: \"" + minimalVersion + "\".\n" +
+                        "       Please check https://docs.gluonhq.com/client/#_linux and make sure that your environment meets the requirements.");
                 throw new IllegalArgumentException(processCommand[0] + " version too old");
             }
         }
