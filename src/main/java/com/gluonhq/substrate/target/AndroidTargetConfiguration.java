@@ -31,6 +31,7 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.ProcessRunner;
 
@@ -182,11 +183,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         aaptAddClass.runProcess("AAPT-add classes", dalvikBinPath.toFile());
         Path libPath = paths.getAppPath().resolve(projectConfiguration.getAppName());
         Path graalLibPath = dalvikLibArm64Path.resolve("libmygraal.so");
- // TODO: add freetype
         Files.deleteIfExists(graalLibPath);
         Files.copy(libPath, graalLibPath);
+        Path freetypeLibPath = dalvikLibArm64Path.resolve("libfreetype.so");
+        Files.deleteIfExists(freetypeLibPath);
+        Files.copy(fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so"), freetypeLibPath);
         ProcessRunner aaptAddLibs = new ProcessRunner(aaptCmd, "add", unalignedApk,
-                "lib/arm64-v8a/libmygraal.so");
+                "lib/arm64-v8a/libmygraal.so","lib/arm64-v8a/libfreetype.so" );
         aaptAddLibs.runProcess("AAPT-add lib", dalvikPath.toFile());
 
         ProcessRunner zipAlign = new ProcessRunner(buildToolsPath.resolve("zipalign").toString(), "-f", "4", unalignedApk, alignedApk);
