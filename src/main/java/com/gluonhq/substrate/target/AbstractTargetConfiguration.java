@@ -124,7 +124,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (projectConfiguration.isVerbose()) {
             compileBuilder.command().add("-H:+PrintAnalysisCallTree");
         }
-        compileBuilder.command().addAll(getResources());
+        compileBuilder.command().addAll(getIncludeResourcesArguments());
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
             String bundles = String.join(",", getBundlesList());
@@ -444,14 +444,19 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "png", "jpg", "jpeg", "gif", "bmp",
             "license", "json");
 
-    private List<String> getResources() {
-        List<String> resources = RESOURCES_BY_EXTENSION.stream()
+    private List<String> getIncludeResourcesArguments() {
+        List<String> resourcesByExtension = RESOURCES_BY_EXTENSION.stream()
                 .map(extension -> "-H:IncludeResources=.*\\." + extension + "$")
                 .collect(Collectors.toList());
 
-        resources.addAll(projectConfiguration.getResourcesList());
+        List<String> configurationResources = projectConfiguration.getResourcesList().stream()
+                .map(resource -> "-H:IncludeResources=" + resource)
+                .collect(Collectors.toList());
 
-        return resources;
+        List<String> includeResourcesArguments = new ArrayList<>();
+        includeResourcesArguments.addAll(resourcesByExtension);
+        includeResourcesArguments.addAll(configurationResources);
+        return includeResourcesArguments;
     }
 
     private static final List<String> bundlesList = new ArrayList<>(Arrays.asList(
