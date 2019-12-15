@@ -55,12 +55,31 @@ class ConfigTests {
     }
 
     @Test
+    void testInitBuildNullArch() throws IOException {
+        List<String> initList = resolver.getUserInitBuildTimeList(null);
+        assertNotNull(initList);
+        assertEquals(1, initList.size());
+        assertTrue(initList.contains("this.is.a.test"));
+    }
+
+    @Test
     void testInitBuild() throws IOException {
         List<String> initList = resolver.getUserInitBuildTimeList("test");
         assertNotNull(initList);
         assertEquals(2, initList.size());
         assertTrue(initList.contains("this.is.a.test"));
         assertTrue(initList.contains("this.is.a.target.test"));
+    }
+
+    @Test
+    void testReflectionNullArch() throws IOException {
+        List<String> reflectionList = resolver.getUserReflectionList(null);
+        assertNotNull(reflectionList);
+        assertEquals(5, reflectionList.size());
+        assertTrue(reflectionList.stream()
+                .anyMatch(s -> "\"name\":\"this.is.a.test\",".equals(s.trim())));
+        assertTrue(reflectionList.stream()
+                .anyMatch(s -> "\"methods\":[{\"name\":\"test\",\"parameterTypes\":[\"int\"] }]".equals(s.trim())));
     }
 
     @Test
@@ -72,6 +91,18 @@ class ConfigTests {
                 .anyMatch(s -> "\"name\":\"this.is.a.target.test\",".equals(s.trim())));
         assertTrue(reflectionList.stream()
                 .anyMatch(s -> "\"methods\":[{\"name\":\"test\",\"parameterTypes\":[\"int\"] }]".equals(s.trim())));
+    }
+
+    @Test
+    void testJNINullArch() throws IOException {
+        List<String> jniList = resolver.getUserJNIList(null);
+        assertNotNull(jniList);
+        assertEquals(5, jniList.size());
+        assertTrue(jniList.stream()
+                .anyMatch(s -> "\"name\":\"this.is.a.test\",".equals(s.trim())));
+        assertEquals(1, jniList.stream()
+                .filter(s -> ",".equals(s.trim()))
+                .count());
     }
 
     @Test

@@ -75,15 +75,15 @@ public class ConfigResolver {
      *
      * The method will return a list of class names from all the files found
      *
-     * @param archOs a string with the arch and os
+     * @param archOs a string with the arch and os, it can be null
      * @return a list of classes that should be initialized at build time
      * @throws IOException
      */
     public List<String> getUserInitBuildTimeList(String archOs) throws IOException {
         Logger.logDebug("Scanning for init build time files");
-        Objects.requireNonNull(archOs, "archOs can't be null");
         return scanJars(USER_INIT_BUILD_TIME_FILE,
-                Strings.substitute(USER_INIT_BUILD_TIME_ARCHOS_FILE, Map.of("archOs", archOs)),
+                archOs == null ?
+                        null : Strings.substitute(USER_INIT_BUILD_TIME_ARCHOS_FILE, Map.of("archOs", archOs)),
                 null,
                 null);
     }
@@ -95,15 +95,15 @@ public class ConfigResolver {
      *
      * The method will return a list of lines from all the files found
      *
-     * @param archOs a string with the arch and os
+     * @param archOs a string with the arch and os, it can be null
      * @return a list of lines that should be added to the reflectionconfig.json file
      * @throws IOException
      */
     public List<String> getUserReflectionList(String archOs) throws IOException {
         Logger.logDebug("Scanning for reflection files");
-        Objects.requireNonNull(archOs, "archOs can't be null");
         return scanJars(USER_REFLECTION_FILE,
-                Strings.substitute(USER_REFLECTION_ARCHOS_FILE, Map.of("archOs", archOs)),
+                archOs == null ?
+                        null : Strings.substitute(USER_REFLECTION_ARCHOS_FILE, Map.of("archOs", archOs)),
                 ",",
                 line -> !line.startsWith("[") && !line.startsWith("]"));
     }
@@ -115,22 +115,21 @@ public class ConfigResolver {
      *
      * The method will return a list of lines from all the files found
      *
-     * @param archOs a string with the arch and os
+     * @param archOs a string with the arch and os, it can be null
      * @return a list of lines that should be added to the jniconfig.json file
      * @throws IOException
      */
     public List<String> getUserJNIList(String archOs) throws IOException {
         Logger.logDebug("Scanning for JNI files");
-        Objects.requireNonNull(archOs, "archOs can't be null");
         return scanJars(USER_JNI_FILE,
-                Strings.substitute(USER_JNI_ARCHOS_FILE, Map.of("archOs", archOs)),
+                archOs == null ?
+                        null : Strings.substitute(USER_JNI_ARCHOS_FILE, Map.of("archOs", archOs)),
                 ",",
                 line -> !line.startsWith("[") && !line.startsWith("]"));
     }
 
     private List<String> scanJars(String configName, String configArchosName, String initLine, Predicate<String> filter) throws IOException {
         Objects.requireNonNull(configName, "configName can't be null");
-        Objects.requireNonNull(configArchosName, "configArchosName can't be null");
         List<String> list = new ArrayList<>();
         for (File jar : jars) {
             ZipFile zip = new ZipFile(jar);
@@ -140,7 +139,7 @@ public class ConfigResolver {
                 String name = zipEntry.getName();
                 if (!zipEntry.isDirectory() &&
                         ((META_INF_SUBSTRATE_CONFIG + configName).equals(name) ||
-                                (META_INF_SUBSTRATE_CONFIG + configArchosName).equals(name))) {
+                            (configArchosName != null && (META_INF_SUBSTRATE_CONFIG + configArchosName).equals(name)))) {
                     if (initLine != null) {
                         // first line content before adding the file's content
                         list.add(initLine);
