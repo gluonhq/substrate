@@ -82,8 +82,7 @@ public class ConfigResolver {
     public List<String> getUserInitBuildTimeList(String archOs) throws IOException {
         Logger.logDebug("Scanning for init build time files");
         return scanJars(USER_INIT_BUILD_TIME_FILE,
-                archOs == null ?
-                        null : Strings.substitute(USER_INIT_BUILD_TIME_ARCHOS_FILE, Map.of("archOs", archOs)),
+                getFileNameForArchOs(USER_INIT_BUILD_TIME_ARCHOS_FILE, archOs),
                 null,
                 null);
     }
@@ -102,8 +101,7 @@ public class ConfigResolver {
     public List<String> getUserReflectionList(String archOs) throws IOException {
         Logger.logDebug("Scanning for reflection files");
         return scanJars(USER_REFLECTION_FILE,
-                archOs == null ?
-                        null : Strings.substitute(USER_REFLECTION_ARCHOS_FILE, Map.of("archOs", archOs)),
+                getFileNameForArchOs(USER_REFLECTION_ARCHOS_FILE, archOs),
                 ",",
                 line -> !line.startsWith("[") && !line.startsWith("]"));
     }
@@ -122,8 +120,7 @@ public class ConfigResolver {
     public List<String> getUserJNIList(String archOs) throws IOException {
         Logger.logDebug("Scanning for JNI files");
         return scanJars(USER_JNI_FILE,
-                archOs == null ?
-                        null : Strings.substitute(USER_JNI_ARCHOS_FILE, Map.of("archOs", archOs)),
+                getFileNameForArchOs(USER_JNI_ARCHOS_FILE, archOs),
                 ",",
                 line -> !line.startsWith("[") && !line.startsWith("]"));
     }
@@ -151,4 +148,10 @@ public class ConfigResolver {
         }
         return list;
     }
+
+    private String getFileNameForArchOs(String userFileName, String archOs) {
+        return archOs == null ?
+                null : Strings.substitute(userFileName, Map.of("archOs", archOs));
+    }
+
 }
