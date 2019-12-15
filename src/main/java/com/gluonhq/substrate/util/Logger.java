@@ -38,6 +38,7 @@ public class Logger {
     private static final java.util.logging.Logger LOGGER = java.util.logging.Logger.getLogger(Logger.class.getName());
     private static ConsoleHandler consoleHandler;
     private static FileHandler fileHandler;
+    private static String logDirectory;
 
     public static void logInfo(String s) {
         LOGGER.info(s);
@@ -53,8 +54,8 @@ public class Logger {
 
     public static void logSevere(String s) {
         LOGGER.severe(s + "\n" +
-                "Check the log files under $buildDir/client/$os-$arch/gvm/log.\n" +
-                "And please check https://docs.gluonhq.com/client/ for more information.");
+                "Check the log files under "+logDirectory +
+                "\nAnd please check https://docs.gluonhq.com/client/ for more information.");
     }
 
     /**
@@ -71,6 +72,7 @@ public class Logger {
 
     public static void logInit(String logPath, String message, boolean verbose) {
         System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc][%4$s] %5$s%n"); // [Date][Level] Message
+        logDirectory = logPath;
 
         LOGGER.setLevel(Level.ALL);
         LOGGER.setUseParentHandlers(false);
