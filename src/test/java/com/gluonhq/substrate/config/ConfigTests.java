@@ -28,7 +28,6 @@
 package com.gluonhq.substrate.config;
 
 import com.gluonhq.substrate.util.FileOps;
-import com.gluonhq.substrate.util.Strings;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
