@@ -121,6 +121,10 @@ int start_logger(const char *app_name)
     return 0;
 }
 
+void determineCPUFeatures() {
+fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
+}
+
 void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
 fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_INIT\n");
 }
