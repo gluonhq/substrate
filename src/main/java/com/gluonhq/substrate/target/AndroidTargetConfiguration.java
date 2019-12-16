@@ -317,7 +317,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             System.err.println("done creating ks");
         } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException kse) {
             kse.printStackTrace();
-            throw new RuntimeException("fatal, can not create a keystore");
+            throw new IllegalArgumentException("fatal, can not create a keystore", kse);
         }
     }
 }
