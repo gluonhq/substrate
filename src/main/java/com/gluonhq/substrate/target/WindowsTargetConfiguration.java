@@ -62,6 +62,16 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    void postProcessCompilerArguments(List<String> arguments) {
+        for (int i = 0; i < arguments.size(); i++) {
+            String argument = arguments.get(i);
+            if (argument.contains("=")) {
+                arguments.set(i, "\"" + argument + "\"");
+            }
+        }
+    }
+
+    @Override
     String getCompiler() {
         return "cl";
     }
