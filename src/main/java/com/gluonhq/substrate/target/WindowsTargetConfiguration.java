@@ -76,6 +76,11 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    String processClassPath(String cp) {
+        return "\"" + cp + "\"";
+    }
+
+    @Override
     String getCompiler() {
         return "cl";
     }
