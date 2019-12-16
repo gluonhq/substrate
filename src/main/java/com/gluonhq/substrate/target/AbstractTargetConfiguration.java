@@ -222,7 +222,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     void checkPlatformSpecificClibs(Path clibPath) throws IOException {}
 
-    private Path getCLibPath( ) {
+    private Path getCLibPath() {
         Triplet target = projectConfiguration.getTargetTriplet();
         return projectConfiguration.getGraalPath()
                 .resolve("lib")
@@ -289,7 +289,16 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add(getLinkLibraryPathOption() + getCLibPath());
     }
 
-    private void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
+    /**
+     * Add the location of the java static libraries to the linker command.
+     * 
+     * <p>By default, the java static libraries will be loaded from {@link FileDeps#getJavaSDKPath()}.
+     * Targets can choose to override this to specify a different path when linking the
+     * java static libraries.</p>
+     *
+     * @param linkBuilder A ProcessBuilder instance to add the path to the java static libraries to.
+     */
+    void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
         Path javaSDKPath = fileDeps.getJavaSDKPath();
         linkBuilder.command().add(getLinkLibraryPathOption() + javaSDKPath);
     }
