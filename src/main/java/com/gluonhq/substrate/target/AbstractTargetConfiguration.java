@@ -133,6 +133,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add(classPath);
         compileBuilder.command().addAll(projectConfiguration.getCompilerArgs());
         compileBuilder.command().add(mainClassName);
+
+        postProcessCompilerArguments(compileBuilder.command());
+
         Logger.logDebug("compile command: "+String.join(" ",compileBuilder.command()));
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
         compileBuilder.directory(workDir.toFile());
@@ -166,6 +169,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     // by default, we allow the HTTPS protocol, but subclasses can decide against it.
     boolean allowHttps() {
         return true;
+    }
+
+    /**
+     * Apply post-processing to the arguments for the compiler command.
+     *
+     * @param arguments the list of arguments of the compiler command.
+     */
+    void postProcessCompilerArguments(List<String> arguments) {
+        // no post processing is required by default
     }
 
     private String getJniPlatform( String os ) {
