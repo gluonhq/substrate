@@ -71,9 +71,9 @@ public class SubstrateDispatcher {
         config.setGraalPath(Path.of(graalVM));
         config.setAppName(appName);
         config.setTarget(targetTriplet);
-        config.setReflectionList(Strings.splitString(System.getProperty("reflectionlist")));
-        config.setJniList(Strings.splitString(System.getProperty("jnilist")));
-        config.setBundlesList(Strings.splitString(System.getProperty("bundleslist")));
+        config.setReflectionList(Strings.split(System.getProperty("reflectionlist")));
+        config.setJniList(Strings.split(System.getProperty("jnilist")));
+        config.setBundlesList(Strings.split(System.getProperty("bundleslist")));
         config.setVerbose(verbose);
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");

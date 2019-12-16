@@ -70,7 +70,7 @@ import java.util.stream.Stream;
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
     private static final String URL_CLIBS_ZIP = "http://download2.gluonhq.com/substrate/clibs/${osarch}.zip";
-    private static final List<String> RESOURCES_LIST = Arrays.asList(
+    private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "frag", "fxml", "css", "gls", "ttf", "xml",
             "png", "jpg", "jpeg", "gif", "bmp",
             "license", "json");
@@ -118,6 +118,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         FileOps.rmdir(paths.getTmpPath());
         String tmpDir = paths.getTmpPath().toFile().getAbsolutePath();
         String mainClassName = projectConfiguration.getMainClassName();
+
         if (mainClassName == null || mainClassName.isEmpty()) {
             throw new IllegalArgumentException("No main class is supplied. Cannot compile.");
         }
@@ -146,7 +147,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (projectConfiguration.isVerbose()) {
             compileBuilder.command().add("-H:+PrintAnalysisCallTree");
         }
-        compileBuilder.command().addAll(getResources());
+        compileBuilder.command().addAll(getIncludeResourcesArguments());
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
             String bundles = String.join(",", getBundlesList());
@@ -155,8 +156,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
         compileBuilder.command().add(classPath);
+        compileBuilder.command().addAll(projectConfiguration.getCompilerArgs());
         compileBuilder.command().add(mainClassName);
-        Logger.logDebug("compile command: "+String.join(" ",compileBuilder.command()));
+
+        postProcessCompilerArguments(compileBuilder.command());
+
+        Logger.logDebug("compile command: " + String.join(" ", compileBuilder.command()));
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
         compileBuilder.directory(workDir.toFile());
         compileBuilder.redirectErrorStream(true);
@@ -441,17 +446,19 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return answer;
     }
 
-    private List<String> getResources() {
-        List<String> resources = new ArrayList<>(RESOURCES_LIST);
-        resources.addAll(projectConfiguration.getResourcesList());
-
-        List<String> list = resources.stream()
-                .map(s -> "-H:IncludeResources=.*/.*" + s + "$")
+    private List<String> getIncludeResourcesArguments() {
+        List<String> resourcesByExtension = RESOURCES_BY_EXTENSION.stream()
+                .map(extension -> "-H:IncludeResources=.*\\." + extension + "$")
                 .collect(Collectors.toList());
-        list.addAll(resources.stream()
-                .map(s -> "-H:IncludeResources=.*" + s + "$")
-                .collect(Collectors.toList()));
-        return list;
+
+        List<String> configurationResources = projectConfiguration.getResourcesList().stream()
+                .map(resource -> "-H:IncludeResources=" + resource)
+                .collect(Collectors.toList());
+
+        List<String> includeResourcesArguments = new ArrayList<>();
+        includeResourcesArguments.addAll(resourcesByExtension);
+        includeResourcesArguments.addAll(configurationResources);
+        return includeResourcesArguments;
     }
 
     private List<String> getBundlesList() {
@@ -674,6 +681,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     String getLinkLibraryPathOption() {
         return "-L";
+    }
+
+    /**
+     * Apply post-processing to the arguments for the compiler command.
+     *
+     * @param arguments the list of arguments of the compiler command.
+     */
+    void postProcessCompilerArguments(List<String> arguments) {
+        // no post processing is required by default
     }
 
     /**

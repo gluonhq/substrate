@@ -1,0 +1,14 @@
+<?xml version='1.0'?>
+<manifest xmlns:a='http://schemas.android.com/apk/res/android' package='com.gluonhq.helloandroid' a:versionCode='1' a:versionName='1.0'>
+    <supports-screens a:xlargeScreens="true"/>
+    <uses-sdk a:minSdkVersion="21" a:targetSdkVersion="21"/>
+    <application a:label='A HelloGraal'>
+        <activity a:name='com.gluonhq.helloandroid.MainActivity' a:configChanges="orientation|keyboardHidden">
+             <intent-filter>
+                <category a:name='android.intent.category.LAUNCHER'/>
+                <action a:name='android.intent.action.MAIN'/>
+             </intent-filter>
+        </activity>
+    </application>
+</manifest>
+
