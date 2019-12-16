@@ -180,6 +180,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * @param arguments the list of arguments of the compiler command.
      */
     void postProcessCompilerArguments(List<String> arguments) {
+        // no post processing is required by default
     }
 
     private String getJniPlatform( String os ) {
