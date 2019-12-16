@@ -31,7 +31,6 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
-import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.ProcessRunner;
 
@@ -40,13 +39,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -169,7 +165,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner processRunner = new ProcessRunner(java8Home + "/bin/javac", "-d", dalvikClassPath.toString(), "-source", "1.7",
                 "-target", "1.7", "-cp", dalvikSrcPath.toString(), "-bootclasspath", androidJar,
                 dalvikSrcPath.resolve("MainActivity.java").toString());
-        int res = processRunner.runProcess("dalvikCompilation");
+        processRunner.runProcess("dalvikCompilation");
         ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
                 "--output="+dalvikBinPath.resolve("classes.dex"),dalvikClassPath.toString());
         dx.runProcess("DX");
@@ -204,11 +200,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path buildToolsPath = sdkPath.resolve("build-tools").resolve("27.0.3");
 
         Path dalvikPath = paths.getGvmPath().resolve("dalvik");
-        Path dalvikSrcPath = dalvikPath.resolve("src");
-        Path dalvikClassPath = dalvikPath.resolve("class");
         Path dalvikBinPath = dalvikPath.resolve("bin");
 
-        String unalignedApk = dalvikBinPath.resolve("hello.unanligned.apk").toString();
         String alignedApk = dalvikBinPath.resolve("hello.apk").toString();
         ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(),"sign", "--ks",
                 "~/android.keystore" , alignedApk);
