@@ -61,6 +61,10 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         return false;
     }
 
+    /**
+     * The arguments to native-image.cmd must be wrapped in double quotes when the
+     * argument contains the '=' character.
+     */
     @Override
     void postProcessCompilerArguments(List<String> arguments) {
         for (int i = 0; i < arguments.size(); i++) {
