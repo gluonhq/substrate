@@ -7,14 +7,20 @@ if [[ ! -s sonatype.gpg ]]
 fi
 
 ./gradlew publish --info -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD -Psigning.keyId=$GPG_KEYNAME -Psigning.password=$GPG_PASSPHRASE -Psigning.secretKeyRingFile=sonatype.gpg
+gradlew_return_code=$?
 
-# Update version by 1
-newVersion=${TRAVIS_TAG%.*}.$((${TRAVIS_TAG##*.} + 1))
-
-# Replace version = TRAVIS_TAG
-# with 
-# version = newVersion-SNAPSHOT
-sed -i -z "0,/version = $TRAVIS_TAG/s//version = $newVersion-SNAPSHOT/" gradle.properties
-
-git commit gradle.properties -m "Upgrade version to $newVersion-SNAPSHOT" --author "Github Bot <githubbot@gluonhq.com>"
-git push https://gluon-bot:$GITHUB_PASSWORD@github.com/gluonhq/substrate HEAD:master
+if [[ $gradlew_return_code -eq 0 ]]
+then
+  # Update version by 1
+  newVersion=${TRAVIS_TAG%.*}.$((${TRAVIS_TAG##*.} + 1))
+  
+  # Replace version = TRAVIS_TAG
+  # with 
+  # version = newVersion-SNAPSHOT
+  sed -i -z "0,/version = $TRAVIS_TAG/s//version = $newVersion-SNAPSHOT/" gradle.properties
+  
+  git commit gradle.properties -m "Upgrade version to $newVersion-SNAPSHOT" --author "Gluon Bot <githubbot@gluonhq.com>"
+  git push https://gluon-bot:$GITHUB_PASSWORD@github.com/gluonhq/substrate HEAD:master
+else
+  echo "Failed to publish artifacts"
+fi
