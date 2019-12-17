@@ -34,9 +34,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
+abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
 
-    public PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+    PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
     }
 
