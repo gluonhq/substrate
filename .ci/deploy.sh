@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Exit immediately if any command in the script fails
+set -e
+
 openssl aes-256-cbc -K $encrypted_da16bb6c74a0_key -iv $encrypted_da16bb6c74a0_iv -in .ci/sonatype.gpg.enc -out sonatype.gpg -d
 if [[ ! -s sonatype.gpg ]]
    then echo "Decryption failed."
@@ -16,5 +19,5 @@ newVersion=${TRAVIS_TAG%.*}.$((${TRAVIS_TAG##*.} + 1))
 # version = newVersion-SNAPSHOT
 sed -i -z "0,/version = $TRAVIS_TAG/s//version = $newVersion-SNAPSHOT/" gradle.properties
 
-git commit gradle.properties -m "Upgrade version to $newVersion-SNAPSHOT" --author "Github Bot <githubbot@gluonhq.com>"
+git commit gradle.properties -m "Upgrade version to $newVersion-SNAPSHOT" --author "Gluon Bot <githubbot@gluonhq.com>"
 git push https://gluon-bot:$GITHUB_PASSWORD@github.com/gluonhq/substrate HEAD:master
