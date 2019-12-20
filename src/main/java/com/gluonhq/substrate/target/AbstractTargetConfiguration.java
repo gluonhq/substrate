@@ -28,8 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.gluon.AttachResolver;
-import com.gluonhq.substrate.gluon.GlistenResolver;
+import com.gluonhq.substrate.config.ConfigResolver;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
@@ -83,9 +82,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     final InternalProjectConfiguration projectConfiguration;
     final ProcessPaths paths;
 
-    private List<String> attachList = Collections.emptyList();
+    private ConfigResolver configResolver;
     private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
-    private boolean useGlisten = false;
 
     AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         this.projectConfiguration = configuration;
@@ -125,11 +123,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (cp == null || cp.isEmpty()) {
             throw new IllegalArgumentException("No classpath specified. Cannot compile");
         }
-        attachList = AttachResolver.attachServices(cp);
-        useGlisten = GlistenResolver.useGlisten(cp);
+        configResolver = new ConfigResolver(cp);
         String nativeImage = getNativeImagePath();
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
-        List<String> buildTimeList = getInitializeAtBuildTimeList(useGlisten);
+        List<String> buildTimeList = getInitializeAtBuildTimeList(suffix);
         if (!buildTimeList.isEmpty()) {
             compileBuilder.command().add("--initialize-at-build-time=" + String.join(",", buildTimeList));
         }
@@ -426,9 +423,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             if (usePrismSW) {
                 answer.add(Constants.REFLECTION_JAVAFXSW_FILE);
             }
-            if (useGlisten) {
-                answer.add(Constants.REFLECTION_GLISTEN_FILE);
-            }
         }
         return answer;
     }
@@ -489,10 +483,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     bw.write(line + "\n");
                 }
             }
-            for (String attachClass : attachList) {
-                bw.write(",\n");
-                writeInitEntry(bw, attachClass);
+
+            for (String line : configResolver.getUserReflectionList(suffix)) {
+                bw.write(line + "\n");
             }
+
             for (String javaClass : projectConfiguration.getReflectionList()) {
                 writeEntry(bw, javaClass);
             }
@@ -523,6 +518,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     bw.write(line + "\n");
                 }
             }
+
+            for (String line : configResolver.getUserJNIList(suffix)) {
+                bw.write(line + "\n");
+            }
+
             for (String javaClass : projectConfiguration.getJniList()) {
                 writeEntry(bw, javaClass);
             }
@@ -554,13 +554,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         } else {
             bw.write("\n");
         }
-        bw.write("  }\n");
-    }
-
-    private static void writeInitEntry(BufferedWriter bw, String javaClass) throws IOException {
-        bw.write("  {\n");
-        bw.write("    \"name\" : \"" + javaClass + "\",\n");
-        bw.write("    \"methods\":[{\"name\":\"<init>\",\"parameterTypes\":[] }]\n");
         bw.write("  }\n");
     }
 
@@ -754,11 +747,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * Generates a list with class names that should be added to the
      * initialize in build time flag
      *
-     * @param useGlisten true if Glisten is used
      * @return a list with fully qualified class names
      */
-    List<String> getInitializeAtBuildTimeList(boolean useGlisten) {
-        return projectConfiguration.getInitBuildTimeList();
+    private List<String> getInitializeAtBuildTimeList(String suffix) throws IOException {
+        List<String> list = new ArrayList<>(projectConfiguration.getInitBuildTimeList());
+        list.addAll(configResolver.getUserInitBuildTimeList(suffix));
+        return list;
     }
     
 }
