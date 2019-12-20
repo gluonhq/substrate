@@ -20,8 +20,6 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
-import java.util.concurrent.*;
-
 public class MainActivity extends Activity implements SurfaceHolder.Callback,
         SurfaceHolder.Callback2 {
 
