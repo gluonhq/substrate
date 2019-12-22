@@ -17,6 +17,8 @@
 extern int *run_main(int argc, char* argv[]);
 
 extern void requestGlassToRedraw();
+extern void android_setNativeWindow(ANativeWindow* nativeWindow);
+extern void android_setDensity(float nativeDensity);
 
 ANativeWindow *window;
 jfloat density;
@@ -52,6 +54,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurfa
 (JNIEnv *env, jobject activity, jobject surface) {
     LOGE(stderr, "nativeSetSurface called, env at %p and size %ld, surface at %p\n", env, sizeof(JNIEnv), surface);
     window = ANativeWindow_fromSurface(env, surface);
+    android_setNativeWindow(window);
     LOGE(stderr, "native setSurface Ready, native window at %p\n", window);
 }
 
@@ -59,6 +62,8 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
 (JNIEnv *env, jobject activity, jobject surface, jfloat mydensity) {
     LOGE(stderr, "SurfaceReady, surface at %p\n", surface);
     window = ANativeWindow_fromSurface(env, surface);
+    android_setNativeWindow(window);
+    android_setDensity(mydensity);
     LOGE(stderr, "SurfaceReady, native window at %p\n", window);
     density = mydensity;
     return (jlong)window;
