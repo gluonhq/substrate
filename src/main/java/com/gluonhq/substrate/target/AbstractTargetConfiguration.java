@@ -357,7 +357,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         checkPlatformSpecificClibs(clibPath);
     }
 
-    private Path getCLibPath() {
+    protected Path getCLibPath() {
         Triplet target = projectConfiguration.getTargetTriplet();
         return projectConfiguration.getGraalPath()
                 .resolve("lib")

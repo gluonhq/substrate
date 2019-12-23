@@ -39,8 +39,15 @@ import java.util.stream.Collectors;
 public class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
     private static final List<String> darwinLibs = Arrays.asList(
-            "-llibchelper", "-lpthread",
+            "-lpthread",
             "-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
+
+    private static final List<String> staticJavaLibs = Arrays.asList(
+            "java", "nio", "zip", "net", "j2pkcs11", "sunec", "extnet"
+    );
+    private static final List<String> staticJvmLibs = Arrays.asList(
+            "jvm", "strictmath", "libchelper"
+    );
 
     public DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
@@ -79,10 +86,21 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        return List.of(
-            "-Wl,-Bstatic", "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstrictmath", "-lj2pkcs11", "-lsunec", "-lextnet",
-            "-Wl,-Bdynamic", "-lz", "-ldl", "-lstdc++"
-        );
+        String staticJavaPrefix = projectConfiguration.getGraalPath().resolve("lib").toString();
+        List<String> staticJavaLibraries = staticJavaLibs.stream()
+                .map(lib -> staticJavaPrefix + "/lib" + lib + ".a")
+                .collect(Collectors.toList());
+
+        String staticJvmPrefix = getCLibPath().toString();
+        List<String> staticJvmLibraries = staticJvmLibs.stream()
+                .map(lib -> staticJvmPrefix + "/lib" + lib + ".a")
+                .collect(Collectors.toList());
+
+        List<String> targetLibraries = new ArrayList<>();
+        targetLibraries.addAll(staticJavaLibraries);
+        targetLibraries.addAll(staticJvmLibraries);
+        targetLibraries.addAll(Arrays.asList("-lz", "-ldl", "-lstdc++"));
+        return targetLibraries;
     }
 
     @Override
@@ -92,9 +110,8 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
                 .collect(Collectors.toList());
     }
 
-    private static final List<String> macoslibs = Arrays.asList("-lffi",
-            "-lpthread", "-lz", "-ldl", "-lstrictmath", "-llibchelper",
-            "-ljava", "-lnio", "-lzip", "-ljvm", "-lobjc",
+    private static final List<String> macoslibs = Arrays.asList(
+            "-lffi", "-lobjc",
             "-Wl,-framework,Foundation", "-Wl,-framework,AppKit",
             "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
             "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");
