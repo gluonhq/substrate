@@ -19,6 +19,11 @@ extern int *run_main(int argc, char* argv[]);
 extern void requestGlassToRedraw();
 extern void android_setNativeWindow(ANativeWindow* nativeWindow);
 extern void android_setDensity(float nativeDensity);
+extern void Java_com_sun_glass_ui_android_DalvikInput_onMultiTouchEventNative
+      (JNIEnv *env, jobject activity, jint count, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys);
+extern void android_gotTouchEvent (int count, int* actions, int* ids, int* xs, int* ys, int primary);
+extern void Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative
+      (JNIEnv *env, jobject activity, jint action, jint keycode);
 
 ANativeWindow *window;
 jfloat density;
@@ -74,6 +79,37 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSurfaceR
     LOGE(stderr, "launcher, nativeSurfaceRedrawNeeded called. Invoke method on glass_monocle\n");
     requestGlassToRedraw();
 }
+
+
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotTouchEvent
+(JNIEnv *env, jobject activity, jint count, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys) {
+    LOGE(stderr, "Native Dalvik layer got touch event, pass to native Graal layer...");
+
+    int *actions = (*env)->GetIntArrayElements(env, jactions, 0);
+    int *ids = (*env)->GetIntArrayElements(env, jids, 0);
+    int *xs = (*env)->GetIntArrayElements(env, jxs, 0);
+    int *ys = (*env)->GetIntArrayElements(env, jys, 0);
+    int primary = 0;
+    for(int i=0;i<jcount;i++) {
+        actions[i] = to_jfx_touch_action(actions[i]);
+        jlongids[i] = (jlong)ids[i];
+        if (actions[i] != com_sun_glass_events_TouchEvent_TOUCH_STILL) {
+            primary = actions[i] == com_sun_glass_events_TouchEvent_TOUCH_RELEASED && jcount == 1 ? -1 : i; 
+        }
+    }
+    android_gotTouchEvent(jcount, actions, ids, xs, ys, primary);
+
+    // Java_com_sun_glass_ui_android_DalvikInput_onMultiTouchEventNative(NULL, NULL, count, jactions, jids, jxs, jys);
+    LOGE(stderr, "Native Dalvik layer got touch event, passed to native Graal layer...");
+}
+
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotKeyEvent
+(JNIEnv *env, jobject activity, jint action, jint keyCode) {
+    LOGE(stderr, "Native Dalvik layer got key event, pass to native Graal layer...");
+    Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative(NULL, NULL, action, keyCode);
+    LOGE(stderr, "Native Dalvik layer got key event, passed to native Graal layer...");
+}
+
 // == expose window functionality to JavaFX native code == //
 
 ANativeWindow* _GLUON_getNativeWindow() {

@@ -6,6 +6,15 @@
       {"name":"repaintFromNative","parameterTypes":[] }
     ]
   }
+,
+  {
+    "name" : "com.sun.glass.ui.monocle.AndroidInputDeviceRegistry",
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"gotTouchEventFromNative","parameterTypes":["int", "int[]", "int[]", "int[]", "int[]", "int"]},
+      {"name":"gotKeyEventFromNative","parameterTypes":["int", "int"]}
+    ]
+  }
 , 
   {
     "name" : "com.sun.javafx.font.FontConfigManager$FcCompFont",
