@@ -57,6 +57,11 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
+    boolean useGraalVMJavaStaticLibraries() {
+        return true;
+    }
+
+    @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         if (!useJavaFX) {
             return darwinLibs;
@@ -74,9 +79,10 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
-        return defaultLinkFlags;
+        return List.of(
+            "-Wl,-Bstatic", "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstrictmath", "-lj2pkcs11", "-lsunec", "-lextnet",
+            "-Wl,-Bdynamic", "-lz", "-ldl", "-lstdc++"
+        );
     }
 
     @Override

@@ -77,14 +77,10 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        List<String> linkFlags = new ArrayList<>();
-
-        linkFlags.add("-Wl,-Bstatic");
-        linkFlags.addAll(Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstrictmath", "-lj2pkcs11", "-lsunec", "-lextnet"));
-        linkFlags.add("-Wl,-Bdynamic");
-        linkFlags.addAll(Arrays.asList("-lz", "-ldl", "-lstdc++"));
-
-        return linkFlags;
+        return List.of(
+            "-Wl,-Bstatic", "-ljava", "-lnio", "-lzip", "-lnet", "-ljvm", "-lstrictmath", "-lj2pkcs11", "-lsunec", "-lextnet",
+            "-Wl,-Bdynamic", "-lz", "-ldl", "-lstdc++"
+        );
     }
 
     @Override
@@ -127,12 +123,9 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         return linkFlags;
     }
 
-    /**
-     * On linux we use the java static libs that are provided by GraalVM.
-     */
     @Override
-    void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) {
-        linkBuilder.command().add(getLinkLibraryPathOption() + projectConfiguration.getGraalPath().resolve("lib"));
+    boolean useGraalVMJavaStaticLibraries() {
+        return true;
     }
 
     private void checkCompiler() throws IOException, InterruptedException {

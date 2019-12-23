@@ -30,10 +30,10 @@ static const char *tag = "myapp";
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
 (JNIEnv *env, jobject activity) {
-    LOGE(stderr, "Start GraalApp, env at %p pointing to %p\n", env, *env);
-LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
-int ev = (*env)->GetVersion(env);
-LOGE(stderr, "EnvVersion = %d\n", ev);
+    LOGE(stderr, "Start GraalApp, DALVIK env at %p\n", env);
+    LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
+    int ev = (*env)->GetVersion(env);
+    LOGE(stderr, "EnvVersion = %d\n", ev);
     start_logger("GraalCompiled");
     LOGE(stderr, "calling JavaMainWrapper_run\n");
     (*IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e)(1);
@@ -119,6 +119,10 @@ int start_logger(const char *app_name)
         return -1;
     pthread_detach(thr);
     return 0;
+}
+
+void determineCPUFeatures() {
+fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
 }
 
 void Java_sun_nio_fs_LinuxNativeDispatcher_init () {

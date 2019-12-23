@@ -125,11 +125,8 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         return "/LIBPATH:";
     }
 
-    /**
-     * On windows we use the java static libs that are provided by GraalVM.
-     */
     @Override
-    void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) {
-        linkBuilder.command().add(getLinkLibraryPathOption() + projectConfiguration.getGraalPath().resolve("lib"));
+    boolean useGraalVMJavaStaticLibraries() {
+        return true;
     }
 }
