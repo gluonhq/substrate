@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.Logger;
@@ -129,6 +130,22 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 .collect(Collectors.toList()));
         linkFlags.add("-Wl,--no-whole-archive");
         return linkFlags;
+    }
+
+    @Override
+    List<String> getTargetSpecificAOTCompileFlags() throws IOException {
+        if (!crossCompile) {
+            return super.getTargetSpecificAOTCompileFlags();
+        }
+        Path llcPath = getLlcPath();
+        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+                "-H:-SpawnIsolates",
+                "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
+                "-H:+UseOnlyWritableBootImageHeap",
+                "-H:+UseCAPCache",
+                "-H:CAPCacheDir=/tmp/cca",
+                "-H:CustomLD=aarch64-linux-gnu-gcc" ,
+                "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
 
     private void checkCompiler() throws IOException, InterruptedException {

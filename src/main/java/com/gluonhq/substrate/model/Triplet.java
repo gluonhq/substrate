@@ -164,4 +164,15 @@ public class Triplet {
     public String toString() {
         return arch + '-' + vendor + '-' + os;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (! (o instanceof Triplet)) return false;
+        Triplet target = (Triplet)o;
+        return (this.arch.equals(target.arch) &&
+                this.os.equals(target.os) &&
+                this.vendor.equals(target.vendor)) ;
+    }
+
+
 }
