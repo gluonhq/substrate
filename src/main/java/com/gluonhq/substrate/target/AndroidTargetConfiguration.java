@@ -319,9 +319,14 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private void createDevelopKeystore() {
+        Path keystore = paths.getGvmPath().resolve("debugkeystore.jks");
+        
+        if (Files.exists(keystore)){
+            System.err.println("ks exists, skipping");
+            return;
+        }
 
-        String storename = paths.getGvmPath().resolve("debugkeystore.jks").toString();
-        ProcessRunner generateTestKey = new ProcessRunner("keytool", "-genkey", "-v", "-keystore", storename, "-storepass",
+        ProcessRunner generateTestKey = new ProcessRunner("keytool", "-genkey", "-v", "-keystore", keystore.toString(), "-storepass",
                 "android", "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US", "-noprompt");         
         try {
             generateTestKey.runProcess("generateTestKey");
