@@ -151,7 +151,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path dalvikLibPath = dalvikPath.resolve("lib");
         Path dalvikLibArm64Path = dalvikLibPath.resolve("arm64-v8a");
 
-        String unalignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".unanligned.apk").toString();
+        String unalignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".unaligned.apk").toString();
         String alignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".apk").toString();
 
         Files.createDirectories(dalvikSrcPath);
@@ -243,6 +243,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CustomLD=" + ldlld.toAbsolutePath().toString(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+                //,
+                //, "-Djavafx.platform=android",
+                // "-Dembedded=monocle",
+                // "-Dglass.platform=Monocle",
+                // "-Djavafx.verbose=true",
+                // "-Djavafx.pulseLogger=true",
+                // "-Dprism.verbose=true");
     }
 
     @Override
