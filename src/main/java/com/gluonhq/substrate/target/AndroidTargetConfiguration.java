@@ -326,8 +326,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         try {
             generateTestKey.runProcess("generateTestKey");
             System.err.println("done creating ks");
-        }
-        catch(IOException | InterruptedException kse){
+        }catch(IOException | InterruptedException kse){
             kse.printStackTrace();
             throw new IllegalArgumentException("fatal, can not create a keystore", kse);
         }
