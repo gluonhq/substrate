@@ -32,9 +32,7 @@ const char * args[] = {
         "-Dglass.platform=Monocle",
         "-Djavafx.verbose=true",
         "-Djavafx.pulseLogger=true",
-        "-Dprism.verbose=true",
-        "test"
-    };
+        "-Dprism.verbose=true"};
 
 // === called from DALVIK. Minize work/dependencies here === // 
 
@@ -47,7 +45,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
     start_logger("GraalCompiled");
     LOGE(stderr, "calling JavaMainWrapper_run\n");
 
-    (*run_main)(1, args);
+    (*run_main)(7, args);
     LOGE(stderr, "called JavaMainWrapper_run\n");
 }
 
