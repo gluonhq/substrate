@@ -109,7 +109,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
 
         return new ClassPath(classPath).mapWithLibs(
-                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls", "javafx-fxml" );
+                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls");
 
     }
 
@@ -237,10 +237,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
                 "install", "-r", alignedApk);
         processResult = install.runProcess("install");
-        if (processResult != 0)
-            return false;
-
-        return true;
+        
+        return processResult == 0;
     }
 
     @Override
