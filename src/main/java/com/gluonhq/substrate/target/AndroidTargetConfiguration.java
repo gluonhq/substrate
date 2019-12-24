@@ -209,10 +209,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks", 
             paths.getGvmPath().resolve("debugkeystore.jks").toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
         processResult = sign.runProcess("sign");
-        if (processResult != 0)
-            return false;
-
-        return true;
+        
+        return processResult == 0;
     }
 
     @Override
