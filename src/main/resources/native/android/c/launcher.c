@@ -44,7 +44,6 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
     LOGE(stderr, "EnvVersion = %d\n", ev);
     start_logger("GraalCompiled");
     LOGE(stderr, "calling JavaMainWrapper_run\n");
-
     (*run_main)(7, args);
     LOGE(stderr, "called JavaMainWrapper_run\n");
 }
