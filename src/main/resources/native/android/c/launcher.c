@@ -125,13 +125,13 @@ void determineCPUFeatures() {
 fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
 }
 
-void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
+/*void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
 fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_INIT\n");
 }
 
 void  Java_sun_nio_fs_LinuxNativeDispatcher_fgetxattr0() {
 fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_GETXATTR\n");
-}
+}*/
 
 void Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0() {
 fprintf(stderr, "\n\n\nLINUXSOCKETOPTIONS_KEEPALIVESUP0\n");
