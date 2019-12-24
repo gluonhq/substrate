@@ -207,7 +207,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         createDevelopKeystore();
 
         ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks", 
-            paths.getGvmPath().resolve("debugkeystore.jks").toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
+            paths.getGvmPath().resolve("debug.keystore").toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
         processResult = sign.runProcess("sign");
         
         return processResult == 0;
@@ -255,13 +255,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CustomLD=" + ldlld.toAbsolutePath().toString(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
-                //,
-                //, "-Djavafx.platform=android",
-                // "-Dembedded=monocle",
-                // "-Dglass.platform=Monocle",
-                // "-Djavafx.verbose=true",
-                // "-Djavafx.pulseLogger=true",
-                // "-Dprism.verbose=true");
     }
 
     @Override
@@ -338,7 +331,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private void createDevelopKeystore() throws IOException, InterruptedException {
-        Path keystore = paths.getGvmPath().resolve("debugkeystore.jks");
+        Path keystore = paths.getGvmPath().resolve("debug.keystore");
         
         if (Files.exists(keystore)) {
             System.err.println("ks exists, skipping");
