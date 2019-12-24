@@ -38,15 +38,22 @@ import java.util.stream.Collectors;
 
 public class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
-    private static final List<String> darwinLibs = Arrays.asList(
-            "-lpthread",
-            "-Wl,-framework,Foundation", "-Wl,-framework,AppKit");
+    private static final List<String> javaDarwinLibs = Arrays.asList("pthread", "z", "dl", "stdc++");
+    private static final List<String> javaDarwinFrameworks = Arrays.asList("Foundation", "AppKit");
+
+    private static final List<String> javaFxDarwinLibs = Arrays.asList("objc");
+    private static final List<String> javaFxDarwinFrameworks = Arrays.asList(
+            "ApplicationServices", "OpenGL", "QuartzCore", "Security"
+    );
 
     private static final List<String> staticJavaLibs = Arrays.asList(
             "java", "nio", "zip", "net", "j2pkcs11", "sunec", "extnet"
     );
     private static final List<String> staticJvmLibs = Arrays.asList(
-            "jvm", "strictmath", "libchelper"
+            "ffi", "jvm", "strictmath", "libchelper"
+    );
+    private static final List<String> staticJavaFxLibs = Arrays.asList(
+            "glass", "javafx_font", "javafx_iio"
     );
 
     public DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
@@ -70,36 +77,41 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        if (!useJavaFX) {
-            return darwinLibs;
+        List<String> linkFlags = new ArrayList<>();
+
+        linkFlags.addAll(asListOfLibraryLinkFlags(javaDarwinLibs));
+        if (useJavaFX) {
+            linkFlags.addAll(asListOfLibraryLinkFlags(javaFxDarwinLibs));
         }
-        String libPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
-        List<String> answer = new ArrayList<>(Arrays.asList(
-                libPath + "libprism_es2.a", libPath + "libglass.a",
-                libPath + "libjavafx_font.a", libPath + "libjavafx_iio.a"));
-        if (usePrismSW) {
-            answer.add(libPath + "libprism_sw.a");
+
+        linkFlags.addAll(asListOfFrameworkLinkFlags(javaDarwinFrameworks));
+        if (useJavaFX) {
+            linkFlags.addAll(asListOfFrameworkLinkFlags(javaFxDarwinFrameworks));
         }
-        answer.addAll(macoslibs);
-        return answer;
+
+        if (useJavaFX) {
+            List<String> javafxLibs = new ArrayList<>(staticJavaFxLibs);
+            if (usePrismSW) {
+                javafxLibs.add("prism_sw");
+            } else {
+                javafxLibs.add("prism_es2");
+            }
+
+            String staticLibPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
+            linkFlags.addAll(asListOfStaticLibraryLinkFlags(staticLibPath, javafxLibs));
+        }
+
+        return linkFlags;
     }
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        String staticJavaPrefix = projectConfiguration.getGraalPath().resolve("lib").toString();
-        List<String> staticJavaLibraries = staticJavaLibs.stream()
-                .map(lib -> staticJavaPrefix + "/lib" + lib + ".a")
-                .collect(Collectors.toList());
-
-        String staticJvmPrefix = getCLibPath().toString();
-        List<String> staticJvmLibraries = staticJvmLibs.stream()
-                .map(lib -> staticJvmPrefix + "/lib" + lib + ".a")
-                .collect(Collectors.toList());
+        String staticJavaLibPath = projectConfiguration.getGraalPath().resolve("lib") + "/";
+        String staticJvmLibPath = getCLibPath() + "/";
 
         List<String> targetLibraries = new ArrayList<>();
-        targetLibraries.addAll(staticJavaLibraries);
-        targetLibraries.addAll(staticJvmLibraries);
-        targetLibraries.addAll(Arrays.asList("-lz", "-ldl", "-lstdc++"));
+        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJavaLibPath, staticJavaLibs));
+        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJvmLibPath, staticJvmLibs));
         return targetLibraries;
     }
 
@@ -110,9 +122,21 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
                 .collect(Collectors.toList());
     }
 
-    private static final List<String> macoslibs = Arrays.asList(
-            "-lffi", "-lobjc",
-            "-Wl,-framework,Foundation", "-Wl,-framework,AppKit",
-            "-Wl,-framework,ApplicationServices", "-Wl,-framework,OpenGL",
-            "-Wl,-framework,QuartzCore", "-Wl,-framework,Security");
+    private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
+        return libraries.stream()
+                .map(library -> "-l" + library)
+                .collect(Collectors.toList());
+    }
+
+    private List<String> asListOfStaticLibraryLinkFlags(String staticLibPath, List<String> libraries) {
+        return libraries.stream()
+                .map(library -> staticLibPath + "lib" + library + ".a")
+                .collect(Collectors.toList());
+    }
+
+    private List<String> asListOfFrameworkLinkFlags(List<String> frameworks) {
+        return frameworks.stream()
+                .map(framework -> "-Wl,-framework," + framework)
+                .collect(Collectors.toList());
+    }
 }
