@@ -28,16 +28,17 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,10 +47,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class IosTargetConfiguration extends AbstractTargetConfiguration {
+public class IosTargetConfiguration extends PosixTargetConfiguration {
 
     private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
 
@@ -61,10 +62,12 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
 
     private static final List<String> iosFrameworks = Arrays.asList(
-            "-Wl,-framework,Foundation", "-Wl,-framework,UIKit",
-            "-Wl,-framework,CoreGraphics", "-Wl,-framework,MobileCoreServices",
-            "-Wl,-framework,OpenGLES", "-Wl,-framework,CoreText",
-            "-Wl,-framework,QuartzCore", "-Wl,-framework,ImageIO");
+            "Foundation", "UIKit", "CoreGraphics", "MobileCoreServices",
+            "OpenGLES", "CoreText", "QuartzCore", "ImageIO",
+            "CoreBluetooth", "CoreImage", "CoreLocation", "CoreMedia", "CoreMotion", "CoreVideo",
+            "Accelerate", "AVFoundation", "AudioToolbox", "MediaPlayer", "UserNotifications",
+            "ARKit", "AVKit", "SceneKit", "StoreKit"
+    );
 
     public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
@@ -89,7 +92,9 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
                     linkFlags.add("-Wl,-force_load," + javafxSDK + "/lib" + name + ".a"));
         }
         linkFlags.addAll(ioslibs);
-        linkFlags.addAll(iosFrameworks);
+        linkFlags.addAll(iosFrameworks.stream()
+                .map(f -> "-Wl,-framework," + f)
+                .collect(Collectors.toList()));
         return linkFlags;
     }
 
@@ -111,6 +116,10 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
 
+    @Override
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return this::lipoMatch;
+    }
 
     @Override
     public String getAdditionalSourceFileLocation() {
@@ -139,7 +148,7 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         boolean result = super.link();
 
         if (result) {
-            createInfoPlist(paths, projectConfiguration);
+            createInfoPlist(paths);
 
             if (!isSimulator() && !projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
                 CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
@@ -152,16 +161,27 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        return libs.stream()
+                .map(s -> "-Wl,-force_load," + libPath.resolve(s))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
-        Deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
+        if (!isSimulator() && projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
+            // without signing, app can't be deployed
+            return true;
+        }
+        Deploy deploy = new Deploy();
+        deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
         String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
         if (isSimulator()) {
             // TODO: launchOnSimulator(appPath);
             return false;
-        } else if (!projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
-            return Deploy.install(appPath);
+        } else {
+            return deploy.install(appPath);
         }
-        return true;
     }
 
     @Override
@@ -197,18 +217,9 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
-        Path javafxSDKLibsPath = fileDeps.getJavaFXSDKLibsPath();
-        return Stream.of(classPath.split(File.pathSeparator))
-                .map(s -> {
-                    if (s.indexOf("javafx-graphics") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.graphics.jar").toString();
-                    } else if (s.indexOf("javafx-controls") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.controls.jar").toString();
-                    } else {
-                        return s;
-                    }
-                })
-                .collect(Collectors.joining(File.pathSeparator));
+
+        return new ClassPath(classPath).mapWithLibs(
+                     fileDeps.getJavaFXSDKLibsPath(),"javafx-graphics","javafx-controls" );
     }
 
     private String getArch() {
@@ -224,18 +235,27 @@ public class IosTargetConfiguration extends AbstractTargetConfiguration {
         return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
-    private void createInfoPlist(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
-        try {
-            InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
-                    XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
-            Path plist = infoPlist.processInfoPlist();
-            if (plist != null) {
-                Logger.logDebug("Plist at " + plist.toString());
-                FileOps.copyStream(new FileInputStream(plist.toFile()),
-                        paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
-            }
-        } catch (IOException e) {
-            Logger.logFatal(e, "Error creating info.plist");
+    private void createInfoPlist(ProcessPaths paths) throws IOException {
+        InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
+                XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
+        Path plist = infoPlist.processInfoPlist();
+        if (plist != null) {
+            Logger.logDebug("Plist at " + plist.toString());
+            FileOps.copyStream(new FileInputStream(plist.toFile()),
+                    paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
         }
+    }
+
+    private boolean lipoMatch(Path path) {
+        try {
+            return lipoInfo(path).indexOf(getArch()) > 0;
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Error processing lipo for " + path);
+        }
+        return false;
+    }
+
+    private String lipoInfo(Path path) throws IOException, InterruptedException {
+        return ProcessRunner.runProcessForSingleOutput("lipo", "lipo", "-info", path.toFile().getAbsolutePath());
     }
 }

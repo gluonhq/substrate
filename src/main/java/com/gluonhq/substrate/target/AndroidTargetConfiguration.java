@@ -28,27 +28,34 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.ProcessRunner;
 
-import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
+public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private final String ndk;
+    private final String sdk;
     private final Path ldlld;
     private final Path clang;
+    private final String java8Home;
 
     private List<String> androidAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
@@ -58,6 +65,11 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-Wl,--no-whole-archive",
             "-lGLESv2", "-lEGL", "-lfreetype");
+    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
+            "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
+            "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
+            "LLVMDirectives.cap", "PosixDirectives.cap"};
+    private final String capLocation= "/native/android/cap/";
 
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
@@ -80,7 +92,10 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
             this.ldlld = null;
             this.clang = null;
         }
+        this.java8Home = System.getenv("JAVA8_HOME");
+        this.sdk = System.getenv("ANDROID_SDK");
     }
+
     /**
      * // TODO: this is 100% similar to what we do on iOS. We need something like CrossPlatformTools for this.
      * If we are not using JavaFX, we immediately return the provided classpath, no further processing needed
@@ -97,20 +112,10 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
         if (!projectConfiguration.isUseJavaFX()) {
             return classPath;
         }
-        Path javafxSDKLibsPath = fileDeps.getJavaFXSDKLibsPath();
-        return Stream.of(classPath.split(File.pathSeparator))
-                .map(s -> {
-                    if (s.indexOf("javafx-graphics") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.graphics.jar").toString();
-                    } else if (s.indexOf("javafx-base") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.base.jar").toString();
-                    } else if (s.indexOf("javafx-controls") > 0) {
-                        return javafxSDKLibsPath.resolve("javafx.controls.jar").toString();
-                    } else {
-                        return s;
-                    }
-                })
-                .collect(Collectors.joining(File.pathSeparator));
+
+        return new ClassPath(classPath).mapWithLibs(
+                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls" );
+
     }
 
     @Override
@@ -127,7 +132,85 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
         // we override compile as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");
-        return super.link();
+        if (java8Home == null) throw new IOException("You need an ancient JDK (1.8). Set the environment property JAVA8_HOME");
+        if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
+        super.link();
+
+        Path sdkPath = Paths.get(sdk);
+        Path buildToolsPath = sdkPath.resolve("build-tools").resolve("27.0.3");
+
+        String androidJar = sdkPath.resolve("platforms").resolve("android-27").resolve("android.jar").toString();
+        String aaptCmd = buildToolsPath.resolve("aapt").toString();
+
+        Path dalvikPath = paths.getGvmPath().resolve("dalvik");
+        Files.createDirectories(dalvikPath);
+        Path dalvikSrcPath = dalvikPath.resolve("src");
+        Path dalvikClassPath = dalvikPath.resolve("class");
+        Path dalvikBinPath = dalvikPath.resolve("bin");
+        Path dalvikLibPath = dalvikPath.resolve("lib");
+        Path dalvikLibArm64Path = dalvikLibPath.resolve("arm64-v8a");
+
+        String unalignedApk = dalvikBinPath.resolve("hello.unanligned.apk").toString();
+        String alignedApk = dalvikBinPath.resolve("hello.apk").toString();
+
+        Files.createDirectories(dalvikSrcPath);
+        Files.createDirectories(dalvikClassPath);
+        Files.createDirectories(dalvikBinPath);
+        Files.createDirectories(dalvikLibPath);
+        Files.createDirectories(dalvikLibArm64Path);
+        Path androidManifestPath = dalvikPath.resolve("AndroidManifest.xml");
+        FileOps.copyResource("/native/android/dalvik/MainActivity.java", dalvikSrcPath.resolve("MainActivity.java"));
+        FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
+
+        ProcessRunner processRunner = new ProcessRunner(java8Home + "/bin/javac", "-d", dalvikClassPath.toString(), "-source", "1.7",
+                "-target", "1.7", "-cp", dalvikSrcPath.toString(), "-bootclasspath", androidJar,
+                dalvikSrcPath.resolve("MainActivity.java").toString());
+        processRunner.runProcess("dalvikCompilation");
+        ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
+                "--output="+dalvikBinPath.resolve("classes.dex"),dalvikClassPath.toString());
+        dx.runProcess("DX");
+
+        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package", "-f", "-m", "-F", unalignedApk,
+        "-M", androidManifestPath.toString(), "-I", androidJar);
+        aaptpackage.runProcess("AAPT-package");
+
+        ProcessRunner aaptAddClass = new ProcessRunner(aaptCmd, "add", unalignedApk,
+                "classes.dex");
+        aaptAddClass.runProcess("AAPT-add classes", dalvikBinPath.toFile());
+        Path libPath = paths.getAppPath().resolve(projectConfiguration.getAppName());
+        Path graalLibPath = dalvikLibArm64Path.resolve("libmygraal.so");
+        Files.deleteIfExists(graalLibPath);
+        Files.copy(libPath, graalLibPath);
+        Path freetypeLibPath = dalvikLibArm64Path.resolve("libfreetype.so");
+        Files.deleteIfExists(freetypeLibPath);
+        Files.copy(fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so"), freetypeLibPath);
+        ProcessRunner aaptAddLibs = new ProcessRunner(aaptCmd, "add", unalignedApk,
+                "lib/arm64-v8a/libmygraal.so","lib/arm64-v8a/libfreetype.so" );
+        aaptAddLibs.runProcess("AAPT-add lib", dalvikPath.toFile());
+
+        ProcessRunner zipAlign = new ProcessRunner(buildToolsPath.resolve("zipalign").toString(), "-f", "4", unalignedApk, alignedApk);
+        zipAlign.runProcess("zipalign");
+        createDevelopKeystore();
+        return true;
+    }
+
+    @Override
+    public boolean runUntilEnd() throws IOException, InterruptedException {
+        Path sdkPath = Paths.get(sdk);
+        Path buildToolsPath = sdkPath.resolve("build-tools").resolve("27.0.3");
+
+        Path dalvikPath = paths.getGvmPath().resolve("dalvik");
+        Path dalvikBinPath = dalvikPath.resolve("bin");
+
+        String alignedApk = dalvikBinPath.resolve("hello.apk").toString();
+        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(),"sign", "--ks",
+                "~/android.keystore" , alignedApk);
+        sign.runProcess("sign");
+
+        ProcessRunner install = new ProcessRunner(sdkPath.resolve("patform-tools").resolve("adb").toString(),
+                "install", "-r", alignedApk);
+        install.runProcess("install");
+        return true;
     }
 
     @Override
@@ -142,6 +225,8 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
+                "-H:+UseCAPCache",
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CustomLD=" + ldlld.toAbsolutePath().toString(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
@@ -179,6 +264,17 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        List<String> linkFlags = new ArrayList<>();
+        linkFlags.add("-Wl,--whole-archive");
+        linkFlags.addAll(libs.stream()
+                .map(s -> libPath.resolve(s).toString())
+                .collect(Collectors.toList()));
+        linkFlags.add("-Wl,--no-whole-archive");
+        return linkFlags;
+    }
+
+    @Override
     public String getAdditionalSourceFileLocation() {
         return "/native/android/c/";
     }
@@ -191,5 +287,37 @@ public class AndroidTargetConfiguration extends AbstractTargetConfiguration {
 
     List<String> getAdditionalHeaderFiles() {
         return androidAdditionalHeaderFiles;
+    }
+
+   /*
+    * Copies the .cap files from the jar resource and store them in
+    * a directory. Return that directory
+    */
+    private Path getCapCacheDir() throws IOException {
+        Path capPath = paths.getGvmPath().resolve("capcache");
+        if (!Files.exists(capPath)) {
+            Files.createDirectory(capPath);
+        }
+        for (String cap : capFiles) {
+            FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
+        }
+        return capPath;
+    }
+
+    private void createDevelopKeystore() {
+        try {
+            System.err.println("Create ks");
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            ks.load(null, null); //empty pwd
+            String storename = paths.getGvmPath().resolve("debugkeystore.jks").toString();
+            String pwd = "debug";
+            try (FileOutputStream fos = new FileOutputStream(storename)) {
+                ks.store(fos, pwd.toCharArray());
+            }
+            System.err.println("done creating ks");
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException kse) {
+            kse.printStackTrace();
+            throw new IllegalArgumentException("fatal, can not create a keystore", kse);
+        }
     }
 }

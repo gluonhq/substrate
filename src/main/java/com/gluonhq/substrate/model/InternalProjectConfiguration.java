@@ -29,6 +29,7 @@ package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.ProjectConfiguration;
+import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -67,7 +68,7 @@ public class InternalProjectConfiguration {
     private List<String> resourcesList = Collections.emptyList();
     private List<String> reflectionList = Collections.emptyList();
     private List<String> jniList = Collections.emptyList();
-    private List<String> delayInitList;
+    private List<String> initBuildTimeList;
     private List<String> runtimeArgsList;
     private List<String> releaseSymbolsList;
 
@@ -92,19 +93,11 @@ public class InternalProjectConfiguration {
 
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
         setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
-
-        setReflectionList(splitString(System.getProperty("reflectionlist")));
-        setJniList(splitString(System.getProperty("jnilist")));
-        setBundlesList(splitString(System.getProperty("bundleslist")));
-
-    }
-
-    private static List<String> splitString( String s ) {
-        return s == null || s.trim().isEmpty()? Collections.emptyList() : Arrays.asList(s.split(","));
+        setInitBuildTimeList(Strings.split(System.getProperty("initbuildtimelist")));
     }
 
     public Path getGraalPath() {
-        return this.publicConfig.getGraalPath();
+        return Objects.requireNonNull( this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
     }
 
     /**
@@ -114,7 +107,8 @@ public class InternalProjectConfiguration {
      * @return the specified JavaStaticSDK version, or the default
      */
     public String getJavaStaticSdkVersion() {
-        return publicConfig.getJavaStaticSdkVersion();
+        return Optional.ofNullable(publicConfig.getJavaStaticSdkVersion())
+                       .orElse(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
     }
 
     /**
@@ -209,7 +203,8 @@ public class InternalProjectConfiguration {
     }
 
     public String getJavafxStaticSdkVersion() {
-        return publicConfig.getJavafxStaticSdkVersion();
+        return Optional.ofNullable(publicConfig.getJavafxStaticSdkVersion())
+                       .orElse(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
     }
 
     public String getLlcPath() {
@@ -252,12 +247,8 @@ public class InternalProjectConfiguration {
         return enableCheckHash;
     }
 
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
-    }
-
     public boolean isVerbose() {
-        return verbose;
+        return publicConfig.isVerbose();
     }
 
     /**
@@ -269,7 +260,7 @@ public class InternalProjectConfiguration {
     }
 
     public Triplet getTargetTriplet() {
-        return publicConfig.getTargetTriplet();
+        return Objects.requireNonNull( publicConfig.getTargetTriplet(), "Target triplet is required");
     }
 
 
@@ -280,7 +271,8 @@ public class InternalProjectConfiguration {
      * @throws IllegalArgumentException in case the current operating system is not supported
      */
     public Triplet getHostTriplet() throws IllegalArgumentException {
-        return publicConfig.getHostTriplet();
+        return Optional.ofNullable(publicConfig.getHostTriplet())
+                       .orElse(Triplet.fromCurrentOS());
     }
 
 
@@ -297,63 +289,41 @@ public class InternalProjectConfiguration {
     }
 
     public List<String> getBundlesList() {
-        return bundlesList;
-    }
-
-    /**
-     * Sets additional bundles
-     * @param bundlesList a list of classes that will be added to the default bundlesList list
-     */
-    public void setBundlesList(List<String> bundlesList) {
-        this.bundlesList = bundlesList;
-    }
-
-    /**
-     * Set additional resources to be included
-     * @param resourcesList a list of resource patterns that will be included
-     */
-    public void setResourcesList(List<String> resourcesList) {
-        this.resourcesList = resourcesList;
+        return Optional.ofNullable(publicConfig.getBundlesList())
+                       .orElse(Collections.emptyList());
     }
 
     public List<String> getResourcesList() {
-        return resourcesList;
+        return Optional.ofNullable(publicConfig.getResourcesList())
+                .orElse(Collections.emptyList());
     }
 
     public List<String> getReflectionList() {
-        return reflectionList;
-    }
-
-    /**
-     * Sets additional lists
-     * @param reflectionList a list of classes that will be added to the default reflection list
-     */
-    public void setReflectionList(List<String> reflectionList) {
-        this.reflectionList = reflectionList;
+        return Optional.ofNullable(publicConfig.getReflectionList())
+                .orElse(Collections.emptyList());
     }
 
     public List<String> getJniList() {
-        return jniList;
+        return Optional.ofNullable(publicConfig.getJniList())
+                .orElse(Collections.emptyList());
+    }
+
+    public List<String> getCompilerArgs() {
+        return Optional.ofNullable(publicConfig.getCompilerArgs())
+                .orElse(Collections.emptyList());
+    }
+
+    public List<String> getInitBuildTimeList() {
+        return initBuildTimeList;
     }
 
     /**
      * Sets additional lists
-     * @param jniList a list of classes that will be added to the default jni list
+     * @param initBuildTimeList a list of classes that will be added to the default
+     *                          initialize build time list
      */
-    public void setJniList(List<String> jniList) {
-        this.jniList = jniList;
-    }
-
-    public List<String> getDelayInitList() {
-        return delayInitList;
-    }
-
-    /**
-     * Sets additional lists
-     * @param delayInitList a list of classes that will be added to the default delayed list
-     */
-    public void setDelayInitList(List<String> delayInitList) {
-        this.delayInitList = delayInitList;
+    public void setInitBuildTimeList(List<String> initBuildTimeList) {
+        this.initBuildTimeList = initBuildTimeList;
     }
 
     public List<String> getRuntimeArgsList() {
@@ -381,24 +351,15 @@ public class InternalProjectConfiguration {
     }
 
     public String getAppName() {
-        return publicConfig.getAppName();
+        return Objects.requireNonNull(publicConfig.getAppName(), "App name is required");
     }
-
 
     public String getMainClassName() {
         return publicConfig.getMainClassName();
     }
 
     public IosSigningConfiguration getIosSigningConfiguration() {
-        return iosSigningConfiguration;
-    }
-
-    /**
-     * Sets some iOS specific parameters
-     * @param iosSigningConfiguration iOS configuration
-     */
-    public void setIosSigningConfiguration(IosSigningConfiguration iosSigningConfiguration) {
-        this.iosSigningConfiguration = iosSigningConfiguration;
+        return Optional.ofNullable(publicConfig.getIosSigningConfiguration()).orElse(new IosSigningConfiguration());
     }
 
     /**
@@ -451,7 +412,7 @@ public class InternalProjectConfiguration {
                 ", resourcesList=" + resourcesList +
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
-                ", delayInitList=" + delayInitList +
+                ", initBuildTimeList=" + initBuildTimeList +
                 ", runtimeArgsList=" + runtimeArgsList +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + getAppName() + '\'' +

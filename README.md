@@ -2,9 +2,11 @@
 
 [![Travis CI](https://travis-ci.com/gluonhq/substrate.svg?branch=master)](https://travis-ci.com/gluonhq/substrate)
 
+[![Coverage Status](https://coveralls.io/repos/github/gluonhq/substrate/badge.svg?branch=master)](https://coveralls.io/github/gluonhq/substrate?branch=master)
+
 Gluon Substrate is a tool that converts Java(FX) Client applications into
 native executables for desktop, mobile and embedded devices.
-It uses the [GraalVM](https://graalvm.org) GraalVM native-image tool to
+It uses the [GraalVM](https://www.graalvm.org/) GraalVM native-image tool to
 compile the required Java bytecode into code that can be executed on the
 target system (e.g. your desktop, on iOS, on a Raspberry Pi).
 

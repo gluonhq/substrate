@@ -42,7 +42,7 @@ import java.util.Optional;
  */
 public class ProjectConfiguration {
 
-    private String graalPath;
+    private Path graalPath;
 
     private String javafxStaticSdkVersion;
     private String javaStaticSdkVersion;
@@ -57,6 +57,7 @@ public class ProjectConfiguration {
     private List<String> resourcesList = Collections.emptyList();
     private List<String> reflectionList = Collections.emptyList();
     private List<String> jniList = Collections.emptyList();
+    private List<String> compilerArgs = Collections.emptyList();
 
     private String appName;
     private String mainClassName;
@@ -71,10 +72,10 @@ public class ProjectConfiguration {
     }
 
     public Path getGraalPath() {
-        return Path.of( Objects.requireNonNull(this.graalPath, "GraalVM Path is not defined"));
+        return this.graalPath;
     }
 
-    public void setGraalPath(String path) {
+    public void setGraalPath(Path path) {
         this.graalPath = path;
     }
 
@@ -88,7 +89,7 @@ public class ProjectConfiguration {
     }
 
     public String getJavaStaticSdkVersion() {
-        return Optional.ofNullable(this.javaStaticSdkVersion).orElse(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
+        return this.javaStaticSdkVersion;
     }
 
     /**
@@ -100,9 +101,8 @@ public class ProjectConfiguration {
     }
 
     public String getJavafxStaticSdkVersion() {
-        return Optional.ofNullable(this.javaStaticSdkVersion).orElse(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
+        return this.javafxStaticSdkVersion;
     }
-
 
     public boolean isUsePrismSW() {
         return usePrismSW;
@@ -121,7 +121,7 @@ public class ProjectConfiguration {
     }
 
     public Triplet getTargetTriplet() {
-        return Objects.requireNonNull( targetTriplet, "Target triplet is required") ;
+        return targetTriplet;
     }
 
     /**
@@ -143,7 +143,7 @@ public class ProjectConfiguration {
     }
 
     public void setHostTriplet(Triplet hostTriplet) {
-        this.hostTriplet = hostTriplet == null? Triplet.fromCurrentOS(): hostTriplet;
+        this.hostTriplet = hostTriplet;
     }
 
     public List<String> getBundlesList() {
@@ -155,7 +155,7 @@ public class ProjectConfiguration {
      * @param bundlesList a list of classes that will be added to the default bundlesList list
      */
     public void setBundlesList(List<String> bundlesList) {
-        this.bundlesList = bundlesList == null? Collections.emptyList(): bundlesList;
+        this.bundlesList = bundlesList;
     }
 
     /**
@@ -163,7 +163,7 @@ public class ProjectConfiguration {
      * @param resourcesList a list of resource patterns that will be included
      */
     public void setResourcesList(List<String> resourcesList) {
-        this.resourcesList = resourcesList == null? Collections.emptyList(): resourcesList;
+        this.resourcesList = resourcesList;
     }
 
     public List<String> getResourcesList() {
@@ -179,7 +179,7 @@ public class ProjectConfiguration {
      * @param reflectionList a list of classes that will be added to the default reflection list
      */
     public void setReflectionList(List<String> reflectionList) {
-        this.reflectionList = reflectionList == null? Collections.emptyList(): reflectionList;
+        this.reflectionList = reflectionList;
     }
 
     public List<String> getJniList() {
@@ -191,11 +191,23 @@ public class ProjectConfiguration {
      * @param jniList a list of classes that will be added to the default jni list
      */
     public void setJniList(List<String> jniList) {
-        this.jniList = jniList == null? Collections.emptyList(): jniList;
+        this.jniList = jniList;
+    }
+
+    public List<String> getCompilerArgs() {
+        return compilerArgs;
+    }
+
+    /**
+     * Sets additional lists
+     * @param compilerArgs a list of optional compiler arguments
+     */
+    public void setCompilerArgs(List<String> compilerArgs) {
+        this.compilerArgs = compilerArgs;
     }
 
     public String getAppName() {
-        return Objects.requireNonNull(appName, "App name is required");
+        return this.appName;
     }
 
     /**
@@ -220,8 +232,7 @@ public class ProjectConfiguration {
      * @param iosSigningConfiguration iOS configuration
      */
     public void setIosSigningConfiguration(IosSigningConfiguration iosSigningConfiguration) {
-        this.iosSigningConfiguration = iosSigningConfiguration == null?
-                new IosSigningConfiguration(): iosSigningConfiguration;
+        this.iosSigningConfiguration = iosSigningConfiguration;
     }
 
     @Override
@@ -238,6 +249,7 @@ public class ProjectConfiguration {
                 ", resourcesList=" + resourcesList +
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
+                ", compilerArgs=" + compilerArgs +
                 ", appName='" + appName + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +

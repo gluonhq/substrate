@@ -40,25 +40,37 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
 
 import static com.gluonhq.substrate.TestUtils.isCIMacOS;
 import static com.gluonhq.substrate.TestUtils.isLocalMacOS;
 import static com.gluonhq.substrate.TestUtils.isTravis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class IOSTest {
+
+    private Deploy deploy;
+
+    private Deploy getDeploy() {
+        if (deploy == null) {
+            try {
+                deploy = new Deploy();
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return deploy;
+    }
 
     @BeforeEach
     void notForTravis() {
         if (!isTravis()) {
             assumeTrue(isLocalMacOS());
-            String[] devices = Deploy.connectedDevices();
-            assumeTrue((devices != null && devices.length > 0));
+            assumeTrue(getDeploy().getIosDeployPath() != null);
+//            String[] devices = deploy.connectedDevices();
+//            assumeTrue((devices != null && devices.length > 0));
         } else {
             assumeTrue(isCIMacOS());
         }
@@ -67,19 +79,7 @@ class IOSTest {
     @Test
     void iosDeployTest() {
         assumeTrue(!isTravis());
-        try {
-            assertNotNull(Deploy.getIOSDeployPath());
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    void deviceConnected() {
-        assumeTrue(!isTravis());
-        String[] devices = Deploy.connectedDevices();
-        assertNotNull(devices);
-        assertTrue(devices.length > 0);
+        assertNotNull(getDeploy().getIosDeployPath());
     }
 
     @Test

@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,54 +25,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate;
+package com.gluonhq.substrate.target;
 
-import java.io.File;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.ProcessPaths;
+
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
-public class NativeImage {
+abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
 
-    private boolean useJNI = true;
-
-    public void setUseJNI(boolean v) {
-        this.useJNI = v;
+    PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+        super(paths, configuration);
     }
 
-    public int compile(String graalVMRoot, String classPath, String mainClass) {
-        ProcessBuilder pb = new ProcessBuilder();
-        List<String> command = pb.command();
-        command.add(getNativeImageExecutable(graalVMRoot).toString());
-        command.add("-cp");
-        command.add(classPath);
-        addJNIParameters (command);
-
-        command.add(mainClass);
-        int exitStatus = 1;
-        try {
-            pb.redirectError(new File("/tmp/error"));
-            pb.redirectOutput(new File("/tmp/output"));
-            Process p = pb.start();
-            exitStatus = p.waitFor();
-            System.err.println("ExitStatus = "+exitStatus);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            exitStatus = -1;
-        }
-        return exitStatus;
-    }
-
-    // add all parameters required to deal with JNI platform or not
-    private void addJNIParameters (List<String> command) {
-        if (useJNI) {
-            command.add("-Dsvm.platform=org.graalvm.nativeimage.impl.InternalPlatform$LINUX_JNI_AMD64");
-            command.add("-H:+ExitAfterRelocatableImageWrite");
-        }
-    }
-
-    private Path getNativeImageExecutable(String graalVMRoot) {
-        return Path.of(graalVMRoot, "bin", "native-image");
+    @Override
+    void checkPlatformSpecificClibs(Path clibPath) throws IOException {
+        Path libjvmPath = clibPath.resolve("libjvm.a");
+        if (!Files.exists(libjvmPath)) throw new IOException("Missing library libjvm.a not in linkpath "+clibPath);
     }
 
 }

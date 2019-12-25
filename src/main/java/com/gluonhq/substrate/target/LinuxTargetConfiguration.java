@@ -27,8 +27,8 @@
  */
 package com.gluonhq.substrate.target;
 
-import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
@@ -37,12 +37,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
+public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
@@ -76,9 +78,7 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkLibraries() {
         List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.addAll(Arrays.asList("-Wl,--whole-archive",
-                projectConfiguration.getGraalPath().resolve("lib").resolve("libnet.a").toString(),
-                "-Wl,--no-whole-archive", "-lextnet", "-lstdc++"));
+        defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
         return defaultLinkFlags;
     }
 
@@ -111,6 +111,17 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
         return answer;
     }
 
+    @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        List<String> linkFlags = new ArrayList<>();
+        linkFlags.add("-Wl,--whole-archive");
+        linkFlags.addAll(libs.stream()
+                .map(s -> libPath.resolve(s).toString())
+                .collect(Collectors.toList()));
+        linkFlags.add("-Wl,--no-whole-archive");
+        return linkFlags;
+    }
+
     private void checkCompiler() throws IOException, InterruptedException {
         validateVersion(new String[] { "gcc", "--version" }, "compiler", COMPILER_MINIMAL_VERSION);
     }
@@ -122,16 +133,20 @@ public class LinuxTargetConfiguration extends AbstractTargetConfiguration {
     private void validateVersion(String[] processCommand, String processName, Version minimalVersion) throws InterruptedException, IOException {
         String versionLine = getFirstLineFromProcess(processCommand);
         if (versionLine == null) {
-            System.err.println("WARNING: we were unable to parse the version of your " + processName + ".\n" +
+            System.err.println(
+                    "WARNING: we were unable to parse the version of your " + processName + ".\n" +
                     "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is " + minimalVersion + ".");
         } else {
             VersionParser versionParser = new VersionParser();
             Version version = versionParser.parseVersion(versionLine);
             if (version == null) {
-                System.err.println("WARNING: we were unable to parse the version of your " + processName + ": \"" + versionLine + "\".\n" +
+                System.err.println(
+                        "WARNING: we were unable to parse the version of your " + processName + ": \"" + versionLine + "\".\n" +
                         "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is \"" + minimalVersion + "\".");
             } else if (version.compareTo(minimalVersion) < 0) {
-                System.err.println("ERROR: The version of your " + processName + ": \"" + version + "\", does not match the minimal required version: \"" + minimalVersion + "\".");
+                System.err.println(
+                        "ERROR: The version of your " + processName + ": \"" + version + "\", does not match the minimal required version: \"" + minimalVersion + "\".\n" +
+                        "       Please check https://docs.gluonhq.com/client/#_linux and make sure that your environment meets the requirements.");
                 throw new IllegalArgumentException(processCommand[0] + " version too old");
             }
         }

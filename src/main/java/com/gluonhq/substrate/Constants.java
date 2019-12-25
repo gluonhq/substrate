@@ -99,8 +99,8 @@ public class Constants {
     public static final String PROFILE_IOS_SIM = "ios-sim";
     public static final String PROFILE_ANDROID = "android";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "14-ea+3";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "14-ea+gvm1";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "14-ea+5";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "14-ea+gvm2";
 
     /**
      * Paths
@@ -126,11 +126,18 @@ public class Constants {
      */
     public static final String PLIST_FILE = "Default-Info.plist";
 
+    public static final String META_INF_SUBSTRATE_CONFIG = "META-INF/substrate/config/";
+    public static final String USER_INIT_BUILD_TIME_FILE = "initbuildtime";
+    public static final String USER_INIT_BUILD_TIME_ARCHOS_FILE = "initbuildtime-${archOs}";
+    public static final String USER_REFLECTION_FILE = "reflectionconfig.json";
+    public static final String USER_REFLECTION_ARCHOS_FILE = "reflectionconfig-${archOs}.json";
+    public static final String USER_JNI_FILE = "jniconfig.json";
+    public static final String USER_JNI_ARCHOS_FILE = "jniconfig-${archOs}.json";
+
     public static final String CONFIG_FILES = "/config/";
     public static final String REFLECTION_JAVA_FILE = "reflectionconfig-java.json";
     public static final String REFLECTION_JAVAFX_FILE = "reflectionconfig-javafx.json";
     public static final String REFLECTION_JAVAFXSW_FILE = "reflectionconfig-javafxsw.json";
-    public static final String REFLECTION_GLISTEN_FILE = "reflectionconfig-glisten.json";
     public static final String REFLECTION_JAVAFX_ARCH_FILE = "reflectionconfig-javafx-${archOs}.json";
     public static final String REFLECTION_ARCH_FILE = "reflectionconfig-${archOs}.json";
 
