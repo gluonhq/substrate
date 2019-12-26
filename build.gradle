@@ -103,6 +103,9 @@ signing {
 }
 
 nexusPublishing {
+    repositories {
+        sonatype()
+    }
     // credentials are shared from staging plugin
     clientTimeout = Duration.ofMinutes(5)
     connectTimeout = Duration.ofMinutes(5)
