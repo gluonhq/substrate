@@ -34,15 +34,10 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.ProcessRunner;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -114,7 +109,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
 
         return new ClassPath(classPath).mapWithLibs(
-                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls" );
+                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls");
 
     }
 
@@ -150,8 +145,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path dalvikLibPath = dalvikPath.resolve("lib");
         Path dalvikLibArm64Path = dalvikLibPath.resolve("arm64-v8a");
 
-        String unalignedApk = dalvikBinPath.resolve("hello.unanligned.apk").toString();
-        String alignedApk = dalvikBinPath.resolve("hello.apk").toString();
+        String unalignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".unaligned.apk").toString();
+        String alignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".apk").toString();
 
         Files.createDirectories(dalvikSrcPath);
         Files.createDirectories(dalvikClassPath);
@@ -161,22 +156,35 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path androidManifestPath = dalvikPath.resolve("AndroidManifest.xml");
         FileOps.copyResource("/native/android/dalvik/MainActivity.java", dalvikSrcPath.resolve("MainActivity.java"));
         FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
+        FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
+
+        int processResult;
 
         ProcessRunner processRunner = new ProcessRunner(java8Home + "/bin/javac", "-d", dalvikClassPath.toString(), "-source", "1.7",
                 "-target", "1.7", "-cp", dalvikSrcPath.toString(), "-bootclasspath", androidJar,
                 dalvikSrcPath.resolve("MainActivity.java").toString());
-        processRunner.runProcess("dalvikCompilation");
+        processResult = processRunner.runProcess("dalvikCompilation");
+        if (processResult != 0)
+            return false;
+
         ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
                 "--output="+dalvikBinPath.resolve("classes.dex"),dalvikClassPath.toString());
-        dx.runProcess("DX");
+        processResult = dx.runProcess("DX");
+        if (processResult != 0)
+            return false;
 
         ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package", "-f", "-m", "-F", unalignedApk,
         "-M", androidManifestPath.toString(), "-I", androidJar);
-        aaptpackage.runProcess("AAPT-package");
+        processResult = aaptpackage.runProcess("AAPT-package");
+        if (processResult != 0)
+            return false;
 
         ProcessRunner aaptAddClass = new ProcessRunner(aaptCmd, "add", unalignedApk,
                 "classes.dex");
-        aaptAddClass.runProcess("AAPT-add classes", dalvikBinPath.toFile());
+        processResult = aaptAddClass.runProcess("AAPT-add classes", dalvikBinPath.toFile());
+        if (processResult != 0)
+            return false;
+
         Path libPath = paths.getAppPath().resolve(projectConfiguration.getAppName());
         Path graalLibPath = dalvikLibArm64Path.resolve("libmygraal.so");
         Files.deleteIfExists(graalLibPath);
@@ -184,33 +192,51 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path freetypeLibPath = dalvikLibArm64Path.resolve("libfreetype.so");
         Files.deleteIfExists(freetypeLibPath);
         Files.copy(fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so"), freetypeLibPath);
+
         ProcessRunner aaptAddLibs = new ProcessRunner(aaptCmd, "add", unalignedApk,
                 "lib/arm64-v8a/libmygraal.so","lib/arm64-v8a/libfreetype.so" );
-        aaptAddLibs.runProcess("AAPT-add lib", dalvikPath.toFile());
+        processResult = aaptAddLibs.runProcess("AAPT-add lib", dalvikPath.toFile());
+        if (processResult != 0)
+            return false;
 
         ProcessRunner zipAlign = new ProcessRunner(buildToolsPath.resolve("zipalign").toString(), "-f", "4", unalignedApk, alignedApk);
-        zipAlign.runProcess("zipalign");
+        processResult = zipAlign.runProcess("zipalign");
+        if (processResult != 0)
+            return false;
+
         createDevelopKeystore();
-        return true;
+
+        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks", 
+            paths.getGvmPath().resolve("debug.keystore").toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
+        processResult = sign.runProcess("sign");
+        
+        return processResult == 0;
     }
 
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
         Path sdkPath = Paths.get(sdk);
-        Path buildToolsPath = sdkPath.resolve("build-tools").resolve("27.0.3");
 
         Path dalvikPath = paths.getGvmPath().resolve("dalvik");
         Path dalvikBinPath = dalvikPath.resolve("bin");
+        String alignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".apk").toString();
 
-        String alignedApk = dalvikBinPath.resolve("hello.apk").toString();
-        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(),"sign", "--ks",
-                "~/android.keystore" , alignedApk);
-        sign.runProcess("sign");
+        int processResult;
 
-        ProcessRunner install = new ProcessRunner(sdkPath.resolve("patform-tools").resolve("adb").toString(),
+        // Path keystorePath = Paths.get(System.getProperty("user.home")+"/android.keystore");
+        // if (!Files.exists(keystorePath)) throw new IOException ("Can't find android keystore file at "+System.getProperty("user.home"));
+
+        // ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(),"sign", "--ks",
+        // keystorePath.toString() , alignedApk);
+        // processResult = sign.runProcess("sign");
+        // if (processResult != 0)
+        //     return false;
+
+        ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
                 "install", "-r", alignedApk);
-        install.runProcess("install");
-        return true;
+        processResult = install.runProcess("install");
+        
+        return processResult == 0;
     }
 
     @Override
@@ -304,20 +330,22 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return capPath;
     }
 
-    private void createDevelopKeystore() {
-        try {
-            System.err.println("Create ks");
-            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(null, null); //empty pwd
-            String storename = paths.getGvmPath().resolve("debugkeystore.jks").toString();
-            String pwd = "debug";
-            try (FileOutputStream fos = new FileOutputStream(storename)) {
-                ks.store(fos, pwd.toCharArray());
-            }
-            System.err.println("done creating ks");
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException kse) {
-            kse.printStackTrace();
-            throw new IllegalArgumentException("fatal, can not create a keystore", kse);
+    private void createDevelopKeystore() throws IOException, InterruptedException {
+        Path keystore = paths.getGvmPath().resolve("debug.keystore");
+        
+        if (Files.exists(keystore)) {
+            System.err.println("ks exists, skipping");
+            return;
         }
+
+        int processResult;
+
+        ProcessRunner generateTestKey = new ProcessRunner("keytool", "-genkey", "-v", "-keystore", keystore.toString(), "-storepass",
+            "android", "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US", "-noprompt");
+        processResult = generateTestKey.runProcess("generateTestKey");
+        if (processResult != 0)
+            throw new IllegalArgumentException("fatal, can not create a keystore");
+
+        System.err.println("done creating ks");
     }
 }

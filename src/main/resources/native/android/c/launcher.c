@@ -14,7 +14,7 @@
 #define  LOGD(ignore, ...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define  LOGE(ignore, ...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-extern void *IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e();
+extern int *run_main(int argc, char* argv[]);
 
 extern void requestGlassToRedraw();
 
@@ -25,6 +25,14 @@ int start_logger(const char *app_name);
 static int pfd[2];
 static pthread_t thr;
 static const char *tag = "myapp";
+const char * args[] = {
+        "myapp",
+        "-Djavafx.platform=android",
+        "-Dembedded=monocle",
+        "-Dglass.platform=Monocle",
+        "-Djavafx.verbose=true",
+        "-Djavafx.pulseLogger=true",
+        "-Dprism.verbose=true"};
 
 // === called from DALVIK. Minize work/dependencies here === // 
 
@@ -36,7 +44,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
     LOGE(stderr, "EnvVersion = %d\n", ev);
     start_logger("GraalCompiled");
     LOGE(stderr, "calling JavaMainWrapper_run\n");
-    (*IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e)(1);
+    (*run_main)(7, args);
     LOGE(stderr, "called JavaMainWrapper_run\n");
 }
 
@@ -125,13 +133,13 @@ void determineCPUFeatures() {
 fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
 }
 
-void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
+/*void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
 fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_INIT\n");
 }
 
 void  Java_sun_nio_fs_LinuxNativeDispatcher_fgetxattr0() {
 fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_GETXATTR\n");
-}
+}*/
 
 void Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0() {
 fprintf(stderr, "\n\n\nLINUXSOCKETOPTIONS_KEEPALIVESUP0\n");
