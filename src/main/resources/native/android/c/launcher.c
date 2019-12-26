@@ -19,11 +19,12 @@ extern int *run_main(int argc, char* argv[]);
 extern void requestGlassToRedraw();
 extern void android_setNativeWindow(ANativeWindow* nativeWindow);
 extern void android_setDensity(float nativeDensity);
-extern void Java_com_sun_glass_ui_android_DalvikInput_onMultiTouchEventNative
-      (JNIEnv *env, jobject activity, jint count, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys);
+// extern void Java_com_sun_glass_ui_android_DalvikInput_onMultiTouchEventNative
+      // (JNIEnv *env, jobject activity, jint count, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys);
 extern void android_gotTouchEvent (int count, int* actions, int* ids, int* xs, int* ys, int primary);
-extern void Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative
-      (JNIEnv *env, jobject activity, jint action, jint keycode);
+// extern void Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative
+      // (JNIEnv *env, jobject activity, jint action, jint keycode);
+extern int to_jfx_touch_action(int state);
 
 ANativeWindow *window;
 jfloat density;
@@ -82,8 +83,10 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSurfaceR
 
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotTouchEvent
-(JNIEnv *env, jobject activity, jint count, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys) {
+(JNIEnv *env, jobject activity, jint jcount, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys) {
     LOGE(stderr, "Native Dalvik layer got touch event, pass to native Graal layer...");
+
+    jlong jlongids[jcount];
 
     int *actions = (*env)->GetIntArrayElements(env, jactions, 0);
     int *ids = (*env)->GetIntArrayElements(env, jids, 0);
@@ -99,6 +102,12 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotTouch
     }
     android_gotTouchEvent(jcount, actions, ids, xs, ys, primary);
 
+    (*env)->ReleaseIntArrayElements(env, jactions, actions, 0);
+    (*env)->ReleaseIntArrayElements(env, jids, ids, 0);
+    (*env)->ReleaseIntArrayElements(env, jxs, xs, 0);
+    (*env)->ReleaseIntArrayElements(env, jys, ys, 0);
+
+
     // Java_com_sun_glass_ui_android_DalvikInput_onMultiTouchEventNative(NULL, NULL, count, jactions, jids, jxs, jys);
     LOGE(stderr, "Native Dalvik layer got touch event, passed to native Graal layer...");
 }
@@ -106,7 +115,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotTouch
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotKeyEvent
 (JNIEnv *env, jobject activity, jint action, jint keyCode) {
     LOGE(stderr, "Native Dalvik layer got key event, pass to native Graal layer...");
-    Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative(NULL, NULL, action, keyCode);
+    // Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative(NULL, NULL, action, keyCode);
     LOGE(stderr, "Native Dalvik layer got key event, passed to native Graal layer...");
 }
 

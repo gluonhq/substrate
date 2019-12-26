@@ -12,7 +12,8 @@
     "methods" : [
       {"name":"<init>","parameterTypes":[] },
       {"name":"gotTouchEventFromNative","parameterTypes":["int", "int[]", "int[]", "int[]", "int[]", "int"]},
-      {"name":"gotKeyEventFromNative","parameterTypes":["int", "int"]}
+      {"name":"gotKeyEventFromNative","parameterTypes":["int", "int"]},
+      {"name":"registerDevice","parameterTypes":[]}
     ]
   }
 , 
