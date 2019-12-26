@@ -189,15 +189,22 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path graalLibPath = dalvikLibArm64Path.resolve("libmygraal.so");
         Files.deleteIfExists(graalLibPath);
         Files.copy(libPath, graalLibPath);
-        Path freetypeLibPath = dalvikLibArm64Path.resolve("libfreetype.so");
-        Files.deleteIfExists(freetypeLibPath);
-        Files.copy(fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so"), freetypeLibPath);
 
-        ProcessRunner aaptAddLibs = new ProcessRunner(aaptCmd, "add", unalignedApk,
-                "lib/arm64-v8a/libmygraal.so","lib/arm64-v8a/libfreetype.so" );
+        boolean useJavaFX = projectConfiguration.isUseJavaFX();
+        if (useJavaFX) {
+            Path freetypeLibPath = dalvikLibArm64Path.resolve("libfreetype.so");
+            Files.deleteIfExists(freetypeLibPath);
+            Files.copy(fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so"), freetypeLibPath);
+        }
+
+        List<String> aaptAddLibsArgs = Arrays.asList(aaptCmd, "add", unalignedApk,"lib/arm64-v8a/libmygraal.so");
+        if (useJavaFX) {
+            aaptAddLibsArgs.add("lib/arm64-v8a/libfreetype.so");
+        }
+
+        ProcessRunner aaptAddLibs = new ProcessRunner(aaptAddLibsArgs.toArray(String[]::new));
         processResult = aaptAddLibs.runProcess("AAPT-add lib", dalvikPath.toFile());
-        if (processResult != 0)
-            return false;
+        if (processResult != 0) return false;
 
         ProcessRunner zipAlign = new ProcessRunner(buildToolsPath.resolve("zipalign").toString(), "-f", "4", unalignedApk, alignedApk);
         processResult = zipAlign.runProcess("zipalign");
