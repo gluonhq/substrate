@@ -17,7 +17,8 @@
 extern int *run_main(int argc, char* argv[]);
 
 extern void requestGlassToRedraw();
-extern void android_setNativeWindow(ANativeWindow* nativeWindow);
+// extern void android_setNativeWindow(ANativeWindow* nativeWindow);
+extern void androidJfx_setNativeWindow(ANativeWindow* nativeWindow);
 extern void android_setDensity(float nativeDensity);
 // extern void Java_com_sun_glass_ui_android_DalvikInput_onMultiTouchEventNative
       // (JNIEnv *env, jobject activity, jint count, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys);
@@ -58,9 +59,10 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurface
 (JNIEnv *env, jobject activity, jobject surface) {
-    LOGE(stderr, "nativeSetSurface called, env at %p and size %ld, surface at %p\n", env, sizeof(JNIEnv), surface);
+    LOGE(stderr, "nativeSetSurface Called, env at %p and size %ld, surface at %p\n", env, sizeof(JNIEnv), surface);
     window = ANativeWindow_fromSurface(env, surface);
-    android_setNativeWindow(window);
+    LOGE(stderr, "now call ANDROID_SETNATIVEWINDOW on openjfx, method = %p or %p\n", androidJfx_setNativeWindow, &androidJfx_setNativeWindow);
+    androidJfx_setNativeWindow(window);
     LOGE(stderr, "native setSurface Ready, native window at %p\n", window);
 }
 
@@ -68,7 +70,8 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
 (JNIEnv *env, jobject activity, jobject surface, jfloat mydensity) {
     LOGE(stderr, "SurfaceReady, surface at %p\n", surface);
     window = ANativeWindow_fromSurface(env, surface);
-    android_setNativeWindow(window);
+    LOGE(stderr, "now call ANDROID_SETNATIVEWINDOW on openjfx, method = %p or %p\n", androidJfx_setNativeWindow, &androidJfx_setNativeWindow);
+    androidJfx_setNativeWindow(window);
     android_setDensity(mydensity);
     LOGE(stderr, "SurfaceReady, native window at %p\n", window);
     density = mydensity;
