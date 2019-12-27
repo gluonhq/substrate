@@ -179,26 +179,19 @@ public class SubstrateDispatcher {
      */
     public boolean nativeCompile(String classPath) throws Exception {
         config.canRunNativeImage();
-        if (classPath != null) {
-            boolean useJavaFX = new ClassPath(classPath).contains( s -> s.contains("javafx"));
-            config.setUseJavaFX(useJavaFX);
-        }
+        boolean useJavaFX = new ClassPath(classPath).contains( s -> s.contains("javafx"));
+        config.setUseJavaFX(useJavaFX);
 
         Triplet targetTriplet  = config.getTargetTriplet();
         if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
             throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
         }
 
-        logInit(paths.getLogPath().toString(), title("COMPILE TASK"),
-                config.isVerbose());
+        logInit(paths.getLogPath().toString(), title("COMPILE TASK"),  config.isVerbose());
         System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
-        boolean compile = targetConfiguration.compile(classPath);
-        if (compile) {
-            System.err.println("Compilation succeeded.");
-        } else {
-            System.err.println("Compilation failed. The error should be printed above.");
-        }
-        return compile;
+        boolean compilationSuccess = targetConfiguration.compile(classPath);
+        System.err.println(compilationSuccess? "Compilation succeeded.": "Compilation failed. See error printed above.");
+        return compilationSuccess;
     }
 
     /**
@@ -213,12 +206,9 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public boolean nativeLink(String classPath) throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("LINK TASK"),
-                config.isVerbose());
-        if (classPath != null) {
-            boolean useJavaFX = new ClassPath(classPath).contains(s -> s.contains("javafx"));
-            config.setUseJavaFX(useJavaFX);
-        }
+        logInit(paths.getLogPath().toString(), title("LINK TASK"), config.isVerbose());
+        boolean useJavaFX = new ClassPath(classPath).contains(s -> s.contains("javafx"));
+        config.setUseJavaFX(useJavaFX);
         return targetConfiguration.link();
     }
 
@@ -229,8 +219,7 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public void nativeRun() throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("RUN TASK"),
-                config.isVerbose());
+        logInit(paths.getLogPath().toString(), title("RUN TASK"), config.isVerbose());
         targetConfiguration.runUntilEnd();
     }
 
