@@ -152,7 +152,7 @@ public class SubstrateDispatcher {
         this.config = new InternalProjectConfiguration(config);
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),
-                "Error: Target Configuration was null");
+                "Error: Target Configuration was not found");
     }
 
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
@@ -188,9 +188,7 @@ public class SubstrateDispatcher {
         if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
             throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
         }
-        if (targetConfiguration == null) {
-            throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
-        }
+
         logInit(paths.getLogPath().toString(), title("COMPILE TASK"),
                 config.isVerbose());
         System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
@@ -217,9 +215,6 @@ public class SubstrateDispatcher {
     public boolean nativeLink(String classPath) throws IOException, InterruptedException {
         logInit(paths.getLogPath().toString(), title("LINK TASK"),
                 config.isVerbose());
-        if (targetConfiguration == null) {
-            throw new IllegalArgumentException("We don't have a configuration to link " + config.getTargetTriplet());
-        }
         if (classPath != null) {
             boolean useJavaFX = new ClassPath(classPath).contains(s -> s.contains("javafx"));
             config.setUseJavaFX(useJavaFX);
@@ -236,9 +231,6 @@ public class SubstrateDispatcher {
     public void nativeRun() throws IOException, InterruptedException {
         logInit(paths.getLogPath().toString(), title("RUN TASK"),
                 config.isVerbose());
-        if (targetConfiguration == null) {
-            throw new IllegalArgumentException("We don't have a configuration to run " + config.getTargetTriplet());
-        }
         targetConfiguration.runUntilEnd();
     }
 
