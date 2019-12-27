@@ -197,7 +197,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Files.copy(fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so"), freetypeLibPath);
         }
 
-        List<String> aaptAddLibsArgs = Arrays.asList(aaptCmd, "add", unalignedApk,"lib/arm64-v8a/libmygraal.so");
+        List<String> aaptAddLibsArgs = new ArrayList<>(Arrays.asList(aaptCmd, "add", unalignedApk,"lib/arm64-v8a/libmygraal.so"));
         if (useJavaFX) {
             aaptAddLibsArgs.add("lib/arm64-v8a/libfreetype.so");
         }
