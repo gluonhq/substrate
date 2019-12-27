@@ -151,8 +151,9 @@ public class SubstrateDispatcher {
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
         this.config = new InternalProjectConfiguration(config);
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
-        this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),
-                "Error: Target Configuration was not found");
+        Triplet targetTriplet = config.getTargetTriplet();
+        this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
+                "Error: Target Configuration was not found for " + targetTriplet);
     }
 
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
