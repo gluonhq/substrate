@@ -17,12 +17,11 @@
 extern int *run_main(int argc, char* argv[]);
 
 extern void requestGlassToRedraw();
-// extern void android_setNativeWindow(ANativeWindow* nativeWindow);
 extern void androidJfx_setNativeWindow(ANativeWindow* nativeWindow);
-extern void android_setDensity(float nativeDensity);
+extern void androidJfx_setDensity(float nativeDensity);
 // extern void Java_com_sun_glass_ui_android_DalvikInput_onMultiTouchEventNative
       // (JNIEnv *env, jobject activity, jint count, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys);
-extern void android_gotTouchEvent (int count, int* actions, int* ids, int* xs, int* ys, int primary);
+extern void androidJfx_gotTouchEvent (int count, int* actions, int* ids, int* xs, int* ys, int primary);
 // extern void Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative
       // (JNIEnv *env, jobject activity, jint action, jint keycode);
 extern int to_jfx_touch_action(int state);
@@ -72,7 +71,7 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
     window = ANativeWindow_fromSurface(env, surface);
     LOGE(stderr, "now call ANDROID_SETNATIVEWINDOW on openjfx, method = %p or %p\n", androidJfx_setNativeWindow, &androidJfx_setNativeWindow);
     androidJfx_setNativeWindow(window);
-    android_setDensity(mydensity);
+    androidJfx_setDensity(mydensity);
     LOGE(stderr, "SurfaceReady, native window at %p\n", window);
     density = mydensity;
     return (jlong)window;
@@ -103,7 +102,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotTouch
             primary = actions[i] == com_sun_glass_events_TouchEvent_TOUCH_RELEASED && jcount == 1 ? -1 : i; 
         }
     }
-    android_gotTouchEvent(jcount, actions, ids, xs, ys, primary);
+    androidJfx_gotTouchEvent(jcount, actions, ids, xs, ys, primary);
 
     (*env)->ReleaseIntArrayElements(env, jactions, actions, 0);
     (*env)->ReleaseIntArrayElements(env, jids, ids, 0);
