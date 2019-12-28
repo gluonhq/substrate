@@ -27,18 +27,15 @@
  */
 package com.gluonhq.substrate.model;
 
-import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.target.*;
 
-import java.util.Locale;
-
-import static com.gluonhq.substrate.Constants.*;
+import java.util.Objects;
 
 public class Triplet {
 
-    private String arch;
-    private String vendor;
-    private String os;
+    private Architecture arch;
+    private OS os;
+    private Vendor vendor;
 
     /**
      * Creates a new triplet for the current runtime
@@ -46,60 +43,21 @@ public class Triplet {
      * @throws IllegalArgumentException in case the current operating system is not supported
      */
     public static Triplet fromCurrentOS() throws IllegalArgumentException {
-        String osName  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-
-        if (osName.contains("mac")) {
-           return new Triplet(Constants.Profile.MACOS);
-        } else if (osName.contains("nux")) {
-            return new Triplet(Constants.Profile.LINUX);
-        } else if (osName.contains("windows")) {
-            return new Triplet(Constants.Profile.WINDOWS);
-        } else {
-           throw new IllegalArgumentException("OS " + osName + " not supported");
-        }
+        return new Triplet( TripletProfile.fromCurrentOS());
     }
 
     public Triplet(String arch, String vendor, String os) {
-        this.arch = arch;
-        this.vendor = vendor;
-        this.os = os;
+
+        // following should throw exception for unsupported parts
+        this.arch = Architecture.valueOf(arch);
+        this.os = OS.valueOf(os);
+        this.vendor = Vendor.valueOf(vendor);
     }
 
-    public Triplet(Constants.Profile profile) {
-        switch (profile) {
-            case LINUX:
-                this.arch = ARCH_AMD64;
-                this.vendor = VENDOR_LINUX;
-                this.os = OS_LINUX;
-                break;
-            case MACOS:
-                this.arch = ARCH_AMD64;
-                this.vendor = VENDOR_APPLE;
-                this.os = OS_DARWIN;
-                break;
-            case WINDOWS:
-                this.arch = ARCH_AMD64;
-                this.vendor = VENDOR_MICROSOFT;
-                this.os = OS_WINDOWS;
-                break;
-            case IOS:
-                this.arch = ARCH_ARM64;
-                this.vendor = VENDOR_APPLE;
-                this.os = OS_IOS;
-                break;
-            case IOS_SIM:
-                this.arch = ARCH_AMD64;
-                this.vendor = VENDOR_APPLE;
-                this.os = OS_IOS;
-                break;
-            case ANDROID:
-                this.arch = ARCH_AARCH64;
-                this.vendor = VENDOR_LINUX;
-                this.os = OS_ANDROID;
-                break;
-            default:
-                throw new IllegalArgumentException("Triplet for profile "+profile+" is not supported yet");
-        }
+    public Triplet(TripletProfile profile) {
+        Objects.requireNonNull(profile);
+        this.arch = profile.getArch();
+        this.os = profile.getOs();
     }
 
     /*
@@ -111,32 +69,20 @@ public class Triplet {
         if (getOs().equals(target.getOs())) return true;
 
         // if host is linux and target is ios, fail
-        return (!Constants.OS_LINUX.equals(getOs()) && !Constants.OS_WINDOWS.equals(getOs())) ||
-                !Constants.OS_IOS.equals(target.getOs());
+        return (!OS.LINUX.equals(getOs()) && !OS.WINDOWS.equals(getOs())) ||
+                !OS.IOS.equals(target.getOs());
     }
 
-    public String getArch() {
+    public Architecture getArch() {
         return arch;
     }
 
-    public void setArch(String arch) {
-        this.arch = arch;
-    }
-
-    public String getVendor() {
+    public Vendor getVendor() {
         return vendor;
     }
 
-    public void setVendor(String vendor) {
-        this.vendor = vendor;
-    }
-
-    public String getOs() {
+    public OS getOs() {
         return os;
-    }
-
-    public void setOs(String os) {
-        this.os = os;
     }
 
     public String getArchOs() {
@@ -153,8 +99,8 @@ public class Triplet {
      * @return
      */
     public String getOsArch2() {
-        String myarch = this.arch;
-        if (myarch.equals("x86_64")) {
+        String myarch = this.arch.toString();
+        if (  "x86_64".equals(myarch)) {
             myarch = "amd64";
         }
         return this.os+"-"+myarch;
@@ -162,6 +108,6 @@ public class Triplet {
 
     @Override
     public String toString() {
-        return arch + '-' + vendor + '-' + os;
+        return arch.toString() + '-' + vendor + '-' + os;
     }
 }

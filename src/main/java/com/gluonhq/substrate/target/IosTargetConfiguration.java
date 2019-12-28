@@ -83,7 +83,7 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
-                "-arch", Constants.ARCH_ARM64,
+                "-arch", Architecture.ARM64.toString(),
                 "-mios-version-min=11.0",
                 "-isysroot", getSysroot()));
         if (useJavaFX) {
@@ -101,7 +101,7 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificCCompileFlags() {
         return Arrays.asList("-xobjective-c",
-                "-arch", getArch(),
+                "-arch", getArch().toString(),
                 "-isysroot", getSysroot());
     }
 
@@ -222,7 +222,7 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
                      fileDeps.getJavaFXSDKLibsPath(),"javafx-graphics","javafx-controls" );
     }
 
-    private String getArch() {
+    private Architecture getArch() {
         return projectConfiguration.getTargetTriplet().getArch();
     }
 
@@ -232,7 +232,7 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private boolean isSimulator() {
-        return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
+        return Architecture.AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
     private void createInfoPlist(ProcessPaths paths) throws IOException {
@@ -248,7 +248,7 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
 
     private boolean lipoMatch(Path path) {
         try {
-            return lipoInfo(path).indexOf(getArch()) > 0;
+            return lipoInfo(path).indexOf(getArch().toString()) > 0;
         } catch (IOException | InterruptedException e) {
             Logger.logSevere("Error processing lipo for " + path);
         }

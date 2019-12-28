@@ -31,12 +31,8 @@ import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
-import com.gluonhq.substrate.target.AndroidTargetConfiguration;
-import com.gluonhq.substrate.target.DarwinTargetConfiguration;
-import com.gluonhq.substrate.target.IosTargetConfiguration;
-import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
-import com.gluonhq.substrate.target.WindowsTargetConfiguration;
+import com.gluonhq.substrate.target.TripletProfile;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.IOException;
@@ -61,7 +57,7 @@ public class SubstrateDispatcher {
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String targetProfile = System.getProperty("targetProfile");
 
-        Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
+        Triplet targetTriplet = targetProfile != null? new Triplet(TripletProfile.valueOf(targetProfile.toUpperCase()))
                 :Triplet.fromCurrentOS();
 
         String expected  = System.getProperty("expected");
@@ -156,14 +152,7 @@ public class SubstrateDispatcher {
     }
 
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
-        switch (targetTriplet.getOs()) {
-            case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
-            case Constants.OS_DARWIN : return new DarwinTargetConfiguration(paths, config);
-            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config);
-            case Constants.OS_IOS    : return new IosTargetConfiguration(paths, config);
-            case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config);
-            default                  : return null;
-        }
+        return targetTriplet.getOs().getTargetConfiguration(paths, config);
     }
 
 
