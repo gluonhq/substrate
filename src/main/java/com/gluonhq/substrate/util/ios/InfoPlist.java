@@ -87,7 +87,7 @@ public class InfoPlist {
     public InfoPlist(ProcessPaths paths, InternalProjectConfiguration projectConfiguration, XcodeUtils.SDKS sdk) throws IOException {
         this.paths = Objects.requireNonNull(paths);
         this.projectConfiguration = Objects.requireNonNull(projectConfiguration);
-        this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
+        this.sourceOS = projectConfiguration.getTargetTriplet().getOs().toString();
         this.sdk = sdk;
         this.xcodeUtil = new XcodeUtils(sdk);
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");

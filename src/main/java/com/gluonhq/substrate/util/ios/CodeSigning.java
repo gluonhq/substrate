@@ -88,7 +88,7 @@ public class CodeSigning {
     public CodeSigning(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
-        this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
+        this.sourceOS = projectConfiguration.getTargetTriplet().getOs().toString();
         this.bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
 
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");

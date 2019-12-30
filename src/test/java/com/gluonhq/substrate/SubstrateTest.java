@@ -29,6 +29,10 @@ package com.gluonhq.substrate;
 
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.Triplet;
+import com.gluonhq.substrate.target.Architecture;
+import com.gluonhq.substrate.target.OS;
+import com.gluonhq.substrate.target.TripletProfile;
+import com.gluonhq.substrate.target.Vendor;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -41,34 +45,34 @@ class SubstrateTest {
 
     @Test
     void testTriplets() {
-        Triplet triplet = new Triplet(Constants.Profile.LINUX);
-        assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
-        assertEquals(triplet.getVendor(), Constants.VENDOR_LINUX);
-        assertEquals(triplet.getOs(), Constants.OS_LINUX);
+        Triplet triplet = new Triplet(TripletProfile.LINUX);
+        assertEquals(triplet.getArch(), Architecture.AMD64);
+        assertEquals(triplet.getVendor(), Vendor.LINUX);
+        assertEquals(triplet.getOs(), OS.LINUX);
 
-        triplet = new Triplet(Constants.Profile.MACOS);
-        assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
-        assertEquals(triplet.getVendor(), Constants.VENDOR_APPLE);
-        assertEquals(triplet.getOs(), Constants.OS_DARWIN);
+        triplet = new Triplet(TripletProfile.MACOS);
+        assertEquals(triplet.getArch(), Architecture.AMD64);
+        assertEquals(triplet.getVendor(), Vendor.APPLE);
+        assertEquals(triplet.getOs(), OS.DARWIN);
     }
 
     @Test
     void testWindowsTriplet() {
-        Triplet triplet = new Triplet(Constants.Profile.WINDOWS);
-        assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
-        assertEquals(triplet.getVendor(), Constants.VENDOR_MICROSOFT);
-        assertEquals(triplet.getOs(), Constants.OS_WINDOWS);
+        Triplet triplet = new Triplet(TripletProfile.WINDOWS);
+        assertEquals(triplet.getArch(), Architecture.AMD64);
+        assertEquals(triplet.getVendor(), Vendor.MICROSOFT);
+        assertEquals(triplet.getOs(), OS.WINDOWS);
     }
 
     @Test
     void testIOSTriplet() throws IOException {
-        Triplet iosTriplet = new Triplet(Constants.Profile.IOS);
+        Triplet iosTriplet = new Triplet(TripletProfile.IOS);
         Triplet currentOsTriplet = Triplet.fromCurrentOS();
         ProjectConfiguration config = new ProjectConfiguration("");
         config.setTarget(iosTriplet);
 
         // when on linux, nativeCompile should throw an illegalArgumentException
-        if (currentOsTriplet.getOs().indexOf("nux") > 0) {
+        if (currentOsTriplet.getOs().toString().indexOf("nux") > 0) {
             var dispatcher = new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config);
             assertThrows(NullPointerException.class, () -> dispatcher.nativeCompile(null));
         }

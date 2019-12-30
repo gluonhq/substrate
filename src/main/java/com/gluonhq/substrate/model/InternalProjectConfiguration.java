@@ -29,6 +29,7 @@ package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.ProjectConfiguration;
+import com.gluonhq.substrate.target.OS;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedReader;
@@ -374,7 +375,7 @@ public class InternalProjectConfiguration {
         if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
         Path binPath = graalPath.resolve("bin");
         if (!Files.exists(binPath)) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPath);
-        Path niPath = Constants.OS_WINDOWS.equals(getHostTriplet().getOs()) ?
+        Path niPath = OS.WINDOWS.equals(getHostTriplet().getOs()) ?
                 binPath.resolve("native-image.cmd") :
                 binPath.resolve("native-image");
         if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPath + "\n" +
