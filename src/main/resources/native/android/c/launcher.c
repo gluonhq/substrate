@@ -16,7 +16,7 @@
 
 extern int *run_main(int argc, char* argv[]);
 
-extern void requestGlassToRedraw();
+extern void androidJfx_requestGlassToRedraw();
 extern void androidJfx_setNativeWindow(ANativeWindow* nativeWindow);
 extern void androidJfx_setDensity(float nativeDensity);
 extern void androidJfx_gotTouchEvent (int count, int* actions, int* ids, int* xs, int* ys, int primary);
@@ -74,7 +74,7 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSurfaceRedrawNeeded
 (JNIEnv *env, jobject activity) {
     LOGE(stderr, "launcher, nativeSurfaceRedrawNeeded called. Invoke method on glass_monocle\n");
-    requestGlassToRedraw();
+    androidJfx_requestGlassToRedraw();
 }
 
 
