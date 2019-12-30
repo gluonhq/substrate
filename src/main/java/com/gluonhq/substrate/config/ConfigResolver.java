@@ -30,10 +30,13 @@ package com.gluonhq.substrate.config;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -61,11 +64,35 @@ public class ConfigResolver {
 
     private final List<File> jars;
 
-    public ConfigResolver(String classpath) {
-        this.jars = new ClassPath(classpath)
+    /**
+     * ConfigResolver constructor
+     *
+     * @param classpath a string with the full classpath of the user's project
+     * @param tmpPath a temporal path where classes.jar will be added
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public ConfigResolver(String classpath, Path tmpPath) throws IOException, InterruptedException {
+        ClassPath cp = new ClassPath(classpath);
+        Objects.requireNonNull(tmpPath);
+        this.jars = cp
                 .filter(s -> s.endsWith(".jar") && !s.contains("javafx-")).stream()
                 .map(File::new)
                 .collect(Collectors.toList());
+
+        // Add project's classes as a jar to the list so it can be scanned as well
+        String classes = cp.filter(s -> s.endsWith("classes")).stream()
+                    .findFirst()
+                    .orElse(null);
+        if (classes != null) {
+            Path jar = tmpPath.resolve("classes.jar");
+            ProcessRunner runner = new ProcessRunner("jar", "cf", jar.toString(), "-C", classes, ".");
+            if (runner.runProcess("jar") == 0 && Files.exists(jar)) {
+                jars.add(jar.toFile());
+            } else {
+                throw new IOException("Error creating classes.jar");
+            }
+        }
     }
 
     /**
