@@ -72,6 +72,11 @@ public class Triplet {
                 this.vendor = VENDOR_LINUX;
                 this.os = OS_LINUX;
                 break;
+            case LINUX_AARCH64:
+                this.arch = ARCH_AARCH64;
+                this.vendor = VENDOR_LINUX;
+                this.os = OS_LINUX;
+                break;
             case MACOS:
                 this.arch = ARCH_AMD64;
                 this.vendor = VENDOR_APPLE;
