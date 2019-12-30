@@ -68,13 +68,11 @@ public class ConfigResolver {
      * ConfigResolver constructor
      *
      * @param classpath a string with the full classpath of the user's project
-     * @param tmpPath a temporal path where classes.jar will be added
      * @throws IOException
      * @throws InterruptedException
      */
-    public ConfigResolver(String classpath, Path tmpPath) throws IOException, InterruptedException {
+    public ConfigResolver(String classpath) throws IOException, InterruptedException {
         ClassPath cp = new ClassPath(classpath);
-        Objects.requireNonNull(tmpPath);
         this.jars = cp
                 .filter(s -> s.endsWith(".jar") && !s.contains("javafx-")).stream()
                 .map(File::new)
@@ -85,7 +83,7 @@ public class ConfigResolver {
                     .findFirst()
                     .orElse(null);
         if (classes != null) {
-            Path jar = tmpPath.resolve("classes.jar");
+            Path jar = Files.createTempDirectory("classes").resolve("classes.jar");
             ProcessRunner runner = new ProcessRunner("jar", "cf", jar.toString(), "-C", classes, ".");
             if (runner.runProcess("jar") == 0 && Files.exists(jar)) {
                 jars.add(jar.toFile());

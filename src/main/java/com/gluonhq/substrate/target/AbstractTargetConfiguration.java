@@ -114,7 +114,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         Path gvmPath = paths.getGvmPath();
         FileOps.rmdir(paths.getTmpPath());
-        Files.createDirectories(paths.getTmpPath());
         String tmpDir = paths.getTmpPath().toFile().getAbsolutePath();
         String mainClassName = projectConfiguration.getMainClassName();
 
@@ -124,7 +123,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (cp == null || cp.isEmpty()) {
             throw new IllegalArgumentException("No classpath specified. Cannot compile");
         }
-        configResolver = new ConfigResolver(cp, paths.getTmpPath());
+        configResolver = new ConfigResolver(cp);
         String nativeImage = getNativeImagePath();
         ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
         List<String> buildTimeList = getInitializeAtBuildTimeList(suffix);

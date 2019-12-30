@@ -50,7 +50,7 @@ class ConfigTests {
         Path resourcePath = FileOps.copyResource("/substrate-test.jar", jarPath);
         assertNotNull(resourcePath);
         assertTrue(Files.exists(resourcePath));
-        resolver = new ConfigResolver(resourcePath.toString(), jarPath);
+        resolver = new ConfigResolver(resourcePath.toString());
     }
 
     @Test
