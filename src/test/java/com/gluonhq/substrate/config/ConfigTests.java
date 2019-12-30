@@ -45,12 +45,12 @@ class ConfigTests {
     private static ConfigResolver resolver;
 
     @BeforeAll
-    static void setClassPath() throws IOException {
+    static void setClassPath() throws IOException, InterruptedException {
         Path jarPath = Files.createTempDirectory("substrate-tests").resolve("substrate-test.jar");
         Path resourcePath = FileOps.copyResource("/substrate-test.jar", jarPath);
         assertNotNull(resourcePath);
         assertTrue(Files.exists(resourcePath));
-        resolver = new ConfigResolver(resourcePath.toString());
+        resolver = new ConfigResolver(resourcePath.toString(), jarPath);
     }
 
     @Test
