@@ -270,8 +270,9 @@ public class Deploy {
 
     private boolean installIOSDeploy() throws IOException, InterruptedException {
         Logger.logInfo("ios-deploy not found. It will be installed now");
+        Path tmpDeploy = FileOps.copyResourceToTmp("/thirdparty/ios-deploy/ios-deploy.rb");
 
-        ProcessRunner runner = new ProcessRunner("brew", "install", "--HEAD", "ios-deploy");
+        ProcessRunner runner = new ProcessRunner("brew", "install", "--HEAD", tmpDeploy.toString());
         if (runner.runProcess("ios-deploy") == 0) {
             Logger.logDebug("ios-deploy installed");
             return true;
