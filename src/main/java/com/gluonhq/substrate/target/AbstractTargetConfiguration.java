@@ -371,12 +371,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     private void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
-        if (useGraalVMJavaStaticLibraries()) {
-            linkBuilder.command().add(getLinkLibraryPathOption() + projectConfiguration.getGraalPath().resolve("lib"));
-        } else {
-            Path javaSDKPath = fileDeps.getJavaSDKPath();
-            linkBuilder.command().add(getLinkLibraryPathOption() + javaSDKPath);
-        }
+        Path javaSDKPath = fileDeps.getJavaSDKPath(useGraalVMJavaStaticLibraries());
+        linkBuilder.command().add(getLinkLibraryPathOption() + javaSDKPath);
     }
 
     private void addJavaFXStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
