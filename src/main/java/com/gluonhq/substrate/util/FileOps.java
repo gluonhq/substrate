@@ -33,6 +33,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -282,6 +283,35 @@ public class FileOps {
             }
         }
         return lines;
+    }
+
+    /**
+     * Writes list of lines to a text file
+     * @param file Path to output file
+     * @param lines A list of lines
+     * @throws IOException
+     */
+    public static void writeFileLines(Path file, List<String> lines) throws IOException {
+        FileWriter writer = new FileWriter(file.toString()); 
+        for(String str: lines) {
+          writer.write(str + System.lineSeparator());
+        }
+        writer.close();
+    }
+
+    /**
+     * Replaces all occurences of one parameter in file with another
+     * @param file Path to file
+     * @param original String which should be replaced
+     * @param replacement Replacement string
+     * @throws IOException
+     */
+    public static void replaceInFile(Path file, String original, String replacement) throws IOException {
+        InputStream inputStream = Files.newInputStream(file);
+        List<String> lines = readFileLines(inputStream);
+        for (int i=0; i<lines.size(); i++)
+            lines.set(i, lines.get(i).replaceAll(original, replacement));
+        writeFileLines(file, lines);
     }
 
     /**

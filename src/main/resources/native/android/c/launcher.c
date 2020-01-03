@@ -14,9 +14,13 @@
 #define  LOGD(ignore, ...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define  LOGE(ignore, ...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-extern void *IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e();
+extern int *run_main(int argc, char* argv[]);
 
-extern void requestGlassToRedraw();
+extern void androidJfx_requestGlassToRedraw();
+extern void androidJfx_setNativeWindow(ANativeWindow* nativeWindow);
+extern void androidJfx_setDensity(float nativeDensity);
+extern void androidJfx_gotTouchEvent (int count, int* actions, int* ids, int* xs, int* ys, int primary);
+extern int to_jfx_touch_action(int state);
 
 ANativeWindow *window;
 jfloat density;
@@ -25,6 +29,14 @@ int start_logger(const char *app_name);
 static int pfd[2];
 static pthread_t thr;
 static const char *tag = "myapp";
+const char * args[] = {
+        "myapp",
+        "-Djavafx.platform=android",
+        "-Dembedded=monocle",
+        "-Dglass.platform=Monocle",
+        "-Djavafx.verbose=true",
+        "-Djavafx.pulseLogger=true",
+        "-Dprism.verbose=true"};
 
 // === called from DALVIK. Minize work/dependencies here === // 
 
@@ -36,7 +48,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
     LOGE(stderr, "EnvVersion = %d\n", ev);
     start_logger("GraalCompiled");
     LOGE(stderr, "calling JavaMainWrapper_run\n");
-    (*IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e)(1);
+    (*run_main)(7, args);
     LOGE(stderr, "called JavaMainWrapper_run\n");
 }
 
@@ -44,6 +56,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurfa
 (JNIEnv *env, jobject activity, jobject surface) {
     LOGE(stderr, "nativeSetSurface called, env at %p and size %ld, surface at %p\n", env, sizeof(JNIEnv), surface);
     window = ANativeWindow_fromSurface(env, surface);
+    androidJfx_setNativeWindow(window);
     LOGE(stderr, "native setSurface Ready, native window at %p\n", window);
 }
 
@@ -51,6 +64,8 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
 (JNIEnv *env, jobject activity, jobject surface, jfloat mydensity) {
     LOGE(stderr, "SurfaceReady, surface at %p\n", surface);
     window = ANativeWindow_fromSurface(env, surface);
+    androidJfx_setNativeWindow(window);
+    androidJfx_setDensity(mydensity);
     LOGE(stderr, "SurfaceReady, native window at %p\n", window);
     density = mydensity;
     return (jlong)window;
@@ -59,8 +74,45 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSurfaceRedrawNeeded
 (JNIEnv *env, jobject activity) {
     LOGE(stderr, "launcher, nativeSurfaceRedrawNeeded called. Invoke method on glass_monocle\n");
-    requestGlassToRedraw();
+    androidJfx_requestGlassToRedraw();
 }
+
+
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotTouchEvent
+(JNIEnv *env, jobject activity, jint jcount, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys) {
+    LOGE(stderr, "Native Dalvik layer got touch event, pass to native Graal layer...");
+
+    jlong jlongids[jcount];
+
+    int *actions = (*env)->GetIntArrayElements(env, jactions, 0);
+    int *ids = (*env)->GetIntArrayElements(env, jids, 0);
+    int *xs = (*env)->GetIntArrayElements(env, jxs, 0);
+    int *ys = (*env)->GetIntArrayElements(env, jys, 0);
+    int primary = 0;
+    for(int i=0;i<jcount;i++) {
+        actions[i] = to_jfx_touch_action(actions[i]);
+        jlongids[i] = (jlong)ids[i];
+        if (actions[i] != com_sun_glass_events_TouchEvent_TOUCH_STILL) {
+            primary = actions[i] == com_sun_glass_events_TouchEvent_TOUCH_RELEASED && jcount == 1 ? -1 : i; 
+        }
+    }
+    androidJfx_gotTouchEvent(jcount, actions, ids, xs, ys, primary);
+
+    (*env)->ReleaseIntArrayElements(env, jactions, actions, 0);
+    (*env)->ReleaseIntArrayElements(env, jids, ids, 0);
+    (*env)->ReleaseIntArrayElements(env, jxs, xs, 0);
+    (*env)->ReleaseIntArrayElements(env, jys, ys, 0);
+
+    LOGE(stderr, "Native Dalvik layer got touch event, passed to native Graal layer...");
+}
+
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotKeyEvent
+(JNIEnv *env, jobject activity, jint action, jint keyCode) {
+    LOGE(stderr, "Native Dalvik layer got key event, pass to native Graal layer...");
+    // Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative(NULL, NULL, action, keyCode);
+    LOGE(stderr, "Native Dalvik layer got key event, TODO!!!");
+}
+
 // == expose window functionality to JavaFX native code == //
 
 ANativeWindow* _GLUON_getNativeWindow() {
@@ -125,13 +177,13 @@ void determineCPUFeatures() {
 fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
 }
 
-void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
+/*void Java_sun_nio_fs_LinuxNativeDispatcher_init () {
 fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_INIT\n");
 }
 
 void  Java_sun_nio_fs_LinuxNativeDispatcher_fgetxattr0() {
 fprintf(stderr, "\n\n\nLINUXNATIVEDISPATCHER_GETXATTR\n");
-}
+}*/
 
 void Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0() {
 fprintf(stderr, "\n\n\nLINUXSOCKETOPTIONS_KEEPALIVESUP0\n");

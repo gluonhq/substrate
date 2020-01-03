@@ -2,9 +2,9 @@ import java.time.Duration
 
 plugins {
     id 'java'
-    id 'maven-publish'
     id 'signing'
-    id "de.marcphilipp.nexus-publish" version "0.4.0"
+    id 'io.codearte.nexus-staging' version '0.21.1'
+    id 'de.marcphilipp.nexus-publish' version '0.4.0'
 }
 
 group = "com.gluonhq"
@@ -103,11 +103,14 @@ signing {
 
 nexusPublishing {
     repositories {
-        sonatype {
-            username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
-            password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
-        }
+        sonatype()
     }
+    // credentials are shared from staging plugin
     clientTimeout = Duration.ofMinutes(5)
     connectTimeout = Duration.ofMinutes(5)
+}
+
+nexusStaging {
+    username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
+    password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
 }

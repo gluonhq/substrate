@@ -24,6 +24,10 @@
   }
 ,
   {
+    "name" : "javafx.scene.canvas.Canvas"
+  }
+,
+  {
     "name" : "javafx.scene.control.Control"
   }
 ,

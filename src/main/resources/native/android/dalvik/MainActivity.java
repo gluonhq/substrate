@@ -27,6 +27,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private static FrameLayout  mViewGroup;
     private static SurfaceView  mView;
     private long nativeWindowPtr;
+    private float density;
+
     private static final String TAG     = "GraalActivity";
 
     boolean graalStarted = false;
@@ -35,7 +37,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
    @Override
    protected void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
-        Log.v(TAG, "onCreate start, using Android Logging");
+        Log.v(TAG, "onCreate start, using Android Logging v1");
         System.err.println("onCreate called, writing this to System.err");
         super.onCreate(savedInstanceState);
 
@@ -64,7 +66,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         nativeSetSurface(holder.getSurface());
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        float density = metrics.density;
+        density = metrics.density;
         Log.v(TAG, "metrics = "+metrics+", density = "+density);
         nativeWindowPtr = surfaceReady(holder.getSurface(), density);
         Log.v(TAG, "Surface created, native code informed about it, nativeWindow at "+nativeWindowPtr);
@@ -94,7 +96,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         nativeSetSurface(holder.getSurface());
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        float density = metrics.density;
+        density = metrics.density;
         Log.v(TAG, "surfaceChanged done, metrics = "+metrics+", density = "+density);
     }
 
@@ -125,14 +127,64 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native long surfaceReady(Surface surface, float density);
     private native void nativeSetSurface(Surface surface);
     private native void nativeSurfaceRedrawNeeded();
+    private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
+    private native void nativeGotKeyEvent(int action, int keycode);
 
     class InternalSurfaceView extends SurfaceView {
+       private static final int ACTION_POINTER_STILL = -1;
+
        public InternalSurfaceView(Context context) {
             super(context);
             setFocusableInTouchMode(true);
         }
 
+        @Override
+        public boolean dispatchTouchEvent(MotionEvent event) {
+            int action = event.getAction();
+            int actionCode = action & MotionEvent.ACTION_MASK;
+            final int pcount = event.getPointerCount();
+            final int[] actions = new int[pcount];
+            final int[] ids = new int[pcount];
+            final int[] touchXs = new int[pcount];
+            final int[] touchYs = new int[pcount];
+            Log.v(TAG, "Activity, get touch event, pcount = "+pcount);
+            if (pcount > 1) {
+                //multitouch
+                if (actionCode == MotionEvent.ACTION_POINTER_DOWN
+                        || actionCode == MotionEvent.ACTION_POINTER_UP) {
 
+                    int pointerIndex = event.getActionIndex();
+                    for (int i = 0; i < pcount; i++) {
+                        actions[i] = pointerIndex == i ? actionCode : ACTION_POINTER_STILL;
+                        ids[i] = event.getPointerId(i);
+                        touchXs[i] = (int) (event.getX(i)/density);
+                        touchYs[i] = (int) (event.getY(i)/density);
+                    }
+                } else if (actionCode == MotionEvent.ACTION_MOVE) {
+                    for (int i = 0; i < pcount; i++) {
+                        touchXs[i] = (int) (event.getX(i)/density);
+                        touchYs[i] = (int) (event.getY(i)/density);
+                        actions[i] = MotionEvent.ACTION_MOVE;
+                        ids[i] = event.getPointerId(i);
+                    }
+                }
+            } else {
+                //single touch
+                actions[0] = actionCode;
+                ids[0] = event.getPointerId(0);
+                touchXs[0] = (int) (event.getX()/density);
+                touchYs[0] = (int) (event.getY()/density);
+            }
+            nativeGotTouchEvent(pcount, actions, ids, touchXs, touchYs);
+            return true;
+        }
+
+        @Override
+        public boolean dispatchKeyEvent(final KeyEvent event) {
+            Log.v(TAG, "Activity, get key event, action = "+event.getAction());
+            nativeGotKeyEvent(event.getAction(), event.getKeyCode());
+            return true;
+        }
     }
 
     @Override
