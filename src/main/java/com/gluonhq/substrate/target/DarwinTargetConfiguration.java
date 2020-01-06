@@ -86,10 +86,9 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
         if (useJavaFX) {
             List<String> javafxLibs = new ArrayList<>(staticJavaFxLibs);
+            javafxLibs.add("prism_es2");
             if (usePrismSW) {
                 javafxLibs.add("prism_sw");
-            } else {
-                javafxLibs.add("prism_es2");
             }
 
             String staticLibPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
