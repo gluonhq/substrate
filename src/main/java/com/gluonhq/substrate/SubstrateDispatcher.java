@@ -151,8 +151,9 @@ public class SubstrateDispatcher {
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
         this.config = new InternalProjectConfiguration(config);
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
-        this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(config.getTargetTriplet()),
-                "Error: Target Configuration was null");
+        Triplet targetTriplet = config.getTargetTriplet();
+        this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
+                "Error: Target Configuration was not found for " + targetTriplet);
     }
 
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
@@ -179,28 +180,19 @@ public class SubstrateDispatcher {
      */
     public boolean nativeCompile(String classPath) throws Exception {
         config.canRunNativeImage();
-        if (classPath != null) {
-            boolean useJavaFX = new ClassPath(classPath).contains( s -> s.contains("javafx"));
-            config.setUseJavaFX(useJavaFX);
-        }
+        boolean useJavaFX = new ClassPath(classPath).contains( s -> s.contains("javafx"));
+        config.setUseJavaFX(useJavaFX);
 
         Triplet targetTriplet  = config.getTargetTriplet();
         if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
             throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
         }
-        if (targetConfiguration == null) {
-            throw new IllegalArgumentException("We don't have a configuration to compile "+targetTriplet);
-        }
-        logInit(paths.getLogPath().toString(), title("COMPILE TASK"),
-                config.isVerbose());
+
+        logInit(paths.getLogPath().toString(), title("COMPILE TASK"),  config.isVerbose());
         System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
-        boolean compile = targetConfiguration.compile(classPath);
-        if (compile) {
-            System.err.println("Compilation succeeded.");
-        } else {
-            System.err.println("Compilation failed. The error should be printed above.");
-        }
-        return compile;
+        boolean compilationSuccess = targetConfiguration.compile(classPath);
+        System.err.println(compilationSuccess? "Compilation succeeded.": "Compilation failed. See error printed above.");
+        return compilationSuccess;
     }
 
     /**
@@ -215,15 +207,9 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public boolean nativeLink(String classPath) throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("LINK TASK"),
-                config.isVerbose());
-        if (targetConfiguration == null) {
-            throw new IllegalArgumentException("We don't have a configuration to link " + config.getTargetTriplet());
-        }
-        if (classPath != null) {
-            boolean useJavaFX = new ClassPath(classPath).contains(s -> s.contains("javafx"));
-            config.setUseJavaFX(useJavaFX);
-        }
+        logInit(paths.getLogPath().toString(), title("LINK TASK"), config.isVerbose());
+        boolean useJavaFX = new ClassPath(classPath).contains(s -> s.contains("javafx"));
+        config.setUseJavaFX(useJavaFX);
         return targetConfiguration.link();
     }
 
@@ -234,11 +220,7 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public void nativeRun() throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("RUN TASK"),
-                config.isVerbose());
-        if (targetConfiguration == null) {
-            throw new IllegalArgumentException("We don't have a configuration to run " + config.getTargetTriplet());
-        }
+        logInit(paths.getLogPath().toString(), title("RUN TASK"), config.isVerbose());
         targetConfiguration.runUntilEnd();
     }
 
