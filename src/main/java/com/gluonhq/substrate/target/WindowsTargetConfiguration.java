@@ -109,7 +109,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkLibraries() {
         return Arrays.asList("msvcrt.lib", "advapi32.lib", "iphlpapi.lib", "ws2_32.lib", "java.lib", "jvm.lib",
-                "libchelper.lib", "net.lib", "nio.lib", "strictmath.lib", "zip.lib", "j2pkcs11.lib", "sunec.lib");
+                "libchelper.lib", "net.lib", "nio.lib", "strictmath.lib", "zip.lib", "prefs.lib", "j2pkcs11.lib", "sunec.lib");
     }
 
     @Override

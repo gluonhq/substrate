@@ -53,7 +53,7 @@ public final class FileDeps {
     private static final String LLC_URL = "http://download2.gluonhq.com/substrate/llvm/";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
-            "libjava.a", "libnet.a", "libnio.a", "libzip.a"
+            "libjava.a", "libnet.a", "libnio.a", "libzip.a", "libprefs.a"
     );
 
     private static final List<String> JAVAFX_FILES = Arrays.asList(
