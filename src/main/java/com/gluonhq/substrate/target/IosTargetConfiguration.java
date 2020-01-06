@@ -222,6 +222,11 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
                      fileDeps.getJavaFXSDKLibsPath(),"javafx-graphics","javafx-controls" );
     }
 
+    @Override
+    boolean useGraalVMJavaStaticLibraries() {
+        return false;
+    }
+
     private String getArch() {
         return projectConfiguration.getTargetTriplet().getArch();
     }

@@ -71,11 +71,6 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    boolean useGraalVMJavaStaticLibraries() {
-        return true;
-    }
-
-    @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>();
 

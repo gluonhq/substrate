@@ -131,11 +131,6 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         return linkFlags;
     }
 
-    @Override
-    boolean useGraalVMJavaStaticLibraries() {
-        return true;
-    }
-
     private void checkCompiler() throws IOException, InterruptedException {
         validateVersion(new String[] { "gcc", "--version" }, "compiler", COMPILER_MINIMAL_VERSION);
     }

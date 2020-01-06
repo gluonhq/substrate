@@ -124,9 +124,4 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     String getLinkLibraryPathOption() {
         return "/LIBPATH:";
     }
-
-    @Override
-    boolean useGraalVMJavaStaticLibraries() {
-        return true;
-    }
 }

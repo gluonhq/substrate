@@ -639,7 +639,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     boolean useGraalVMJavaStaticLibraries() {
-        return false;
+        return true;
     }
 
     /**
