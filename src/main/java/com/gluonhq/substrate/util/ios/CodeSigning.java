@@ -73,7 +73,6 @@ public class CodeSigning {
     private static List<MobileProvision> mobileProvisions;
     private static List<Identity> identities;
 
-    // TODO
     private static String providedIdentityName; // if provided, use this one
     private static String providedMobileProvision;// if provided, use this one
 
@@ -93,6 +92,9 @@ public class CodeSigning {
 
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
         tmpPath = paths.getTmpPath();
+
+        providedIdentityName = projectConfiguration.getIosSigningConfiguration().getProvidedSigningIdentity();
+        providedMobileProvision = projectConfiguration.getIosSigningConfiguration().getProvidedProvisioningProfile();
     }
 
     public boolean signApp() throws IOException, InterruptedException {
@@ -104,7 +106,7 @@ public class CodeSigning {
         Path provisioningProfilePath = mobileProvision.getProvisioningPath();
         Path embeddedPath = appPath.resolve(EMBEDDED_PROVISIONING_PROFILE);
         Files.copy(provisioningProfilePath, embeddedPath, REPLACE_EXISTING);
-        Path entitlementsPath = getEntitlementsPath(bundleId, true);
+        Path entitlementsPath = getEntitlementsPath(bundleId, getProvisioningProfile().isTaskAllow());
         Logger.logDebug("Signing with entitlements path: " + entitlementsPath);
         return sign(entitlementsPath, appPath);
     }

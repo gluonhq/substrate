@@ -155,6 +155,9 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
                 if (!codeSigning.signApp()) {
                     throw new RuntimeException("Error signing the app");
                 }
+                if (!buildIPA()) {
+                    throw new RuntimeException("Error building the IPA");
+                }
             }
         }
         return result;
@@ -182,6 +185,26 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
         } else {
             return deploy.install(appPath);
         }
+    }
+
+    private boolean buildIPA() throws IOException, InterruptedException {
+        Path localAppPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        Logger.logDebug("Building IPA at " + localAppPath);
+
+        Path tmpAppWrapper = paths.getTmpPath().resolve("tmpApp");
+        Path tmpAppPayload = tmpAppWrapper.resolve("Payload");
+        Files.createDirectories(tmpAppPayload);
+
+        ProcessRunner runner = new ProcessRunner("cp", "-Rp", localAppPath.toString(), tmpAppPayload.toString());
+        if (runner.runProcess("cp") != 0) {
+            return false;
+        }
+
+        String target = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".ipa").toString();
+        Logger.logDebug("IPA target = " + target);
+
+        runner = new ProcessRunner("zip", "--symlinks", "--recurse-paths", target, ".");
+        return runner.runProcess("zip", tmpAppWrapper.toFile()) == 0;
     }
 
     @Override
