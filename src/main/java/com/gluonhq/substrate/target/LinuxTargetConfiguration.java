@@ -49,6 +49,25 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
 
+    private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
+
+    private static final List<String> staticJavaLibs = Arrays.asList(
+            "java", "nio", "zip", "net", "jvm", "strictmath", "j2pkcs11", "sunec", "extnet", "libchelper"
+    );
+
+    private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
+            "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
+            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
+            "-Wl,--no-whole-archive", "-lGL", "-lX11","-lgtk-3", "-lgdk-3",
+            "-lpangocairo-1.0", "-lpango-1.0", "-latk-1.0",
+            "-lcairo-gobject", "-lcairo", "-lgdk_pixbuf-2.0",
+            "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype", "-lpangoft2-1.0",
+            "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst"
+    );
+
+    private static final List<String> linuxfxSWlibs = Arrays.asList(
+            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
+
     public LinuxTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
@@ -60,33 +79,23 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         return super.link();
     }
 
-    private static final List<String> linuxLibs = Arrays.asList("-llibchelper", "-lpthread");
-
-    private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
-            "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
-            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
-            "-Wl,--no-whole-archive", "-lGL", "-lX11","-lgtk-3", "-lgdk-3",
-            "-lpangocairo-1.0", "-lpango-1.0", "-latk-1.0",
-            "-lcairo-gobject", "-lcairo", "-lgdk_pixbuf-2.0",
-            "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype", "-lpangoft2-1.0",
-            "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst"
-            );
-
-    private static final List<String> linuxfxSWlibs = Arrays.asList(
-            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
-
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.addAll(Arrays.asList("-lextnet", "-lstdc++"));
-        return defaultLinkFlags;
+        List<String> targetLibraries = new ArrayList<>();
+
+        targetLibraries.add("-Wl,-Bstatic");
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
+
+        targetLibraries.add("-Wl,-Bdynamic");
+        targetLibraries.addAll(asListOfLibraryLinkFlags(linuxLibs));
+
+        return targetLibraries;
     }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add("-rdynamic");
-        answer.addAll(linuxLibs);
         if (!useJavaFX) return answer;
 
         ProcessBuilder process = new ProcessBuilder("pkg-config", "--libs", "gtk+-3.0", "gthread-2.0", "xtst");
@@ -163,5 +172,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(processInputStream))) {
             return reader.readLine();
         }
+    }
+
+    private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
+        return libraries.stream()
+                .map(library -> "-l" + library)
+                .collect(Collectors.toList());
     }
 }

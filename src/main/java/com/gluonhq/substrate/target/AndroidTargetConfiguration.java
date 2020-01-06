@@ -317,9 +317,14 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return androidAdditionalSourceFiles;
     }
 
-
+    @Override
     List<String> getAdditionalHeaderFiles() {
         return androidAdditionalHeaderFiles;
+    }
+
+    @Override
+    boolean useGraalVMJavaStaticLibraries() {
+        return false;
     }
 
    /*

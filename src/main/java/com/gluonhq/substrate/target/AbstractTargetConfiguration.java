@@ -357,7 +357,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         checkPlatformSpecificClibs(clibPath);
     }
 
-    private Path getCLibPath() {
+    protected Path getCLibPath() {
         Triplet target = projectConfiguration.getTargetTriplet();
         return projectConfiguration.getGraalPath()
                 .resolve("lib")
@@ -371,7 +371,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     private void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
-        Path javaSDKPath = fileDeps.getJavaSDKPath();
+        Path javaSDKPath = fileDeps.getJavaSDKLibsPath(useGraalVMJavaStaticLibraries());
         linkBuilder.command().add(getLinkLibraryPathOption() + javaSDKPath);
     }
 
@@ -635,6 +635,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     // by default, we allow the HTTPS protocol, but subclasses can decide against it.
     boolean allowHttps() {
+        return true;
+    }
+
+    boolean useGraalVMJavaStaticLibraries() {
         return true;
     }
 
