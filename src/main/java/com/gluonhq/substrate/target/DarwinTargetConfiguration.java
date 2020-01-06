@@ -53,7 +53,7 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
             "ffi", "jvm", "strictmath", "libchelper"
     );
     private static final List<String> staticJavaFxLibs = Arrays.asList(
-            "glass", "javafx_font", "javafx_iio"
+            "glass", "javafx_font", "javafx_iio", "prism_es2"
     );
 
     public DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
@@ -86,7 +86,6 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
         if (useJavaFX) {
             List<String> javafxLibs = new ArrayList<>(staticJavaFxLibs);
-            javafxLibs.add("prism_es2");
             if (usePrismSW) {
                 javafxLibs.add("prism_sw");
             }
