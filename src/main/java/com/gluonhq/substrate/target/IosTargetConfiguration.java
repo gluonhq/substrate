@@ -185,6 +185,30 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
+    public boolean packageApp() throws IOException, InterruptedException {
+        Path localAppPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        if (!Files.exists(localAppPath)) {
+            throw new IOException("Error: " + projectConfiguration.getAppName() + ".app not found");
+        }
+        Logger.logDebug("Building IPA for " + localAppPath);
+
+        Path tmpAppWrapper = paths.getTmpPath().resolve("tmpApp");
+        Path tmpAppPayload = tmpAppWrapper.resolve("Payload");
+        Files.createDirectories(tmpAppPayload);
+
+        ProcessRunner runner = new ProcessRunner("cp", "-Rp", localAppPath.toString(), tmpAppPayload.toString());
+        if (runner.runProcess("cp") != 0) {
+            return false;
+        }
+
+        String target = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".ipa").toString();
+        Logger.logDebug("Creating IPA at " + target);
+
+        runner = new ProcessRunner("zip", "--symlinks", "--recurse-paths", target, ".");
+        return runner.runProcess("zip", tmpAppWrapper.toFile()) == 0;
+    }
+
+    @Override
     public String getCompiler() {
         return "clang";
     }

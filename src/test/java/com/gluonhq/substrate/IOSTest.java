@@ -85,7 +85,7 @@ class IOSTest {
     @Test
     void testSigning() {
         assumeTrue(!isTravis());
-        List<Identity> identities = CodeSigning.findIdentityByPattern();
+        List<Identity> identities = CodeSigning.retrieveAllIdentities();
         assertNotNull(identities);
         assertFalse(identities.isEmpty());
     }

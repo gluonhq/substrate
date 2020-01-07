@@ -50,10 +50,13 @@ public class ProcessPaths {
      *     |-- client                   <!-- buildRoot  -->
      *         |-- $app                 <!-- $OS-$ARCH  -->
      *             |-- gvm
-     *                 |-- tmp
+     *                 |-- $appName
      *                 |-- lib
      *                 |-- log
-     *             |-- appName
+     *                 |-- tmp
+     *             |-- $appName.app
+     *             |-- $appName.app.dSYM
+     *             |-- $appName.ipa
      *             |-- gensrc
      *                 |-- mac or ios
      * |-- src
