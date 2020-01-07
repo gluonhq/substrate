@@ -68,13 +68,13 @@ public class CodeSigning {
     private static final String EMBEDDED_PROVISIONING_PROFILE = "embedded.mobileprovision";
     private static String ERRLINK = "Please check https://docs.gluonhq.com/client/ for more information.";
 
-    private static MobileProvision mobileProvision = null;
-    private static Identity identity = null;
-    private static List<MobileProvision> mobileProvisions;
-    private static List<Identity> identities;
+    private MobileProvision mobileProvision = null;
+    private Identity identity = null;
+    private List<MobileProvision> mobileProvisions;
+    private List<Identity> identities;
 
-    private static String providedIdentityName; // if provided, use this one
-    private static String providedMobileProvision;// if provided, use this one
+    private final String providedIdentityName; // if provided, use this one
+    private final String providedMobileProvision;// if provided, use this one
 
     private String bundleId;
     private final ProcessPaths paths;
@@ -129,7 +129,7 @@ public class CodeSigning {
                 if (mobileProvision != null) {
                     if (providedMobileProvision == null
                             || providedMobileProvision.equals(mobileProvision.getName())) {
-                        CodeSigning.identity = identity;
+                        this.identity = identity;
                         Logger.logDebug("Got provisioning profile: " + mobileProvision.getName());
                         return mobileProvision;
                     }
@@ -189,7 +189,7 @@ public class CodeSigning {
         return null;
     }
 
-    private static List<MobileProvision> retrieveValidMobileProvisions() {
+    private List<MobileProvision> retrieveValidMobileProvisions() {
         final LocalDate now = LocalDate.now();
         if (mobileProvisions == null) {
             mobileProvisions = retrieveAllMobileProvisions();
@@ -224,10 +224,9 @@ public class CodeSigning {
     private boolean sign(Path entitlementsPath, Path appPath) throws IOException, InterruptedException {
         if (identity == null) {
             getProvisioningProfile();
-        }
-        Identity identity = CodeSigning.identity;
-        if (identity == null) {
-            throw new RuntimeException("Error signing app: signing identity was null");
+            if (identity == null) {
+                throw new IOException("Error signing app: signing identity was null");
+            }
         }
         Logger.logDebug("Signing app with identity: " + identity);
         ProcessRunner runner = new ProcessRunner("codesign", "--force", "--sign", identity.getSha1());
@@ -292,14 +291,14 @@ public class CodeSigning {
         return entitlementsPath;
     }
 
-    private static List<Identity> getIdentity() {
+    private List<Identity> getIdentity() {
         if (providedIdentityName != null) {
             return findIdentityByName(providedIdentityName);
         }
         return findIdentityByPattern();
     }
 
-    private static List<Identity> findIdentityByName(String name) {
+    private List<Identity> findIdentityByName(String name) {
         if (name == null) {
             return Collections.emptyList();
         }
@@ -311,7 +310,7 @@ public class CodeSigning {
                 .collect(Collectors.toList());
     }
 
-    public static List<Identity> findIdentityByPattern() {
+    private List<Identity> findIdentityByPattern() {
         if (identities == null) {
             identities = retrieveAllIdentities();
         }
@@ -320,7 +319,7 @@ public class CodeSigning {
                 .collect(Collectors.toList());
     }
 
-    private static List<Identity> retrieveAllIdentities() {
+    public static List<Identity> retrieveAllIdentities() {
         ProcessRunner runner = new ProcessRunner("security", "find-identity", "-p", "codesigning", "-v");
         try {
             if (runner.runProcess("security") == 0) {
