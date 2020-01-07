@@ -28,7 +28,9 @@
 #import <Cocoa/Cocoa.h>
 #include <pthread.h>
 
-extern void *IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e();
+extern void *run_main(int argc, char* argv[]);
+
+const char* args[] = {"myapp"};
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @end
@@ -42,7 +44,7 @@ extern void *IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece4
     NSLog(@"Starting Gluon VM...");
     pthread_t me = pthread_self();
     // fprintf(stderr, "Starting on thread: %p\n",me);
-    (*IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e)(1);
+    (*run_main)(1, args);
     NSLog(@"Started Gluon VM...");
 }
 

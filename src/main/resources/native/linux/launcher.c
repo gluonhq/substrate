@@ -27,13 +27,14 @@
  */
 #include <stdio.h>
 
-extern void *IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e();
+extern int *run_main(int argc, char* argv[]);
+const char* args[] = {"myapp"};
 
 int main() {
     #ifdef GVM_VERBOSE
       fprintf(stderr, "Main\n");
     #endif
-    (*IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e)(1);
+    (*run_main)(1, args);
 }
 
 // the following functions are used in Java 11 but not in 14

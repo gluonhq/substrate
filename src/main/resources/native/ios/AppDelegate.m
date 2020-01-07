@@ -53,7 +53,8 @@ static __inline__ void gvmlog(NSString* format, ...)
 
 int startGVM();
 
-extern void *IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e();
+extern int *run_main(int argc, char* argv[]);
+const char * args[] = {"myapp"};
 
 @interface AppDelegate ()
 
@@ -113,7 +114,7 @@ int main(int argc, char * argv[]) {
 int startGVM() {
     gvmlog(@"Starting GVM for ios");
 
-    (*IsolateEnterStub__JavaMainWrapper__run__5087f5482cc9a6abc971913ece43acb471d2631b__a61fe6c26e84dd4037e4629852b5488bfcc16e7e)(1);
+    (*run_main)(1, args);
 
     gvmlog(@"Finished running GVM, done with isolatehread");
     return 0;
