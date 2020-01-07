@@ -47,7 +47,7 @@ public class DarwinTargetConfiguration extends PosixTargetConfiguration {
     );
 
     private static final List<String> staticJavaLibs = Arrays.asList(
-            "java", "nio", "zip", "net", "j2pkcs11", "sunec", "extnet"
+            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet"
     );
     private static final List<String> staticJvmLibs = Arrays.asList(
             "ffi", "jvm", "strictmath", "libchelper"
