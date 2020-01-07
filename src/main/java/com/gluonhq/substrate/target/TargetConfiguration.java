@@ -54,4 +54,17 @@ public interface TargetConfiguration {
      * @throws InterruptedException
      */
     String run(Path appPath, String appName) throws IOException, InterruptedException;
+
+    /**
+     * It creates a package of the application (including at least executable and
+     * other possible files), in a given format.
+     *
+     * This operation has to be called only after link has successfully produced
+     * a valid application
+     * @return true if packaging succeeded, false if failed or not supported
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    boolean packageApp() throws IOException, InterruptedException;
+
 }

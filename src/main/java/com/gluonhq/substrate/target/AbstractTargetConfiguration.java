@@ -288,6 +288,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return true;
     }
 
+    @Override
+    public boolean packageApp() throws IOException, InterruptedException {
+        return false;
+    }
+
     // --- private methods
 
     private boolean compileAdditionalSources()

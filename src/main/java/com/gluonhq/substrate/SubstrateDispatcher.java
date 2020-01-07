@@ -224,4 +224,14 @@ public class SubstrateDispatcher {
         targetConfiguration.runUntilEnd();
     }
 
+    /**
+     * This methods creates a package of the native image application, that was created after {@link #nativeLink(String)}
+     * was called and ended successfully.
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public void nativePackage() throws IOException, InterruptedException {
+        logInit(paths.getLogPath().toString(), title("PACKAGE TASK"), config.isVerbose());
+        targetConfiguration.packageApp();
+    }
 }
