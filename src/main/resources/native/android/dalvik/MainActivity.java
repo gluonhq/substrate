@@ -63,6 +63,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         Log.v(TAG, "loading Graallib");
         System.loadLibrary("mygraal");
         Log.v(TAG, "loaded Graallib");
+        nativeSetDataDir(getApplicationInfo().dataDir);
         nativeSetSurface(holder.getSurface());
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -126,6 +127,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void startGraalApp();
     private native long surfaceReady(Surface surface, float density);
     private native void nativeSetSurface(Surface surface);
+    private native void nativeSetDataDir(String datadir);
     private native void nativeSurfaceRedrawNeeded();
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
     private native void nativeGotKeyEvent(int action, int keycode);
