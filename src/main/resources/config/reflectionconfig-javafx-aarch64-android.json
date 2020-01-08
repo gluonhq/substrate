@@ -31,6 +31,10 @@
   }
 ,
   {
+    "name" : "javafx.scene.control.skin.ButtonSkin"
+  }
+,
+  {
     "name" : "com.sun.scenario.effect.impl.es2.ES2ShaderSource",
     "methods":[{"name":"<init>","parameterTypes":[] }]
   }

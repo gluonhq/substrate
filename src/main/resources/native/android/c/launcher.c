@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <pthread.h>
 
@@ -24,20 +25,36 @@ extern int to_jfx_touch_action(int state);
 
 ANativeWindow *window;
 jfloat density;
+char* appDataDir;
 
 int start_logger(const char *app_name);
 static int pfd[2];
 static pthread_t thr;
 static const char *tag = "myapp";
-const char * args[] = {
+const char * origargs[] = {
         "myapp",
         "-Djavafx.platform=android",
         "-Dembedded=monocle",
         "-Dglass.platform=Monocle",
         "-Djavafx.verbose=true",
-        "-Djavafx.pulseLogger=true",
         "-Dprism.verbose=true"};
 
+int argsize = 6;
+
+char** createArgs() {
+    int origSize = sizeof(origargs)/sizeof(char*);
+    char** result = malloc((origSize+1)* sizeof(char*));
+    for (int i = 0; i < origSize; i++) {
+        result[i] = origargs[i];
+    }
+    int tmpArgSize=18+strlen(appDataDir);
+    char* tmpArgs = calloc(sizeof(char), tmpArgSize);
+    strcpy(tmpArgs,"-Djava.io.tmpdir=");
+    strcat(tmpArgs,appDataDir);
+    result[origSize]=tmpArgs;
+    argsize++;
+    return result;
+}
 // === called from DALVIK. Minize work/dependencies here === // 
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
@@ -47,10 +64,13 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
     int ev = (*env)->GetVersion(env);
     LOGE(stderr, "EnvVersion = %d\n", ev);
     start_logger("GraalCompiled");
-    LOGE(stderr, "calling JavaMainWrapper_run\n");
-    (*run_main)(7, args);
+    char** graalArgs = createArgs();
+    LOGE(stderr, "calling JavaMainWrapper_run with %d argsize\n", argsize);
+    (*run_main)(argsize, graalArgs);
+    // (*run_main)(7, origargs);
     LOGE(stderr, "called JavaMainWrapper_run\n");
 }
+
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurface
 (JNIEnv *env, jobject activity, jobject surface) {
@@ -59,6 +79,16 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurfa
     androidJfx_setNativeWindow(window);
     LOGE(stderr, "native setSurface Ready, native window at %p\n", window);
 }
+
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetDataDir
+(JNIEnv *env, jobject that, jstring jdir) {
+    const char *cdir = (*env)->GetStringUTFChars(env, jdir, 0);
+    int len = strlen(cdir);
+    appDataDir = (char *)malloc(len + 1);
+    strcpy(appDataDir, cdir);
+    LOGE(stderr, "appDataDir: %s", appDataDir);
+}
+
 
 JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady
 (JNIEnv *env, jobject activity, jobject surface, jfloat mydensity) {
