@@ -47,7 +47,7 @@ char** createArgs() {
     for (int i = 0; i < origSize; i++) {
         result[i] = origargs[i];
     }
-    int tmpArgSize=18+strlen(appDataDir);
+    int tmpArgSize=18+strnlen(appDataDir, 512);
     char* tmpArgs = calloc(sizeof(char), tmpArgSize);
     strcpy(tmpArgs,"-Djava.io.tmpdir=");
     strcat(tmpArgs,appDataDir);
@@ -83,7 +83,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurfa
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetDataDir
 (JNIEnv *env, jobject that, jstring jdir) {
     const char *cdir = (*env)->GetStringUTFChars(env, jdir, 0);
-    int len = strlen(cdir);
+    int len = strnlen(cdir, 512);
     appDataDir = (char *)malloc(len + 1);
     strcpy(appDataDir, cdir);
     LOGE(stderr, "appDataDir: %s", appDataDir);
