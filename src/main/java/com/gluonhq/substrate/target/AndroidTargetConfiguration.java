@@ -43,7 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
@@ -244,7 +244,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
                 "install", "-r", alignedApk);
         processResult = install.runProcess("install");
-        
+
         return processResult == 0;
     }
 
@@ -362,20 +362,26 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         System.err.println("done creating ks");
     }
-    
+
     private String findLatestBuildTool(Path sdkPath) throws IOException {
+        Objects.requireNonNull(sdkPath);
         Path buildToolsPath = sdkPath.resolve("build-tools");
-        if (buildToolsPath.toFile().exists()) {
-            Optional<Version> latest = Files.walk(buildToolsPath, 1)
+        if (Files.exists(buildToolsPath)) {
+            return Files.walk(buildToolsPath, 1)
                     .filter(file -> Files.isDirectory(file) && !file.equals(buildToolsPath))
                     .map(file -> new Version(file.getFileName().toString()))
-                    .max(Version::compareTo);
-            if (latest.isPresent()) {
-                return latest.get().toString();
-            }
+                    .max(Version::compareTo)
+                    .map(Version::toString)
+                    .orElseThrow(BuildToolNotFoundException::new);
         }
-        throw new IOException("Android build tools not found. Please install it and try again.");
+        throw new BuildToolNotFoundException();
         // TODO: If no build tool is found, we can install it using sdkmanager.
         //  Currently, sdkmanager doesn't work with JDK 11: https://issuetracker.google.com/issues/67495440
+    }
+
+    private static class BuildToolNotFoundException extends IOException {
+        public BuildToolNotFoundException() {
+            super("Android build tools not found. Please install it and try again.");
+        }
     }
 }
