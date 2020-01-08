@@ -58,7 +58,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-Wl,--gc-sections",
             "-landroid", "-llog", "-lnet", "-shared");
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
-            "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-Wl,--no-whole-archive",
+            "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", "-Wl,--no-whole-archive",
             "-lGLESv2", "-lEGL", "-lfreetype");
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
             "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
