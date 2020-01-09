@@ -1,5 +1,6 @@
 # Compiled class file
 *.class
+!src/main/resources/native/android/dalvik/MainActivity*.class
 
 # Log file
 *.log

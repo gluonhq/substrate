@@ -50,7 +50,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final String sdk;
     private final Path ldlld;
     private final Path clang;
-    private final String java8Home;
 
     private List<String> androidAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
@@ -87,7 +86,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             this.ldlld = null;
             this.clang = null;
         }
-        this.java8Home = System.getenv("JAVA8_HOME");
         this.sdk = System.getenv("ANDROID_SDK");
     }
 
@@ -127,7 +125,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         // we override compile as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");
-        if (java8Home == null) throw new IOException("You need an ancient JDK (1.8). Set the environment property JAVA8_HOME");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
         super.link();
 
@@ -154,18 +151,15 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Files.createDirectories(dalvikLibPath);
         Files.createDirectories(dalvikLibArm64Path);
         Path androidManifestPath = dalvikPath.resolve("AndroidManifest.xml");
-        FileOps.copyResource("/native/android/dalvik/MainActivity.java", dalvikSrcPath.resolve("MainActivity.java"));
+
+        Path dalvikActivityPackage = dalvikClassPath.resolve("com/gluonhq/helloandroid");
+        FileOps.copyResource("/native/android/dalvik/MainActivity.class", dalvikActivityPackage.resolve("MainActivity.class"));
+        FileOps.copyResource("/native/android/dalvik/MainActivity$1.class", dalvikActivityPackage.resolve("MainActivity$1.class"));
+        FileOps.copyResource("/native/android/dalvik/MainActivity$InternalSurfaceView.class", dalvikActivityPackage.resolve("MainActivity$InternalSurfaceView.class"));
         FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
         FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
 
         int processResult;
-
-        ProcessRunner processRunner = new ProcessRunner(java8Home + "/bin/javac", "-d", dalvikClassPath.toString(), "-source", "1.7",
-                "-target", "1.7", "-cp", dalvikSrcPath.toString(), "-bootclasspath", androidJar,
-                dalvikSrcPath.resolve("MainActivity.java").toString());
-        processResult = processRunner.runProcess("dalvikCompilation");
-        if (processResult != 0)
-            return false;
 
         ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
                 "--output="+dalvikBinPath.resolve("classes.dex"),dalvikClassPath.toString());
