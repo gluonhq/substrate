@@ -110,7 +110,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         extractNativeLibs(cp);
         Triplet target =  projectConfiguration.getTargetTriplet();
         String suffix = target.getArchOs();
-        String jniPlatform = getJniPlatform(target.getOs());
+        String jniPlatform = getJniPlatform(target);
         if (!compileAdditionalSources()) {
             return false;
         }
@@ -333,14 +333,27 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return true;
     }
 
-    private String getJniPlatform( String os ) {
+    private String getJniPlatform(Triplet target) {
+        String os = target.getOs();
+        String arch = target.getArch();
         switch (os) {
-            case Constants.OS_LINUX: return "LINUX_AMD64";
-            case Constants.OS_IOS:return "DARWIN_AARCH64";
-            case Constants.OS_DARWIN: return "DARWIN_AMD64";
-            case Constants.OS_WINDOWS: return "WINDOWS_AMD64";
-            case Constants.OS_ANDROID: return "LINUX_AARCH64";
-            default: throw new IllegalArgumentException("No support yet for " + os);
+            case Constants.OS_LINUX:
+                switch (arch) {
+                    case Constants.ARCH_AMD64:
+                        return "LINUX_AMD64";
+                    case Constants.ARCH_AARCH64:
+                        return "LINUX_AARCH64";
+                }
+            case Constants.OS_IOS:
+                return "DARWIN_AARCH64";
+            case Constants.OS_DARWIN:
+                return "DARWIN_AMD64";
+            case Constants.OS_WINDOWS:
+                return "WINDOWS_AMD64";
+            case Constants.OS_ANDROID:
+                return "LINUX_AARCH64";
+            default:
+                throw new IllegalArgumentException("No support yet for " + os);
         }
     }
 

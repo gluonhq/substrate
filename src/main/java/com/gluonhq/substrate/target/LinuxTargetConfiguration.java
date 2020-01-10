@@ -30,6 +30,7 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
@@ -38,6 +39,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,6 +67,12 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype", "-lpangoft2-1.0",
             "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst"
     );
+
+    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
+            "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
+            "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
+            "LLVMDirectives.cap", "PosixDirectives.cap"};
+    private final String capLocation= "/native/linux-aarch64/cap/";
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
             "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
@@ -143,11 +151,25 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
-                "-H:CAPCacheDir=/tmp/cca",
+                "-H:CAPCacheDir="+ getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CustomLD=aarch64-linux-gnu-gcc" ,
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
 
+   /*
+    * Copies the .cap files from the jar resource and store them in
+    * a directory. Return that directory
+    */
+    private Path getCapCacheDir() throws IOException {
+        Path capPath = paths.getGvmPath().resolve("capcache");
+        if (!Files.exists(capPath)) {
+            Files.createDirectory(capPath);
+        }
+        for (String cap : capFiles) {
+            FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
+        }
+        return capPath;
+    }
     private void checkCompiler() throws IOException, InterruptedException {
         validateVersion(new String[] { "gcc", "--version" }, "compiler", COMPILER_MINIMAL_VERSION);
     }
