@@ -81,7 +81,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     final FileDeps fileDeps;
     final InternalProjectConfiguration projectConfiguration;
     final ProcessPaths paths;
-    private final boolean crossCompile;
+    protected final boolean crossCompile;
 
     private ConfigResolver configResolver;
     private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
