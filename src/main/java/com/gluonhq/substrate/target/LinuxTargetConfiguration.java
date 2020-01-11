@@ -152,7 +152,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
                 "-H:CAPCacheDir="+ getCapCacheDir().toAbsolutePath().toString(),
-                "-H:CustomLD=aarch64-linux-gnu-gcc" ,
+                "-H:CustomLD=aarch64-linux-gnu-ld" ,
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
 
