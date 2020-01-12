@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
@@ -83,6 +84,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     public boolean link() throws IOException, InterruptedException {
+compileAdditionalSources();
         checkCompiler();
         checkLinker();
         return super.link();
@@ -155,6 +157,17 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 "-H:CustomLD=aarch64-linux-gnu-ld" ,
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
+    @Override
+    String processClassPath(String classPath) throws IOException {
+        if (!projectConfiguration.isUseJavaFX()) {
+            return classPath;
+        }
+
+        return new ClassPath(classPath).mapWithLibs(
+                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls");
+
+    }
+
 
    /*
     * Copies the .cap files from the jar resource and store them in
@@ -218,4 +231,22 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 .map(library -> "-l" + library)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    String getCompiler() {
+        if (!crossCompile) {
+            return super.getCompiler();
+        }
+        return "aarch64-linux-gnu-gcc";
+    }
+
+    @Override
+    String getLinker() {
+        if (!crossCompile) {
+            return super.getLinker();
+        }
+        return "aarch64-linux-gnu-gcc";
+    }
+
+
 }

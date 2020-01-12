@@ -49,3 +49,13 @@ void Java_java_io_ObjectOutputStream_doublesToBytes() {
     fprintf(stderr, "DoublesToBytesmismatch\n");
 }
 
+#ifdef AARCH64
+void Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0() {
+    fprintf(stderr, "Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0 asked\n");
+}
+
+void Java_jdk_net_LinuxSocketOptions_quickAckSupported0() {
+    fprintf(stderr, "Java_jdk_net_LinuxSocketOptions_quickAckSupported0\n");
+}
+#endif
+

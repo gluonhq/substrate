@@ -84,7 +84,7 @@ public class InternalProjectConfiguration {
 
         this.publicConfig = Objects.requireNonNull(config);
 
-        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
+        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "true"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
 

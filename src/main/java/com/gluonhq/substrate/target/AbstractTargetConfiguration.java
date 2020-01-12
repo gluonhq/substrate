@@ -297,7 +297,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     // --- private methods
 
-    private boolean compileAdditionalSources()
+    protected boolean compileAdditionalSources()
             throws IOException, InterruptedException {
 
         String appName = projectConfiguration.getAppName();
@@ -434,6 +434,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
+System.err.println("GETREFCL, upsw = "+usePrismSW);
         List<String> answer = new LinkedList<>();
         answer.add(Constants.REFLECTION_JAVA_FILE);
         if (useJavaFX) {
