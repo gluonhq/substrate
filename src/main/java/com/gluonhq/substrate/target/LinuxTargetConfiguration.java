@@ -93,7 +93,6 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     public boolean link() throws IOException, InterruptedException {
-compileAdditionalSources();
         checkCompiler();
         checkLinker();
         return super.link();
