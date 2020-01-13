@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,6 +81,14 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     public LinuxTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
+    }
+
+    @Override
+    public boolean compile(String cp) throws IOException, InterruptedException {
+        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+            projectConfiguration.setUsePrismSW(true); // for now, when compiling for AArch64, we should not assume hw rendering
+        }
+        return super.compile(cp);
     }
 
     @Override
@@ -157,6 +166,7 @@ compileAdditionalSources();
                 "-H:CustomLD=aarch64-linux-gnu-ld" ,
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
     }
+
     @Override
     String processClassPath(String classPath) throws IOException {
         if (!projectConfiguration.isUseJavaFX()) {
@@ -168,6 +178,12 @@ compileAdditionalSources();
 
     }
 
+    List<String> getTargetSpecificCCompileFlags() {
+        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+            return Arrays.asList("-DAARCH64");
+        }
+        return Collections.emptyList();
+    }
 
    /*
     * Copies the .cap files from the jar resource and store them in

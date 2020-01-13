@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ public class InternalProjectConfiguration {
 
         this.publicConfig = Objects.requireNonNull(config);
 
-        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "true"));
+        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
 

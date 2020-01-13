@@ -47,7 +47,7 @@ public class ProjectConfiguration {
     private String javafxStaticSdkVersion;
     private String javaStaticSdkVersion;
 
-    private boolean usePrismSW = true;
+    private boolean usePrismSW = false;
     private boolean verbose = false;
 
     private Triplet targetTriplet;
@@ -105,7 +105,7 @@ public class ProjectConfiguration {
     }
 
     public boolean isUsePrismSW() {
-        return true;
+        return usePrismSW;
     }
 
     public void setUsePrismSW(boolean usePrismSW) {
