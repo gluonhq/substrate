@@ -177,7 +177,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     }
 
-    List<String> getTargetSpecificCCompileFlags() {
+    @Override
+    protected List<String> getTargetSpecificCCompileFlags() {
         if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
             return Arrays.asList("-DAARCH64");
         }
