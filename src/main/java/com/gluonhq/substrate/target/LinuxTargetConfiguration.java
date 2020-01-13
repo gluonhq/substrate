@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,8 +27,11 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
@@ -37,9 +40,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,11 +70,25 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst"
     );
 
+    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
+            "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
+            "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
+            "LLVMDirectives.cap", "PosixDirectives.cap"};
+    private final String capLocation= "/native/linux-aarch64/cap/";
+
     private static final List<String> linuxfxSWlibs = Arrays.asList(
             "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
 
     public LinuxTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
+    }
+
+    @Override
+    public boolean compile(String cp) throws IOException, InterruptedException {
+        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+            projectConfiguration.setUsePrismSW(true); // for now, when compiling for AArch64, we should not assume hw rendering
+        }
+        return super.compile(cp);
     }
 
     @Override
@@ -131,6 +150,55 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         return linkFlags;
     }
 
+    @Override
+    List<String> getTargetSpecificAOTCompileFlags() throws IOException {
+        if (!crossCompile) {
+            return super.getTargetSpecificAOTCompileFlags();
+        }
+        Path llcPath = getLlcPath();
+        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+                "-H:-SpawnIsolates",
+                "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
+                "-H:+UseOnlyWritableBootImageHeap",
+                "-H:+UseCAPCache",
+                "-H:CAPCacheDir="+ getCapCacheDir().toAbsolutePath().toString(),
+                "-H:CustomLD=aarch64-linux-gnu-ld" ,
+                "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+    }
+
+    @Override
+    String processClassPath(String classPath) throws IOException {
+        if (!projectConfiguration.isUseJavaFX()) {
+            return classPath;
+        }
+
+        return new ClassPath(classPath).mapWithLibs(
+                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls");
+
+    }
+
+    @Override
+    protected List<String> getTargetSpecificCCompileFlags() {
+        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+            return Arrays.asList("-DAARCH64");
+        }
+        return Collections.emptyList();
+    }
+
+   /*
+    * Copies the .cap files from the jar resource and store them in
+    * a directory. Return that directory
+    */
+    private Path getCapCacheDir() throws IOException {
+        Path capPath = paths.getGvmPath().resolve("capcache");
+        if (!Files.exists(capPath)) {
+            Files.createDirectory(capPath);
+        }
+        for (String cap : capFiles) {
+            FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
+        }
+        return capPath;
+    }
     private void checkCompiler() throws IOException, InterruptedException {
         validateVersion(new String[] { "gcc", "--version" }, "compiler", COMPILER_MINIMAL_VERSION);
     }
@@ -179,4 +247,22 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 .map(library -> "-l" + library)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    String getCompiler() {
+        if (!crossCompile) {
+            return super.getCompiler();
+        }
+        return "aarch64-linux-gnu-gcc";
+    }
+
+    @Override
+    String getLinker() {
+        if (!crossCompile) {
+            return super.getLinker();
+        }
+        return "aarch64-linux-gnu-gcc";
+    }
+
+
 }

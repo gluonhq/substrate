@@ -72,6 +72,11 @@ public class Triplet {
                 this.vendor = VENDOR_LINUX;
                 this.os = OS_LINUX;
                 break;
+            case LINUX_AARCH64:
+                this.arch = ARCH_AARCH64;
+                this.vendor = VENDOR_LINUX;
+                this.os = OS_LINUX;
+                break;
             case MACOS:
                 this.arch = ARCH_AMD64;
                 this.vendor = VENDOR_APPLE;
@@ -164,4 +169,15 @@ public class Triplet {
     public String toString() {
         return arch + '-' + vendor + '-' + os;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (! (o instanceof Triplet)) return false;
+        Triplet target = (Triplet)o;
+        return (this.arch.equals(target.arch) &&
+                this.os.equals(target.os) &&
+                this.vendor.equals(target.vendor)) ;
+    }
+
+
 }
