@@ -141,6 +141,8 @@ public class Constants {
     public static final String REFLECTION_JAVAFX_ARCH_FILE = "reflectionconfig-javafx-${archOs}.json";
     public static final String REFLECTION_ARCH_FILE = "reflectionconfig-${archOs}.json";
 
+    public static final String RESOURCE_ARCH_FILE = "resourceconfig-${archOs}.json";
+
     public static final String JNI_JAVA_FILE = "jniconfig-java.json";
     public static final String JNI_JAVAFX_FILE = "jniconfig-javafx.json";
     public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
