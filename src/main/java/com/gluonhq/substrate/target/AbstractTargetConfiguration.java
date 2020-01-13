@@ -343,6 +343,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                         return "LINUX_AMD64";
                     case Constants.ARCH_AARCH64:
                         return "LINUX_AARCH64";
+                    default:
+                        throw new IllegalArgumentException("No support yet for " + os + ":" + arch);
                 }
             case Constants.OS_IOS:
                 return "DARWIN_AARCH64";
