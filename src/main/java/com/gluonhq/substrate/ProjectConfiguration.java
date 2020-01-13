@@ -264,6 +264,7 @@ public class ProjectConfiguration {
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
                 ", compilerArgs=" + compilerArgs +
+                ", appId='" + appId + '\'' +
                 ", appName='" + appName + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
