@@ -41,7 +41,6 @@ import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -144,7 +143,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (projectConfiguration.isVerbose()) {
             compileBuilder.command().add("-H:+PrintAnalysisCallTree");
         }
-        compileBuilder.command().addAll(getIncludeResourcesArguments());
+        compileBuilder.command().add("-H:ResourceConfigurationFiles=" + createResourceConfig(suffix));
+        if (projectConfiguration.isVerbose()) {
+            compileBuilder.command().add("-H:Log=registerResource:");
+        }
         compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
             String bundles = String.join(",", getBundlesList());
@@ -445,21 +447,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return answer;
     }
 
-    private List<String> getIncludeResourcesArguments() {
-        List<String> resourcesByExtension = RESOURCES_BY_EXTENSION.stream()
-                .map(extension -> "-H:IncludeResources=.*\\." + extension + "$")
-                .collect(Collectors.toList());
-
-        List<String> configurationResources = projectConfiguration.getResourcesList().stream()
-                .map(resource -> "-H:IncludeResources=" + resource)
-                .collect(Collectors.toList());
-
-        List<String> includeResourcesArguments = new ArrayList<>();
-        includeResourcesArguments.addAll(resourcesByExtension);
-        includeResourcesArguments.addAll(configurationResources);
-        return includeResourcesArguments;
-    }
-
     private List<String> getBundlesList() {
         List<String> list = new ArrayList<>(projectConfiguration.getBundlesList());
         if (projectConfiguration.isUseJavaFX()) {
@@ -504,11 +491,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private Path createJNIConfig(String suffix) throws IOException {
         Path gvmPath = paths.getGvmPath();
         Path jniPath = gvmPath.resolve(Strings.substitute(Constants.JNI_ARCH_FILE, Map.of("archOs", suffix)));
-        File f = jniPath.toFile();
-        if (f.exists()) {
-            f.delete();
-        }
-        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
+        Files.deleteIfExists(jniPath);
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(jniPath.toFile())))) {
             bw.write("[\n");
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
             for (String javaFile : getJNIClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
@@ -536,6 +520,41 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return jniPath;
     }
 
+    private Path createResourceConfig(String suffix) throws IOException {
+        Path gvmPath = paths.getGvmPath();
+        Path resourcePath = gvmPath.resolve(
+                Strings.substitute(Constants.RESOURCE_ARCH_FILE, Map.of("archOs", suffix)));
+        Files.deleteIfExists(resourcePath);
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(resourcePath.toFile())))) {
+            bw.write("{\n");
+            bw.write("  \"resources\": [\n");
+            boolean patternHasBeenWritten = false;
+            for (String extension : RESOURCES_BY_EXTENSION) {
+                if (patternHasBeenWritten) {
+                    bw.write(",\n");
+                } else {
+                    patternHasBeenWritten = true;
+                }
+                writePatternEntry(bw, ".*\\\\." + extension + "$");
+            }
+            for (String configurationResource : projectConfiguration.getResourcesList()) {
+                if (patternHasBeenWritten) {
+                    bw.write(",\n");
+                } else {
+                    patternHasBeenWritten = true;
+                }
+                writePatternEntry(bw, configurationResource);
+            }
+            if (patternHasBeenWritten) {
+                bw.write("\n");
+            }
+
+            bw.write("  ]\n");
+            bw.write("}");
+        }
+        return resourcePath;
+    }
+
     private static void writeEntry(BufferedWriter bw, String javaClass) throws IOException {
         writeEntry(bw, javaClass, false);
     }
@@ -560,6 +579,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             bw.write("\n");
         }
         bw.write("  }\n");
+    }
+
+    private static void writePatternEntry(BufferedWriter bw, String pattern) throws IOException {
+        bw.write("    {\"pattern\": \"" + pattern + "\"}");
     }
 
     /**
