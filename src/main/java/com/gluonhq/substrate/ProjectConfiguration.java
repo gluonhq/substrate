@@ -34,7 +34,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * This class contains all public configuration info about the current project (not about the current OS/Arch/vendor etc)
@@ -59,6 +58,7 @@ public class ProjectConfiguration {
     private List<String> jniList = Collections.emptyList();
     private List<String> compilerArgs = Collections.emptyList();
 
+    private String appId;
     private String appName;
     private String mainClassName;
 
@@ -206,6 +206,20 @@ public class ProjectConfiguration {
         this.compilerArgs = compilerArgs;
     }
 
+    public String getAppId() {
+        return appId;
+    }
+
+    /**
+     * Sets the AppID. This acts as the application identifier in various platforms.
+     * For Android, this is the equivalent of 'package' name of the application.
+     * 
+     * @param appId The application ID of the application.
+     */
+    public void setAppId(String appId) {
+        this.appId = appId;
+    }
+
     public String getAppName() {
         return this.appName;
     }
@@ -250,6 +264,7 @@ public class ProjectConfiguration {
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
                 ", compilerArgs=" + compilerArgs +
+                ", appId='" + appId + '\'' +
                 ", appName='" + appName + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +

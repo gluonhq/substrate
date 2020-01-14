@@ -350,6 +350,10 @@ public class InternalProjectConfiguration {
         this.runtimeArgsList = runtimeArgsList;
     }
 
+    public String getAppId() {
+        return Objects.requireNonNull(publicConfig.getAppId(), "App ID is required");
+    }
+
     public String getAppName() {
         return Objects.requireNonNull(publicConfig.getAppName(), "App name is required");
     }

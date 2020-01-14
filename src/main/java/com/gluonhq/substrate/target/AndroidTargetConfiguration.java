@@ -157,6 +157,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.copyResource("/native/android/dalvik/MainActivity$1.class", dalvikActivityPackage.resolve("MainActivity$1.class"));
         FileOps.copyResource("/native/android/dalvik/MainActivity$InternalSurfaceView.class", dalvikActivityPackage.resolve("MainActivity$InternalSurfaceView.class"));
         FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
+        FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
         FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
 
         int processResult;

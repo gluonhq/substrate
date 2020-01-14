@@ -58,6 +58,7 @@ public class SubstrateDispatcher {
         String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
 
         String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
+        String appId     = Optional.ofNullable(System.getProperty("appId")).orElse("com.gluonhq.anonymousApp");
         String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         String targetProfile = System.getProperty("targetProfile");
 
@@ -69,6 +70,7 @@ public class SubstrateDispatcher {
 
         ProjectConfiguration config = new ProjectConfiguration(mainClass);
         config.setGraalPath(Path.of(graalVM));
+        config.setAppId(appId);
         config.setAppName(appName);
         config.setTarget(targetTriplet);
         config.setReflectionList(Strings.split(System.getProperty("reflectionlist")));
