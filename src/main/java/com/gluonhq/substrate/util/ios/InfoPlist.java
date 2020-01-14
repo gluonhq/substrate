@@ -96,13 +96,24 @@ public class InfoPlist {
     }
 
     public Path processInfoPlist() throws IOException {
-        Path workDir = appPath;
-        String executableName = getExecutableName(projectConfiguration.getAppName(), sourceOS);
+        String appName = projectConfiguration.getAppName();
+        String executableName = getExecutableName(appName, sourceOS);
+        Path executable = appPath.resolve(executableName);
+        if (!Files.exists(executable)) {
+            String errorMessage = "The executable " + executable + " doesn't exist.";
+            if (!appName.equals(executableName) && Files.exists(appPath.resolve(appName))) {
+                errorMessage += "\nMake sure the CFBundleExecutable key in the Default-Info.plist file is set to: " + appName;
+            }
+            throw new IOException(errorMessage);
+        }
+        if (!Files.isExecutable(executable)) {
+            throw new IOException("The file " + executable + " is not executable");
+        }
         String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getMainClassName());
 
         Path userPlist = rootPath.resolve(Constants.PLIST_FILE);
         boolean inited = true;
-        if (! userPlist.toFile().exists()) {
+        if (!Files.exists(userPlist)) {
             Path iosPath = paths.getGenPath().resolve(sourceOS);
             Path genPlist = iosPath.resolve(Constants.PLIST_FILE);
             Path iosAssets = iosPath.resolve("assets");
@@ -143,7 +154,7 @@ public class InfoPlist {
             if (! inited) {
                 dict.put("CFBundleIdentifier", bundleIdName);
                 dict.put("CFBundleExecutable", executableName);
-                dict.put("CFBundleName", projectConfiguration.getAppName());
+                dict.put("CFBundleName", appName);
                 dict.saveAsXML(plist);
             }
             dict.put("DTPlatformName", xcodeUtil.getPlatformName());
@@ -175,7 +186,7 @@ public class InfoPlist {
             orderedDict.put("MinimumOSVersion", minOSVersion != null ? minOSVersion : "11.0");
 
             //             BinaryPropertyListWriter.write(new File(appDir, "Info.plist"), orderedDict);
-            orderedDict.saveAsBinary(workDir.resolve("Info.plist"));
+            orderedDict.saveAsBinary(appPath.resolve("Info.plist"));
             orderedDict.saveAsXML(tmpPath.resolve("Info.plist"));
             orderedDict.getEntrySet().forEach(e -> {
                         if ("CFBundleIdentifier".equals(e.getKey())) {
@@ -208,7 +219,7 @@ public class InfoPlist {
     private String getExecutableName(String appName, String sourceName) {
         Path plist = getPlistPath(paths, sourceName);
         if (plist == null) {
-            return appName; // + (Constants.SOURCE_IOS.equals(sourceName) ? "App" : "");
+            return appName;
         }
 
         try {
