@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,10 +29,11 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ClassPath;
-import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.ProcessRunner;
+import com.gluonhq.substrate.util.Version;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
@@ -129,7 +131,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         super.link();
 
         Path sdkPath = Paths.get(sdk);
-        Path buildToolsPath = sdkPath.resolve("build-tools").resolve("27.0.3");
+        Path buildToolsPath = sdkPath.resolve("build-tools").resolve(findLatestBuildTool(sdkPath));
 
         String androidJar = sdkPath.resolve("platforms").resolve("android-27").resolve("android.jar").toString();
         String aaptCmd = buildToolsPath.resolve("aapt").toString();
@@ -237,7 +239,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
                 "install", "-r", alignedApk);
         processResult = install.runProcess("install");
-        
+
         return processResult == 0;
     }
 
@@ -354,5 +356,27 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             throw new IllegalArgumentException("fatal, can not create a keystore");
 
         System.err.println("done creating ks");
+    }
+
+    private String findLatestBuildTool(Path sdkPath) throws IOException {
+        Objects.requireNonNull(sdkPath);
+        Path buildToolsPath = sdkPath.resolve("build-tools");
+        if (Files.exists(buildToolsPath)) {
+            return Files.walk(buildToolsPath, 1)
+                    .filter(file -> Files.isDirectory(file) && !file.equals(buildToolsPath))
+                    .map(file -> new Version(file.getFileName().toString()))
+                    .max(Version::compareTo)
+                    .map(Version::toString)
+                    .orElseThrow(BuildToolNotFoundException::new);
+        }
+        throw new BuildToolNotFoundException();
+        // TODO: If no build tool is found, we can install it using sdkmanager.
+        //  Currently, sdkmanager doesn't work with JDK 11: https://issuetracker.google.com/issues/67495440
+    }
+
+    private static class BuildToolNotFoundException extends IOException {
+        public BuildToolNotFoundException() {
+            super("Android build tools not found. Please install it and try again.");
+        }
     }
 }
