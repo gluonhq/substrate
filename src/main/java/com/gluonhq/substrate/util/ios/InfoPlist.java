@@ -153,8 +153,9 @@ public class InfoPlist {
             dict.put("DTPlatformVersion", xcodeUtil.getPlatformVersion());
             dict.put("DTPlatformBuild", xcodeUtil.getPlatformBuild());
             dict.put("DTSDKBuild", xcodeUtil.getPlatformBuild());
-            dict.put("DTXcode", xcodeUtil.getDTXCode());
-            dict.put("DTXcodeBuild", xcodeUtil.getDTXCodeBuild());
+            dict.put("DTXcode", xcodeUtil.getDTXcode());
+            dict.put("DTXcodeBuild", xcodeUtil.getDTXcodeBuild());
+            dict.put("BuildMachineOSBuild", xcodeUtil.getBuildMachineOSBuild());
             NSDictionaryEx orderedDict = new NSDictionaryEx();
             orderedDict.put("CFBundleVersion", dict.get("CFBundleVersion"));
             dict.remove("CFBundleVersion");
