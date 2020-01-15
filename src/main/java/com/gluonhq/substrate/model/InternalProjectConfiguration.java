@@ -350,8 +350,13 @@ public class InternalProjectConfiguration {
         this.runtimeArgsList = runtimeArgsList;
     }
 
+    /**
+     * Returns the appId from {@link ProjectConfiguration}. If the appId is null, a concatenation of strings
+     * "com.gluonhq." and a random string with 6 alphabets, is returned.
+     * @return appId from {@link ProjectConfiguration}. If the appId is null, it will return a random string.
+     */
     public String getAppId() {
-        return Objects.requireNonNull(publicConfig.getAppId(), "App ID is required");
+        return Optional.ofNullable(publicConfig.getAppId()).orElse("com.gluonhq." + Strings.randomString(6));
     }
 
     public String getAppName() {
