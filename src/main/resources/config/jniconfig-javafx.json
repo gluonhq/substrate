@@ -158,4 +158,21 @@
       {"name":"<init>","parameterTypes":["java.util.List","com.sun.glass.ui.CommonDialogs$ExtensionFilter"] }
     ]
   }
+,
+  {
+    "name" : "com.sun.javafx.iio.jpeg.JPEGImageLoader",
+    "methods" : [
+      {"name":"<init>","parameterTypes":["java.io.InputStream"]},
+      {"name":"updateImageProgress","parameterTypes":["int"]},
+      {"name":"setInputAttributes","parameterTypes":["int", "int", "int", "int", "int", "byte[]"]},
+      {"name":"setOutputAttributes","parameterTypes":["int", "int"]}
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.iio.common.ImageLoaderImpl",
+    "methods" : [
+      {"name":"emitWarning","parameterTypes":["java.lang.String"]}
+    ]
+  }
 ]
