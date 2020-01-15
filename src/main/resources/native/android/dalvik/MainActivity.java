@@ -9,7 +9,12 @@ import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
+
+import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
+
 import android.view.KeyEvent;
+import android.view.KeyCharacterMap;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -19,6 +24,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
+
+import javafx.scene.input.KeyCode;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback,
         SurfaceHolder.Callback2 {
@@ -33,10 +40,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     boolean graalStarted = false;
 
+    private static InputMethodManager imm;
 
-   @Override
-   protected void onCreate(Bundle savedInstanceState) {
-      super.onCreate(savedInstanceState);
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         Log.v(TAG, "onCreate start, using Android Logging v1");
         System.err.println("onCreate called, writing this to System.err");
         super.onCreate(savedInstanceState);
@@ -54,6 +63,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         mViewGroup.addView(mView);
         setContentView(mViewGroup);
         instance = this;
+        imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         Log.v(TAG, "onCreate done");
     }
 
@@ -124,6 +134,21 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         Log.v(TAG, "surfaceredraw needed (and wait) done");
     }
 
+    private static void showIME() {
+        Log.v(TAG, "Called notify_showIME, DONT show input for imm = "+imm+", mv = "+mView);
+        mView.requestFocus();
+        boolean answer = imm.showSoftInput(mView, 0);
+        Log.v(TAG, "Done calling notify_showIME, result = "+answer);
+    }
+
+    private static void hideIME() {
+        Log.v(TAG, "Called notify_hideIME");
+        mView.requestFocus();
+        boolean answer = imm.hideSoftInputFromWindow(mView.getWindowToken(), 0);
+        Log.v(TAG, "Done Calling notify_hideIME, answer = "+answer);
+    }
+
+
     private native void startGraalApp();
     private native long surfaceReady(Surface surface, float density);
     private native void nativeSetSurface(Surface surface);
@@ -131,6 +156,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeSurfaceRedrawNeeded();
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
     private native void nativeGotKeyEvent(int action, int keycode);
+    private native void nativedispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
 
     class InternalSurfaceView extends SurfaceView {
        private static final int ACTION_POINTER_STILL = -1;
@@ -183,8 +209,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
         @Override
         public boolean dispatchKeyEvent(final KeyEvent event) {
-            Log.v(TAG, "Activity, get key event, action = "+event.getAction());
-            nativeGotKeyEvent(event.getAction(), event.getKeyCode());
+            Log.v(TAG, "Activity, process get key event, action = "+event.getAction());
+            processAndroidKeyEvent (event);
+            // nativeGotKeyEvent(event.getAction(), event.getKeyCode());
             return true;
         }
     }
@@ -227,6 +254,240 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         Log.v(TAG, "onStop");
         super.onStop();
     }
+
+    public final static int PRESS   = 111;
+    public final static int RELEASE = 112;
+    public final static int TYPED   = 113; 
+
+    private int deadKey = 0;
+
+    void processAndroidKeyEvent (KeyEvent event) {
+        System.out.println("KeyEvent: " + event+" with action = "+event.getAction());
+        int jfxModifiers = mapAndroidModifierToJfx(event.getMetaState());
+        switch (event.getAction()) {
+            case KeyEvent.ACTION_DOWN:
+                KeyCode jfxKeyCode = mapAndroidKeyCodeToJfx(event.getKeyCode());
+System.out.println ("[JVDBG] eventkeycode = "+event.getKeyCode()+" and jfxkc = "+jfxKeyCode+" with code "+ jfxKeyCode.impl_getCode());
+                nativedispatchKeyEvent(PRESS, jfxKeyCode.impl_getCode(), jfxKeyCode.impl_getChar().toCharArray(), jfxKeyCode.impl_getChar().toCharArray().length, jfxModifiers);
+                break;
+
+            case KeyEvent.ACTION_UP:
+                jfxKeyCode = mapAndroidKeyCodeToJfx(event.getKeyCode());
+                nativedispatchKeyEvent(RELEASE, jfxKeyCode.impl_getCode(), jfxKeyCode.impl_getChar().toCharArray(), jfxKeyCode.impl_getChar().toCharArray().length, jfxModifiers);
+                int unicodeChar = event.getUnicodeChar();
+                if ((unicodeChar & KeyCharacterMap.COMBINING_ACCENT) != 0) {
+                    deadKey = unicodeChar & KeyCharacterMap.COMBINING_ACCENT_MASK;
+                    return;
+                }
+
+                if (deadKey != 0 && unicodeChar != 0) {
+                    unicodeChar = KeyCharacterMap.getDeadChar(deadKey, unicodeChar);
+                    deadKey = 0;
+                }
+
+                if (unicodeChar != 0) {
+                    nativedispatchKeyEvent(TYPED, KeyCode.UNDEFINED.impl_getCode(), Character.toChars(unicodeChar), 1, jfxModifiers);
+                }
+
+                break;
+
+            case KeyEvent.ACTION_MULTIPLE:
+                if (event.getKeyCode() == KeyEvent.KEYCODE_UNKNOWN) {
+                    nativedispatchKeyEvent(TYPED, KeyCode.UNDEFINED.impl_getCode(), event.getCharacters().toCharArray(), event.getCharacters().toCharArray().length,    jfxModifiers);
+                } else {
+                    jfxKeyCode = mapAndroidKeyCodeToJfx(event.getKeyCode());
+                    for (int i = 0; i < event.getRepeatCount(); i++) {
+                        nativedispatchKeyEvent(PRESS, jfxKeyCode.impl_getCode(), null, 0, jfxModifiers);
+                        nativedispatchKeyEvent(RELEASE, jfxKeyCode.impl_getCode(), null, 0, jfxModifiers);
+                        nativedispatchKeyEvent(TYPED, jfxKeyCode.impl_getCode(), null, 0, jfxModifiers);
+                    }
+                }
+
+                break;
+            default:
+                System.err.println("DalvikInput.onKeyEvent Unknown Action " + event.getAction());
+                break;
+        }
+    }
+
+    private final static int MODIFIER_SHIFT = 1;
+    private final static int MODIFIER_CONTROL = 2;
+    private final static int MODIFIER_ALT = 4;
+    private final static int MODIFIER_WINDOWS = 8;
+
+
+    private static int mapAndroidModifierToJfx(int androidMetaStates) {
+        int jfxModifiers = 0;
+
+        if ((androidMetaStates & KeyEvent.META_SHIFT_MASK) != 0) {
+            jfxModifiers += MODIFIER_SHIFT;
+        }
+
+        if ((androidMetaStates & KeyEvent.META_CTRL_MASK) != 0) {
+            jfxModifiers += MODIFIER_CONTROL;
+        }
+
+        if ((androidMetaStates & KeyEvent.META_ALT_MASK) != 0) {
+            jfxModifiers += MODIFIER_ALT;
+        }
+
+        if ((androidMetaStates & KeyEvent.META_META_ON) != 0) {
+            jfxModifiers += MODIFIER_WINDOWS;
+        }
+        return jfxModifiers;
+    }
+
+
+    private static KeyCode mapAndroidKeyCodeToJfx(int keycode) {
+        switch (keycode) {
+            case KeyEvent.KEYCODE_UNKNOWN: return KeyCode.UNDEFINED;
+            case KeyEvent.KEYCODE_HOME: return KeyCode.HOME;
+            case KeyEvent.KEYCODE_BACK: return KeyCode.ESCAPE; // special back key mapped to ESC
+            case KeyEvent.KEYCODE_0: return KeyCode.DIGIT0;
+            case KeyEvent.KEYCODE_1: return KeyCode.DIGIT1;
+            case KeyEvent.KEYCODE_2: return KeyCode.DIGIT2;
+            case KeyEvent.KEYCODE_3: return KeyCode.DIGIT3;
+            case KeyEvent.KEYCODE_4: return KeyCode.DIGIT4;
+            case KeyEvent.KEYCODE_5: return KeyCode.DIGIT5;
+            case KeyEvent.KEYCODE_6: return KeyCode.DIGIT6;
+            case KeyEvent.KEYCODE_7: return KeyCode.DIGIT7;
+            case KeyEvent.KEYCODE_8: return KeyCode.DIGIT8;
+            case KeyEvent.KEYCODE_9: return KeyCode.DIGIT9;
+            case KeyEvent.KEYCODE_STAR: return KeyCode.STAR;
+            case KeyEvent.KEYCODE_POUND: return KeyCode.POUND;
+            case KeyEvent.KEYCODE_DPAD_UP: return KeyCode.UP;
+            case KeyEvent.KEYCODE_DPAD_DOWN: return KeyCode.DOWN;
+            case KeyEvent.KEYCODE_DPAD_LEFT: return KeyCode.LEFT;
+            case KeyEvent.KEYCODE_DPAD_RIGHT: return KeyCode.RIGHT;
+            case KeyEvent.KEYCODE_VOLUME_UP: return KeyCode.VOLUME_UP;
+            case KeyEvent.KEYCODE_VOLUME_DOWN: return KeyCode.VOLUME_DOWN;
+            case KeyEvent.KEYCODE_POWER: return KeyCode.POWER;
+            case KeyEvent.KEYCODE_CLEAR: return KeyCode.CLEAR;
+            case KeyEvent.KEYCODE_A: return KeyCode.A;
+            case KeyEvent.KEYCODE_B: return KeyCode.B;
+            case KeyEvent.KEYCODE_C: return KeyCode.C;
+            case KeyEvent.KEYCODE_D: return KeyCode.D;
+            case KeyEvent.KEYCODE_E: return KeyCode.E;
+            case KeyEvent.KEYCODE_F: return KeyCode.F;
+            case KeyEvent.KEYCODE_G: return KeyCode.G;
+            case KeyEvent.KEYCODE_H: return KeyCode.H;
+            case KeyEvent.KEYCODE_I: return KeyCode.I;
+            case KeyEvent.KEYCODE_J: return KeyCode.J;
+            case KeyEvent.KEYCODE_K: return KeyCode.K;
+            case KeyEvent.KEYCODE_L: return KeyCode.L;
+            case KeyEvent.KEYCODE_M: return KeyCode.M;
+            case KeyEvent.KEYCODE_N: return KeyCode.N;
+            case KeyEvent.KEYCODE_O: return KeyCode.O;
+            case KeyEvent.KEYCODE_P: return KeyCode.P;
+            case KeyEvent.KEYCODE_Q: return KeyCode.Q;
+            case KeyEvent.KEYCODE_R: return KeyCode.R;
+            case KeyEvent.KEYCODE_S: return KeyCode.S;
+            case KeyEvent.KEYCODE_T: return KeyCode.T;
+            case KeyEvent.KEYCODE_U: return KeyCode.U;
+            case KeyEvent.KEYCODE_V: return KeyCode.V;
+            case KeyEvent.KEYCODE_W: return KeyCode.W;
+            case KeyEvent.KEYCODE_X: return KeyCode.X;
+            case KeyEvent.KEYCODE_Y: return KeyCode.Y;
+            case KeyEvent.KEYCODE_Z: return KeyCode.Z;
+            case KeyEvent.KEYCODE_COMMA: return KeyCode.COMMA;
+            case KeyEvent.KEYCODE_PERIOD: return KeyCode.PERIOD;
+            case KeyEvent.KEYCODE_ALT_LEFT: return KeyCode.ALT;
+            case KeyEvent.KEYCODE_ALT_RIGHT: return KeyCode.ALT;
+            case KeyEvent.KEYCODE_SHIFT_LEFT: return KeyCode.SHIFT;
+            case KeyEvent.KEYCODE_SHIFT_RIGHT: return KeyCode.SHIFT;
+            case KeyEvent.KEYCODE_TAB: return KeyCode.TAB;
+            case KeyEvent.KEYCODE_SPACE: return KeyCode.SPACE;
+            case KeyEvent.KEYCODE_ENTER: return KeyCode.ENTER;
+            case KeyEvent.KEYCODE_DEL: return KeyCode.BACK_SPACE;
+            case KeyEvent.KEYCODE_GRAVE: return KeyCode.DEAD_GRAVE;
+            case KeyEvent.KEYCODE_MINUS: return KeyCode.MINUS;
+            case KeyEvent.KEYCODE_EQUALS: return KeyCode.EQUALS;
+            case KeyEvent.KEYCODE_LEFT_BRACKET: return KeyCode.BRACELEFT;
+            case KeyEvent.KEYCODE_RIGHT_BRACKET: return KeyCode.BRACERIGHT;
+            case KeyEvent.KEYCODE_BACKSLASH: return KeyCode.BACK_SLASH;
+            case KeyEvent.KEYCODE_SEMICOLON: return KeyCode.SEMICOLON;
+            case KeyEvent.KEYCODE_SLASH: return KeyCode.SLASH;
+            case KeyEvent.KEYCODE_AT: return KeyCode.AT;
+            case KeyEvent.KEYCODE_PLUS: return KeyCode.PLUS;
+            case KeyEvent.KEYCODE_MENU: return KeyCode.CONTEXT_MENU;
+            case KeyEvent.KEYCODE_SEARCH: return KeyCode.FIND;
+            case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE: return KeyCode.PLAY;
+            case KeyEvent.KEYCODE_MEDIA_STOP: return KeyCode.STOP;
+            case KeyEvent.KEYCODE_MEDIA_NEXT: return KeyCode.TRACK_NEXT;
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS: return KeyCode.TRACK_PREV;
+            case KeyEvent.KEYCODE_MEDIA_REWIND: return KeyCode.REWIND;
+            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD: return KeyCode.FAST_FWD;
+            case KeyEvent.KEYCODE_MUTE: return KeyCode.MUTE;
+            case KeyEvent.KEYCODE_PAGE_UP: return KeyCode.PAGE_UP;
+            case KeyEvent.KEYCODE_PAGE_DOWN: return KeyCode.PAGE_DOWN;
+            case KeyEvent.KEYCODE_BUTTON_A: return KeyCode.GAME_A;
+            case KeyEvent.KEYCODE_BUTTON_B: return KeyCode.GAME_B;
+            case KeyEvent.KEYCODE_BUTTON_C: return KeyCode.GAME_C;
+            case KeyEvent.KEYCODE_BUTTON_X: return KeyCode.GAME_D;
+            case KeyEvent.KEYCODE_BUTTON_MODE: return KeyCode.MODECHANGE;
+            case KeyEvent.KEYCODE_ESCAPE: return KeyCode.ESCAPE;
+            case KeyEvent.KEYCODE_CTRL_LEFT: return KeyCode.CONTROL;
+            case KeyEvent.KEYCODE_CTRL_RIGHT: return KeyCode.CONTROL;
+            case KeyEvent.KEYCODE_CAPS_LOCK: return KeyCode.CAPS;
+            case KeyEvent.KEYCODE_SCROLL_LOCK: return KeyCode.SCROLL_LOCK;
+            case KeyEvent.KEYCODE_META_LEFT: return KeyCode.META;
+            case KeyEvent.KEYCODE_META_RIGHT: return KeyCode.META;
+            case KeyEvent.KEYCODE_SYSRQ: return KeyCode.PRINTSCREEN;
+            case KeyEvent.KEYCODE_BREAK: return KeyCode.PAUSE;
+            case KeyEvent.KEYCODE_MOVE_HOME: return KeyCode.BEGIN;
+            case KeyEvent.KEYCODE_MOVE_END: return KeyCode.END;
+            case KeyEvent.KEYCODE_INSERT: return KeyCode.INSERT;
+            case KeyEvent.KEYCODE_MEDIA_PLAY: return KeyCode.PLAY;
+            case KeyEvent.KEYCODE_MEDIA_EJECT: return KeyCode.EJECT_TOGGLE;
+            case KeyEvent.KEYCODE_MEDIA_RECORD: return KeyCode.RECORD;
+            case KeyEvent.KEYCODE_F1: return KeyCode.F1;
+            case KeyEvent.KEYCODE_F2: return KeyCode.F2;
+            case KeyEvent.KEYCODE_F3: return KeyCode.F3;
+            case KeyEvent.KEYCODE_F4: return KeyCode.F4;
+            case KeyEvent.KEYCODE_F5: return KeyCode.F5;
+            case KeyEvent.KEYCODE_F6: return KeyCode.F6;
+            case KeyEvent.KEYCODE_F7: return KeyCode.F7;
+            case KeyEvent.KEYCODE_F8: return KeyCode.F8;
+            case KeyEvent.KEYCODE_F9: return KeyCode.F9;
+            case KeyEvent.KEYCODE_F10: return KeyCode.F10;
+            case KeyEvent.KEYCODE_F11: return KeyCode.F11;
+            case KeyEvent.KEYCODE_F12: return KeyCode.F12;
+            case KeyEvent.KEYCODE_NUM_LOCK: return KeyCode.NUM_LOCK;
+            case KeyEvent.KEYCODE_NUMPAD_0: return KeyCode.NUMPAD0;
+            case KeyEvent.KEYCODE_NUMPAD_1: return KeyCode.NUMPAD1;
+            case KeyEvent.KEYCODE_NUMPAD_2: return KeyCode.NUMPAD2;
+            case KeyEvent.KEYCODE_NUMPAD_3: return KeyCode.NUMPAD3;
+            case KeyEvent.KEYCODE_NUMPAD_4: return KeyCode.NUMPAD4;
+            case KeyEvent.KEYCODE_NUMPAD_5: return KeyCode.NUMPAD5;
+            case KeyEvent.KEYCODE_NUMPAD_6: return KeyCode.NUMPAD6;
+            case KeyEvent.KEYCODE_NUMPAD_7: return KeyCode.NUMPAD7;
+            case KeyEvent.KEYCODE_NUMPAD_8: return KeyCode.NUMPAD8;
+            case KeyEvent.KEYCODE_NUMPAD_9: return KeyCode.NUMPAD9;
+            case KeyEvent.KEYCODE_NUMPAD_DIVIDE: return KeyCode.DIVIDE;
+            case KeyEvent.KEYCODE_NUMPAD_MULTIPLY: return KeyCode.MULTIPLY;
+            case KeyEvent.KEYCODE_NUMPAD_SUBTRACT: return KeyCode.SUBTRACT;
+            case KeyEvent.KEYCODE_NUMPAD_ADD: return KeyCode.ADD;
+            case KeyEvent.KEYCODE_NUMPAD_DOT: return KeyCode.PERIOD;
+            case KeyEvent.KEYCODE_NUMPAD_COMMA: return KeyCode.COMMA;
+            case KeyEvent.KEYCODE_NUMPAD_ENTER: return KeyCode.ENTER;
+            case KeyEvent.KEYCODE_NUMPAD_EQUALS: return KeyCode.EQUALS;
+            case KeyEvent.KEYCODE_NUMPAD_LEFT_PAREN: return KeyCode.LEFT_PARENTHESIS;
+            case KeyEvent.KEYCODE_NUMPAD_RIGHT_PAREN: return KeyCode.RIGHT_PARENTHESIS;
+            case KeyEvent.KEYCODE_VOLUME_MUTE: return KeyCode.MUTE;
+            case KeyEvent.KEYCODE_INFO: return KeyCode.INFO;
+            case KeyEvent.KEYCODE_CHANNEL_UP: return KeyCode.CHANNEL_UP;
+            case KeyEvent.KEYCODE_CHANNEL_DOWN: return KeyCode.CHANNEL_DOWN;
+            case KeyEvent.KEYCODE_PROG_RED: return KeyCode.COLORED_KEY_0;
+            case KeyEvent.KEYCODE_PROG_GREEN: return KeyCode.COLORED_KEY_1;
+            case KeyEvent.KEYCODE_PROG_YELLOW: return KeyCode.COLORED_KEY_2;
+            case KeyEvent.KEYCODE_PROG_BLUE: return KeyCode.COLORED_KEY_3;
+            case KeyEvent.KEYCODE_KATAKANA_HIRAGANA: return KeyCode.JAPANESE_HIRAGANA;
+            case KeyEvent.KEYCODE_KANA: return KeyCode.KANA;
+            default:
+                return KeyCode.UNDEFINED;
+        }
+    }
+
 
 
 }

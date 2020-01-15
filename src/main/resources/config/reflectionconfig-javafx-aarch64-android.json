@@ -38,6 +38,16 @@
   }
 ,
   {
+    "name" : "javafx.scene.control.skin.TextFieldSkinAndroid",
+    "methods":[{"name":"<init>","parameterTypes":["javafx.scene.control.TextField"] }]
+  }
+,
+  {
+    "name" : "javafx.scene.control.skin.TextAreaSkinAndroid",
+    "methods":[{"name":"<init>","parameterTypes":["javafx.scene.control.TextArea"] }]
+  }
+,
+  {
     "name" : "javafx.scene.control.skin.ButtonSkin"
   }
 ,

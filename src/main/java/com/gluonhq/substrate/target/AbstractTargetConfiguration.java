@@ -199,6 +199,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     */
     @Override
     public boolean link() throws IOException, InterruptedException {
+        compileAdditionalSources();
         ensureClibs();
 
         String appName = projectConfiguration.getAppName();
@@ -299,7 +300,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     // --- private methods
 
-    private boolean compileAdditionalSources()
+    protected boolean compileAdditionalSources()
             throws IOException, InterruptedException {
 
         String appName = projectConfiguration.getAppName();
