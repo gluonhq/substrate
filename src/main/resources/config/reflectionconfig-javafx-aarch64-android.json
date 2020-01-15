@@ -23,6 +23,13 @@
   }
 ,
   {
+    "name":"com.sun.prism.es2.ES2PhongShader",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] }
+    ]
+  }
+,
+  {
     "name" : "com.sun.prism.es2.ES2ResourceFactory"
   }
 ,
