@@ -21,8 +21,17 @@ extern void androidJfx_requestGlassToRedraw();
 extern void androidJfx_setNativeWindow(ANativeWindow* nativeWindow);
 extern void androidJfx_setDensity(float nativeDensity);
 extern void androidJfx_gotTouchEvent (int count, int* actions, int* ids, int* xs, int* ys, int primary);
+extern void androidJfx_gotKeyEvent (int action, int key, jchar* chars, int count, int mods);
 extern int to_jfx_touch_action(int state);
 
+jclass activityClass;
+jobject activity;
+jmethodID activity_showIME;
+jmethodID activity_hideIME;
+
+
+JavaVM *androidVM;
+JNIEnv* androidEnv;
 ANativeWindow *window;
 jfloat density;
 char* appDataDir;
@@ -37,11 +46,13 @@ const char * origargs[] = {
         "-Dembedded=monocle",
         "-Dglass.platform=Monocle",
         "-Djavafx.verbose=true",
+        "-Dmonocle.input.traceEvents.verbose=true",
         "-Dprism.verbose=true"};
 
-int argsize = 6;
+int argsize = 7;
 
 char** createArgs() {
+LOGE(stderr, "CREATE ARGS");
     int origSize = sizeof(origargs)/sizeof(char*);
     char** result = malloc((origSize+1)* sizeof(char*));
     for (int i = 0; i < origSize; i++) {
@@ -53,12 +64,30 @@ char** createArgs() {
     strcat(tmpArgs,appDataDir);
     result[origSize]=tmpArgs;
     argsize++;
+LOGE(stderr, "CREATE ARGS done");
     return result;
 }
+
+void registerMethodHandles (JNIEnv *aenv) {
+    activityClass = (*aenv)->NewGlobalRef(aenv, 
+          (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/MainActivity"));
+    activity_showIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "showIME", "()V");
+    activity_hideIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "hideIME", "()V");
+}
+
+int JNI_OnLoad(JavaVM *vm, void *reserved) {
+    androidVM = vm;
+    (*vm)->GetEnv(vm, (void **) &androidEnv, JNI_VERSION_1_6);
+    registerMethodHandles(androidEnv);
+    LOGE(stderr, "AndroidVM called into native, vm = %p, androidEnv = %p",androidVM, androidEnv);
+    return JNI_VERSION_1_6;
+}
+
 // === called from DALVIK. Minize work/dependencies here === // 
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
-(JNIEnv *env, jobject activity) {
+(JNIEnv *env, jobject activityObj) {
+    activity = activityObj;
     LOGE(stderr, "Start GraalApp, DALVIK env at %p\n", env);
     LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
     int ev = (*env)->GetVersion(env);
@@ -107,6 +136,8 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSurfaceR
     androidJfx_requestGlassToRedraw();
 }
 
+JNIEXPORT void JNICALL 
+Java_javafx_scene_control_skin_TextFieldSkinAndroid_showSoftwareKeyboard();
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotTouchEvent
 (JNIEnv *env, jobject activity, jint jcount, jintArray jactions, jintArray jids, jintArray jxs, jintArray jys) {
@@ -136,11 +167,23 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotTouch
     LOGE(stderr, "Native Dalvik layer got touch event, passed to native Graal layer...");
 }
 
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativedispatchKeyEvent
+(JNIEnv *env, jobject activity, jint action, jint keyCode, jcharArray jchars, jint cc, jint modifiers) {
+    LOGE(stderr, "Native Dalvik layer has to dispatch key event, pass to native Graal layer with %d chars...", cc);
+    jchar *kars = (*env)->GetCharArrayElements(env, jchars, 0);
+int realcount = (*env)->GetArrayLength(env, jchars);
+LOGE(stderr, "passed count = %d and realcount = %d\n", cc, realcount);
+LOGE(stderr, "c0 = %c and c1 = %c\n", kars[0], kars[1]);
+LOGE(stderr, "c0 = %x and c1 = %x\n", kars[0], kars[1]);
+    androidJfx_gotKeyEvent(action, keyCode, kars, cc, modifiers);
+}
+
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotKeyEvent
 (JNIEnv *env, jobject activity, jint action, jint keyCode) {
     LOGE(stderr, "Native Dalvik layer got key event, pass to native Graal layer...");
+    // androidJfx_gotKeyEvent(action, keyCode);
     // Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative(NULL, NULL, action, keyCode);
-    LOGE(stderr, "Native Dalvik layer got key event, TODO!!!");
+    LOGE(stderr, "Native Dalvik layer got key event!!!");
 }
 
 // == expose window functionality to JavaFX native code == //
@@ -238,4 +281,47 @@ fprintf(stderr, "In dummy JNI_OnLoad_javafx_font\n");
     return JNI_VERSION_1_4;
 #endif
 }
+
+void showSoftwareKeyboard() {
+    JNIEnv *menv;
+    (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **) &menv, NULL);
+    LOGE(stderr, "now I have to show keyboard, invoke method %p on env %p (old = %p)\n", activity_showIME, menv, androidEnv); 
+    (*menv)->CallStaticVoidMethod(menv, activityClass, activity_showIME);
+    (*androidVM)->DetachCurrentThread(androidVM);
+    LOGE(stderr, "I did show keyboard\n"); 
+}
+
+JNIEXPORT void JNICALL 
+Java_javafx_scene_control_skin_TextAreaSkinAndroid_showSoftwareKeyboard
+(JNIEnv *env, jobject textareaskin) {
+    showSoftwareKeyboard();
+}
+
+JNIEXPORT void JNICALL 
+Java_javafx_scene_control_skin_TextFieldSkinAndroid_showSoftwareKeyboard
+(JNIEnv *env, jobject textfieldskin) {
+    showSoftwareKeyboard();
+}
+
+void hideSoftwareKeyboard() {
+    JNIEnv *menv;
+    (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **) &menv, NULL);
+    LOGE(stderr, "now I have to hide keyboard, invoke method %p on env %p (old = %p)\n", activity_hideIME, menv, androidEnv); 
+    (*menv)->CallStaticVoidMethod(menv, activityClass, activity_hideIME);
+    (*androidVM)->DetachCurrentThread(androidVM);
+    LOGE(stderr, "I did hide keyboard\n"); 
+}
+
+JNIEXPORT void JNICALL 
+Java_javafx_scene_control_skin_TextFieldSkinAndroid_hideSoftwareKeyboard
+(JNIEnv *env, jobject textfieldskin) {
+    hideSoftwareKeyboard();
+}
+
+JNIEXPORT void JNICALL 
+Java_javafx_scene_control_skin_TextAreaSkinAndroid_hideSoftwareKeyboard
+(JNIEnv *env, jobject textareaskin) {
+    hideSoftwareKeyboard();
+}
+
 
