@@ -14,23 +14,28 @@ def setupGraalDependencies(String platform) {
         }
     }
 
+    if (platform != "mac" && platform != "linux") {
+        throw new GradleException("Platform $platform not supported")
+    }
+
     def graalVM = new File("${System.properties['user.home']}/.gluon/substrate/graalvm")
     if (!graalVM.exists()) {
         graalVM.mkdirs()
     }
-    def graalFolder = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev")
-    def name = "mac" == platform ? "darwin-amd64" : ("linux" == platform ? "linux-x86_64" : "windows-x86_64")
-    def graalZip = new File("$graalVM/graalvm-unknown-java11-19.3.0-dev-gvm-3-${name}.zip")
+    def name = "mac" == platform ? "darwin" : "linux"
+    def version = "mac" == platform ? "21" : "20"
+    def graalFolder = new File("$graalVM/graalvm-svm-${name}-20.0.0-ea+${version}")
+    def graalZip = new File("$graalVM/graalvm-svm-${name}-20.0.0-ea+${version}.zip")
     if (!graalZip.exists()) {
         println "Downloading graalZip..."
-        new URL("https://download2.gluonhq.com/substrate/graalvm/graalvm-unknown-java11-19.3.0-dev-gvm-3-${name}.zip")
+        new URL("https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-${name}-20.0.0-ea+${version}.zip")
                 .withInputStream { i -> graalZip.withOutputStream { it << i } }
         copy {
             from zipTree(graalZip)
             into graalVM
         }
     }
-    return "mac" == platform ? "$graalFolder/Contents/Home" : "$graalFolder"
+    return "${graalFolder}"
 }
 
 def setupJavaFXDependencies(String platform, String target) {
@@ -38,7 +43,7 @@ def setupJavaFXDependencies(String platform, String target) {
     if (!javafxSdk.exists()) {
         javafxSdk.mkdirs()
     }
-    def version = "14-ea+gvm1"
+    def version = "14-ea+gvm4"
     def name
     if ("linux" == platform) {
         name = "linux-x86_64"

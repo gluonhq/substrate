@@ -32,6 +32,123 @@
   }
 ,
   {
+    "name":"javafx.scene.control.Button",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] },
+      {"name":"setDefaultButton","parameterTypes":["boolean"] },
+      {"name":"isDefaultButton","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.ButtonBase",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] },
+      {"name":"setOnAction","parameterTypes":["javafx.event.EventHandler"] },
+      {"name":"getOnAction","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.ContentDisplay",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.Label",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.Labeled",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] },
+      {"name":"setText","parameterTypes":["java.lang.String"] },
+      {"name":"getText","parameterTypes":[] },
+      {"name":"getGraphic","parameterTypes":[] },
+      {"name":"setGraphic","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getAlignment","parameterTypes":[] },
+      {"name":"setAlignment","parameterTypes":["javafx.geometry.Pos"] },
+      {"name":"getTextAlignment","parameterTypes":[] },
+      {"name":"setTextAlignment","parameterTypes":["javafx.scene.text.TextAlignment"] },
+      {"name":"getContentDisplay","parameterTypes":[] },
+      {"name":"setContentDisplay","parameterTypes":["javafx.scene.control.ContentDisplay"] },
+      {"name":"setMnemonicParsing","parameterTypes":["boolean"] },
+      {"name":"isMnemonicParsing","parameterTypes":[] },
+      {"name":"setWrapText","parameterTypes":["boolean"] },
+      {"name":"isWrapText","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.ScrollPane",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getContent","parameterTypes":[] },
+      {"name":"setContent","parameterTypes":["javafx.scene.Node"] },
+      {"name":"isFitToWidth","parameterTypes":[] },
+      {"name":"setFitToWidth","parameterTypes":["boolean"] },
+      {"name":"getHbarPolicy","parameterTypes":[] },
+      {"name":"setHbarPolicy","parameterTypes":["javafx.scene.control.ScrollPane$ScrollBarPolicy"] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.ScrollPane$ScrollBarPolicy",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.TextInputControl",
+    "methods":[
+      {"name":"setPromptText","parameterTypes":["java.lang.String"] },
+      {"name":"getPromptText","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.TextArea",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] },
+      {"name":"setWrapText","parameterTypes":["boolean"] },
+      {"name":"isWrapText","parameterTypes":[] }
+    ],
+    "fields":[{"name": "wrapText"}]
+  }
+,
+  {
+    "name":"javafx.scene.control.TextField",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.ToolBar",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["javafx.scene.Node[]"] },
+      {"name":"getItems","parameterTypes":[] }
+    ],
+    "fields":[ {"name": "items"}]
+  }
+,
+  {
     "name" : "javafx.scene.layout.AnchorPane",
     "methods":[
       {"name":"<init>","parameterTypes":[] },
@@ -86,9 +203,10 @@
       {"name":"setAlignment","parameterTypes":["javafx.geometry.Pos"] },
       {"name":"getAlignment","parameterTypes":[] },
       {"name":"setSpacing","parameterTypes":["double"] },
-      {"name":"getSpacing","parameterTypes":[] }
+      {"name":"getSpacing","parameterTypes":[] },
+      {"name":"setHgrow","parameterTypes":["javafx.scene.Node","javafx.scene.layout.Priority"] },
+      {"name":"getHgrow","parameterTypes":["javafx.scene.Node"] }
     ]
-
   }
 ,
   {
@@ -100,11 +218,24 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.Priority"
+    "name":"javafx.scene.layout.Priority",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
   }
 ,
   {
-    "name" : "javafx.scene.layout.Region"
+    "name" : "javafx.scene.layout.Region",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"getPadding","parameterTypes":[] },
+      {"name":"setPadding","parameterTypes":["javafx.geometry.Insets"] },
+      {"name":"getPrefHeight","parameterTypes":[] },
+      {"name":"setPrefHeight","parameterTypes":["double"] },
+      {"name":"getPrefWidth","parameterTypes":[] },
+      {"name":"setPrefWidth","parameterTypes":["double"] }
+    ]
   }
 ,
   {
@@ -126,7 +257,9 @@
       {"name":"setAlignment","parameterTypes":["javafx.geometry.Pos"] },
       {"name":"getAlignment","parameterTypes":[] },
       {"name":"setSpacing","parameterTypes":["double"] },
-      {"name":"getSpacing","parameterTypes":[] }
+      {"name":"getSpacing","parameterTypes":[] },
+      {"name":"setVgrow","parameterTypes":["javafx.scene.Node","javafx.scene.layout.Priority"] },
+      {"name":"getVgrow","parameterTypes":["javafx.scene.Node"] }
     ]
   }
 ,
@@ -139,11 +272,34 @@
   }
 ,
   {
-    "name" : "javafx.scene.Node"
+    "name" : "javafx.scene.Node",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"getStyleClass","parameterTypes":[] },
+      {"name":"idProperty","parameterTypes":[] },
+      {"name":"getId","parameterTypes":[] },
+      {"name":"setId","parameterTypes":["java.lang.String"] },
+      {"name":"isPickOnBounds","parameterTypes":[] },
+      {"name":"setPickOnBounds","parameterTypes":["boolean"] },
+      {"name":"isVisible","parameterTypes":[] },
+      {"name":"setVisible","parameterTypes":["boolean"] },
+      {"name":"isMouseTransparent","parameterTypes":[] },
+      {"name":"setMouseTransparent","parameterTypes":["boolean"] },
+      {"name":"isManaged","parameterTypes":[] },
+      {"name":"setManaged","parameterTypes":["boolean"] },
+      {"name":"getLayoutX","parameterTypes":[] },
+      {"name":"setLayoutX","parameterTypes":["double"] },
+      {"name":"getLayoutY","parameterTypes":[] },
+      {"name":"setLayoutY","parameterTypes":["double"] }
+    ]
   }
 ,
   {
-    "name" : "javafx.scene.Parent"
+    "name" : "javafx.scene.Parent",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"getStylesheets","parameterTypes":[] }
+      ]
   }
 ,
   {
@@ -151,7 +307,21 @@
   }
 ,
   {
-    "name" : "javafx.scene.ParallelCamera"
+    "name":"javafx.scene.SubScene",
+    "methods":[
+      {"name":"<init>","parameterTypes":["javafx.scene.Parent","double","double"] },
+      {"name":"<init>","parameterTypes":["javafx.scene.Parent","double","double","boolean","javafx.scene.SceneAntialiasing"] }
+    ]
+  }
+,
+  {
+    "name" : "javafx.scene.ParallelCamera",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"javafx.scene.PerspectiveCamera",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
   }
 ,
   {
@@ -160,6 +330,14 @@
 ,
   {
     "name" : "javafx.scene.text.Text"
+  }
+,
+  {
+    "name":"javafx.scene.text.TextAlignment",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -192,7 +370,18 @@
   }
 ,
   {
-    "name" : "javafx.scene.image.ImageView"
+    "name" : "javafx.scene.image.ImageView",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"getImage","parameterTypes":[] },
+      {"name":"setImage","parameterTypes":["javafx.scene.image.Image"] },
+      {"name":"getFitHeight","parameterTypes":[] },
+      {"name":"setFitHeight","parameterTypes":["double"] },
+      {"name":"getFitWidth","parameterTypes":[] },
+      {"name":"setFitWidth","parameterTypes":["double"] },
+      {"name":"isPreserveRatio","parameterTypes":[] },
+      {"name":"setPreserveRatio","parameterTypes":["boolean"] }
+    ]
   }
 ,
   {
@@ -205,6 +394,11 @@
 ,
   {
     "name" : "javafx.scene.paint.Paint"
+  }
+,
+  {
+    "name":"javafx.scene.paint.Material",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
   }
 ,
   {
@@ -229,6 +423,10 @@
 ,
   {
     "name" : "javafx.scene.shape.CubicCurveTo"
+  }
+,
+  {
+    "name" : "javafx.scene.shape.Ellipse"
   }
 ,
   {
@@ -273,6 +471,28 @@
 ,
   {
     "name" : "javafx.scene.shape.Shape"
+  }
+,
+  {
+    "name":"javafx.scene.shape.Shape3D",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"javafx.scene.shape.Mesh",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"javafx.scene.shape.MeshView",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["javafx.scene.shape.Mesh"] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.shape.TriangleMesh",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
   }
 ,
   {
@@ -863,7 +1083,17 @@
   }
 ,
   {
+    "name" : "com.sun.scenario.effect.impl.prism.ps.PPSBlend_SRC_ATOPPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
     "name" : "com.sun.scenario.effect.impl.prism.ps.PPSBlend_SRC_INPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.prism.ps.PPSInvertMaskPeer",
     "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
   }
 ,

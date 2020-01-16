@@ -12,27 +12,11 @@
     "methods" : [
       {"name":"<init>","parameterTypes":[] },
       {"name":"gotTouchEventFromNative","parameterTypes":["int", "int[]", "int[]", "int[]", "int[]", "int"]},
-      {"name":"gotKeyEventFromNative","parameterTypes":["int", "int"]},
+      {"name":"dispatchKeyEventFromNative","parameterTypes":["int", "int", "char[]", "int"]},
       {"name":"registerDevice","parameterTypes":[]}
     ]
   }
 ,
-  {
-    "name" : "com.sun.javafx.iio.jpeg.JPEGImageLoader",
-    "methods" : [
-      {"name":"updateImageProgress","parameterTypes":["int"]},
-      {"name":"setInputAttributes","parameterTypes":["int", "int", "int", "int", "int", "byte[]"]},
-      {"name":"setOutputAttributes","parameterTypes":["int", "int"]}
-    ]
-  }
-,
-  {
-    "name" : "com.sun.javafx.iio.common.ImageLoaderImpl",
-    "methods" : [
-      {"name":"emitWarning","parameterTypes":["java.lang.String"]}
-    ]
-  }
-, 
   {
     "name" : "com.sun.javafx.font.FontConfigManager$FcCompFont",
     "fields" : [

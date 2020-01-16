@@ -23,11 +23,28 @@
   }
 ,
   {
+    "name":"com.sun.prism.es2.ES2PhongShader",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] }
+    ]
+  }
+,
+  {
     "name" : "com.sun.prism.es2.ES2ResourceFactory"
   }
 ,
   {
     "name" : "com.sun.prism.es2.ES2Shader"
+  }
+,
+  {
+    "name" : "javafx.scene.control.skin.TextFieldSkinAndroid",
+    "methods":[{"name":"<init>","parameterTypes":["javafx.scene.control.TextField"] }]
+  }
+,
+  {
+    "name" : "javafx.scene.control.skin.TextAreaSkinAndroid",
+    "methods":[{"name":"<init>","parameterTypes":["javafx.scene.control.TextArea"] }]
   }
 ,
   {

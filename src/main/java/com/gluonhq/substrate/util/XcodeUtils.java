@@ -50,6 +50,7 @@ public class XcodeUtils {
     private String platformName;
     private String dtxcode;
     private String dtxcodeBuild;
+    private String buildMachineOSBuild;
     private String sdkName;
 
     public XcodeUtils(SDKS sdk) throws IOException {
@@ -76,7 +77,8 @@ public class XcodeUtils {
             this.platformVersion = additionalInfo.getString("DTPlatformVersion");
             this.platformName    = additionalInfo.getString("DTPlatformName");
             this.dtxcode         = xcodeInfoDict.getString("DTXcode");
-            this.dtxcodeBuild    = xcodeInfoDict.getString("DTXcodeBuild");
+            this.dtxcodeBuild    = xcodeVersionDict.getString("ProductBuildVersion");
+            this.buildMachineOSBuild = xcodeInfoDict.getString("BuildMachineOSBuild");
             this.sdkName         = sdkSettingsDict.getString( "CanonicalName");
         } catch (Exception ex) {
             Logger.logFatal(ex, "Error processing plist file");
@@ -96,12 +98,16 @@ public class XcodeUtils {
         return platformVersion;
     }
 
-    public String getDTXCode() {
+    public String getDTXcode() {
         return dtxcode;
     }
 
-    public String getDTXCodeBuild() {
+    public String getDTXcodeBuild() {
         return dtxcodeBuild;
+    }
+
+    public String getBuildMachineOSBuild() {
+        return buildMachineOSBuild;
     }
 
     public String getPlatformName() {
