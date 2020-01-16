@@ -98,17 +98,6 @@ public class InfoPlist {
     public Path processInfoPlist() throws IOException {
         String appName = projectConfiguration.getAppName();
         String executableName = getExecutableName(appName, sourceOS);
-        Path executable = appPath.resolve(executableName);
-        if (!Files.exists(executable)) {
-            String errorMessage = "The executable " + executable + " doesn't exist.";
-            if (!appName.equals(executableName) && Files.exists(appPath.resolve(appName))) {
-                errorMessage += "\nMake sure the CFBundleExecutable key in the Default-Info.plist file is set to: " + appName;
-            }
-            throw new IOException(errorMessage);
-        }
-        if (!Files.isExecutable(executable)) {
-            throw new IOException("The file " + executable + " is not executable");
-        }
         String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getMainClassName());
 
         Path userPlist = rootPath.resolve(Constants.PLIST_FILE);
@@ -146,7 +135,19 @@ public class InfoPlist {
 
         Path plist = getPlistPath(paths, sourceOS);
         if (plist == null) {
-            throw new RuntimeException("Error: plist not found");
+            throw new IOException("Error: plist not found");
+        }
+
+        Path executable = appPath.resolve(executableName);
+        if (!Files.exists(executable)) {
+            String errorMessage = "The executable " + executable + " doesn't exist.";
+            if (!appName.equals(executableName) && Files.exists(appPath.resolve(appName))) {
+                errorMessage += "\nMake sure the CFBundleExecutable key in the " + plist.toString() + " file is set to: " + appName;
+            }
+            throw new IOException(errorMessage);
+        }
+        if (!Files.isExecutable(executable)) {
+            throw new IOException("The file " + executable + " is not executable.");
         }
 
         try {
