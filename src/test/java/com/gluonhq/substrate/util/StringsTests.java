@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,6 +100,13 @@ public class StringsTests {
                 Collections.emptyList(),
                 Strings.split( null ));
 
+    }
+    
+    @Test
+    void randomStringGeneration() {
+        final String randomString = Strings.randomString(6);
+        assertEquals(6, randomString.length());
+        assertTrue(randomString.matches("^[a-z]*$"));
     }
 
 
