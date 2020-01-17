@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class InfoPlist {
 
@@ -131,6 +132,7 @@ public class InfoPlist {
             inited = false;
         } else {
             copyVerifyAssets(rootPath.resolve("assets"));
+            copyOtherAssets(rootPath.resolve("assets"));
         }
 
         Path plist = getPlistPath(paths, sourceOS);
@@ -358,6 +360,24 @@ public class InfoPlist {
         int result = args.runProcess("actool");
         if (result != 0) {
             throw new RuntimeException("Error verifyAssetCatalog");
+        }
+    }
+
+    private void copyOtherAssets(Path resourcePath) throws IOException {
+        if (resourcePath == null || !Files.exists(resourcePath)) {
+            throw new RuntimeException("Error: invalid path " + resourcePath);
+        }
+        List<Path> otherAssets = Files.list(resourcePath)
+                .filter(r -> Files.isDirectory(r))
+                .filter(r -> !r.toString().endsWith("Assets.xcassets"))
+                .collect(Collectors.toList());
+        for (Path assetPath : otherAssets) {
+            Path targetPath = appPath.resolve(resourcePath.relativize(assetPath));
+            if (Files.exists(targetPath)) {
+                FileOps.deleteDirectory(targetPath);
+            }
+            Logger.logDebug("Copying directory " + assetPath);
+            FileOps.copyDirectory(assetPath, targetPath);
         }
     }
 
