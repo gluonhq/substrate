@@ -363,6 +363,13 @@ public class InfoPlist {
         }
     }
 
+    /**
+     * Scans the ios/assets folder for possible folders other than
+     * Assets.cassets (which is compressed with actool),
+     * and copy them directly to the app folder
+     * @param resourcePath the path for ios assets
+     * @throws IOException
+     */
     private void copyOtherAssets(Path resourcePath) throws IOException {
         if (resourcePath == null || !Files.exists(resourcePath)) {
             throw new RuntimeException("Error: invalid path " + resourcePath);
