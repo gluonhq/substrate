@@ -77,6 +77,7 @@ public class SubstrateDispatcher {
         config.setJniList(Strings.split(System.getProperty("jnilist")));
         config.setBundlesList(Strings.split(System.getProperty("bundleslist")));
         config.setVerbose(verbose);
+        config.setUsePrismSW(Boolean.parseBoolean(System.getProperty("prism.sw", "false")));
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
 
