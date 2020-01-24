@@ -69,7 +69,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private static final String URL_CLIBS_ZIP = "http://download2.gluonhq.com/substrate/clibs/${osarch}.zip";
     private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
-            "frag", "fxml", "css", "gls", "ttf", "xml",
+            "frag", "vert", "fxml", "css", "gls", "ttf", "xml",
             "png", "jpg", "jpeg", "gif", "bmp",
             "license", "json");
     private static final List<String> BUNDLES_LIST = new ArrayList<>(Arrays.asList(

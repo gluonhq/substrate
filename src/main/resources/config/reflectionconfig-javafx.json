@@ -509,6 +509,18 @@
   }
 ,
   {
+    "name" : "javafx.scene.shape.Box"
+  }
+,
+  {
+    "name" : "javafx.scene.shape.Cylinder"
+  }
+,
+  {
+    "name" : "javafx.scene.shape.Sphere"
+  }
+,
+  {
     "name":"javafx.scene.shape.Mesh",
     "methods":[{"name":"<init>","parameterTypes":[] }]
   },
@@ -610,6 +622,16 @@
   }
 ,
   {
+    "name" : "com.sun.prism.shader.AlphaTextureDifference_Color_AlphaTest_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
+    "name" : "com.sun.prism.shader.AlphaTexture_Color_AlphaTest_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
     "name" : "com.sun.prism.shader.AlphaTexture_Color_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
@@ -706,6 +728,11 @@
 ,
   {
     "name" : "com.sun.prism.shader.DrawEllipse_RadialGradient_REPEAT_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
+    "name" : "com.sun.prism.shader.DrawPgram_Color_AlphaTest_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
 ,
@@ -910,6 +937,11 @@
   }
 ,
   {
+    "name" : "com.sun.prism.shader.FillPgram_Color_AlphaTest_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
     "name" : "com.sun.prism.shader.FillPgram_Color_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
@@ -1056,6 +1088,11 @@
 ,
   {
     "name" : "com.sun.prism.shader.Solid_TextureYV12_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
+    "name" : "com.sun.prism.shader.Texture_Color_AlphaTest_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
 ,
