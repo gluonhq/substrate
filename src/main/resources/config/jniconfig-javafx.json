@@ -8,6 +8,7 @@
       {"name":"notifyDidBecomeActive","parameterTypes":[] },
       {"name":"notifyWillResignActive","parameterTypes":[] },
       {"name":"notifyDidResignActive","parameterTypes":[] },
+      {"name":"notifyDidReceiveMemoryWarning","parameterTypes":[] },
       {"name":"notifyWillHide","parameterTypes":[] },
       {"name":"notifyDidHide","parameterTypes":[] },
       {"name":"notifyWillUnhide","parameterTypes":[] },

@@ -80,15 +80,14 @@ public class InternalProjectConfiguration {
      * Private projects configuration, which includes everything, including public settings
      * @param config public project configuration
      */
-    public InternalProjectConfiguration(ProjectConfiguration config ) {
+    public InternalProjectConfiguration(ProjectConfiguration config) {
 
         this.publicConfig = Objects.requireNonNull(config);
 
-        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
 
-        setUsePrismSW(usePrismSW);
+        setUsePrismSW(config.isUsePrismSW());
         getIosSigningConfiguration().setSkipSigning(skipSigning);
 
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case

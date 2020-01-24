@@ -85,7 +85,17 @@
       {"name":"setMnemonicParsing","parameterTypes":["boolean"] },
       {"name":"isMnemonicParsing","parameterTypes":[] },
       {"name":"setWrapText","parameterTypes":["boolean"] },
-      {"name":"isWrapText","parameterTypes":[] }
+      {"name":"isWrapText","parameterTypes":[] },
+      {"name":"setGraphicTextGap","parameterTypes":["double"] },
+      {"name":"getGraphicTextGap","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name" : "javafx.scene.control.ProgressBar",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["double"] }
     ]
   }
 ,
@@ -180,7 +190,9 @@
       {"name":"setLeft","parameterTypes":["javafx.scene.Node"] },
       {"name":"getLeft","parameterTypes":[] },
       {"name":"setRight","parameterTypes":["javafx.scene.Node"] },
-      {"name":"getRight","parameterTypes":[] }
+      {"name":"getRight","parameterTypes":[] },
+      {"name":"setMargin","parameterTypes":["javafx.scene.Node","javafx.geometry.Insets"] },
+      {"name":"getMargin","parameterTypes":["javafx.scene.Node"] }
     ]
   }
 ,
@@ -205,7 +217,9 @@
       {"name":"setSpacing","parameterTypes":["double"] },
       {"name":"getSpacing","parameterTypes":[] },
       {"name":"setHgrow","parameterTypes":["javafx.scene.Node","javafx.scene.layout.Priority"] },
-      {"name":"getHgrow","parameterTypes":["javafx.scene.Node"] }
+      {"name":"getHgrow","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setMargin","parameterTypes":["javafx.scene.Node","javafx.geometry.Insets"] },
+      {"name":"getMargin","parameterTypes":["javafx.scene.Node"] }
     ]
   }
 ,
@@ -234,7 +248,11 @@
       {"name":"getPrefHeight","parameterTypes":[] },
       {"name":"setPrefHeight","parameterTypes":["double"] },
       {"name":"getPrefWidth","parameterTypes":[] },
-      {"name":"setPrefWidth","parameterTypes":["double"] }
+      {"name":"setPrefWidth","parameterTypes":["double"] },
+      {"name":"getMaxWidth","parameterTypes":[] },
+      {"name":"setMaxWidth","parameterTypes":["double"] },
+      {"name":"getMaxHeight","parameterTypes":[] },
+      {"name":"setMaxHeight","parameterTypes":["double"] }
     ]
   }
 ,
@@ -243,7 +261,17 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.StackPane"
+    "name" : "javafx.scene.layout.StackPane",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["javafx.scene.Node[]"] },
+      {"name":"setAlignment","parameterTypes":["javafx.geometry.Pos"] },
+      {"name":"getAlignment","parameterTypes":[] },
+      {"name":"setAlignment","parameterTypes":["javafx.scene.Node","javafx.geometry.Pos"] },
+      {"name":"getAlignment","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setMargin","parameterTypes":["javafx.scene.Node","javafx.geometry.Insets"] },
+      {"name":"getMargin","parameterTypes":["javafx.scene.Node"] }
+    ]
   }
 ,
   {
@@ -259,7 +287,9 @@
       {"name":"setSpacing","parameterTypes":["double"] },
       {"name":"getSpacing","parameterTypes":[] },
       {"name":"setVgrow","parameterTypes":["javafx.scene.Node","javafx.scene.layout.Priority"] },
-      {"name":"getVgrow","parameterTypes":["javafx.scene.Node"] }
+      {"name":"getVgrow","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setMargin","parameterTypes":["javafx.scene.Node","javafx.geometry.Insets"] },
+      {"name":"getMargin","parameterTypes":["javafx.scene.Node"] }
     ]
   }
 ,
@@ -479,6 +509,18 @@
   }
 ,
   {
+    "name" : "javafx.scene.shape.Box"
+  }
+,
+  {
+    "name" : "javafx.scene.shape.Cylinder"
+  }
+,
+  {
+    "name" : "javafx.scene.shape.Sphere"
+  }
+,
+  {
     "name":"javafx.scene.shape.Mesh",
     "methods":[{"name":"<init>","parameterTypes":[] }]
   },
@@ -580,6 +622,16 @@
   }
 ,
   {
+    "name" : "com.sun.prism.shader.AlphaTextureDifference_Color_AlphaTest_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
+    "name" : "com.sun.prism.shader.AlphaTexture_Color_AlphaTest_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
     "name" : "com.sun.prism.shader.AlphaTexture_Color_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
@@ -676,6 +728,11 @@
 ,
   {
     "name" : "com.sun.prism.shader.DrawEllipse_RadialGradient_REPEAT_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
+    "name" : "com.sun.prism.shader.DrawPgram_Color_AlphaTest_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
 ,
@@ -880,6 +937,11 @@
   }
 ,
   {
+    "name" : "com.sun.prism.shader.FillPgram_Color_AlphaTest_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
     "name" : "com.sun.prism.shader.FillPgram_Color_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
@@ -1030,6 +1092,11 @@
   }
 ,
   {
+    "name" : "com.sun.prism.shader.Texture_Color_AlphaTest_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
     "name" : "com.sun.prism.shader.Texture_Color_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
@@ -1089,6 +1156,11 @@
 ,
   {
     "name" : "com.sun.scenario.effect.impl.prism.ps.PPSBlend_SRC_INPeer",
+    "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.prism.ps.PPSColorAdjustPeer",
     "methods":[{"name":"<init>","parameterTypes":["com.sun.scenario.effect.FilterContext","com.sun.scenario.effect.impl.Renderer","java.lang.String"] }]
   }
 ,
