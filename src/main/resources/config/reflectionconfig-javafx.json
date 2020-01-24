@@ -732,6 +732,11 @@
   }
 ,
   {
+    "name" : "com.sun.prism.shader.DrawPgram_Color_AlphaTest_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
     "name" : "com.sun.prism.shader.DrawPgram_Color_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
@@ -928,6 +933,11 @@
 ,
   {
     "name" : "com.sun.prism.shader.FillEllipse_RadialGradient_REPEAT_Loader",
+    "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
+  }
+,
+  {
+    "name" : "com.sun.prism.shader.FillPgram_Color_AlphaTest_Loader",
     "methods":[{"name":"loadShader","parameterTypes":["com.sun.prism.ps.ShaderFactory","java.io.InputStream"] }]
   }
 ,
