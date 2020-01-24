@@ -41,6 +41,7 @@ import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -219,6 +220,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
 
+        getNativeCodeList().forEach(sourceFile -> linkBuilder.command()
+        .add(gvmAppPath.resolve(sourceFile.replaceAll("\\..*", "." + getObjectFileExtension())).toString()));
+
         getTargetSpecificLinkLibraries().forEach(linkBuilder.command()::add);
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
 
@@ -317,11 +321,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
             processBuilder.command().add(fileName);
         }
+        
+        Path nativeCodeDir = getNativeCodePath();
+        for( String fileName: getNativeCodeList() ) {
+            FileOps.copyFile(nativeCodeDir.resolve(fileName), workDir.resolve(fileName));
+            processBuilder.command().add(fileName);
+        }
+
         for( String fileName: getAdditionalHeaderFiles() ) {
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
             processBuilder.command().add(fileName);
         }
-        processBuilder.command().addAll(getTargetSpecificCCompileFlags());
+  
         processBuilder.directory(workDir.toFile());
         String cmds = String.join(" ", processBuilder.command());
         processBuilder.redirectErrorStream(true);
@@ -754,6 +765,19 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     List<String> getTargetSpecificLinkOutputFlags() {
         String appName = projectConfiguration.getAppName();
         return Arrays.asList("-o", getAppPath(appName));
+    }
+
+    Path getNativeCodePath() {
+        return paths.getSourcePath().getParent().resolve("native");
+    }
+
+    List<String> getNativeCodeList() throws IOException {
+        Path nativeCodeDir = getNativeCodePath();
+        if (!Files.exists(nativeCodeDir))
+            return Collections.emptyList();
+        return Files.list(nativeCodeDir)
+            .map(p -> p.getFileName().toString())
+            .collect(Collectors.toList());
     }
 
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {

@@ -179,10 +179,15 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     protected List<String> getTargetSpecificCCompileFlags() {
+        List<String> flags = Arrays.asList("-I" + 
+            projectConfiguration.getGraalPath().resolve("include").toString(),
+            "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("linux").toString()
+            );
+            
         if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
-            return Arrays.asList("-DAARCH64");
+            flags.add("-DAARCH64");
         }
-        return Collections.emptyList();
+        return flags;
     }
 
    /*
