@@ -41,7 +41,6 @@ import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -220,8 +219,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
 
-        getNativeCodeList().forEach(sourceFile -> linkBuilder.command()
-        .add(gvmAppPath.resolve(sourceFile.replaceAll("\\..*", "." + getObjectFileExtension())).toString()));
+        getNativeCodeList().stream()
+            .map(s -> s.replaceAll("\\..*", "." + getObjectFileExtension()))
+            .distinct()
+            .collect(Collectors.toList())
+            .forEach(sourceFile -> linkBuilder.command().add(gvmAppPath.resolve(sourceFile).toString()));
 
         getTargetSpecificLinkLibraries().forEach(linkBuilder.command()::add);
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
@@ -777,6 +779,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             return Collections.emptyList();
         return Files.list(nativeCodeDir)
             .map(p -> p.getFileName().toString())
+            .filter(s -> s.endsWith(".c") || s.endsWith(".h"))
             .collect(Collectors.toList());
     }
 
