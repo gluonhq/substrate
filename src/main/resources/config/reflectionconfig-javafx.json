@@ -87,7 +87,11 @@
       {"name":"setWrapText","parameterTypes":["boolean"] },
       {"name":"isWrapText","parameterTypes":[] },
       {"name":"setGraphicTextGap","parameterTypes":["double"] },
-      {"name":"getGraphicTextGap","parameterTypes":[] }
+      {"name":"getGraphicTextGap","parameterTypes":[] },
+      {"name":"setTextFill","parameterTypes":["javafx.scene.paint.Paint"] },
+      {"name":"getTextFill","parameterTypes":[] },
+      {"name":"setFont","parameterTypes":["javafx.scene.text.Font"] },
+      {"name":"getFont","parameterTypes":[] }
     ]
   }
 ,
@@ -145,6 +149,22 @@
     "methods":[
       {"name":"<init>","parameterTypes":[] },
       {"name":"<init>","parameterTypes":["java.lang.String"] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.ToggleGroup",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.ToggleButton",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"setToggleGroup","parameterTypes":["javafx.scene.control.ToggleGroup"] },
+      {"name":"getToggleGroup","parameterTypes":[] }
     ]
   }
 ,
@@ -245,6 +265,10 @@
       {"name":"<init>","parameterTypes":[] },
       {"name":"getPadding","parameterTypes":[] },
       {"name":"setPadding","parameterTypes":["javafx.geometry.Insets"] },
+      {"name":"getMinHeight","parameterTypes":[] },
+      {"name":"setMinHeight","parameterTypes":["double"] },
+      {"name":"getMinWidth","parameterTypes":[] },
+      {"name":"setMinWidth","parameterTypes":["double"] },
       {"name":"getPrefHeight","parameterTypes":[] },
       {"name":"setPrefHeight","parameterTypes":["double"] },
       {"name":"getPrefWidth","parameterTypes":[] },
@@ -355,7 +379,16 @@
   }
 ,
   {
-    "name" : "javafx.scene.text.Font"
+    "name" : "javafx.scene.text.Font",
+    "methods":[
+      {"name":"<init>","parameterTypes":["double"] },
+      {"name":"<init>","parameterTypes":["java.lang.String","double"] },
+      {"name":"font","parameterTypes":["java.lang.String"] },
+      {"name":"font","parameterTypes":["double"] },
+      {"name":"font","parameterTypes":["java.lang.String","double"] },
+      {"name":"getSize","parameterTypes":[] },
+      {"name":"getName","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -423,7 +456,10 @@
   }
 ,
   {
-    "name" : "javafx.scene.paint.Paint"
+    "name" : "javafx.scene.paint.Paint",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] }
+    ]
   }
 ,
   {
@@ -440,7 +476,13 @@
   }
 ,
   {
-    "name" : "javafx.scene.shape.Circle"
+    "name" : "javafx.scene.shape.Circle",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["double"] },
+      {"name":"setRadius","parameterTypes":["double"] },
+      {"name":"getRadius","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -500,7 +542,18 @@
   }
 ,
   {
-    "name" : "javafx.scene.shape.Shape"
+    "name" : "javafx.scene.shape.Shape",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"setFill","parameterTypes":["javafx.scene.paint.Paint"] },
+      {"name":"getFill","parameterTypes":[] },
+      {"name":"setStroke","parameterTypes":["javafx.scene.paint.Paint"] },
+      {"name":"getStroke","parameterTypes":[] },
+      {"name":"setStrokeWidth","parameterTypes":["double"] },
+      {"name":"getStrokeWidth","parameterTypes":[] },
+      {"name":"setStrokeType","parameterTypes":["javafx.scene.shape.StrokeType"] },
+      {"name":"getStrokeType","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -538,7 +591,11 @@
   }
 ,
   {
-    "name" : "javafx.scene.shape.StrokeType"
+    "name" : "javafx.scene.shape.StrokeType",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -563,6 +620,11 @@
 ,
   {
     "name":"com.sun.javafx.beans.IDProperty",
+    "allDeclaredMethods":true
+  }
+,
+  {
+    "name":"javafx.beans.NamedArg",
     "allDeclaredMethods":true
   }
 ,
