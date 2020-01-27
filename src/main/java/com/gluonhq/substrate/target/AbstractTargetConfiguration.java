@@ -769,11 +769,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return Arrays.asList("-o", getAppPath(appName));
     }
 
-    Path getNativeCodePath() {
+    protected Path getNativeCodePath() {
         return paths.getSourcePath().getParent().resolve("native");
     }
 
-    List<String> getNativeCodeList() throws IOException {
+    protected List<String> getNativeCodeList() throws IOException {
         Path nativeCodeDir = getNativeCodePath();
         if (!Files.exists(nativeCodeDir))
             return Collections.emptyList();
