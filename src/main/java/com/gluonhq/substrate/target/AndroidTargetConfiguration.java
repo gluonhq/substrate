@@ -228,7 +228,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path dalvikBinPath = dalvikPath.resolve("bin");
         String alignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".apk").toString();
 
-        int processResult = 0;
+        int processResult;
 
         // Path keystorePath = Paths.get(System.getProperty("user.home")+"/android.keystore");
         // if (!Files.exists(keystorePath)) throw new IOException ("Can't find android keystore file at "+System.getProperty("user.home"));
@@ -241,7 +241,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
                 "install", "-r", alignedApk);
-        processResult += install.runProcess("install");
+        processResult = install.runProcess("install");
         if (processResult != 0) throw new IOException("Application instalation failed!");
 
         Runnable logcat = () -> {
