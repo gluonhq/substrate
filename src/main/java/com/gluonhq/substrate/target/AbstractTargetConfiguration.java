@@ -319,20 +319,23 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             processBuilder.command().add("-DGVM_VERBOSE");
         }
         processBuilder.command().addAll(getTargetSpecificCCompileFlags());
+
+        processBuilder.command().add("-I" + workDir.toString());
+
         for( String fileName: getAdditionalSourceFiles() ) {
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
             processBuilder.command().add(fileName);
         }
         
-        Path nativeCodeDir = getNativeCodePath();
+        Path nativeCodeDir = paths.getNativeCodePath();
+        FileOps.copyDirectory(nativeCodeDir, workDir);
+
         for( String fileName: getNativeCodeList() ) {
-            FileOps.copyFile(nativeCodeDir.resolve(fileName), workDir.resolve(fileName));
             processBuilder.command().add(fileName);
         }
 
         for( String fileName: getAdditionalHeaderFiles() ) {
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
-            processBuilder.command().add(fileName);
         }
   
         processBuilder.directory(workDir.toFile());
@@ -769,17 +772,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return Arrays.asList("-o", getAppPath(appName));
     }
 
-    protected Path getNativeCodePath() {
-        return paths.getSourcePath().getParent().resolve("native");
-    }
-
     protected List<String> getNativeCodeList() throws IOException {
-        Path nativeCodeDir = getNativeCodePath();
+        Path nativeCodeDir = paths.getNativeCodePath();
         if (!Files.exists(nativeCodeDir))
             return Collections.emptyList();
         return Files.list(nativeCodeDir)
             .map(p -> p.getFileName().toString())
-            .filter(s -> s.endsWith(".c") || s.endsWith(".h"))
+            .filter(s -> s.endsWith(".c"))
             .collect(Collectors.toList());
     }
 

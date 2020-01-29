@@ -243,7 +243,6 @@ public class FileOps {
      * @throws IOException if an exception happens when listing the content
      */
     public static void copyDirectory(Path source, Path destination) throws IOException {
-        copyFile(source, destination);
         if (Files.isDirectory(source)) {
             List<Path> fileNames = Files.list(source)
                     .map(Path::getFileName)
@@ -252,6 +251,8 @@ public class FileOps {
                 copyDirectory(source.resolve(fileName), destination.resolve(fileName));
             }
         }
+        else
+            copyFile(source, destination);
     }
 
     /**
