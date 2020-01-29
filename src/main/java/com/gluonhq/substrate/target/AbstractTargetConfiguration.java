@@ -328,7 +328,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         
         Path nativeCodeDir = paths.getNativeCodePath();
-        FileOps.copyDirectory(nativeCodeDir, workDir);
+        if (Files.isDirectory(nativeCodeDir))
+            FileOps.copyDirectory(nativeCodeDir, workDir);
 
         for( String fileName: getNativeCodeList() ) {
             processBuilder.command().add(fileName);
