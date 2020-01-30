@@ -1,0 +1,46 @@
+[
+  {
+    "name" : "com.sun.prism.es2.ES2Pipeline",
+    "methods":[
+      {"name":"getInstance","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.prism.es2.ES2ResourceFactory"
+  }
+,
+  {
+    "name" : "com.sun.prism.es2.ES2Shader"
+  }
+,
+  {
+    "name" : "com.sun.prism.es2.X11GLFactory",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name" : "javafx.scene.control.skin.ButtonSkin"
+  }
+,
+  {
+    "name" : "com.sun.scenario.effect.impl.es2.ES2ShaderSource",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name" : "com.sun.glass.ui.gtk.GtkPlatformFactory",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.freetype.FTFactory",
+    "methods":[{"name":"getFactory","parameterTypes":[] }]
+  }
+,
+  {
+    "name" : "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+]

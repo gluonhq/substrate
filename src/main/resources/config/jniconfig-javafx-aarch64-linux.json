@@ -1,0 +1,128 @@
+[
+  {
+    "name" : "com.sun.glass.ui.gtk.GtkApplication",
+    "fields" : [
+      {"name":"display" },
+      {"name":"screen" },
+      {"name":"visualID" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.glass.ui.gtk.GtkPixels",
+    "methods" : [
+      {"name":"<init>","parameterTypes":["int","int","java.nio.ByteBuffer"] }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.glass.ui.gtk.GtkView",
+    "methods" : [
+      {"name":"notifyInputMethodDraw","parameterTypes":["java.lang.String","int","int","int","byte[]"] },
+      {"name":"notifyInputMethodCaret","parameterTypes":["int","int","int"] },
+      {"name":"notifyPreeditMode","parameterTypes":["boolean"] }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.glass.ui.gtk.GtkWindow",
+    "methods" : [
+      {"name":"notifyStateChanged","parameterTypes":["int"] }
+    ]
+  }
+,
+
+  {
+    "name" : "com.sun.javafx.iio.jpeg.JPEGImageLoader",
+    "methods" : [
+      {"name":"updateImageProgress","parameterTypes":["int"]},
+      {"name":"setInputAttributes","parameterTypes":["int", "int", "int", "int", "int", "byte[]"]},
+      {"name":"setOutputAttributes","parameterTypes":["int", "int"]}
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.iio.common.ImageLoaderImpl",
+    "methods" : [
+      {"name":"emitWarning","parameterTypes":["java.lang.String"]}
+    ]
+  }
+, 
+  {
+    "name" : "com.sun.javafx.font.FontConfigManager$FcCompFont",
+    "fields" : [
+      {"name":"fcName" },
+      {"name":"firstFont" },
+      {"name":"allFonts" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.FontConfigManager$FontConfigFont",
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"familyName" },
+      {"name":"styleStr" },
+      {"name":"fullName" },
+      {"name":"fontFile" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.freetype.FT_Bitmap",
+    "fields" : [
+      {"name":"rows" },
+      {"name":"width" },
+      {"name":"pitch" },
+      {"name":"buffer" },
+      {"name":"num_grays" },
+      {"name":"pixel_mode" },
+      {"name":"palette_mode" },
+      {"name":"palette" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.freetype.FT_GlyphSlotRec",
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] }
+    ],
+    "fields" : [
+      {"name":"metrics" },
+      {"name":"linearHoriAdvance" },
+      {"name":"linearVertAdvance" },
+      {"name":"advance_x" },
+      {"name":"advance_y" },
+      {"name":"format" },
+      {"name":"bitmap" },
+      {"name":"bitmap_left" },
+      {"name":"bitmap_top" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.freetype.FT_Glyph_Metrics",
+    "fields" : [
+      {"name":"width" },
+      {"name":"height" },
+      {"name":"horiBearingX" },
+      {"name":"horiBearingY" },
+      {"name":"horiAdvance" },
+      {"name":"vertBearingX" },
+      {"name":"vertBearingY" },
+      {"name":"vertAdvance" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.freetype.FT_Matrix",
+    "fields" : [
+      {"name":"xx" },
+      {"name":"xy" },
+      {"name":"yx" },
+      {"name":"yy" }
+    ]
+  }
+]
