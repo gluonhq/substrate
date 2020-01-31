@@ -83,7 +83,7 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
-                "-arch", Constants.ARCH_ARM64,
+                "-arch", getArch(),
                 "-mios-version-min=11.0",
                 "-isysroot", getSysroot()));
         if (useJavaFX) {
@@ -102,6 +102,7 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     List<String> getTargetSpecificCCompileFlags() {
         return Arrays.asList("-xobjective-c",
                 "-arch", getArch(),
+                "-mios-version-min=11.0",
                 "-isysroot", getSysroot());
     }
 
