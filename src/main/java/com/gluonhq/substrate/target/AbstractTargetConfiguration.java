@@ -222,7 +222,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         getNativeCodeList().stream()
             .map(s -> s.replaceAll("\\..*", "." + getObjectFileExtension()))
             .distinct()
-            .collect(Collectors.toList())
             .forEach(sourceFile -> linkBuilder.command().add(gvmAppPath.resolve(sourceFile).toString()));
 
         getTargetSpecificLinkLibraries().forEach(linkBuilder.command()::add);
@@ -328,8 +327,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         
         Path nativeCodeDir = paths.getNativeCodePath();
-        if (Files.isDirectory(nativeCodeDir))
+        if (Files.isDirectory(nativeCodeDir)) {
             FileOps.copyDirectory(nativeCodeDir, workDir);
+        }
 
         for( String fileName: getNativeCodeList() ) {
             processBuilder.command().add(fileName);
@@ -773,13 +773,19 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return Arrays.asList("-o", getAppPath(appName));
     }
 
+    List<String> getTargetNativeCodeExtensions() {
+        return Arrays.asList(".c");
+    }
+
     protected List<String> getNativeCodeList() throws IOException {
         Path nativeCodeDir = paths.getNativeCodePath();
-        if (!Files.exists(nativeCodeDir))
+        if (!Files.exists(nativeCodeDir)) {
             return Collections.emptyList();
+        }
+        List<String> extensions = getTargetNativeCodeExtensions();
         return Files.list(nativeCodeDir)
             .map(p -> p.getFileName().toString())
-            .filter(s -> s.endsWith(".c"))
+            .filter(s -> extensions.stream().anyMatch(e -> s.endsWith(e)))
             .collect(Collectors.toList());
     }
 
