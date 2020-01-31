@@ -773,7 +773,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return Arrays.asList("-o", getAppPath(appName));
     }
 
-    List<String> getTargetNativeCodeExtensions() {
+    protected List<String> getTargetNativeCodeExtensions() {
         return Arrays.asList(".c");
     }
 
