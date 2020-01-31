@@ -219,6 +219,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkBuilder.command().add(objectFile.toString());
         linkBuilder.command().addAll(getTargetSpecificObjectFiles());
 
+        getNativeCodeList().stream()
+            .map(s -> s.replaceAll("\\..*", "." + getObjectFileExtension()))
+            .distinct()
+            .forEach(sourceFile -> linkBuilder.command().add(gvmAppPath.resolve(sourceFile).toString()));
+
         getTargetSpecificLinkLibraries().forEach(linkBuilder.command()::add);
         linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
 
@@ -313,15 +318,27 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             processBuilder.command().add("-DGVM_VERBOSE");
         }
         processBuilder.command().addAll(getTargetSpecificCCompileFlags());
+
+        processBuilder.command().add("-I" + workDir.toString());
+
         for( String fileName: getAdditionalSourceFiles() ) {
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
             processBuilder.command().add(fileName);
         }
-        for( String fileName: getAdditionalHeaderFiles() ) {
-            FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
+        
+        Path nativeCodeDir = paths.getNativeCodePath();
+        if (Files.isDirectory(nativeCodeDir)) {
+            FileOps.copyDirectory(nativeCodeDir, workDir);
+        }
+
+        for( String fileName: getNativeCodeList() ) {
             processBuilder.command().add(fileName);
         }
-        processBuilder.command().addAll(getTargetSpecificCCompileFlags());
+
+        for( String fileName: getAdditionalHeaderFiles() ) {
+            FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
+        }
+  
         processBuilder.directory(workDir.toFile());
         String cmds = String.join(" ", processBuilder.command());
         processBuilder.redirectErrorStream(true);
@@ -754,6 +771,22 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     List<String> getTargetSpecificLinkOutputFlags() {
         String appName = projectConfiguration.getAppName();
         return Arrays.asList("-o", getAppPath(appName));
+    }
+
+    protected List<String> getTargetNativeCodeExtensions() {
+        return Arrays.asList(".c");
+    }
+
+    protected List<String> getNativeCodeList() throws IOException {
+        Path nativeCodeDir = paths.getNativeCodePath();
+        if (!Files.exists(nativeCodeDir)) {
+            return Collections.emptyList();
+        }
+        List<String> extensions = getTargetNativeCodeExtensions();
+        return Files.list(nativeCodeDir)
+            .map(p -> p.getFileName().toString())
+            .filter(s -> extensions.stream().anyMatch(e -> s.endsWith(e)))
+            .collect(Collectors.toList());
     }
 
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
