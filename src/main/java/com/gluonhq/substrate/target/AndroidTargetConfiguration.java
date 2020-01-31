@@ -242,7 +242,32 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
                 "install", "-r", alignedApk);
         processResult = install.runProcess("install");
+        if (processResult != 0) throw new IOException("Application instalation failed!");
 
+        Runnable logcat = () -> {
+            try {
+                ProcessRunner clearLog = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
+                "logcat", "-c");
+                clearLog.runProcess("clearLog");
+
+                ProcessRunner log = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
+                "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalGluon:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
+                log.setInfo(true);
+                log.runProcess("log");
+            } catch (IOException | InterruptedException e) { 
+                e.printStackTrace(); 
+            }
+        };
+        
+        Thread logger = new Thread(logcat);
+        logger.start();
+
+        ProcessRunner run = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
+                "shell", "monkey", "-p", projectConfiguration.getAppId(), "1");
+        processResult += run.runProcess("run");
+        if (processResult != 0) throw new IOException("Application starting failed!");
+        
+        logger.join();
         return processResult == 0;
     }
 
