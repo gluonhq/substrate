@@ -110,16 +110,16 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
         boolean graalvm22 = true;
         Path internalLlcPath = projectConfiguration.getGraalPath().resolve("lib").resolve("llvm").resolve("bin");
-        if (!Files.exists(internalLlcPath)) {
+        if (!Files.exists(internalLlcPath.resolve("llc"))) {
             graalvm22 = false; // and use customLLC
         }
-        Path llcPath = getLlcPath();
         List<String> answer = Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
                 "-Dllvm.bin.dir=" + internalLlcPath,
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getArch());
         if (!graalvm22) {
+            Path llcPath = getLlcPath();
             answer.add("-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
         }
         return answer;
