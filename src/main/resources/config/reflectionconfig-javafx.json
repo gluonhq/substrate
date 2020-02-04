@@ -126,6 +126,54 @@
   }
 ,
   {
+    "name":"javafx.geometry.Orientation",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.Separator",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["javafx.geometry.Orientation"] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.Tab",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] },
+      {"name":"<init>","parameterTypes":["java.lang.String", "javafx.scene.Node"] },
+      {"name":"getId","parameterTypes":[] },
+      {"name":"setId","parameterTypes":["java.lang.String"] },
+      {"name":"getContent","parameterTypes":[] },
+      {"name":"setContent","parameterTypes":["javafx.scene.Node"] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.TabPane",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["javafx.scene.control.Tab[]"] },
+      {"name":"setTabClosingPolicy","parameterTypes":["javafx.scene.control.TabPane$TabClosingPolicy"] },
+      {"name":"getTabClosingPolicy","parameterTypes":[] },
+      {"name":"getTabs","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.TabPane$TabClosingPolicy",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
+  }
+,
+  {
     "name":"javafx.scene.control.TextInputControl",
     "methods":[
       {"name":"setPromptText","parameterTypes":["java.lang.String"] },
@@ -225,7 +273,20 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.GridPane"
+    "name" : "javafx.scene.layout.GridPane",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"setRowIndex","parameterTypes":["javafx.scene.Node","java.lang.Integer"] },
+      {"name":"getRowIndex","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setColumnIndex","parameterTypes":["javafx.scene.Node","java.lang.Integer"] },
+      {"name":"getColumnIndex","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setHgrow","parameterTypes":["javafx.scene.Node","javafx.scene.layout.Priority"] },
+      {"name":"getHgrow","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setVgrow","parameterTypes":["javafx.scene.Node","javafx.scene.layout.Priority"] },
+      {"name":"getVgrow","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setMargin","parameterTypes":["javafx.scene.Node","javafx.geometry.Insets"] },
+      {"name":"getMargin","parameterTypes":["javafx.scene.Node"] }
+    ]
   }
 ,
   {
