@@ -112,7 +112,7 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
         Path llcPath = getLlcPath();
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
-                "-Dllvm.bin.dir=" + projectConfiguration.getGraalPath().resolve("lib/llvm/bin"),
+                "-Dllvm.bin.dir=" + projectConfiguration.getGraalPath().resolve("lib").resolve("llvm").resolve("bin"),
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getArch(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
