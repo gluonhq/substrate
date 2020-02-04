@@ -113,11 +113,12 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
         if (!Files.exists(internalLlcPath.resolve("llc"))) {
             graalvm22 = false; // and use customLLC
         }
-        List<String> answer = Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+        List<String> answer = new ArrayList<>();
+        answer.addAll(Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
                 "-Dllvm.bin.dir=" + internalLlcPath,
                 "-Dsvm.targetName=iOS",
-                "-Dsvm.targetArch=" + getArch());
+                "-Dsvm.targetArch=" + getArch()));
         if (!graalvm22) {
             Path llcPath = getLlcPath();
             answer.add("-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
