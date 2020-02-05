@@ -226,7 +226,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         Path dalvikPath = paths.getGvmPath().resolve("dalvik");
         Path dalvikBinPath = dalvikPath.resolve("bin");
-        String alignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".apk").toString();
+        Path apkPath = dalvikBinPath.resolve(projectConfiguration.getAppName()+".apk");
+        if (!Files.exists(apkPath)) {
+            throw new IOException("Application not found at path " + apkPath);
+        }
 
         int processResult;
 
@@ -240,7 +243,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         //     return false;
 
         ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "install", "-r", alignedApk);
+                "install", "-r", apkPath.toString());
         processResult = install.runProcess("install");
         if (processResult != 0) throw new IOException("Application instalation failed!");
 
