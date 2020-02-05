@@ -41,7 +41,9 @@ abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
     PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
 
-        checkGraalVMPermissions(configuration.getGraalPath().toString());
+        if (this instanceof DarwinTargetConfiguration || this instanceof IosTargetConfiguration) {
+            checkGraalVMPermissions(configuration.getGraalPath().toString());
+        }
     }
 
     @Override
@@ -65,8 +67,7 @@ abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
      * @param graalvmHome the path to GraalVM
      */
     private void checkGraalVMPermissions(String graalvmHome) {
-        if (graalvmHome == null ||
-                !(this instanceof DarwinTargetConfiguration || this instanceof IosTargetConfiguration)) {
+        if (graalvmHome == null) {
             return;
         }
         Logger.logDebug("Checking execution permissions for " + graalvmHome);
