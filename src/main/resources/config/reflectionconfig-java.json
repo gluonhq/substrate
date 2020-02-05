@@ -11,6 +11,9 @@
     "allDeclaredMethods":true
   },
   {
+    "name":"java.lang.Integer"
+  },
+  {
     "name":"java.lang.Long"
   },
   {

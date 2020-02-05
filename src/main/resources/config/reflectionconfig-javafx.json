@@ -52,6 +52,16 @@
   }
 ,
   {
+    "name":"javafx.scene.control.CheckBox",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] },
+      {"name":"isSelected","parameterTypes":[] },
+      {"name":"setSelected","parameterTypes":["boolean"] }
+    ]
+  }
+,
+  {
     "name":"javafx.scene.control.ContentDisplay",
     "methods":[
       {"name":"valueOf","parameterTypes":["java.lang.String"] },
@@ -104,6 +114,14 @@
   }
 ,
   {
+    "name" : "javafx.scene.control.RadioButton",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] }
+    ]
+  }
+,
+  {
     "name":"javafx.scene.control.ScrollPane",
     "methods":[
       {"name":"<init>","parameterTypes":[] },
@@ -112,8 +130,12 @@
       {"name":"setContent","parameterTypes":["javafx.scene.Node"] },
       {"name":"isFitToWidth","parameterTypes":[] },
       {"name":"setFitToWidth","parameterTypes":["boolean"] },
+      {"name":"isFitToHeight","parameterTypes":[] },
+      {"name":"setFitToHeight","parameterTypes":["boolean"] },
       {"name":"getHbarPolicy","parameterTypes":[] },
-      {"name":"setHbarPolicy","parameterTypes":["javafx.scene.control.ScrollPane$ScrollBarPolicy"] }
+      {"name":"setHbarPolicy","parameterTypes":["javafx.scene.control.ScrollPane$ScrollBarPolicy"] },
+      {"name":"getVbarPolicy","parameterTypes":[] },
+      {"name":"setVbarPolicy","parameterTypes":["javafx.scene.control.ScrollPane$ScrollBarPolicy"] }
     ]
   }
 ,
@@ -405,7 +427,9 @@
       {"name":"getLayoutX","parameterTypes":[] },
       {"name":"setLayoutX","parameterTypes":["double"] },
       {"name":"getLayoutY","parameterTypes":[] },
-      {"name":"setLayoutY","parameterTypes":["double"] }
+      {"name":"setLayoutY","parameterTypes":["double"] },
+      {"name":"getUserData","parameterTypes":[] },
+      {"name":"setUserData","parameterTypes":["java.lang.Object"] }
     ]
   }
 ,
@@ -465,7 +489,13 @@
   }
 ,
   {
-    "name" : "javafx.scene.text.TextFlow"
+    "name":"javafx.scene.text.TextFlow",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["javafx.scene.Node[]"] },
+      {"name":"getTextAlignment","parameterTypes":[] },
+      {"name":"setTextAlignment","parameterTypes":["javafx.scene.text.TextAlignment"] }
+    ]
   }
 ,
   {
@@ -1365,6 +1395,22 @@
   {
     "name":"javafx.scene.text.FontSmoothingType",
     "methods":[{"name":"values","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"javafx.scene.text.FontPosture",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.text.FontWeight",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
   }
 ,
   {
