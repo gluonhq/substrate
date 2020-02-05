@@ -67,7 +67,7 @@ abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
      * @param graalvmHome the path to GraalVM
      */
     private void checkGraalVMPermissions(String graalvmHome) {
-        if (graalvmHome == null) {
+        if (graalvmHome == null || graalvmHome.isEmpty()) {
             return;
         }
         Logger.logDebug("Checking execution permissions for " + graalvmHome);
