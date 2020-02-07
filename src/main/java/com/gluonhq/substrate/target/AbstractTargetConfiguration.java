@@ -105,7 +105,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     @Override
     public boolean compile(String cp) throws IOException, InterruptedException {
-        String classPath = processClassPath(cp);
+        cp = processClassPath(cp);
         extractNativeLibs(cp);
         Triplet target =  projectConfiguration.getTargetTriplet();
         String suffix = target.getArchOs();
@@ -156,7 +156,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileBuilder.command().add("-cp");
-        compileBuilder.command().add(classPath);
+        compileBuilder.command().add(cp);
         compileBuilder.command().addAll(projectConfiguration.getCompilerArgs());
         compileBuilder.command().add(mainClassName);
 
