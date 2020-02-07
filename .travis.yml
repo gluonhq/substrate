@@ -31,6 +31,7 @@ matrix:
             - build-essential
             - libgtk-3-dev
             - libxtst-dev
+            - libavcodec57
       before_script:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
         - wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0.2/graalvm-ce-java11-linux-amd64-19.3.0.2.tar.gz
