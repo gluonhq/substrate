@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProcessTest {
 
@@ -58,7 +59,7 @@ public class ProcessTest {
         assertEquals("", runner.getLastResponse());
 
         assertEquals(1, runner.runProcess("mkdir", tempDir.toFile()));
-        assertEquals("mkdir: runner: File exists", runner.getLastResponse());
+        assertTrue(runner.getLastResponse().endsWith("File exists"));
     }
 
 }
