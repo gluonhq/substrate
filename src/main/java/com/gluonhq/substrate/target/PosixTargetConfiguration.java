@@ -27,8 +27,10 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 
@@ -41,7 +43,7 @@ abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
     PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
 
-        if (this instanceof DarwinTargetConfiguration || this instanceof IosTargetConfiguration) {
+        if (new Triplet(Constants.Profile.MACOS).equals(Triplet.fromCurrentOS())) {
             checkGraalVMPermissions(configuration.getGraalPath().toString());
         }
     }
