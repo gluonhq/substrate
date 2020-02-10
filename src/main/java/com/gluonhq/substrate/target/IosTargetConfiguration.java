@@ -108,13 +108,22 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
-
-        Path llcPath = getLlcPath();
-        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+        boolean graalvm22 = true;
+        Path internalLlcPath = projectConfiguration.getGraalPath().resolve("lib").resolve("llvm").resolve("bin");
+        if (!Files.exists(internalLlcPath.resolve("llc"))) {
+            graalvm22 = false; // and use customLLC
+        }
+        List<String> answer = new ArrayList<>();
+        answer.addAll(Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
+                "-Dllvm.bin.dir=" + internalLlcPath,
                 "-Dsvm.targetName=iOS",
-                "-Dsvm.targetArch=" + getArch(),
-                "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+                "-Dsvm.targetArch=" + getArch()));
+        if (!graalvm22) {
+            Path llcPath = getLlcPath();
+            answer.add("-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+        }
+        return answer;
     }
 
     @Override
@@ -174,14 +183,19 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
             // without signing, app can't be deployed
             return true;
         }
+
+        Path app = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        if (!Files.exists(app)) {
+            throw new IOException("Application not found at path " + app);
+        }
+
         Deploy deploy = new Deploy();
         deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
-        String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
         if (isSimulator()) {
             // TODO: launchOnSimulator(appPath);
             return false;
         } else {
-            return deploy.install(appPath);
+            return deploy.install(app.toString());
         }
     }
 
