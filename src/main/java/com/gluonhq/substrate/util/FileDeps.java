@@ -47,10 +47,10 @@ import java.util.Set;
 public final class FileDeps {
 
     private static final String JAVA_STATIC_ZIP = "labs-staticjdk-${target}-gvm-${version}.zip";
-    private static final String JAVA_STATIC_URL = "http://download2.gluonhq.com/substrate/staticjdk/";
+    private static final String JAVA_STATIC_URL = "https://download2.gluonhq.com/substrate/staticjdk/";
     private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static.zip";
-    private static final String JAVAFX_STATIC_URL = "http://download2.gluonhq.com/substrate/javafxstaticsdk/";
-    private static final String LLC_URL = "http://download2.gluonhq.com/substrate/llvm/";
+    private static final String JAVAFX_STATIC_URL = "https://download2.gluonhq.com/substrate/javafxstaticsdk/";
+    private static final String LLC_URL = "https://download2.gluonhq.com/substrate/llvm/";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
             "libjava.a", "libnet.a", "libnio.a", "libzip.a", "libprefs.a"
