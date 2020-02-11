@@ -378,6 +378,31 @@ public class InternalProjectConfiguration {
      * @throws IOException when the path to bin/native-image doesn't exist
      */
     public void canRunNativeImage() throws IOException, InterruptedException {
+        Path javaCmd =  getGraalVMBinPath().resolve("java");
+        ProcessRunner processRunner = new ProcessRunner(javaCmd.toString(), "-version");
+        if (processRunner.runProcess("check version") != 0) {
+            throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
+        }
+        for (String l : processRunner.getResponses()) {
+            if (l == null || l.isEmpty()) {
+                throw new IllegalArgumentException(javaCmd + " -version failed to return a valid value for GraalVM");
+            }
+            if (l.indexOf("1.8") > 0) {
+                throw new IllegalArgumentException("You are using an old version of GraalVM in " + javaCmd +
+                        " which uses Java version " + l + "\nUse GraalVM 19.3 or later");
+            }
+        }
+    }
+
+    /**
+     * Gets $GRAALVM/bin path or throws an IOException if the path is not found
+     * It also verifies that native-image is installed in that path.
+     *
+     * @return the path to $GRAALVM/bin
+     * @throws IOException If $GRAALVM, $GRAALVM/bin or $GRAALVM/bin/native-image paths
+     *                    don't exist
+     */
+    private Path getGraalVMBinPath() throws IOException {
         Path graalPath = getGraalPath();//Path.of(graalPathString);
         if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
         Path binPath = graalPath.resolve("bin");
@@ -387,20 +412,7 @@ public class InternalProjectConfiguration {
                 binPath.resolve("native-image");
         if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPath + "\n" +
                 "You can use gu to install it running: \n${GRAALVM_HOME}/bin/gu install native-image");
-        Path javacmd = binPath.resolve("java");
-        ProcessRunner processRunner = new ProcessRunner(javacmd.toString(), "-version");
-        if (processRunner.runProcess("check version") != 0) {
-            throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
-        }
-        for (String l : processRunner.getResponses()) {
-            if (l == null || l.isEmpty()) {
-                throw new IllegalArgumentException("java -version failed to return a value for GraalVM in " + graalPath);
-            }
-            if (l.indexOf("1.8") > 0) {
-                throw new IllegalArgumentException("You are using an old version of GraalVM in " + graalPath +
-                        " which uses Java version " + l + "\nUse GraalVM 19.3 or later");
-            }
-        }
+        return binPath;
     }
 
     @Override

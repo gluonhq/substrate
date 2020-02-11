@@ -176,10 +176,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 extraMessage = "Objectfile should be called "+nameSearch+" but we didn't find that under "+gvmPath.toString();
             }
         }
-        if (failure) {
-            if (extraMessage != null) {
-                Logger.logInfo("Additional information: " + extraMessage);
-            }
+        if (failure && extraMessage != null) {
+            Logger.logInfo("Additional information: " + extraMessage);
         }
         return !failure;
     }
