@@ -248,7 +248,7 @@ public class CodeSigning {
         }
         for (String line : runner.getResponses()) {
             if (line.contains(KEYCHAIN_ERROR_MESSAGE)) {
-                Logger.logInfo("Error signing the application: keychain was locked");
+                Logger.logInfo("Error signing the application: the keychain was locked.\nYou will be required now to unlock the keychain");
                 if (unlockKeychain()) {
                     return sign(entitlementsPath, appPath);
                 }
