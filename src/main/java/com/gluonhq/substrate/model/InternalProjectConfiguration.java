@@ -218,6 +218,24 @@ public class InternalProjectConfiguration {
         this.llcPath = llcPath;
     }
 
+    /**
+     * Gets Android SDK path
+     */
+    public Path getAndroidSdkPath() {
+        String sdkEnv = System.getenv("ANDROID_SDK");
+        return (sdkEnv != null) ? Paths.get(sdkEnv) 
+                : Constants.USER_SUBSTRATE_PATH.resolve("Android");
+    }
+
+    /**
+     * Gets Android NDK path
+     */
+    public Path getAndroidNdkPath() {
+        String ndkEnv = System.getenv("ANDROID_NDK");
+        return (ndkEnv != null) ? Paths.get(ndkEnv) 
+                : getAndroidSdkPath().resolve("ndk-bundle");
+    }
+
     public boolean isUseJNI() {
         return useJNI;
     }

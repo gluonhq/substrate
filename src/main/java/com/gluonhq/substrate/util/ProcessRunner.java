@@ -57,6 +57,7 @@ public class ProcessRunner {
     private static boolean info;
     private static boolean logToFile;
     private final Path processLogPath;
+    private static boolean interactive;
 
     /**
      * Constructor, allowing some command line arguments
@@ -77,6 +78,10 @@ public class ProcessRunner {
      */
     public void setInfo(boolean info) {
         ProcessRunner.info = info;
+    }
+
+    public void setInteractive(boolean interactive) {
+        this.interactive = interactive;
     }
 
     /**
@@ -279,6 +284,9 @@ public class ProcessRunner {
         ProcessBuilder pb = new ProcessBuilder(args);
         Logger.logDebug("PB Command for " +  processName + ": " + String.join(" ", pb.command()));
         pb.redirectErrorStream(true);
+        if (interactive) {
+            pb.inheritIO();
+        }
         if (directory != null) {
             pb.directory(directory);
         }

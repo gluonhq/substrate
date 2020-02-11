@@ -57,7 +57,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
     private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-Wl,--gc-sections",
-            "-landroid", "-llog", "-lnet", "-shared");
+            "-landroid", "-llog", "-lnet", "-shared", "-lffi");
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", "-Wl,--no-whole-archive",
             "-lGLESv2", "-lEGL", "-lfreetype");
@@ -70,25 +70,20 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths,configuration);
-        // for now, we need to have an ANDROID_NDK
-        // we will fail fast whenever a method is invoked that uses it (e.g. compile)
-        String sysndk = System.getenv("ANDROID_NDK");
-        if (sysndk != null) {
-            this.ndk = sysndk;
-            Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64", "bin", "ld.lld");
-            if (Files.exists(ldguess)) {
-                ldlld = ldguess;
-            } else {
-                ldlld = null;
-            }
-            Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64", "bin", "clang");
-            clang = Files.exists(clangguess) ? clangguess : null;
-        } else {
-            this.ndk = null;
-            this.ldlld = null;
-            this.clang = null;
+        try {
+            fileDeps.setupDependencies();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        this.sdk = System.getenv("ANDROID_SDK");
+        
+        this.sdk = projectConfiguration.getAndroidSdkPath().toString();
+        this.ndk = projectConfiguration.getAndroidNdkPath().toString();
+        
+        Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64", "bin", "ld.lld");
+        this.ldlld = Files.exists(ldguess) ? ldguess : null; 
+        
+        Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64", "bin", "clang");
+        this.clang = Files.exists(clangguess) ? clangguess : null;
     }
 
     /**
@@ -282,11 +277,14 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
         Path llcPath = getLlcPath();
+        Path internalLlcPath = projectConfiguration.getGraalPath().resolve("lib").resolve("llvm").resolve("bin");
+        
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
+                "-Dllvm.bin.dir=" + internalLlcPath,
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CustomLD=" + ldlld.toAbsolutePath().toString(),
                 "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
