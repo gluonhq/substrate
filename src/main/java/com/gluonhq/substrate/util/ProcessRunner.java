@@ -54,8 +54,8 @@ public class ProcessRunner {
     private final List<String> args = new ArrayList<>();
     private final Map<String, String> map;
     private StringBuffer answer;
-    private static boolean info;
-    private static boolean logToFile;
+    private boolean info;
+    private boolean logToFile;
     private final Path processLogPath;
 
     /**
@@ -76,7 +76,7 @@ public class ProcessRunner {
      * @param info a boolean that sets the log level of the process output
      */
     public void setInfo(boolean info) {
-        ProcessRunner.info = info;
+        this.info = info;
     }
 
     /**
@@ -87,7 +87,7 @@ public class ProcessRunner {
      * @param logToFile if true will log the process to a file
      */
     public void setLogToFile(boolean logToFile) {
-        ProcessRunner.logToFile = logToFile;
+        this.logToFile = logToFile;
     }
     /**
      * Adds a command line argument to the list of existing list of
@@ -167,7 +167,7 @@ public class ProcessRunner {
     public int runProcess(String processName, File directory) throws IOException, InterruptedException {
         Process p = setupProcess(processName, directory);
 
-        Thread logThread = mergeProcessOutput(p.getInputStream(), answer);
+        Thread logThread = mergeProcessOutput(p.getInputStream(), answer, info);
         int result = p.waitFor();
         logThread.join();
         Logger.logDebug("Result for " + processName + ": " + result);
@@ -175,7 +175,7 @@ public class ProcessRunner {
             Logger.logSevere("Process " + processName + " failed with result: " + result);
         }
         if (logToFile || result != 0) {
-            logFailure(processName, "result: " + result);
+            logProcess(processName, "result: " + result, result != 0);
         }
         return result;
     }
@@ -206,7 +206,7 @@ public class ProcessRunner {
      */
     public boolean runTimedProcess(String processName, File directory, long timeout) throws IOException, InterruptedException {
         Process p = setupProcess(processName, directory);
-        Thread logThread = mergeProcessOutput(p.getInputStream(), answer);
+        Thread logThread = mergeProcessOutput(p.getInputStream(), answer, info);
         boolean result = p.waitFor(timeout, TimeUnit.SECONDS);
         logThread.join();
         Logger.logDebug("Result for " + processName + ": " + result);
@@ -214,7 +214,7 @@ public class ProcessRunner {
             Logger.logSevere("Process " + processName + " failed with result: " + result);
         }
         if (logToFile || !result) {
-            logFailure(processName, "result: " + result);
+            logProcess(processName, "result: " + result, !result);
         }
         return result;
     }
@@ -288,7 +288,7 @@ public class ProcessRunner {
         return pb.start();
     }
 
-    private static Thread mergeProcessOutput(final InputStream is, final StringBuffer sb) {
+    private static Thread mergeProcessOutput(final InputStream is, final StringBuffer sb, final boolean info) {
         Runnable r = () -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
                 String line;
@@ -314,9 +314,10 @@ public class ProcessRunner {
      * result of the process.
      * @param processName The name of the process
      * @param result The result of the process
+     * @param failure true if the process failed
      * @throws IOException
      */
-    private void logFailure(String processName, String result) throws IOException {
+    private void logProcess(String processName, String result, boolean failure) throws IOException {
         if (processLogPath == null) {
             return;
         }
@@ -324,7 +325,11 @@ public class ProcessRunner {
             Files.createDirectories(processLogPath);
         }
         Path log = processLogPath.resolve("process-" + processName + "-" + System.currentTimeMillis() + ".log");
-        Logger.logInfo("Logging process [" + processName + "] to file: " + log);
+        if (failure) {
+            Logger.logInfo("Logging process [" + processName + "] to file: " + log);
+        } else {
+            Logger.logDebug("Logging process [" + processName + "] to file: " + log);
+        }
         Files.write(log, toString(processName, result).getBytes());
     }
 
