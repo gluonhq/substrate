@@ -68,6 +68,9 @@ public class CodeSigning {
     private static final String EMBEDDED_PROVISIONING_PROFILE = "embedded.mobileprovision";
     private static String ERRLINK = "Please check https://docs.gluonhq.com/client/ for more information.";
 
+    private static final String KEYCHAIN_ERROR_MESSAGE = "errSecInternalComponent";
+    private static final String KEYCHAIN_LOCKED_MESSAGE = "User interaction is not allowed";
+
     private MobileProvision mobileProvision = null;
     private Identity identity = null;
     private List<MobileProvision> mobileProvisions;
@@ -243,6 +246,15 @@ public class CodeSigning {
             Logger.logSevere("Codesign process failed");
             return false;
         }
+        for (String line : runner.getResponses()) {
+            if (line.contains(KEYCHAIN_ERROR_MESSAGE)) {
+                Logger.logInfo("Error signing the application: keychain was locked");
+                if (unlockKeychain()) {
+                    return sign(entitlementsPath, appPath);
+                }
+                return false;
+            }
+        }
 
         if (!verifyCodesign(appPath)) {
             Logger.logSevere("Codesign validation failed");
@@ -251,6 +263,29 @@ public class CodeSigning {
 
         Logger.logDebug("Signing done successfully");
         return true;
+    }
+
+    private boolean unlockKeychain() throws IOException, InterruptedException {
+        String keychain = ProcessRunner.runProcessForSingleOutput("keychain", "security", "default-keychain", "-d", "user");
+        if (keychain == null || keychain.isEmpty() || !Files.exists(Path.of(keychain))) {
+            Logger.logSevere("User Keychain not found. Can't unlock");
+            return false;
+        }
+        String info = ProcessRunner.runProcessForSingleOutput("keychain state", "security", "show-keychain-info", keychain);
+        if (info == null || info.isEmpty()) {
+            Logger.logSevere("Keychain info not found. Can't unlock");
+            return false;
+        }
+        if (info.contains(KEYCHAIN_LOCKED_MESSAGE)) {
+            String unlock = ProcessRunner.runProcessForSingleOutput("keychain unlock", "security", "unlock-keychain", keychain);
+            if (unlock == null || !unlock.isEmpty()) {
+                Logger.logSevere("Wrong keychain password. Can't unlock");
+                return false;
+            }
+            Logger.logDebug("Keychain unlocked successfully");
+            return true;
+        }
+        return false;
     }
 
     private boolean verifyCodesign(Path target) throws IOException, InterruptedException {
