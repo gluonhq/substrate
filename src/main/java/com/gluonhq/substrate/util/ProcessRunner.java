@@ -80,8 +80,13 @@ public class ProcessRunner {
         ProcessRunner.info = info;
     }
 
+    /**
+     * When set to true, it will enable user interaction
+     * during the process. By default is false
+     * @param interactive a boolean that sets the interactive mode
+     */
     public void setInteractive(boolean interactive) {
-        this.interactive = interactive;
+        ProcessRunner.interactive = interactive;
     }
 
     /**
