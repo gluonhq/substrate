@@ -29,7 +29,6 @@ package com.gluonhq.substrate.util;
 
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.ProjectConfiguration;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 
 import java.io.File;
@@ -37,7 +36,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
 import java.util.HashSet;
