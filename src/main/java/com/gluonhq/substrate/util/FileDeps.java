@@ -363,7 +363,7 @@ public final class FileDeps {
         String hostOs = configuration.getHostTriplet().getOs();
         String androidSdkUrl = Strings.substitute(ANDROID_SDK_URL, Map.of("host", hostOs));
         System.out.println("Downloading Android SDK...");
-        FileOps.downloadAndUnzip(androidSdkUrl, sdk.getParent(), "android-sdk.zip", sdk.getFileName().toString(), ".");
+        FileOps.downloadAndUnzip(androidSdkUrl, sdk.getParent(), "android-sdk.zip", sdk.getFileName().toString(), "");
         System.out.println("Done");
     }
 
@@ -390,7 +390,7 @@ public final class FileDeps {
         ProcessRunner sdkmanager = new ProcessRunner("java", "-Dcom.android.sdklib.toolsdir=" + tools, "-classpath",
                 libs + "/*:" + additionalLibs + "/*", "com.android.sdklib.tool.sdkmanager.SdkManagerCli");
         sdkmanager.addArgs(args);
-        sdkmanager.setInteractive(true);
+        sdkmanager.setInteractive(true); // Needed to accept EULA and show download progress
 
         System.out.println("Running sdkmanager with: " + sdkmanager.getCmd());
         try {
