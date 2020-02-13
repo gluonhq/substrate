@@ -395,9 +395,9 @@ public final class FileDeps {
         Path sdk = configuration.getAndroidSdkPath();
         String hostOs = configuration.getHostTriplet().getOs();
         String androidSdkUrl = Strings.substitute(ANDROID_SDK_URL, Map.of("host", hostOs));
-        Logger.logInfo("Downloading Android SDK...");
+        Logger.logDebug("Downloading Android SDK...");
         FileOps.downloadAndUnzip(androidSdkUrl, sdk.getParent(), "android-sdk.zip", sdk.getFileName().toString(), "");
-        Logger.logInfo("Done");
+        Logger.logDebug("Done");
     }
     /**
      * Downloads libraries needed for Android SDK's sdkmanager 
@@ -408,13 +408,13 @@ public final class FileDeps {
         Path libsLocation = sdk.resolve("tools").resolve("lib").resolve("java11");
 
         Files.createDirectories(libsLocation);
-        Logger.logInfo("Downloading additional libs ...");
+        Logger.logDebug("Downloading additional libs ...");
         for (String url : ANDROID_DEPS) {
             URL link = new URL(url);
             String filename = url.substring(url.lastIndexOf('/')+1, url.length());
             FileOps.downloadFile(link, libsLocation.resolve(filename));
         }
-        Logger.logInfo("Done");
+        Logger.logDebug("Done");
     }
 
     /**
@@ -434,8 +434,8 @@ public final class FileDeps {
         sdkmanager.addArgs(args);
         sdkmanager.setInteractive(true); // Needed to accept EULA and show download progress
 
-        Logger.logInfo("Running sdkmanager with: " + sdkmanager.getCmd());
-        Logger.logInfo("You might be prompted to accept EULA.");
+        Logger.logDebug("Running sdkmanager with: " + sdkmanager.getCmd());
+        Logger.logDebug("You might be prompted to accept EULA.");
         sdkmanager.runProcess("sdkmanager");
     }
 
@@ -445,9 +445,9 @@ public final class FileDeps {
      * @throws InterruptedException in case anything goes wrong.
      */
     private void fetchFromSdkManager() throws IOException, InterruptedException {
-        Logger.logInfo("Downloading Android toolchain...");
+        Logger.logDebug("Downloading Android toolchain...");
         String[] args = {"platforms;android-27", "build-tools;27.0.3", "platform-tools", "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle"};
         androidSdkManager(args);
-        Logger.logInfo("Done");
+        Logger.logDebug("Done");
     }
 } 

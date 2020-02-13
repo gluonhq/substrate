@@ -68,22 +68,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final String capLocation= "/native/android/cap/";
 
 
-    public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
+    public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
         super(paths,configuration);
         
-        String tmpSdk = "";
-        String tmpNdk = "";
-
-        try { 
-            tmpSdk = fileDeps.getAndroidSDKPath().toString();
-            tmpNdk = fileDeps.getAndroidNDKPath().toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.sdk = fileDeps.getAndroidSDKPath().toString();
+        this.ndk = fileDeps.getAndroidNDKPath().toString();
         
-        this.sdk = tmpSdk;
-        this.ndk = tmpNdk;
-
         Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64", "bin", "ld.lld");
         this.ldlld = Files.exists(ldguess) ? ldguess : null; 
         
