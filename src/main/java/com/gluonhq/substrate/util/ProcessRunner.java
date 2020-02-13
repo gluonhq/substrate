@@ -57,7 +57,7 @@ public class ProcessRunner {
     private static boolean info;
     private static boolean logToFile;
     private final Path processLogPath;
-    private static boolean interactive;
+    private boolean interactive;
 
     /**
      * Constructor, allowing some command line arguments
@@ -86,7 +86,7 @@ public class ProcessRunner {
      * @param interactive a boolean that sets the interactive mode
      */
     public void setInteractive(boolean interactive) {
-        ProcessRunner.interactive = interactive;
+        this.interactive = interactive;
     }
 
     /**

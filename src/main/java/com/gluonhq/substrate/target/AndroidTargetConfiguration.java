@@ -70,15 +70,20 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths,configuration);
-        try {
-            fileDeps.setupDependencies();
+        
+        String tmpSdk = "";
+        String tmpNdk = "";
+
+        try { 
+            tmpSdk = fileDeps.getAndroidSDKPath().toString();
+            tmpNdk = fileDeps.getAndroidNDKPath().toString();
         } catch (IOException e) {
             e.printStackTrace();
         }
         
-        this.sdk = projectConfiguration.getAndroidSdkPath().toString();
-        this.ndk = projectConfiguration.getAndroidNdkPath().toString();
-        
+        this.sdk = tmpSdk;
+        this.ndk = tmpNdk;
+
         Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64", "bin", "ld.lld");
         this.ldlld = Files.exists(ldguess) ? ldguess : null; 
         

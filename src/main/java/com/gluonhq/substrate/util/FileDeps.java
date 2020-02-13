@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -107,6 +108,28 @@ public final class FileDeps {
     }
 
     /**
+     * Return the path to the Android SDK for this configuration.
+     * The path is cached on the environment variable.
+     * If it is not there yet, all dependencies are retrieved.
+     * @return the location of the Android SDK for the arch-os for this configuration
+     * @throws IOException in case anything goes wrong.
+     */
+    public Path getAndroidSDKPath() throws IOException {
+        return resolvePath(configuration.getAndroidSdkPath(),"Fatal error, could not install Android SDK ");
+    }
+
+    /**
+     * Return the path to the Android NDK for this configuration.
+     * The path is cached on the environment variable.
+     * If it is not there yet, all dependencies are retrieved.
+     * @return the location of the Android NDK for the arch-os for this configuration
+     * @throws IOException in case anything goes wrong.
+     */
+    public Path getAndroidNDKPath() throws IOException {
+        return resolvePath(configuration.getAndroidNdkPath(),"Fatal error, could not install Android NDK ");
+    }
+
+    /**
      * For a given path, it verifies that the path exists, or else it tries
      * to install it. After that, it returns the path for this configuration.
      * @param path the initial path
@@ -140,7 +163,7 @@ public final class FileDeps {
      * @return true if the processed ended succesfully, false otherwise
      * @throws IOException in case default path for Substrate dependencies can't be created
      */
-    public boolean setupDependencies() throws IOException {
+    private boolean setupDependencies() throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
 
         if (!Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
@@ -151,8 +174,11 @@ public final class FileDeps {
         Path defaultJavaStaticPath = configuration.getDefaultJavaStaticPath();
         boolean customJavaLocation = configuration.useCustomJavaStaticLibs();
 
-        boolean downloadJavaStatic = false, downloadJavaFXStatic = false, downloadAndroidSdk = false,
-                downloadAndroidNdk = false, downloadAndroidAdditionalLibs = false;
+        boolean downloadJavaStatic = false;
+        boolean downloadJavaFXStatic = false;
+        boolean downloadAndroidSdk = false;
+        boolean downloadAndroidNdk = false;
+        boolean downloadAndroidAdditionalLibs = false;
 
         // Java Static
         Logger.logDebug("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
@@ -225,13 +251,13 @@ public final class FileDeps {
             }
         }
         // Android
-        if (target.startsWith("android")) {
-            Path AndroidSdk = configuration.getAndroidSdkPath();
-            Path AndroidNdk = configuration.getAndroidNdkPath();
+        if (Constants.OS_ANDROID.equals(configuration.getTargetTriplet().getOs())) {
+            Path androidSdk = configuration.getAndroidSdkPath();
+            Path androidNdk = configuration.getAndroidNdkPath();
 
-            Path libsLocation = AndroidSdk.resolve("tools").resolve("lib").resolve("java11");
+            Path libsLocation = androidSdk.resolve("tools").resolve("lib").resolve("java11");
 
-            if (!Files.exists(AndroidSdk)) {
+            if (!Files.exists(androidSdk)) {
                 downloadAndroidSdk = true;
             } 
 
@@ -239,7 +265,7 @@ public final class FileDeps {
                 downloadAndroidAdditionalLibs = true;
             }
 
-            if (!Files.exists(AndroidNdk)) {
+            if (!Files.exists(androidNdk)) {
                 downloadAndroidNdk = true;
             }
         }
@@ -251,17 +277,20 @@ public final class FileDeps {
             if (downloadJavaFXStatic) {
                 downloadJavaFXZip(target, Constants.USER_SUBSTRATE_PATH);
             }
+
             if (downloadAndroidSdk) { // First we get SDK
                 downloadAndroidSdkZip();
             }
+
             if (downloadAndroidAdditionalLibs) { // Then we get additional libs
                 downloadAdditionalAndroidLibs();
             }
+
             if (downloadAndroidNdk) { // And then NDK
                 fetchFromSdkManager();
             }
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Error downloading zips: " + e.getMessage());
         }
         Logger.logDebug("Setup dependencies done");
@@ -358,52 +387,67 @@ public final class FileDeps {
         Logger.logDebug("Process zip javafx done");
     }
 
+    /**
+     * Crafts Android SDK url and then downloads it 
+     * @throws IOException in case anything goes wrong.
+     */
     private void downloadAndroidSdkZip() throws IOException {
         Path sdk = configuration.getAndroidSdkPath();
         String hostOs = configuration.getHostTriplet().getOs();
         String androidSdkUrl = Strings.substitute(ANDROID_SDK_URL, Map.of("host", hostOs));
-        System.out.println("Downloading Android SDK...");
+        Logger.logInfo("Downloading Android SDK...");
         FileOps.downloadAndUnzip(androidSdkUrl, sdk.getParent(), "android-sdk.zip", sdk.getFileName().toString(), "");
-        System.out.println("Done");
+        Logger.logInfo("Done");
     }
-
+    /**
+     * Downloads libraries needed for Android SDK's sdkmanager 
+     * @throws IOException in case anything goes wrong.
+     */
     private void downloadAdditionalAndroidLibs() throws IOException {
         Path sdk = configuration.getAndroidSdkPath();
         Path libsLocation = sdk.resolve("tools").resolve("lib").resolve("java11");
 
         Files.createDirectories(libsLocation);
-        System.out.println("Downloading additional libs ...");
+        Logger.logInfo("Downloading additional libs ...");
         for (String url : ANDROID_DEPS) {
             URL link = new URL(url);
             String filename = url.substring(url.lastIndexOf('/')+1, url.length());
             FileOps.downloadFile(link, libsLocation.resolve(filename));
         }
-        System.out.println("Done");
+        Logger.logInfo("Done");
     }
 
-    private void androidSdkManager(String[] args) {
+    /**
+     * Runs Android SDK's sdkmanager with specified arguments
+     * @param args array of arguments to be passed to process
+     * @throws IOException in case anything goes wrong.
+     * @throws InterruptedException in case anything goes wrong.
+     */
+    private void androidSdkManager(String[] args) throws IOException, InterruptedException {
         Path sdk = configuration.getAndroidSdkPath();
         Path tools = sdk.resolve("tools");
         Path libs = tools.resolve("lib");
         Path additionalLibs = libs.resolve("java11");
 
-        ProcessRunner sdkmanager = new ProcessRunner("java", "-Dcom.android.sdklib.toolsdir=" + tools, "-classpath",
+        ProcessRunner sdkmanager = new ProcessRunner(Paths.get(configuration.getGraalPath().toString(), "bin", "java").toString(), "-Dcom.android.sdklib.toolsdir=" + tools, "-classpath",
                 libs + "/*:" + additionalLibs + "/*", "com.android.sdklib.tool.sdkmanager.SdkManagerCli");
         sdkmanager.addArgs(args);
         sdkmanager.setInteractive(true); // Needed to accept EULA and show download progress
 
-        System.out.println("Running sdkmanager with: " + sdkmanager.getCmd());
-        try {
-            sdkmanager.runProcess("sdkmanager");
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        Logger.logInfo("Running sdkmanager with: " + sdkmanager.getCmd());
+        Logger.logInfo("You might be prompted to accept EULA.");
+        sdkmanager.runProcess("sdkmanager");
     }
 
-    private void fetchFromSdkManager() {
-        System.out.println("Downloading Android toolchain...");
+    /**
+     * Downloads Android NDK and build tools
+     * @throws IOException in case anything goes wrong.
+     * @throws InterruptedException in case anything goes wrong.
+     */
+    private void fetchFromSdkManager() throws IOException, InterruptedException {
+        Logger.logInfo("Downloading Android toolchain...");
         String[] args = {"platforms;android-27", "build-tools;27.0.3", "platform-tools", "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle"};
         androidSdkManager(args);
-        System.out.println("Done");
+        Logger.logInfo("Done");
     }
 } 
