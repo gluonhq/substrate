@@ -397,7 +397,7 @@ public final class FileDeps {
         String androidSdkUrl = Strings.substitute(ANDROID_SDK_URL, Map.of("host", hostOs));
         Logger.logDebug("Downloading Android SDK...");
         FileOps.downloadAndUnzip(androidSdkUrl, sdk.getParent(), "android-sdk.zip", sdk.getFileName().toString(), "");
-        Logger.logDebug("Done");
+        Logger.logDebug("Done downloading Android SDK");
     }
     /**
      * Downloads libraries needed for Android SDK's sdkmanager 
@@ -414,7 +414,7 @@ public final class FileDeps {
             String filename = url.substring(url.lastIndexOf('/')+1, url.length());
             FileOps.downloadFile(link, libsLocation.resolve(filename));
         }
-        Logger.logDebug("Done");
+        Logger.logDebug("Done downloading additional libs");
     }
 
     /**
@@ -448,6 +448,6 @@ public final class FileDeps {
         Logger.logDebug("Downloading Android toolchain...");
         String[] args = {"platforms;android-27", "build-tools;27.0.3", "platform-tools", "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle"};
         androidSdkManager(args);
-        Logger.logDebug("Done");
+        Logger.logDebug("Done downloading Android toolchain");
     }
 } 
