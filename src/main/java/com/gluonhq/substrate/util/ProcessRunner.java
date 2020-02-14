@@ -167,7 +167,7 @@ public class ProcessRunner {
     public int runProcess(String processName, File directory) throws IOException, InterruptedException {
         Process p = setupProcess(processName, directory);
 
-        Thread logThread = mergeProcessOutput(p.getInputStream(), answer, info);
+        Thread logThread = mergeProcessOutput(p.getInputStream());
         int result = p.waitFor();
         logThread.join();
         Logger.logDebug("Result for " + processName + ": " + result);
@@ -206,7 +206,7 @@ public class ProcessRunner {
      */
     public boolean runTimedProcess(String processName, File directory, long timeout) throws IOException, InterruptedException {
         Process p = setupProcess(processName, directory);
-        Thread logThread = mergeProcessOutput(p.getInputStream(), answer, info);
+        Thread logThread = mergeProcessOutput(p.getInputStream());
         boolean result = p.waitFor(timeout, TimeUnit.SECONDS);
         logThread.join();
         Logger.logDebug("Result for " + processName + ": " + result);
@@ -288,12 +288,12 @@ public class ProcessRunner {
         return pb.start();
     }
 
-    private static Thread mergeProcessOutput(final InputStream is, final StringBuffer sb, final boolean info) {
+    private Thread mergeProcessOutput(final InputStream is) {
         Runnable r = () -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    sb.append(line).append("\n");
+                    answer.append(line).append("\n");
                     if (info) {
                         Logger.logInfo("[SUB] " + line);
                     } else {
