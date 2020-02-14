@@ -43,13 +43,14 @@ static const char *tag = "myapp";
 const char * origargs[] = {
         "myapp",
         "-Djavafx.platform=android",
+        "-Dmonocle.platform=Android", // used in com.sun.glass.ui.monocle.NativePlatformFactory
         "-Dembedded=monocle",
         "-Dglass.platform=Monocle",
         "-Djavafx.verbose=true",
         "-Dmonocle.input.traceEvents.verbose=true",
         "-Dprism.verbose=true"};
 
-int argsize = 7;
+int argsize = 8;
 
 char** createArgs() {
 LOGE(stderr, "CREATE ARGS");
