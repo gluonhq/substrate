@@ -52,6 +52,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final String sdk;
     private final Path ldlld;
     private final Path clang;
+    private final String hostPlatformFolder;
 
     private List<String> androidAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
@@ -73,13 +74,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         
         this.sdk = fileDeps.getAndroidSDKPath().toString();
         this.ndk = fileDeps.getAndroidNDKPath().toString();
+        this.hostPlatformFolder = configuration.getHostTriplet().getOs() + "-x86_64";
 
-        final String platform = configuration.getHostTriplet().getOs() + "-x86_64";
-
-        Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", platform, "bin", "ld.lld");
+        Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "ld.lld");
         this.ldlld = Files.exists(ldguess) ? ldguess : null; 
         
-        Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", platform, "bin", "clang");
+        Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "clang");
         this.clang = Files.exists(clangguess) ? clangguess : null;
     }
 
@@ -109,8 +109,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean compile(String classPath) throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no ld.lld in android_ndk, we should not start compiling
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (ldlld == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/ldlld");
-        if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");
+        if (ldlld == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/ldlld");
+        if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"-x86_64/bin/clang");
         return super.compile(classPath);
     }
 
@@ -118,7 +118,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean link() throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/linux-x86_64/bin/clang");
+        if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
 
         super.link();
