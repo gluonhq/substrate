@@ -74,10 +74,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         this.sdk = fileDeps.getAndroidSDKPath().toString();
         this.ndk = fileDeps.getAndroidNDKPath().toString();
 
-        Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64", "bin", "ld.lld");
+        final String platform = configuration.getHostTriplet().getOs() + "-x86_64";
+
+        Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", platform, "bin", "ld.lld");
         this.ldlld = Files.exists(ldguess) ? ldguess : null; 
         
-        Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64", "bin", "clang");
+        Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", platform, "bin", "clang");
         this.clang = Files.exists(clangguess) ? clangguess : null;
     }
 
