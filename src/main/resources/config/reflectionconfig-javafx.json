@@ -8,7 +8,11 @@
   }
 ,
   {
-    "name" : "javafx.geometry.HPos"
+    "name" : "javafx.geometry.HPos",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -20,7 +24,11 @@
   }
 ,
   {
-    "name" : "javafx.geometry.VPos"
+    "name" : "javafx.geometry.VPos",
+    "methods":[
+      {"name":"valueOf","parameterTypes":["java.lang.String"] },
+      {"name":"values","parameterTypes":[] }
+    ]
   }
 ,
   {
@@ -37,7 +45,9 @@
       {"name":"<init>","parameterTypes":[] },
       {"name":"<init>","parameterTypes":["java.lang.String"] },
       {"name":"setDefaultButton","parameterTypes":["boolean"] },
-      {"name":"isDefaultButton","parameterTypes":[] }
+      {"name":"isDefaultButton","parameterTypes":[] },
+      {"name":"setCancelButton","parameterTypes":["boolean"] },
+      {"name":"isCancelButton","parameterTypes":[] }
     ]
   }
 ,
@@ -66,6 +76,17 @@
     "methods":[
       {"name":"valueOf","parameterTypes":["java.lang.String"] },
       {"name":"values","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.Hyperlink",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["java.lang.String"] },
+      {"name":"<init>","parameterTypes":["java.lang.String","javafx.scene.Node"] },
+      {"name":"isVisited","parameterTypes":[] },
+      {"name":"setVisited","parameterTypes":["boolean"] }
     ]
   }
 ,
@@ -102,6 +123,21 @@
       {"name":"getTextFill","parameterTypes":[] },
       {"name":"setFont","parameterTypes":["javafx.scene.text.Font"] },
       {"name":"getFont","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.ListView",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["javafx.collections.ObservableList"] }
+    ]
+  }
+,
+  {
+    "name":"javafx.scene.control.PasswordField",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] }
     ]
   }
 ,
@@ -287,7 +323,25 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.ColumnConstraints"
+    "name" : "javafx.scene.layout.ColumnConstraints",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["double"] },
+      {"name":"<init>","parameterTypes":["double","double","double"] },
+      {"name":"<init>","parameterTypes":["double","double","double","javafx.scene.layout.Priority","javafx.geometry.HPos","boolean"] },
+      {"name":"setHgrow","parameterTypes":["javafx.scene.layout.Priority"] },
+      {"name":"getHgrow","parameterTypes":[] },
+      {"name":"getPercentWidth","parameterTypes":[] },
+      {"name":"setPercentWidth","parameterTypes":["double"] },
+      {"name":"getMinWidth","parameterTypes":[] },
+      {"name":"setMinWidth","parameterTypes":["double"] },
+      {"name":"getPrefWidth","parameterTypes":[] },
+      {"name":"setPrefWidth","parameterTypes":["double"] },
+      {"name":"getMaxWidth","parameterTypes":[] },
+      {"name":"setMaxWidth","parameterTypes":["double"] },
+      {"name":"getHalignment","parameterTypes":[] },
+      {"name":"setHalignment","parameterTypes":["javafx.geometry.HPos"] }
+    ]
   }
 ,
   {
@@ -302,6 +356,12 @@
       {"name":"getRowIndex","parameterTypes":["javafx.scene.Node"] },
       {"name":"setColumnIndex","parameterTypes":["javafx.scene.Node","java.lang.Integer"] },
       {"name":"getColumnIndex","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setColumnSpan","parameterTypes":["javafx.scene.Node","java.lang.Integer"] },
+      {"name":"getColumnSpan","parameterTypes":["javafx.scene.Node"] },
+      {"name":"setRowSpan","parameterTypes":["javafx.scene.Node","java.lang.Integer"] },
+      {"name":"getRowSpan","parameterTypes":["javafx.scene.Node"] },
+      {"name":"getRowConstraints","parameterTypes":[] },
+      {"name":"getColumnConstraints","parameterTypes":[] },
       {"name":"setHgrow","parameterTypes":["javafx.scene.Node","javafx.scene.layout.Priority"] },
       {"name":"getHgrow","parameterTypes":["javafx.scene.Node"] },
       {"name":"setVgrow","parameterTypes":["javafx.scene.Node","javafx.scene.layout.Priority"] },
@@ -364,7 +424,25 @@
   }
 ,
   {
-    "name" : "javafx.scene.layout.RowConstraints"
+    "name" : "javafx.scene.layout.RowConstraints",
+    "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"<init>","parameterTypes":["double"] },
+      {"name":"<init>","parameterTypes":["double","double","double"] },
+      {"name":"<init>","parameterTypes":["double","double","double","javafx.scene.layout.Priority","javafx.geometry.VPos","boolean"] },
+      {"name":"setVgrow","parameterTypes":["javafx.scene.layout.Priority"] },
+      {"name":"getVgrow","parameterTypes":[] },
+      {"name":"getPercentHeight","parameterTypes":[] },
+      {"name":"setPercentHeight","parameterTypes":["double"] },
+      {"name":"getMinHeight","parameterTypes":[] },
+      {"name":"setMinHeight","parameterTypes":["double"] },
+      {"name":"getPrefHeight","parameterTypes":[] },
+      {"name":"setPrefHeight","parameterTypes":["double"] },
+      {"name":"getMaxHeight","parameterTypes":[] },
+      {"name":"setMaxHeight","parameterTypes":["double"] },
+      {"name":"getValignment","parameterTypes":[] },
+      {"name":"setValignment","parameterTypes":["javafx.geometry.VPos"] }
+    ]
   }
 ,
   {
@@ -413,6 +491,8 @@
     "methods":[
       {"name":"<init>","parameterTypes":[] },
       {"name":"getStyleClass","parameterTypes":[] },
+      {"name":"setStyle","parameterTypes":["java.lang.String"] },
+      {"name":"getStyle","parameterTypes":[] },
       {"name":"idProperty","parameterTypes":[] },
       {"name":"getId","parameterTypes":[] },
       {"name":"setId","parameterTypes":["java.lang.String"] },
@@ -424,6 +504,8 @@
       {"name":"setMouseTransparent","parameterTypes":["boolean"] },
       {"name":"isManaged","parameterTypes":[] },
       {"name":"setManaged","parameterTypes":["boolean"] },
+      {"name":"isDisable","parameterTypes":[] },
+      {"name":"setDisable","parameterTypes":["boolean"] },
       {"name":"getLayoutX","parameterTypes":[] },
       {"name":"setLayoutX","parameterTypes":["double"] },
       {"name":"getLayoutY","parameterTypes":[] },
