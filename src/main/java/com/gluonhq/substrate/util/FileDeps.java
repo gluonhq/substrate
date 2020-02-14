@@ -64,6 +64,7 @@ public final class FileDeps {
     );
 
     private static final String ANDROID_SDK_URL = "https://dl.google.com/android/repository/sdk-tools-${host}-4333796.zip";
+
     private static final String[] ANDROID_DEPS = {
             "https://repo1.maven.org/maven2/javax/activation/activation/1.1.1/activation-1.1.1.jar",
             "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-xjc/2.3.2/jaxb-xjc-2.3.2.jar",
@@ -72,6 +73,10 @@ public final class FileDeps {
             "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-jxc/2.3.2/jaxb-jxc-2.3.2.jar",
             "https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar",
             "https://repo1.maven.org/maven2/com/sun/istack/istack-commons-runtime/3.0.10/istack-commons-runtime-3.0.10.jar" };
+
+    private static final String[] ANDROID_SDK_PACKAGES = {
+            "platforms;android-27", "build-tools;27.0.3", "platform-tools", 
+            "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle" };
 
     private final InternalProjectConfiguration configuration;
 
@@ -446,8 +451,7 @@ public final class FileDeps {
      */
     private void fetchFromSdkManager() throws IOException, InterruptedException {
         Logger.logDebug("Downloading Android toolchain...");
-        String[] args = {"platforms;android-27", "build-tools;27.0.3", "platform-tools", "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle"};
-        androidSdkManager(args);
+        androidSdkManager(ANDROID_SDK_PACKAGES);
         Logger.logDebug("Done downloading Android toolchain");
     }
 } 
