@@ -39,12 +39,10 @@ import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,6 +51,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -107,7 +106,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     public boolean compile(String cp) throws IOException, InterruptedException {
         cp = processClassPath(cp);
         extractNativeLibs(cp);
-        Triplet target =  projectConfiguration.getTargetTriplet();
+        Triplet target = projectConfiguration.getTargetTriplet();
         String suffix = target.getArchOs();
         String jniPlatform = getJniPlatform(target);
         if (!compileAdditionalSources()) {
@@ -126,68 +125,59 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         configResolver = new ConfigResolver(cp);
         String nativeImage = getNativeImagePath();
-        ProcessBuilder compileBuilder = new ProcessBuilder(nativeImage);
+        ProcessRunner compileRunner = new ProcessRunner(nativeImage);
         List<String> buildTimeList = getInitializeAtBuildTimeList(suffix);
         if (!buildTimeList.isEmpty()) {
-            compileBuilder.command().add("--initialize-at-build-time=" + String.join(",", buildTimeList));
+            compileRunner.addArg("--initialize-at-build-time=" + String.join(",", buildTimeList));
         }
-        compileBuilder.command().add("--report-unsupported-elements-at-runtime");
-        compileBuilder.command().add("-Djdk.internal.lambda.eagerlyInitialize=false");
-        compileBuilder.command().add("-H:+ExitAfterRelocatableImageWrite");
-        compileBuilder.command().add("-H:TempDirectory="+tmpDir);
-        compileBuilder.command().add("-H:+SharedLibrary");
-        compileBuilder.command().add("-H:+AddAllCharsets");
+        compileRunner.addArg("--report-unsupported-elements-at-runtime");
+        compileRunner.addArg("-Djdk.internal.lambda.eagerlyInitialize=false");
+        compileRunner.addArg("-H:+ExitAfterRelocatableImageWrite");
+        compileRunner.addArg("-H:TempDirectory="+tmpDir);
+        compileRunner.addArg("-H:+SharedLibrary");
+        compileRunner.addArg("-H:+AddAllCharsets");
         if (allowHttps()) {
-            compileBuilder.command().add("-H:EnableURLProtocols=http,https");
+            compileRunner.addArg("-H:EnableURLProtocols=http,https");
         }
-        compileBuilder.command().add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
-        compileBuilder.command().add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
+        compileRunner.addArg("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
+        compileRunner.addArg("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
         if (projectConfiguration.isVerbose()) {
-            compileBuilder.command().add("-H:+PrintAnalysisCallTree");
+            compileRunner.addArg("-H:+PrintAnalysisCallTree");
         }
-        compileBuilder.command().add("-H:ResourceConfigurationFiles=" + createResourceConfig(suffix));
+        compileRunner.addArg("-H:ResourceConfigurationFiles=" + createResourceConfig(suffix));
         if (projectConfiguration.isVerbose()) {
-            compileBuilder.command().add("-H:Log=registerResource:");
+            compileRunner.addArg("-H:Log=registerResource:");
         }
-        compileBuilder.command().addAll(getTargetSpecificAOTCompileFlags());
+        compileRunner.addArgs(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
             String bundles = String.join(",", getBundlesList());
-            compileBuilder.command().add("-H:IncludeResourceBundles=" + bundles);
+            compileRunner.addArg("-H:IncludeResourceBundles=" + bundles);
         }
-        compileBuilder.command().add("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
-        compileBuilder.command().add("-cp");
-        compileBuilder.command().add(cp);
-        compileBuilder.command().addAll(projectConfiguration.getCompilerArgs());
-        compileBuilder.command().add(mainClassName);
+        compileRunner.addArg("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
+        compileRunner.addArg("-cp");
+        compileRunner.addArg(cp);
+        compileRunner.addArgs(projectConfiguration.getCompilerArgs());
+        compileRunner.addArg(mainClassName);
 
-        postProcessCompilerArguments(compileBuilder.command());
+        postProcessCompilerArguments(compileRunner.getCmdList());
 
-        Logger.logDebug("compile command: " + String.join(" ", compileBuilder.command()));
+        compileRunner.setInfo(true);
+        compileRunner.setLogToFile(true);
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
-        compileBuilder.directory(workDir.toFile());
-        compileBuilder.redirectErrorStream(true);
-        Process compileProcess = compileBuilder.start();
-        InputStream inputStream = compileProcess.getInputStream();
-        asynPrintFromInputStream(inputStream);
-        int result = compileProcess.waitFor();
-        // we will print the output of the process only if we don't have the resulting objectfile
+        int result = compileRunner.runProcess("compile", workDir.toFile());
 
         boolean failure = result != 0;
         String extraMessage = null;
         if (!failure) {
-            String nameSearch = mainClassName.toLowerCase() + "." + getObjectFileExtension();
+            // we will print the output of the process only if we don't have the resulting objectfile
+            String nameSearch = mainClassName.toLowerCase(Locale.ROOT) + "." + getObjectFileExtension();
             if (FileOps.findFile(gvmPath, nameSearch).isEmpty()) {
                 failure = true;
                 extraMessage = "Objectfile should be called "+nameSearch+" but we didn't find that under "+gvmPath.toString();
             }
         }
-        if (failure) {
-            System.err.println("Compilation failed with result = " + result);
-            printFromInputStream(inputStream);
-
-            if (extraMessage!= null) {
-                System.err.println("Additional information: "+extraMessage);
-            }
+        if (failure && extraMessage != null) {
+            Logger.logInfo("Additional information: " + extraMessage);
         }
         return !failure;
     }
@@ -210,46 +200,40 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     "Linking failed, since there is no objectfile named " + objectFilename + " under " + gvmPath.toString())
         );
 
-        ProcessBuilder linkBuilder = new ProcessBuilder(getLinker());
+        ProcessRunner linkRunner = new ProcessRunner(getLinker());
 
         Path gvmAppPath = gvmPath.resolve(appName);
-        getAdditionalSourceFiles().forEach(sourceFile -> linkBuilder.command()
-                .add(gvmAppPath.resolve(sourceFile.replaceAll("\\..*", "." + getObjectFileExtension())).toString()));
+        linkRunner.addArgs(getAdditionalSourceFiles().stream()
+                .map(s -> s.replaceAll("\\..*", "." + getObjectFileExtension()))
+                .distinct()
+                .map(sourceFile -> gvmAppPath.resolve(sourceFile).toString())
+                .collect(Collectors.toList()));
 
-        linkBuilder.command().add(objectFile.toString());
-        linkBuilder.command().addAll(getTargetSpecificObjectFiles());
+        linkRunner.addArg(objectFile.toString());
+        linkRunner.addArgs(getTargetSpecificObjectFiles());
 
-        getNativeCodeList().stream()
+        linkRunner.addArgs(getNativeCodeList().stream()
             .map(s -> s.replaceAll("\\..*", "." + getObjectFileExtension()))
             .distinct()
-            .forEach(sourceFile -> linkBuilder.command().add(gvmAppPath.resolve(sourceFile).toString()));
+            .map(sourceFile -> gvmAppPath.resolve(sourceFile).toString())
+            .collect(Collectors.toList()));
 
-        getTargetSpecificLinkLibraries().forEach(linkBuilder.command()::add);
-        linkBuilder.command().addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW()));
+        linkRunner.addArgs(getTargetSpecificLinkLibraries());
+        linkRunner.addArgs(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(),
+                projectConfiguration.isUsePrismSW()));
 
-        getTargetSpecificLinkOutputFlags().forEach(linkBuilder.command()::add);
+        linkRunner.addArgs(getTargetSpecificLinkOutputFlags());
 
-        addGraalStaticLibsPathToLinkProcess(linkBuilder);
-        addJavaStaticLibsPathToLinkProcess(linkBuilder);
+        linkRunner.addArg(getGraalStaticLibsPath());
+        linkRunner.addArg(getJavaStaticLibsPath());
         if (projectConfiguration.isUseJavaFX()) {
-            addJavaFXStaticLibsPathToLinkProcess(linkBuilder);
+            linkRunner.addArg(getJavaFXStaticLibsPath());
         }
-        linkBuilder.command().addAll(getNativeLibsLinkFlags());
-
-        linkBuilder.redirectErrorStream(true);
-        String cmds = String.join(" ", linkBuilder.command());
-        Logger.logDebug("link command: "+cmds);
-        Process compileProcess = linkBuilder.start();
-        System.err.println("started linking");
-        int result = compileProcess.waitFor();
-        System.err.println("done linking");
-        if (result != 0) {
-            System.err.println("Linking failed. Details from linking below:");
-            System.err.println("Command was: "+cmds);
-            printFromInputStream(compileProcess.getInputStream());
-            return false;
-        }
-        return true;
+        linkRunner.addArgs(getNativeLibsLinkFlags());
+        linkRunner.setInfo(true);
+        linkRunner.setLogToFile(true);
+        int result = linkRunner.runProcess("link");
+        return result == 0;
     }
 
     /**
@@ -269,11 +253,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         ProcessRunner runner = new ProcessRunner(app.toString());
         runner.setInfo(true);
+        runner.setLogToFile(true);
         if (runner.runProcess("run " + appName) == 0) {
             return runner.getLastResponse();
-        } else {
-            System.err.println("Run process failed. Command line was: " + runner.getCmd() + "\nOutput was:");
-            runner.getResponses().forEach(System.err::println);
         }
         return null;
     }
@@ -295,15 +277,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (!Files.exists(app)) {
             throw new IOException("Application not found at path " + app.toString());
         }
-        Process runProcess = startAppProcess(appPath, appName);
-        InputStream is = runProcess.getInputStream();
-        asynPrintFromInputStream(is);
-        int result = runProcess.waitFor();
-        if (result != 0) {
-            printFromInputStream(is);
-            return false;
-        }
-        return true;
+        ProcessRunner runProcess = new ProcessRunner(appPath.resolve(appName).toString());
+        int result = runProcess.runProcess("run until end");
+        return result == 0;
     }
 
     @Override
@@ -320,18 +296,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path workDir = paths.getGvmPath().resolve(appName);
         Files.createDirectories(workDir);
 
-        ProcessBuilder processBuilder = new ProcessBuilder(getCompiler());
-        processBuilder.command().add("-c");
+        ProcessRunner processRunner = new ProcessRunner(getCompiler());
+        processRunner.addArg("-c");
         if (projectConfiguration.isVerbose()) {
-            processBuilder.command().add("-DGVM_VERBOSE");
+            processRunner.addArg("-DGVM_VERBOSE");
         }
-        processBuilder.command().addAll(getTargetSpecificCCompileFlags());
+        processRunner.addArgs(getTargetSpecificCCompileFlags());
 
-        processBuilder.command().add("-I" + workDir.toString());
+        processRunner.addArg("-I" + workDir.toString());
 
-        for( String fileName: getAdditionalSourceFiles() ) {
+        for (String fileName : getAdditionalSourceFiles()) {
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
-            processBuilder.command().add(fileName);
+            processRunner.addArg(fileName);
         }
         
         Path nativeCodeDir = paths.getNativeCodePath();
@@ -339,26 +315,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             FileOps.copyDirectory(nativeCodeDir, workDir);
         }
 
-        for( String fileName: getNativeCodeList() ) {
-            processBuilder.command().add(fileName);
-        }
+        processRunner.addArgs(getNativeCodeList());
 
-        for( String fileName: getAdditionalHeaderFiles() ) {
+        for (String fileName : getAdditionalHeaderFiles()) {
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
         }
   
-        processBuilder.directory(workDir.toFile());
-        String cmds = String.join(" ", processBuilder.command());
-        processBuilder.redirectErrorStream(true);
-        Process p = processBuilder.start();
-        int result = p.waitFor();
-        if (result != 0) {
-            System.err.println("Compilation of additional sources failed with result = " + result);
-            System.err.println("Original command was "+cmds);
-            printFromInputStream(p.getInputStream());
-            return false;
-        } // we need more checks (e.g. do launcher.o and thread.o exist?)
-        return true;
+        int result = processRunner.runProcess("compile additional sources", workDir.toFile());
+        // we need more checks (e.g. do launcher.o and thread.o exist?)
+        return result == 0;
     }
 
     private String getJniPlatform(Triplet target) {
@@ -416,38 +381,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .resolve(target.getOsArch2());
     }
 
-    private void addGraalStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) {
-        linkBuilder.command().add(getLinkLibraryPathOption() + getCLibPath());
+    private String getGraalStaticLibsPath() {
+        return getLinkLibraryPathOption() + getCLibPath();
     }
 
-    private void addJavaStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
+    private String getJavaStaticLibsPath() throws IOException {
         Path javaSDKPath = fileDeps.getJavaSDKLibsPath(useGraalVMJavaStaticLibraries());
-        linkBuilder.command().add(getLinkLibraryPathOption() + javaSDKPath);
+        return getLinkLibraryPathOption() + javaSDKPath;
     }
 
-    private void addJavaFXStaticLibsPathToLinkProcess(ProcessBuilder linkBuilder) throws IOException {
+    private String getJavaFXStaticLibsPath() throws IOException {
         Path javafxSDKPath = fileDeps.getJavaFXSDKLibsPath();
-        linkBuilder.command().add(getLinkLibraryPathOption() + javafxSDKPath);
-    }
-
-    private void asynPrintFromInputStream (InputStream inputStream) {
-        Thread t = new Thread(() -> {
-            try {
-                printFromInputStream(inputStream);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        t.start();
-    }
-
-    private void printFromInputStream(InputStream inputStream) throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-        String l = br.readLine();
-        while (l != null) {
-            System.err.println(l);
-            l = br.readLine();
-        }
+        return getLinkLibraryPathOption() + javafxSDKPath;
     }
 
     private String getNativeImagePath() {
@@ -455,12 +400,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .resolve("bin")
                 .resolve(getNativeImageCommand())
                 .toString();
-    }
-
-    private Process startAppProcess( Path appPath, String appName ) throws IOException {
-        ProcessBuilder runBuilder = new ProcessBuilder(appPath.resolve(appName).toString());
-        runBuilder.redirectErrorStream(true);
-        return runBuilder.start();
     }
 
     private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
