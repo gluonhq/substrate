@@ -70,7 +70,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private static final String URL_CLIBS_ZIP = "https://download2.gluonhq.com/substrate/clibs/${osarch}.zip";
     private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "frag", "vert", "fxml", "css", "gls", "ttf", "xml",
-            "png", "jpg", "jpeg", "gif", "bmp",
+            "png", "jpg", "jpeg", "gif", "bmp", "raw",
             "license", "json");
     private static final List<String> BUNDLES_LIST = new ArrayList<>(Arrays.asList(
             "com/sun/javafx/scene/control/skin/resources/controls",
