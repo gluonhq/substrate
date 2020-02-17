@@ -418,7 +418,7 @@ public class FileOps {
              FileChannel fileChannel = fileOutputStream.getChannel()) {
             fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
         } catch (IOException e) {
-            throw new IOException("Error downloading from " + fileUrl + "into " + filePath + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
+            throw new IOException("Error downloading from " + fileUrl + " into " + filePath + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
         }
     }
 
