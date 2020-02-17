@@ -27,12 +27,8 @@
  */
 package com.gluonhq.substrate.target;
 
-import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.model.Triplet;
-import com.gluonhq.substrate.util.Logger;
-import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,49 +38,12 @@ abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
 
     PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
-
-        if (new Triplet(Constants.Profile.MACOS).equals(Triplet.fromCurrentOS())) {
-            checkGraalVMPermissions(configuration.getGraalPath().toString());
-        }
     }
 
     @Override
     void checkPlatformSpecificClibs(Path clibPath) throws IOException {
         Path libjvmPath = clibPath.resolve("libjvm.a");
         if (!Files.exists(libjvmPath)) throw new IOException("Missing library libjvm.a not in linkpath "+clibPath);
-    }
-
-    /**
-     * Prevent undesired dialogs and build failures when running on MacOs 1.15.0+.
-     *
-     * By default, the OS prevents the access to any non-notarized executable if it
-     * has been downloaded.
-     *
-     * This method will check if the GraalVM folder is under quarantine, and if that
-     * is the case, it will remove it recursively from all the files, without the
-     * need of deactivating GateKeeper.
-     *
-     * See https://github.com/oracle/graal/issues/1724
-     *
-     * @param graalvmHome the path to GraalVM
-     */
-    private void checkGraalVMPermissions(String graalvmHome) {
-        if (graalvmHome == null || graalvmHome.isEmpty()) {
-            return;
-        }
-        Logger.logDebug("Checking execution permissions for " + graalvmHome);
-        try {
-            String response = ProcessRunner.runProcessForSingleOutput("check attr", "xattr", "-p", "com.apple.quarantine", graalvmHome);
-            if (response != null && !response.contains("No such xattr")) {
-                ProcessRunner runner = new ProcessRunner("xattr", "-r", "-d", "com.apple.quarantine", graalvmHome);
-                if (runner.runProcess("remove quarantine") != 0) {
-                    throw new IOException("Error removing quarantine from " + graalvmHome);
-                }
-                Logger.logDebug("Quarantine attributes removed successfully");
-            }
-        } catch (IOException | InterruptedException e) {
-            Logger.logFatal(e,"Error checking execution permissions for " + graalvmHome);
-        }
     }
 
 }
