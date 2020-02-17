@@ -116,12 +116,16 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     public boolean link() throws IOException, InterruptedException {
-        // we override compile as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
+        // we override link as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
 
-        super.link();
+        boolean result = super.link();
+
+        if (!result) {
+            return false;
+        }
 
         Path sdkPath = Paths.get(sdk);
         Path buildToolsPath = sdkPath.resolve("build-tools").resolve(findLatestBuildTool(sdkPath));
