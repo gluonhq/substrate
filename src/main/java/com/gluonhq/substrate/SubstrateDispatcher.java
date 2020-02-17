@@ -159,7 +159,7 @@ public class SubstrateDispatcher {
                 "Error: Target Configuration was not found for " + targetTriplet);
     }
 
-    private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
+    private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) throws IOException {
         switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
             case Constants.OS_DARWIN : return new DarwinTargetConfiguration(paths, config);
