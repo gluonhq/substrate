@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,106 +30,10 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+abstract class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
-public class DarwinTargetConfiguration extends PosixTargetConfiguration {
-
-    private static final List<String> javaDarwinLibs = Arrays.asList("pthread", "z", "dl", "stdc++");
-    private static final List<String> javaDarwinFrameworks = Arrays.asList("Foundation", "AppKit");
-
-    private static final List<String> javaFxDarwinLibs = Arrays.asList("objc");
-    private static final List<String> javaFxDarwinFrameworks = Arrays.asList(
-            "ApplicationServices", "OpenGL", "QuartzCore", "Security"
-    );
-
-    private static final List<String> staticJavaLibs = Arrays.asList(
-            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet"
-    );
-    private static final List<String> staticJvmLibs = Arrays.asList(
-            "ffi", "jvm", "strictmath", "libchelper"
-    );
-    private static final List<String> staticJavaFxLibs = Arrays.asList(
-            "glass", "javafx_font", "javafx_iio", "prism_es2"
-    );
-
-    public DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
+    DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
     }
 
-    @Override
-    String getAdditionalSourceFileLocation() {
-        return "/native/macosx/";
-    }
-
-    @Override
-    List<String> getAdditionalSourceFiles() {
-        return Arrays.asList("AppDelegate.m", "launcher.c");
-    }
-
-    @Override
-    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        List<String> linkFlags = new ArrayList<>();
-
-        linkFlags.addAll(asListOfLibraryLinkFlags(javaDarwinLibs));
-        if (useJavaFX) {
-            linkFlags.addAll(asListOfLibraryLinkFlags(javaFxDarwinLibs));
-        }
-
-        linkFlags.addAll(asListOfFrameworkLinkFlags(javaDarwinFrameworks));
-        if (useJavaFX) {
-            linkFlags.addAll(asListOfFrameworkLinkFlags(javaFxDarwinFrameworks));
-        }
-
-        if (useJavaFX) {
-            List<String> javafxLibs = new ArrayList<>(staticJavaFxLibs);
-            if (usePrismSW) {
-                javafxLibs.add("prism_sw");
-            }
-
-            String staticLibPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
-            linkFlags.addAll(asListOfStaticLibraryLinkFlags(staticLibPath, javafxLibs));
-        }
-
-        return linkFlags;
-    }
-
-    @Override
-    List<String> getTargetSpecificLinkLibraries() {
-        String staticJavaLibPath = projectConfiguration.getGraalPath().resolve("lib") + "/";
-        String staticJvmLibPath = getCLibPath() + "/";
-
-        List<String> targetLibraries = new ArrayList<>();
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJavaLibPath, staticJavaLibs));
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJvmLibPath, staticJvmLibs));
-        return targetLibraries;
-    }
-
-    @Override
-    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
-        return libs.stream()
-                .map(s -> "-Wl,-force_load," + libPath.resolve(s))
-                .collect(Collectors.toList());
-    }
-
-    private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
-        return libraries.stream()
-                .map(library -> "-l" + library)
-                .collect(Collectors.toList());
-    }
-
-    private List<String> asListOfStaticLibraryLinkFlags(String staticLibPath, List<String> libraries) {
-        return libraries.stream()
-                .map(library -> staticLibPath + "lib" + library + ".a")
-                .collect(Collectors.toList());
-    }
-
-    private List<String> asListOfFrameworkLinkFlags(List<String> frameworks) {
-        return frameworks.stream()
-                .map(framework -> "-Wl,-framework," + framework)
-                .collect(Collectors.toList());
-    }
 }

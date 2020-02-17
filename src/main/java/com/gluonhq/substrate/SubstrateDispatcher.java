@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.target.AndroidTargetConfiguration;
-import com.gluonhq.substrate.target.DarwinTargetConfiguration;
+import com.gluonhq.substrate.target.MacOSTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
@@ -162,7 +162,7 @@ public class SubstrateDispatcher {
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) throws IOException {
         switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
-            case Constants.OS_DARWIN : return new DarwinTargetConfiguration(paths, config);
+            case Constants.OS_DARWIN : return new MacOSTargetConfiguration(paths, config);
             case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config);
             case Constants.OS_IOS    : return new IosTargetConfiguration(paths, config);
             case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config);
