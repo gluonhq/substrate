@@ -67,7 +67,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
             "LLVMDirectives.cap", "PosixDirectives.cap"};
     private final String capLocation= "/native/android/cap/";
-
+    private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
+            "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
         super(paths,configuration);
@@ -161,6 +162,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
         FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
 
+        // resources
+       for (String iconFolder : iconFolders) {
+            Path assetPath = dalvikPath.resolve("res").resolve(iconFolder);
+            Files.createDirectories(assetPath);
+            FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
+        }
+
         int processResult;
 
         ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
@@ -169,8 +177,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (processResult != 0)
             return false;
 
-        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package", "-f", "-m", "-F", unalignedApk,
-        "-M", androidManifestPath.toString(), "-I", androidJar);
+        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
+                "-f", "-m", "-F", unalignedApk,
+                "-M", androidManifestPath.toString(),
+                "-S", dalvikPath.resolve("res").toString(),
+                "-I", androidJar);
         processResult = aaptpackage.runProcess("AAPT-package");
         if (processResult != 0)
             return false;
