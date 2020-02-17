@@ -67,8 +67,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
             "LLVMDirectives.cap", "PosixDirectives.cap"};
     private final String capLocation= "/native/android/cap/";
-    private final List<String> assets = Arrays.asList("mipmap-hdpi",
-            "mipmap-ldpi", "mipmap-mdpi", "mipmap-xdpi", "mipmap-xxdpi", "mipmap-xxxdpi");
+    private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
+            "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
         super(paths,configuration);
@@ -159,10 +159,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
 
         // resources
-       for (String asset : assets) {
-            Path assetPath = dalvikPath.resolve("res").resolve(asset);
+       for (String iconFolder : iconFolders) {
+            Path assetPath = dalvikPath.resolve("res").resolve(iconFolder);
             Files.createDirectories(assetPath);
-            FileOps.copyResource("/native/android/assets/res/" + asset + "/lc_launcher.png", assetPath.resolve("lc_launcher.png"));
+            FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
         }
 
         int processResult;
@@ -173,8 +173,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (processResult != 0)
             return false;
 
-        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package", "-f", "-m", "-F", unalignedApk,
-        "-M", androidManifestPath.toString(), "-I", androidJar);
+        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
+                "-f", "-m", "-F", unalignedApk,
+                "-M", androidManifestPath.toString(),
+                "-S", dalvikPath.resolve("res").toString(),
+                "-I", androidJar);
         processResult = aaptpackage.runProcess("AAPT-package");
         if (processResult != 0)
             return false;
