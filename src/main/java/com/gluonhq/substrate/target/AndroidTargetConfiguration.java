@@ -67,7 +67,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
             "LLVMDirectives.cap", "PosixDirectives.cap"};
     private final String capLocation= "/native/android/cap/";
-
+    private final List<String> assets = Arrays.asList("mipmap-hdpi",
+            "mipmap-ldpi", "mipmap-mdpi", "mipmap-xdpi", "mipmap-xxdpi", "mipmap-xxxdpi");
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
         super(paths,configuration);
@@ -156,6 +157,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
         FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
         FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
+
+        // resources
+       for (String asset : assets) {
+            Path assetPath = dalvikPath.resolve("res").resolve(asset);
+            Files.createDirectories(assetPath);
+            FileOps.copyResource("/native/android/assets/res/" + asset + "/lc_launcher.png", assetPath.resolve("lc_launcher.png"));
+        }
 
         int processResult;
 
