@@ -153,7 +153,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Logger.logInfo("Default Android resources generated in " + androidPath.toString() + ".\n" +
                     "Consider copying them to " + rootPath.toString() + " before performing any modification");
         } else {
-            // use manifest from src/android
+            // use manifest and assets from src/android
             androidPath = rootPath;
         }
 
