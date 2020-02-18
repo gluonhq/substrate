@@ -179,7 +179,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Files.createDirectories(dalvikBinPath);
         Files.createDirectories(dalvikLibPath);
         Files.createDirectories(dalvikLibArm64Path);
-        Path androidManifestPath = dalvikPath.resolve("AndroidManifest.xml");
+        Path androidManifestDalvikPath = dalvikPath.resolve(Constants.MANIFEST_FILE);
         Path dalvikActivityPackage = dalvikClassPath.resolve("com/gluonhq/helloandroid");
         Path dalvikKeyCodePackage = dalvikClassPath.resolve("javafx/scene/input");
         FileOps.copyResource("/native/android/dalvik/MainActivity.class", dalvikActivityPackage.resolve("MainActivity.class"));
@@ -187,11 +187,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.copyResource("/native/android/dalvik/MainActivity$InternalSurfaceView.class", dalvikActivityPackage.resolve("MainActivity$InternalSurfaceView.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode.class", dalvikKeyCodePackage.resolve("KeyCode.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode$KeyCodeClass.class", dalvikKeyCodePackage.resolve("KeyCode$KeyCodeClass.class"));
+
         Path androidManifest = androidPath.resolve(Constants.MANIFEST_FILE);
         if (!Files.exists(androidManifest)) {
             throw new IOException("File " + androidManifest.toString() + " not found");
         }
-        FileOps.copyResource(androidManifest.toString(), dalvikPath.resolve(Constants.MANIFEST_FILE));
+        FileOps.copyFile(androidManifest, androidManifestDalvikPath);
         for (String iconFolder : iconFolders) {
             Path iconPath = androidPath.resolve("assets").resolve("res").resolve(iconFolder).resolve("ic_launcher.png");
             if (!Files.exists(iconPath)) {
@@ -199,7 +200,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             }
             Path assetPath = dalvikPath.resolve("res").resolve(iconFolder);
             Files.createDirectories(assetPath);
-            FileOps.copyResource(iconPath.toString(), assetPath.resolve("ic_launcher.png"));
+            FileOps.copyFile(iconPath, assetPath.resolve("ic_launcher.png"));
         }
 
         int processResult;
@@ -212,7 +213,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
                 "-f", "-m", "-F", unalignedApk,
-                "-M", androidManifestPath.toString(),
+                "-M", androidManifestDalvikPath.toString(),
                 "-S", dalvikPath.resolve("res").toString(),
                 "-I", androidJar);
         processResult = aaptpackage.runProcess("AAPT-package");
