@@ -434,12 +434,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
      * @throws IOException
      */
     private Path prepareAndroidResources() throws IOException {
-        String sourceOS = projectConfiguration.getTargetTriplet().getOs();
-        Path rootPath = paths.getSourcePath().resolve(sourceOS);
-        Path userManifest = rootPath.resolve(Constants.MANIFEST_FILE);
+        String targetOS = projectConfiguration.getTargetTriplet().getOs();
+        Path targetSourcePath = paths.getSourcePath().resolve(targetOS);
+        Path userManifest = targetSourcePath.resolve(Constants.MANIFEST_FILE);
         if (!Files.exists(userManifest)) {
             // copy manifest and assets to gensrc/android
-            Path androidPath = paths.getGenPath().resolve(sourceOS);
+            Path androidPath = paths.getGenPath().resolve(targetOS);
             Path genManifest = androidPath.resolve(Constants.MANIFEST_FILE);
             Logger.logDebug("Copy " + Constants.MANIFEST_FILE + " to " + genManifest.toString());
             FileOps.copyResource("/native/android/AndroidManifest.xml", genManifest);
@@ -454,11 +454,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
             }
             Logger.logInfo("Default Android resources generated in " + androidPath.toString() + ".\n" +
-                    "Consider copying them to " + rootPath.toString() + " before performing any modification");
+                    "Consider copying them to " + targetSourcePath.toString() + " before performing any modification");
             return androidPath;
         }
         // use manifest and assets from src/android
-        return rootPath;
+        return targetSourcePath;
     }
 
     private static class BuildToolNotFoundException extends IOException {
