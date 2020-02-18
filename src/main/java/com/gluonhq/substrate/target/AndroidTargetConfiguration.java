@@ -32,6 +32,7 @@ import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
 
@@ -128,6 +129,34 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             return false;
         }
 
+        // Prepare files
+        String sourceOS = projectConfiguration.getTargetTriplet().getOs();
+        Path rootPath = paths.getSourcePath().resolve(sourceOS);
+        Path userManifest = rootPath.resolve(Constants.MANIFEST_FILE);
+        Path androidPath;
+        if (!Files.exists(userManifest)) {
+            // copy manifest and assets to gensrc/android
+            androidPath = paths.getGenPath().resolve(sourceOS);
+            Path genManifest = androidPath.resolve(Constants.MANIFEST_FILE);
+            Logger.logDebug("Copy " + Constants.MANIFEST_FILE + " to " + genManifest.toString());
+            FileOps.copyResource("/native/android/AndroidManifest.xml", genManifest);
+            FileOps.replaceInFile(genManifest, "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
+            FileOps.replaceInFile(genManifest, "A HelloGraal", projectConfiguration.getAppName());
+
+            Path androidResources = androidPath.resolve("assets").resolve("res");
+            Logger.logDebug("Copy assets to " + androidResources.toString());
+            for (String iconFolder : iconFolders) {
+                Path assetPath = androidResources.resolve(iconFolder);
+                Files.createDirectories(assetPath);
+                FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
+            }
+            Logger.logInfo("Default Android resources generated in " + androidPath.toString() + ".\n" +
+                    "Consider copying them to " + rootPath.toString() + " before performing any modification");
+        } else {
+            // use manifest from src/android
+            androidPath = rootPath;
+        }
+
         Path sdkPath = Paths.get(sdk);
         Path buildToolsPath = sdkPath.resolve("build-tools").resolve(findLatestBuildTool(sdkPath));
 
@@ -158,15 +187,19 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.copyResource("/native/android/dalvik/MainActivity$InternalSurfaceView.class", dalvikActivityPackage.resolve("MainActivity$InternalSurfaceView.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode.class", dalvikKeyCodePackage.resolve("KeyCode.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode$KeyCodeClass.class", dalvikKeyCodePackage.resolve("KeyCode$KeyCodeClass.class"));
-        FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
-        FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
-        FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
-
-        // resources
-       for (String iconFolder : iconFolders) {
+        Path androidManifest = androidPath.resolve(Constants.MANIFEST_FILE);
+        if (!Files.exists(androidManifest)) {
+            throw new IOException("File " + androidManifest.toString() + " not found");
+        }
+        FileOps.copyResource(androidManifest.toString(), dalvikPath.resolve(Constants.MANIFEST_FILE));
+        for (String iconFolder : iconFolders) {
+            Path iconPath = androidPath.resolve("assets").resolve("res").resolve(iconFolder).resolve("ic_launcher.png");
+            if (!Files.exists(iconPath)) {
+                throw new IOException("File " + iconPath.toString() + " not found");
+            }
             Path assetPath = dalvikPath.resolve("res").resolve(iconFolder);
             Files.createDirectories(assetPath);
-            FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
+            FileOps.copyResource(iconPath.toString(), assetPath.resolve("ic_launcher.png"));
         }
 
         int processResult;
