@@ -143,7 +143,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             FileOps.replaceInFile(genManifest, "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
             FileOps.replaceInFile(genManifest, "A HelloGraal", projectConfiguration.getAppName());
 
-            Path androidResources = androidPath.resolve("assets").resolve("res");
+            Path androidResources = androidPath.resolve("res");
             Logger.logDebug("Copy assets to " + androidResources.toString());
             for (String iconFolder : iconFolders) {
                 Path assetPath = androidResources.resolve(iconFolder);
@@ -194,7 +194,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
         FileOps.copyFile(androidManifest, androidManifestDalvikPath);
         for (String iconFolder : iconFolders) {
-            Path iconPath = androidPath.resolve("assets").resolve("res").resolve(iconFolder).resolve("ic_launcher.png");
+            Path iconPath = androidPath.resolve("res").resolve(iconFolder).resolve("ic_launcher.png");
             if (!Files.exists(iconPath)) {
                 throw new IOException("File " + iconPath.toString() + " not found");
             }
