@@ -29,6 +29,7 @@ matrix:
             - *global_deps
             - at-spi2-core
             - build-essential
+            - libgl-dev
             - libgtk-3-dev
             - libxtst-dev
             - libavcodec-dev

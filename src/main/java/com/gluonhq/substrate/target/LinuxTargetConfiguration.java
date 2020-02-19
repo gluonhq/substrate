@@ -32,7 +32,6 @@ import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
-import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
 
@@ -59,18 +58,12 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "java", "nio", "zip", "net", "prefs", "jvm", "strictmath", "j2pkcs11", "sunec", "extnet", "libchelper"
     );
 
-    private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
+    private static final List<String> linuxfxlibs = List.of(
+            "-Wl,--whole-archive",
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
             "-ljfxmedia", "-lfxplugins", "-lavplugin",
-            "-Wl,--no-whole-archive", "-lGL", "-lX11","-lgtk-3", "-lgdk-3",
-            "-lpangocairo-1.0", "-lpango-1.0", "-latk-1.0",
-            "-lcairo-gobject", "-lcairo", "-lgdk_pixbuf-2.0",
-            "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype",
-            "-lpangoft2-1.0", "-lgstreamer-lite",
-            "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst",
-            "-lavcodec", "-lavformat", "-lavutil",
-            "-lasound", "-lm", "-lgmodule-2.0"
+            "-Wl,--no-whole-archive"
     );
 
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
@@ -120,22 +113,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         answer.add("-rdynamic");
         if (!useJavaFX) return answer;
 
-        ProcessBuilder process = new ProcessBuilder("pkg-config", "--libs", "gtk+-3.0", "gthread-2.0", "xtst");
-        process.redirectErrorStream(true);
-        try {
-            Process start = process.start();
-            InputStream is = start.getInputStream();
-            start.waitFor();
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            String line;
-            while ((line = br.readLine()) != null) {
-                Logger.logInfo("[SUB] " + line);
-            }
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-
         answer.addAll(linuxfxlibs);
+        answer.addAll(new LinuxLinkerFlags().getLinkerFlags());
         if (usePrismSW) {
             answer.addAll(linuxfxSWlibs);
         }
@@ -271,6 +250,4 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         }
         return "aarch64-linux-gnu-gcc";
     }
-
-
 }
