@@ -32,6 +32,7 @@ import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
 
@@ -220,8 +221,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         createDevelopKeystore();
 
-        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks", 
-            paths.getGvmPath().resolve("debug.keystore").toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
+        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks",
+                Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE).toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
         processResult = sign.runProcess("sign");
         
         return processResult == 0;
@@ -381,10 +382,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private void createDevelopKeystore() throws IOException, InterruptedException {
-        Path keystore = paths.getGvmPath().resolve("debug.keystore");
+        Path keystore = Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE);
         
         if (Files.exists(keystore)) {
-            System.err.println("ks exists, skipping");
+            Logger.logDebug("The " + Constants.ANDROID_KEYSTORE + " file already exists, skipping");
             return;
         }
 
@@ -396,7 +397,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (processResult != 0)
             throw new IllegalArgumentException("fatal, can not create a keystore");
 
-        System.err.println("done creating ks");
+        Logger.logDebug("Done creating " + Constants.ANDROID_KEYSTORE);
     }
 
     private String findLatestBuildTool(Path sdkPath) throws IOException {
