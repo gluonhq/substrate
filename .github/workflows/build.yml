@@ -6,6 +6,7 @@ jobs:
     name: Build
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
@@ -16,6 +17,7 @@ jobs:
       - name: Install packages (MacOS)
         if: runner.os == 'macOS'
         run: |
+          brew install --HEAD libusbmuxd
           mkdir -p $HOME/llvm && cd $HOME/llvm
           wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
           tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $GITHUB_WORKSPACE
