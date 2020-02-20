@@ -153,7 +153,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Files.createDirectories(dalvikBinPath);
         Files.createDirectories(dalvikLibPath);
         Files.createDirectories(dalvikLibArm64Path);
-        Path androidManifestDalvikPath = dalvikPath.resolve(Constants.MANIFEST_FILE);
+        Path androidManifestPath = dalvikPath.resolve(Constants.MANIFEST_FILE);
         Path dalvikActivityPackage = dalvikClassPath.resolve("com/gluonhq/helloandroid");
         Path dalvikKeyCodePackage = dalvikClassPath.resolve("javafx/scene/input");
         FileOps.copyResource("/native/android/dalvik/MainActivity.class", dalvikActivityPackage.resolve("MainActivity.class"));
@@ -166,7 +166,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (!Files.exists(androidManifest)) {
             throw new IOException("File " + androidManifest.toString() + " not found");
         }
-        FileOps.copyFile(androidManifest, androidManifestDalvikPath);
+        FileOps.copyFile(androidManifest, androidManifestPath);
         for (String iconFolder : iconFolders) {
             Path iconPath = androidPath.resolve("res").resolve(iconFolder).resolve("ic_launcher.png");
             if (!Files.exists(iconPath)) {
@@ -187,7 +187,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
                 "-f", "-m", "-F", unalignedApk,
-                "-M", androidManifestDalvikPath.toString(),
+                "-M", androidManifestPath.toString(),
                 "-S", dalvikPath.resolve("res").toString(),
                 "-I", androidJar);
         processResult = aaptpackage.runProcess("AAPT-package");
