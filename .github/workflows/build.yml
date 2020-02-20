@@ -24,6 +24,7 @@ jobs:
           wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
           tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $GITHUB_WORKSPACE
           export PATH="$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
+          echo $PATH
 
       - name: Install GraalVM (Linux)
         if: runner.os == 'Linux'
@@ -60,7 +61,9 @@ jobs:
 
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
-        run: ./gradlew -i test
+        run: |
+          echo $PATH
+          ./gradlew -i test
 
       - name: Build project
         run: ./gradlew -i build -x test
