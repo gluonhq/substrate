@@ -9,6 +9,39 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest, macos-latest]
     steps:
+      - name: Install packages
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]
+          then
+              sudo apt-get install at-spi2-core build-essential libgtk-3-dev libxtst-dev libavcodec-dev libavformat-dev libasound2-dev
+          elfi [ "$RUNNER_OS" == "macOS" ]
+          then
+              mkdir -p $HOME/llvm && cd $HOME/llvm
+              wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
+              tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $TRAVIS_BUILD_DIR
+              export PATH="$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
+          fi
+        shell: bash
+
+      - name: Install GraalVM
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]
+          then
+              mkdir -p $HOME/graalvm && cd $HOME/graalvm
+              wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0.2/graalvm-ce-java11-linux-amd64-19.3.0.2.tar.gz
+              tar xf graalvm-ce-java11-linux-amd64-19.3.0.2.tar.gz && cd $GITHUB_WORKSPACE
+              export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0.2
+              ${GRAALVM_HOME}/bin/gu install native-image
+          elfi [ "$RUNNER_OS" == "macOS" ]
+          then
+              mkdir -p $HOME/graalvm && cd $HOME/graalvm
+              wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0.2/graalvm-ce-java11-darwin-amd64-19.3.0.2.tar.gz
+              tar xf graalvm-ce-java11-darwin-amd64-19.3.0.2.tar.gz && cd $GITHUB_WORKSPACE
+              export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0.2/Contents/Home
+              ${GRAALVM_HOME}/bin/gu install native-image
+          fi
+        shell: bash
+
       - name: Checkout
         uses: actions/checkout@v2
 
