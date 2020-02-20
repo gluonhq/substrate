@@ -69,6 +69,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             "ARKit", "AVKit", "SceneKit", "StoreKit"
     );
 
+    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
+            "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
+            "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
+            "LLVMDirectives.cap", "PosixDirectives.cap"};
+    private final String capLocation= "/native/ios/cap/";
+
     public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
@@ -117,6 +123,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         answer.addAll(Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
                 "-Dllvm.bin.dir=" + internalLlcPath,
+                "-H:+UseCAPCache",
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getArch()));
         if (!graalvm22) {
@@ -302,4 +310,20 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     private String lipoInfo(Path path) throws IOException, InterruptedException {
         return ProcessRunner.runProcessForSingleOutput("lipo", "lipo", "-info", path.toFile().getAbsolutePath());
     }
+
+    /*
+     * Copies the .cap files from the jar resource and store them in
+     * a directory. Return that directory
+     */
+    private Path getCapCacheDir() throws IOException {
+        Path capPath = paths.getGvmPath().resolve("capcache");
+        if (!Files.exists(capPath)) {
+            Files.createDirectory(capPath);
+        }
+        for (String cap : capFiles) {
+            FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
+        }
+        return capPath;
+    }
+
 }
