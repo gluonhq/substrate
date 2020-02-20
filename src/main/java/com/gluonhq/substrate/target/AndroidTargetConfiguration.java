@@ -228,8 +228,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         createDevelopKeystore();
 
-        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks", 
-            paths.getGvmPath().resolve("debug.keystore").toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
+        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks",
+                Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE).toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
         processResult = sign.runProcess("sign");
         
         return processResult == 0;
@@ -269,7 +269,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 clearLog.runProcess("clearLog");
 
                 ProcessRunner log = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalGluon:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
+                "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalActivity:V", "GraalGluon:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
                 log.setInfo(true);
                 log.runProcess("log");
             } catch (IOException | InterruptedException e) { 
@@ -389,10 +389,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private void createDevelopKeystore() throws IOException, InterruptedException {
-        Path keystore = paths.getGvmPath().resolve("debug.keystore");
+        Path keystore = Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE);
         
         if (Files.exists(keystore)) {
-            System.err.println("ks exists, skipping");
+            Logger.logDebug("The " + Constants.ANDROID_KEYSTORE + " file already exists, skipping");
             return;
         }
 
@@ -404,7 +404,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (processResult != 0)
             throw new IllegalArgumentException("fatal, can not create a keystore");
 
-        System.err.println("done creating ks");
+        Logger.logDebug("Done creating " + Constants.ANDROID_KEYSTORE);
     }
 
     private String findLatestBuildTool(Path sdkPath) throws IOException {

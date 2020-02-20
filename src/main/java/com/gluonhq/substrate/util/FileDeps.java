@@ -441,7 +441,10 @@ public final class FileDeps {
 
         Logger.logDebug("Running sdkmanager with: " + sdkmanager.getCmd());
         Logger.logDebug("You might be prompted to accept EULA.");
-        sdkmanager.runProcess("sdkmanager");
+        int result = sdkmanager.runProcess("sdkmanager");
+        if (result != 0) {
+            throw new IOException("Could not run the Android sdk manager");
+        }
     }
 
     /**
