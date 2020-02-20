@@ -12,12 +12,14 @@ jobs:
     steps:
       - name: Install packages (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get install at-spi2-core build-essential libgtk-3-dev libxtst-dev libavcodec-dev libavformat-dev libasound2-dev
+        run: |
+          sudo apt-get install at-spi2-core build-essential libgtk-3-dev libxtst-dev libavcodec-dev libavformat-dev libasound2-dev
+          sudo apt-get install xvfb
 
       - name: Install packages (MacOS)
         if: runner.os == 'macOS'
         run: |
-          brew install --HEAD libusbmuxd
+          brew install --HEAD libusbmuxd libimobiledevice
           mkdir -p $HOME/llvm && cd $HOME/llvm
           wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
           tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $GITHUB_WORKSPACE
@@ -32,7 +34,7 @@ jobs:
           export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0.2
           ${GRAALVM_HOME}/bin/gu install native-image
 
-      - name: Install packages (MacOS)
+      - name: Install GraalVM (MacOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
@@ -52,5 +54,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Run Tests (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum ./gradlew -i test
+
+      - name: Run Tests (MacOS)
+        if: runner.os == 'macOS'
+        run: ./gradlew -i test
+
       - name: Build project
-        run: ./gradlew -i clean build
+        run: ./gradlew -i build -x test
