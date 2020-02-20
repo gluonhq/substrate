@@ -135,37 +135,35 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         String androidJar = sdkPath.resolve("platforms").resolve("android-27").resolve("android.jar").toString();
         String aaptCmd = buildToolsPath.resolve("aapt").toString();
 
-        Path dalvikPath = paths.getGvmPath().resolve("dalvik");
-        Files.createDirectories(dalvikPath);
-        Path dalvikSrcPath = dalvikPath.resolve("src");
-        Path dalvikClassPath = dalvikPath.resolve("class");
-        Path dalvikBinPath = dalvikPath.resolve("bin");
-        Path dalvikLibPath = dalvikPath.resolve("lib");
-        Path dalvikLibArm64Path = dalvikLibPath.resolve("arm64-v8a");
+        Path apkPath = paths.getGvmPath().resolve(Constants.APK_PATH);
+        Files.createDirectories(apkPath);
+        Path apkClassPath = apkPath.resolve("class");
+        Path apkBinPath = apkPath.resolve("bin");
+        Path apkLibPath = apkPath.resolve("lib");
+        Path apkLibArm64Path = apkLibPath.resolve("arm64-v8a");
 
-        String unalignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".unaligned.apk").toString();
-        String alignedApk = dalvikBinPath.resolve(projectConfiguration.getAppName()+".apk").toString();
+        String unalignedApk = apkBinPath.resolve(projectConfiguration.getAppName()+".unaligned.apk").toString();
+        String alignedApk = apkBinPath.resolve(projectConfiguration.getAppName()+".apk").toString();
 
-        Files.createDirectories(dalvikSrcPath);
-        Files.createDirectories(dalvikClassPath);
-        Files.createDirectories(dalvikBinPath);
-        Files.createDirectories(dalvikLibPath);
-        Files.createDirectories(dalvikLibArm64Path);
-        Path androidManifestPath = dalvikPath.resolve("AndroidManifest.xml");
-        Path dalvikActivityPackage = dalvikClassPath.resolve("com/gluonhq/helloandroid");
-        Path dalvikKeyCodePackage = dalvikClassPath.resolve("javafx/scene/input");
+        Files.createDirectories(apkClassPath);
+        Files.createDirectories(apkBinPath);
+        Files.createDirectories(apkLibPath);
+        Files.createDirectories(apkLibArm64Path);
+        Path androidManifestPath = apkPath.resolve("AndroidManifest.xml");
+        Path dalvikActivityPackage = apkClassPath.resolve("com/gluonhq/helloandroid");
+        Path dalvikKeyCodePackage = apkClassPath.resolve("javafx/scene/input");
         FileOps.copyResource("/native/android/dalvik/MainActivity.class", dalvikActivityPackage.resolve("MainActivity.class"));
         FileOps.copyResource("/native/android/dalvik/MainActivity$1.class", dalvikActivityPackage.resolve("MainActivity$1.class"));
         FileOps.copyResource("/native/android/dalvik/MainActivity$InternalSurfaceView.class", dalvikActivityPackage.resolve("MainActivity$InternalSurfaceView.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode.class", dalvikKeyCodePackage.resolve("KeyCode.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode$KeyCodeClass.class", dalvikKeyCodePackage.resolve("KeyCode$KeyCodeClass.class"));
-        FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
-        FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
-        FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
+        FileOps.copyResource("/native/android/AndroidManifest.xml", apkPath.resolve("AndroidManifest.xml"));
+        FileOps.replaceInFile(apkPath.resolve("AndroidManifest.xml"), "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
+        FileOps.replaceInFile(apkPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
 
         // resources
        for (String iconFolder : iconFolders) {
-            Path assetPath = dalvikPath.resolve("res").resolve(iconFolder);
+            Path assetPath = apkPath.resolve("res").resolve(iconFolder);
             Files.createDirectories(assetPath);
             FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
         }
@@ -173,7 +171,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         int processResult;
 
         ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
-                "--output="+dalvikBinPath.resolve("classes.dex"),dalvikClassPath.toString());
+                "--output="+apkBinPath.resolve("classes.dex"),apkClassPath.toString());
         processResult = dx.runProcess("DX");
         if (processResult != 0)
             return false;
@@ -181,7 +179,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
                 "-f", "-m", "-F", unalignedApk,
                 "-M", androidManifestPath.toString(),
-                "-S", dalvikPath.resolve("res").toString(),
+                "-S", apkPath.resolve("res").toString(),
                 "-I", androidJar);
         processResult = aaptpackage.runProcess("AAPT-package");
         if (processResult != 0)
@@ -189,18 +187,18 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         ProcessRunner aaptAddClass = new ProcessRunner(aaptCmd, "add", unalignedApk,
                 "classes.dex");
-        processResult = aaptAddClass.runProcess("AAPT-add classes", dalvikBinPath.toFile());
+        processResult = aaptAddClass.runProcess("AAPT-add classes", apkBinPath.toFile());
         if (processResult != 0)
             return false;
 
         Path libPath = paths.getAppPath().resolve(projectConfiguration.getAppName());
-        Path graalLibPath = dalvikLibArm64Path.resolve("libmygraal.so");
+        Path graalLibPath = apkLibArm64Path.resolve("libmygraal.so");
         Files.deleteIfExists(graalLibPath);
         Files.copy(libPath, graalLibPath);
 
         boolean useJavaFX = projectConfiguration.isUseJavaFX();
         if (useJavaFX) {
-            Path freetypeLibPath = dalvikLibArm64Path.resolve("libfreetype.so");
+            Path freetypeLibPath = apkLibArm64Path.resolve("libfreetype.so");
             Files.deleteIfExists(freetypeLibPath);
             Files.copy(fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so"), freetypeLibPath);
         }
@@ -211,7 +209,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
 
         ProcessRunner aaptAddLibs = new ProcessRunner(aaptAddLibsArgs.toArray(String[]::new));
-        processResult = aaptAddLibs.runProcess("AAPT-add lib", dalvikPath.toFile());
+        processResult = aaptAddLibs.runProcess("AAPT-add lib", apkPath.toFile());
         if (processResult != 0) return false;
 
         ProcessRunner zipAlign = new ProcessRunner(buildToolsPath.resolve("zipalign").toString(), "-f", "4", unalignedApk, alignedApk);
@@ -232,11 +230,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean runUntilEnd() throws IOException, InterruptedException {
         Path sdkPath = Paths.get(sdk);
 
-        Path dalvikPath = paths.getGvmPath().resolve("dalvik");
-        Path dalvikBinPath = dalvikPath.resolve("bin");
-        Path apkPath = dalvikBinPath.resolve(projectConfiguration.getAppName()+".apk");
-        if (!Files.exists(apkPath)) {
-            throw new IOException("Application not found at path " + apkPath);
+        Path apkPath = paths.getGvmPath().resolve(Constants.APK_PATH);
+        Path apkBinPath = apkPath.resolve("bin");
+        Path apkFilePath = apkBinPath.resolve(projectConfiguration.getAppName()+".apk");
+        if (!Files.exists(apkFilePath)) {
+            throw new IOException("Application not found at path " + apkFilePath);
         }
 
         int processResult;
@@ -251,9 +249,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         //     return false;
 
         ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "install", "-r", apkPath.toString());
+                "install", "-r", apkFilePath.toString());
         processResult = install.runProcess("install");
-        if (processResult != 0) throw new IOException("Application instalation failed!");
+        if (processResult != 0) throw new IOException("Application installation failed!");
 
         Runnable logcat = () -> {
             try {
