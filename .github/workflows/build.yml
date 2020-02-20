@@ -51,4 +51,4 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build project
-        run: ./gradlew clean build
+        run: ./gradlew -i clean build
