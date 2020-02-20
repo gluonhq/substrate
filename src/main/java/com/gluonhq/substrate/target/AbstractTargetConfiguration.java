@@ -133,7 +133,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileRunner.addArg("--report-unsupported-elements-at-runtime");
         compileRunner.addArg("-Djdk.internal.lambda.eagerlyInitialize=false");
         compileRunner.addArg("--no-server");
-        compileRunner.addArg("-J-Xmx24G");
         compileRunner.addArg("-H:+ExitAfterRelocatableImageWrite");
         compileRunner.addArg("-H:TempDirectory="+tmpDir);
         compileRunner.addArg("-H:+SharedLibrary");
