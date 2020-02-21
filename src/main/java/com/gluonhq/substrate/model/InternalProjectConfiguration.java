@@ -29,6 +29,7 @@ package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.ProjectConfiguration;
+import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
@@ -94,6 +95,8 @@ public class InternalProjectConfiguration {
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
         setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
         setInitBuildTimeList(Strings.split(System.getProperty("initbuildtimelist")));
+
+        performHostChecks();
     }
 
     public Path getGraalPath() {
@@ -396,7 +399,7 @@ public class InternalProjectConfiguration {
      * @throws IOException when the path to bin/native-image doesn't exist
      */
     public void canRunNativeImage() throws IOException, InterruptedException {
-        Path javaCmd =  getGraalVMBinPath().resolve("java");
+        Path javaCmd = getGraalVMBinPath().resolve("java");
         ProcessRunner processRunner = new ProcessRunner(javaCmd.toString(), "-version");
         if (processRunner.runProcess("check version") != 0) {
             throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
@@ -409,6 +412,18 @@ public class InternalProjectConfiguration {
                 throw new IllegalArgumentException("You are using an old version of GraalVM in " + javaCmd +
                         " which uses Java version " + l + "\nUse GraalVM 19.3 or later");
             }
+        }
+    }
+
+    /**
+     * Run any necessary checks required on the host
+     */
+    private void performHostChecks() {
+        if (publicConfig.getGraalPath() == null) {
+            return;
+        }
+        if (new Triplet(Constants.Profile.MACOS).equals(Triplet.fromCurrentOS())) {
+            checkGraalVMPermissions(getGraalPath().toString());
         }
     }
 
@@ -431,6 +446,37 @@ public class InternalProjectConfiguration {
         if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPath + "\n" +
                 "You can use gu to install it running: \n${GRAALVM_HOME}/bin/gu install native-image");
         return binPath;
+    }
+
+    /**
+     * Prevent undesired dialogs and build failures when running on MacOS 1.15.0+.
+     *
+     * By default, the OS prevents the access to any non-notarized executable if it
+     * has been downloaded.
+     *
+     * This method will check if the GraalVM folder is under quarantine, and if that
+     * is the case, it will remove it recursively from all the files, without the
+     * need of deactivating GateKeeper.
+     *
+     * See https://github.com/oracle/graal/issues/1724
+     *
+     * @param graalvmHome the path to GraalVM
+     */
+    private void checkGraalVMPermissions(String graalvmHome) {
+        if (graalvmHome == null || graalvmHome.isEmpty()) {
+            return;
+        }
+        Logger.logDebug("Checking execution permissions for " + graalvmHome);
+        try {
+            String response = ProcessRunner.runProcessForSingleOutput("check attr", "xattr", "-p", "com.apple.quarantine", graalvmHome);
+            if (response != null && !response.contains("No such xattr")) {
+                ProcessRunner runner = new ProcessRunner("xattr", "-r", "-d", "com.apple.quarantine", graalvmHome);
+                runner.runProcess("remove quarantine");
+                Logger.logDebug("Quarantine attributes removed successfully");
+            }
+        } catch (IOException | InterruptedException e) {
+            Logger.logFatal(e,"Error checking execution permissions for " + graalvmHome);
+        }
     }
 
     @Override
