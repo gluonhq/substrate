@@ -42,8 +42,7 @@ jobs:
           wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.1.0-ea+23.zip
           unzip graalvm-svm-darwin-20.1.0-ea+23.zip && cd $GITHUB_WORKSPACE
           ls $HOME/graalvm
-          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1.0-ea+23/Contents/Home
-          ${GRAALVM_HOME}/bin/gu install native-image
+          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1.0-ea+23
 
       - name: Checkout
         uses: actions/checkout@v2
