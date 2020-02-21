@@ -39,8 +39,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
-          wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.1.0-ea+23.zip
-          unzip graalvm-svm-darwin-20.1.0-ea+23.zip && cd $GITHUB_WORKSPACE
+          wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.1.0-ea+23.tar.gz
+          tar xf graalvm-svm-darwin-20.1.0-ea+23.tar.gz && cd $GITHUB_WORKSPACE
           ls $HOME/graalvm
           export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1.0-ea+23
 
