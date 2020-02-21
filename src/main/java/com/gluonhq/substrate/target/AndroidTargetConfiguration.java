@@ -32,6 +32,7 @@ import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
 
@@ -67,7 +68,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
             "LLVMDirectives.cap", "PosixDirectives.cap"};
     private final String capLocation= "/native/android/cap/";
-
+    private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
+            "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
         super(paths,configuration);
@@ -116,12 +118,16 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     public boolean link() throws IOException, InterruptedException {
-        // we override compile as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
+        // we override link as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
 
-        super.link();
+        boolean result = super.link();
+
+        if (!result) {
+            return false;
+        }
 
         Path sdkPath = Paths.get(sdk);
         Path buildToolsPath = sdkPath.resolve("build-tools").resolve(findLatestBuildTool(sdkPath));
@@ -157,6 +163,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
         FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
 
+        // resources
+       for (String iconFolder : iconFolders) {
+            Path assetPath = dalvikPath.resolve("res").resolve(iconFolder);
+            Files.createDirectories(assetPath);
+            FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
+        }
+
         int processResult;
 
         ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
@@ -165,8 +178,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (processResult != 0)
             return false;
 
-        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package", "-f", "-m", "-F", unalignedApk,
-        "-M", androidManifestPath.toString(), "-I", androidJar);
+        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
+                "-f", "-m", "-F", unalignedApk,
+                "-M", androidManifestPath.toString(),
+                "-S", dalvikPath.resolve("res").toString(),
+                "-I", androidJar);
         processResult = aaptpackage.runProcess("AAPT-package");
         if (processResult != 0)
             return false;
@@ -205,8 +221,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         createDevelopKeystore();
 
-        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks", 
-            paths.getGvmPath().resolve("debug.keystore").toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
+        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks",
+                Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE).toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
         processResult = sign.runProcess("sign");
         
         return processResult == 0;
@@ -246,7 +262,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 clearLog.runProcess("clearLog");
 
                 ProcessRunner log = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalGluon:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
+                "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalActivity:V", "GraalGluon:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
                 log.setInfo(true);
                 log.runProcess("log");
             } catch (IOException | InterruptedException e) { 
@@ -366,10 +382,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private void createDevelopKeystore() throws IOException, InterruptedException {
-        Path keystore = paths.getGvmPath().resolve("debug.keystore");
+        Path keystore = Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE);
         
         if (Files.exists(keystore)) {
-            System.err.println("ks exists, skipping");
+            Logger.logDebug("The " + Constants.ANDROID_KEYSTORE + " file already exists, skipping");
             return;
         }
 
@@ -381,7 +397,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (processResult != 0)
             throw new IllegalArgumentException("fatal, can not create a keystore");
 
-        System.err.println("done creating ks");
+        Logger.logDebug("Done creating " + Constants.ANDROID_KEYSTORE);
     }
 
     private String findLatestBuildTool(Path sdkPath) throws IOException {
