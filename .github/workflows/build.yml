@@ -20,11 +20,11 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install --HEAD libusbmuxd libimobiledevice
-          mkdir -p $HOME/llvm && cd $HOME/llvm
-          wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
-          tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $GITHUB_WORKSPACE
-          export PATH="$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
-          echo $PATH
+#          mkdir -p $HOME/llvm && cd $HOME/llvm
+#          wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
+#          tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $GITHUB_WORKSPACE
+#          export PATH="$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
+#          echo $PATH
 
       - name: Install GraalVM (Linux)
         if: runner.os == 'Linux'
@@ -39,9 +39,10 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
-          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0.2/graalvm-ce-java11-darwin-amd64-19.3.0.2.tar.gz
-          tar xf graalvm-ce-java11-darwin-amd64-19.3.0.2.tar.gz && cd $GITHUB_WORKSPACE
-          export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0.2/Contents/Home
+          wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.1.0-ea+23.zip
+          unzip graalvm-svm-darwin-20.1.0-ea+23.zip && cd $GITHUB_WORKSPACE
+          ls $HOME/graalvm
+          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1.0-ea+23/Contents/Home
           ${GRAALVM_HOME}/bin/gu install native-image
 
       - name: Checkout
