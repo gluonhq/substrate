@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class SubstrateTest {
 
@@ -63,17 +64,16 @@ class SubstrateTest {
     }
 
     @Test
-    void testIOSTriplet() throws IOException {
+    void testIOSTripletOnLinux() throws IOException {
+        assumeTrue(Triplet.fromCurrentOS().getOs().indexOf("nux") > 0);
         Triplet iosTriplet = new Triplet(Constants.Profile.IOS);
-        Triplet currentOsTriplet = Triplet.fromCurrentOS();
         ProjectConfiguration config = new ProjectConfiguration("");
         config.setTarget(iosTriplet);
+        config.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
 
+        var dispatcher = new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config);
         // when on linux, nativeCompile should throw an illegalArgumentException
-        if (currentOsTriplet.getOs().indexOf("nux") > 0) {
-            var dispatcher = new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config);
-            assertThrows(NullPointerException.class, () -> dispatcher.nativeCompile(null));
-        }
+        assertThrows(IllegalArgumentException.class, () -> dispatcher.nativeCompile(""));
     }
 
     @Test
