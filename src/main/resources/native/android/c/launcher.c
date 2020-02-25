@@ -17,12 +17,12 @@
 
 extern int *run_main(int argc, char* argv[]);
 
-extern void androidJfx_requestGlassToRedraw();
-extern void androidJfx_setNativeWindow(ANativeWindow* nativeWindow);
-extern void androidJfx_setDensity(float nativeDensity);
-extern void androidJfx_gotTouchEvent (int count, int* actions, int* ids, int* xs, int* ys, int primary);
-extern void androidJfx_gotKeyEvent (int action, int key, jchar* chars, int count, int mods);
-extern int to_jfx_touch_action(int state);
+void __attribute__((weak)) androidJfx_requestGlassToRedraw() {}
+void __attribute__((weak)) androidJfx_setNativeWindow(ANativeWindow* nativeWindow) {}
+void __attribute__((weak)) androidJfx_setDensity(float nativeDensity) {}
+void __attribute__((weak)) androidJfx_gotTouchEvent (int count, int* actions, int* ids, int* xs, int* ys, int primary) {}
+void __attribute__((weak)) androidJfx_gotKeyEvent (int action, int key, jchar* chars, int count, int mods) {}
+int  __attribute__((weak)) to_jfx_touch_action(int state) { return 0; }
 
 jclass activityClass;
 jobject activity;
@@ -43,13 +43,14 @@ static const char *tag = "myapp";
 const char * origargs[] = {
         "myapp",
         "-Djavafx.platform=android",
+        "-Dmonocle.platform=Android", // used in com.sun.glass.ui.monocle.NativePlatformFactory
         "-Dembedded=monocle",
         "-Dglass.platform=Monocle",
         "-Djavafx.verbose=true",
         "-Dmonocle.input.traceEvents.verbose=true",
         "-Dprism.verbose=true"};
 
-int argsize = 7;
+int argsize = 8;
 
 char** createArgs() {
 LOGE(stderr, "CREATE ARGS");

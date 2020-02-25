@@ -29,16 +29,17 @@ package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.ProjectConfiguration;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
@@ -80,15 +81,14 @@ public class InternalProjectConfiguration {
      * Private projects configuration, which includes everything, including public settings
      * @param config public project configuration
      */
-    public InternalProjectConfiguration(ProjectConfiguration config ) {
+    public InternalProjectConfiguration(ProjectConfiguration config) {
 
         this.publicConfig = Objects.requireNonNull(config);
 
-        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
         boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
 
-        setUsePrismSW(usePrismSW);
+        setUsePrismSW(config.isUsePrismSW());
         getIosSigningConfiguration().setSkipSigning(skipSigning);
 
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
@@ -217,6 +217,24 @@ public class InternalProjectConfiguration {
      */
     public void setLlcPath(String llcPath) {
         this.llcPath = llcPath;
+    }
+
+    /**
+     * Gets Android SDK path
+     */
+    public Path getAndroidSdkPath() {
+        String sdkEnv = System.getenv("ANDROID_SDK");
+        return (sdkEnv != null) ? Paths.get(sdkEnv) 
+                : Constants.USER_SUBSTRATE_PATH.resolve("Android");
+    }
+
+    /**
+     * Gets Android NDK path
+     */
+    public Path getAndroidNdkPath() {
+        String ndkEnv = System.getenv("ANDROID_NDK");
+        return (ndkEnv != null) ? Paths.get(ndkEnv) 
+                : getAndroidSdkPath().resolve("ndk-bundle");
     }
 
     public boolean isUseJNI() {
@@ -377,8 +395,32 @@ public class InternalProjectConfiguration {
      * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
      * @throws IOException when the path to bin/native-image doesn't exist
      */
-    public void canRunNativeImage() throws IOException {
+    public void canRunNativeImage() throws IOException, InterruptedException {
+        Path javaCmd =  getGraalVMBinPath().resolve("java");
+        ProcessRunner processRunner = new ProcessRunner(javaCmd.toString(), "-version");
+        if (processRunner.runProcess("check version") != 0) {
+            throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
+        }
+        for (String l : processRunner.getResponses()) {
+            if (l == null || l.isEmpty()) {
+                throw new IllegalArgumentException(javaCmd + " -version failed to return a valid value for GraalVM");
+            }
+            if (l.indexOf("1.8") > 0) {
+                throw new IllegalArgumentException("You are using an old version of GraalVM in " + javaCmd +
+                        " which uses Java version " + l + "\nUse GraalVM 19.3 or later");
+            }
+        }
+    }
 
+    /**
+     * Gets $GRAALVM/bin path or throws an IOException if the path is not found
+     * It also verifies that native-image is installed in that path.
+     *
+     * @return the path to $GRAALVM/bin
+     * @throws IOException If $GRAALVM, $GRAALVM/bin or $GRAALVM/bin/native-image paths
+     *                    don't exist
+     */
+    private Path getGraalVMBinPath() throws IOException {
         Path graalPath = getGraalPath();//Path.of(graalPathString);
         if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
         Path binPath = graalPath.resolve("bin");
@@ -388,17 +430,7 @@ public class InternalProjectConfiguration {
                 binPath.resolve("native-image");
         if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPath + "\n" +
                 "You can use gu to install it running: \n${GRAALVM_HOME}/bin/gu install native-image");
-        Path javacmd = binPath.resolve("java");
-        ProcessBuilder processBuilder = new ProcessBuilder(javacmd.toFile().getAbsolutePath());
-        processBuilder.command().add("-version");
-        processBuilder.redirectErrorStream(true);
-        Process process = processBuilder.start();
-        InputStream is = process.getInputStream();
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String l = br.readLine();
-        if (l == null) throw new IllegalArgumentException("java -version failed to return a value for GraalVM in " + graalPath);
-        if (l.indexOf("1.8") > 0) throw new IllegalArgumentException("You are using an old version of GraalVM in " + graalPath +
-                " which uses Java version "+l+"\nUse GraalVM 19.3 or later");
+        return binPath;
     }
 
     @Override

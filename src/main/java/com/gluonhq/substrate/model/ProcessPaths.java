@@ -44,6 +44,7 @@ public class ProcessPaths {
     private Path tmpPath;
     private Path logPath;
     private Path sourcePath;
+    private Path nativeCodePath;
 
     /**
      * |-- build or target
@@ -73,6 +74,7 @@ public class ProcessPaths {
         tmpPath = Files.createDirectories(gvmPath.resolve(Constants.TMP_PATH));
         logPath = Files.createDirectories(gvmPath.resolve(Constants.LOG_PATH));
         sourcePath = clientPath.getParent().getParent().resolve(Constants.SOURCE_PATH);
+        nativeCodePath = sourcePath.getParent().resolve(Constants.NATIVE_CODE_PATH);
     }
 
     public Path getBuildRoot() {
@@ -105,6 +107,10 @@ public class ProcessPaths {
 
     public Path getLogPath() {
         return logPath;
+    }
+
+    public Path getNativeCodePath() {
+        return nativeCodePath;
     }
 }
 

@@ -55,6 +55,7 @@ int startGVM();
 
 extern int *run_main(int argc, char* argv[]);
 const char * args[] = {"myapp",
+          "-Dcom.sun.javafx.isEmbedded=true",
           "-Djavafx.platform=ios"};
 
 @interface AppDelegate ()
@@ -115,7 +116,7 @@ int main(int argc, char * argv[]) {
 int startGVM() {
     gvmlog(@"Starting GVM for ios");
 
-    (*run_main)(2, args);
+    (*run_main)(3, args);
 
     gvmlog(@"Finished running GVM, done with isolatehread");
     return 0;

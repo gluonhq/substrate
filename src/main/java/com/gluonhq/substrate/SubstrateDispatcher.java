@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.target.AndroidTargetConfiguration;
-import com.gluonhq.substrate.target.DarwinTargetConfiguration;
+import com.gluonhq.substrate.target.MacOSTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
@@ -77,6 +77,7 @@ public class SubstrateDispatcher {
         config.setJniList(Strings.split(System.getProperty("jnilist")));
         config.setBundlesList(Strings.split(System.getProperty("bundleslist")));
         config.setVerbose(verbose);
+        config.setUsePrismSW(Boolean.parseBoolean(System.getProperty("prism.sw", "false")));
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
 
@@ -158,10 +159,10 @@ public class SubstrateDispatcher {
                 "Error: Target Configuration was not found for " + targetTriplet);
     }
 
-    private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) {
+    private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) throws IOException {
         switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
-            case Constants.OS_DARWIN : return new DarwinTargetConfiguration(paths, config);
+            case Constants.OS_DARWIN : return new MacOSTargetConfiguration(paths, config);
             case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config);
             case Constants.OS_IOS    : return new IosTargetConfiguration(paths, config);
             case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config);

@@ -243,7 +243,6 @@ public class FileOps {
      * @throws IOException if an exception happens when listing the content
      */
     public static void copyDirectory(Path source, Path destination) throws IOException {
-        copyFile(source, destination);
         if (Files.isDirectory(source)) {
             List<Path> fileNames = Files.list(source)
                     .map(Path::getFileName)
@@ -252,6 +251,8 @@ public class FileOps {
                 copyDirectory(source.resolve(fileName), destination.resolve(fileName));
             }
         }
+        else
+            copyFile(source, destination);
     }
 
     /**
@@ -417,7 +418,7 @@ public class FileOps {
              FileChannel fileChannel = fileOutputStream.getChannel()) {
             fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
         } catch (IOException e) {
-            throw new IOException("Error downloading from " + fileUrl + "into " + filePath + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
+            throw new IOException("Error downloading from " + fileUrl + " into " + filePath + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
         }
     }
 

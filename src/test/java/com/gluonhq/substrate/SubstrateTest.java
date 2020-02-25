@@ -35,7 +35,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SubstrateTest {
 
@@ -88,5 +90,17 @@ class SubstrateTest {
         assertEquals("a.b.Foo", config.getMainClassName());
         config = new InternalProjectConfiguration( new ProjectConfiguration("name/a.b.Foo"));
         assertEquals("a.b.Foo", config.getMainClassName());
+    }
+
+    @Test
+    void testAssertSW() {
+        ProjectConfiguration publicConfig = new ProjectConfiguration("a.b.Foo");
+        InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
+        assertFalse(config.isUsePrismSW());
+
+        publicConfig = new ProjectConfiguration("a.b.Foo");
+        publicConfig.setUsePrismSW(true);
+        config = new InternalProjectConfiguration(publicConfig);
+        assertTrue(config.isUsePrismSW());
     }
 }

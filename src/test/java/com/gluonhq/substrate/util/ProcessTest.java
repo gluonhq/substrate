@@ -25,15 +25,41 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.target;
+package com.gluonhq.substrate.util;
 
-import com.gluonhq.substrate.model.InternalProjectConfiguration;
-import com.gluonhq.substrate.model.ProcessPaths;
+import org.junit.jupiter.api.Test;
 
-abstract class DarwinTargetConfiguration extends PosixTargetConfiguration {
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-    DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
-        super(paths, configuration);
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class ProcessTest {
+
+    private Path getTempDir() throws IOException {
+        return Files.createTempDirectory("substrate-runner-tests");
+    }
+
+    @Test
+    public void processTest() throws IOException, InterruptedException {
+        ProcessRunner runner = new ProcessRunner("ls", "LICENSE");
+        assertEquals(0, runner.runProcess("dir"));
+        assertEquals(1, runner.getResponses().size());
+        assertEquals("LICENSE", runner.getLastResponse());
+    }
+
+    @Test
+    public void processLogTest() throws IOException, InterruptedException {
+        Path tempDir = getTempDir();
+        ProcessRunner runner = new ProcessRunner("mkdir", "runner");
+        assertEquals(0, runner.runProcess("mkdir", tempDir.toFile()));
+        assertEquals(1, runner.getResponses().size());
+        assertEquals("", runner.getLastResponse());
+
+        assertEquals(1, runner.runProcess("mkdir", tempDir.toFile()));
+        assertTrue(runner.getLastResponse().endsWith("File exists"));
     }
 
 }

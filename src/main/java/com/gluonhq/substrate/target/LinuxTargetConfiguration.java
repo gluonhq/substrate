@@ -44,7 +44,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,11 +62,15 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private static final List<String> linuxfxlibs = Arrays.asList( "-Wl,--whole-archive",
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
+            "-ljfxmedia", "-lfxplugins", "-lavplugin",
             "-Wl,--no-whole-archive", "-lGL", "-lX11","-lgtk-3", "-lgdk-3",
             "-lpangocairo-1.0", "-lpango-1.0", "-latk-1.0",
             "-lcairo-gobject", "-lcairo", "-lgdk_pixbuf-2.0",
-            "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype", "-lpangoft2-1.0",
-            "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst"
+            "-lgio-2.0", "-lgobject-2.0", "-lglib-2.0", "-lfreetype",
+            "-lpangoft2-1.0", "-lgstreamer-lite",
+            "-lgthread-2.0", "-lstdc++", "-lz", "-lXtst",
+            "-lavcodec", "-lavformat", "-lavutil",
+            "-lasound", "-lm", "-lgmodule-2.0"
     );
 
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
@@ -173,16 +176,21 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         }
 
         return new ClassPath(classPath).mapWithLibs(
-                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls");
+                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls", "javafx-media");
 
     }
 
     @Override
     protected List<String> getTargetSpecificCCompileFlags() {
+        List<String> flags = Arrays.asList("-I" + 
+            projectConfiguration.getGraalPath().resolve("include").toString(),
+            "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("linux").toString()
+            );
+            
         if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
-            return Arrays.asList("-DAARCH64");
+            flags.add("-DAARCH64");
         }
-        return Collections.emptyList();
+        return flags;
     }
 
    /*

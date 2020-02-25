@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class IosTargetConfiguration extends PosixTargetConfiguration {
+public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
 
@@ -69,6 +69,12 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
             "ARKit", "AVKit", "SceneKit", "StoreKit"
     );
 
+    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
+            "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
+            "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
+            "LLVMDirectives.cap", "PosixDirectives.cap"};
+    private final String capLocation= "/native/ios/cap/";
+
     public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
@@ -83,7 +89,7 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
-                "-arch", Constants.ARCH_ARM64,
+                "-arch", getArch(),
                 "-mios-version-min=11.0",
                 "-isysroot", getSysroot()));
         if (useJavaFX) {
@@ -102,18 +108,30 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     List<String> getTargetSpecificCCompileFlags() {
         return Arrays.asList("-xobjective-c",
                 "-arch", getArch(),
+                "-mios-version-min=11.0",
                 "-isysroot", getSysroot());
     }
 
     @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
-
-        Path llcPath = getLlcPath();
-        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+        boolean graalvm22 = true;
+        Path internalLlcPath = projectConfiguration.getGraalPath().resolve("lib").resolve("llvm").resolve("bin");
+        if (!Files.exists(internalLlcPath.resolve("llc"))) {
+            graalvm22 = false; // and use customLLC
+        }
+        List<String> answer = new ArrayList<>();
+        answer.addAll(Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
+                "-Dllvm.bin.dir=" + internalLlcPath,
+                "-H:+UseCAPCache",
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-Dsvm.targetName=iOS",
-                "-Dsvm.targetArch=" + getArch(),
-                "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+                "-Dsvm.targetArch=" + getArch()));
+        if (!graalvm22) {
+            Path llcPath = getLlcPath();
+            answer.add("-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+        }
+        return answer;
     }
 
     @Override
@@ -173,14 +191,19 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
             // without signing, app can't be deployed
             return true;
         }
+
+        Path app = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        if (!Files.exists(app)) {
+            throw new IOException("Application not found at path " + app);
+        }
+
         Deploy deploy = new Deploy();
         deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
-        String appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString();
         if (isSimulator()) {
             // TODO: launchOnSimulator(appPath);
             return false;
         } else {
-            return deploy.install(appPath);
+            return deploy.install(app.toString());
         }
     }
 
@@ -287,4 +310,20 @@ public class IosTargetConfiguration extends PosixTargetConfiguration {
     private String lipoInfo(Path path) throws IOException, InterruptedException {
         return ProcessRunner.runProcessForSingleOutput("lipo", "lipo", "-info", path.toFile().getAbsolutePath());
     }
+
+    /*
+     * Copies the .cap files from the jar resource and store them in
+     * a directory. Return that directory
+     */
+    private Path getCapCacheDir() throws IOException {
+        Path capPath = paths.getGvmPath().resolve("capcache");
+        if (!Files.exists(capPath)) {
+            Files.createDirectory(capPath);
+        }
+        for (String cap : capFiles) {
+            FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
+        }
+        return capPath;
+    }
+
 }

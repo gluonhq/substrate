@@ -74,7 +74,7 @@ public class ConfigResolver {
     public ConfigResolver(String classpath) throws IOException, InterruptedException {
         ClassPath cp = new ClassPath(classpath);
         this.jars = cp
-                .filter(s -> s.endsWith(".jar") && !s.contains("javafx-")).stream()
+                .filter(s -> s.endsWith(".jar")).stream()
                 .map(File::new)
                 .collect(Collectors.toList());
 
