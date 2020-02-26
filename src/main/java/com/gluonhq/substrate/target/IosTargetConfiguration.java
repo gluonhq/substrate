@@ -56,7 +56,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-lz", "-lstrictmath", "-llibchelper",
-            "-ljava", "-lnio", "-lzip", "-lnet", "-lprefs", "-ljvm");
+            "-ljava", "-lnio", "-lzip", "-lnet", "-lprefs", "-ljvm", "-lffi", "-llibchelper");
 
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
