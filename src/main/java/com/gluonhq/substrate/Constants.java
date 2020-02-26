@@ -128,6 +128,7 @@ public class Constants {
      * Supported files
      */
     public static final String PLIST_FILE = "Default-Info.plist";
+    public static final String MANIFEST_FILE = "AndroidManifest.xml";
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
     public static final String META_INF_SUBSTRATE_CONFIG = "META-INF/substrate/config/";
