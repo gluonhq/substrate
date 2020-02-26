@@ -129,6 +129,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             return false;
         }
 
+        Path androidPath = prepareAndroidResources();
+
         Path sdkPath = Paths.get(sdk);
         Path buildToolsPath = sdkPath.resolve("build-tools").resolve(findLatestBuildTool(sdkPath));
 
@@ -151,7 +153,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Files.createDirectories(dalvikBinPath);
         Files.createDirectories(dalvikLibPath);
         Files.createDirectories(dalvikLibArm64Path);
-        Path androidManifestPath = dalvikPath.resolve("AndroidManifest.xml");
+        Path androidManifestPath = dalvikPath.resolve(Constants.MANIFEST_FILE);
         Path dalvikActivityPackage = dalvikClassPath.resolve("com/gluonhq/helloandroid");
         Path dalvikKeyCodePackage = dalvikClassPath.resolve("javafx/scene/input");
         FileOps.copyResource("/native/android/dalvik/MainActivity.class", dalvikActivityPackage.resolve("MainActivity.class"));
@@ -159,15 +161,20 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.copyResource("/native/android/dalvik/MainActivity$InternalSurfaceView.class", dalvikActivityPackage.resolve("MainActivity$InternalSurfaceView.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode.class", dalvikKeyCodePackage.resolve("KeyCode.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode$KeyCodeClass.class", dalvikKeyCodePackage.resolve("KeyCode$KeyCodeClass.class"));
-        FileOps.copyResource("/native/android/AndroidManifest.xml", dalvikPath.resolve("AndroidManifest.xml"));
-        FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
-        FileOps.replaceInFile(dalvikPath.resolve("AndroidManifest.xml"), "A HelloGraal", projectConfiguration.getAppName());
 
-        // resources
-       for (String iconFolder : iconFolders) {
+        Path androidManifest = androidPath.resolve(Constants.MANIFEST_FILE);
+        if (!Files.exists(androidManifest)) {
+            throw new IOException("File " + androidManifest.toString() + " not found");
+        }
+        FileOps.copyFile(androidManifest, androidManifestPath);
+        for (String iconFolder : iconFolders) {
+            Path iconPath = androidPath.resolve("res").resolve(iconFolder).resolve("ic_launcher.png");
+            if (!Files.exists(iconPath)) {
+                throw new IOException("File " + iconPath.toString() + " not found");
+            }
             Path assetPath = dalvikPath.resolve("res").resolve(iconFolder);
             Files.createDirectories(assetPath);
-            FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
+            FileOps.copyFile(iconPath, assetPath.resolve("ic_launcher.png"));
         }
 
         int processResult;
@@ -414,6 +421,44 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         throw new BuildToolNotFoundException();
         // TODO: If no build tool is found, we can install it using sdkmanager.
         //  Currently, sdkmanager doesn't work with JDK 11: https://issuetracker.google.com/issues/67495440
+    }
+
+    /**
+     * If android manifest and icons are present in src/android, then, this
+     * path will be returned.
+     *
+     * Else, default android manifest and icons are copied into gvm/genSrc/android and
+     * this path is returned
+     *
+     * @return the path where android manifest and resources are located
+     * @throws IOException
+     */
+    private Path prepareAndroidResources() throws IOException {
+        String targetOS = projectConfiguration.getTargetTriplet().getOs();
+        Path targetSourcePath = paths.getSourcePath().resolve(targetOS);
+        Path userManifest = targetSourcePath.resolve(Constants.MANIFEST_FILE);
+        if (!Files.exists(userManifest)) {
+            // copy manifest and assets to gensrc/android
+            Path androidPath = paths.getGenPath().resolve(targetOS);
+            Path genManifest = androidPath.resolve(Constants.MANIFEST_FILE);
+            Logger.logDebug("Copy " + Constants.MANIFEST_FILE + " to " + genManifest.toString());
+            FileOps.copyResource("/native/android/AndroidManifest.xml", genManifest);
+            FileOps.replaceInFile(genManifest, "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
+            FileOps.replaceInFile(genManifest, "A HelloGraal", projectConfiguration.getAppName());
+
+            Path androidResources = androidPath.resolve("res");
+            Logger.logDebug("Copy assets to " + androidResources.toString());
+            for (String iconFolder : iconFolders) {
+                Path assetPath = androidResources.resolve(iconFolder);
+                Files.createDirectories(assetPath);
+                FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
+            }
+            Logger.logInfo("Default Android resources generated in " + androidPath.toString() + ".\n" +
+                    "Consider copying them to " + targetSourcePath.toString() + " before performing any modification");
+            return androidPath;
+        }
+        // use manifest and assets from src/android
+        return targetSourcePath;
     }
 
     private static class BuildToolNotFoundException extends IOException {
