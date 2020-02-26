@@ -1,12 +1,12 @@
 <?xml version='1.0'?>
-<manifest xmlns:android='http://schemas.android.com/apk/res/android' package='com.gluonhq.helloandroid' android:versionCode='1' android:versionName='1.0'>
-    <supports-screens android:xlargeScreens="true"/>
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>
-    <application android:label='A HelloGraal' android:icon="@mipmap/ic_launcher">
-        <activity android:name='com.gluonhq.helloandroid.MainActivity' android:configChanges="orientation|keyboardHidden">
+<manifest xmlns:a='http://schemas.android.com/apk/res/android' package='com.gluonhq.helloandroid' a:versionCode='1' a:versionName='1.0'>
+    <supports-screens a:xlargeScreens="true"/>
+    <uses-sdk a:minSdkVersion="21" a:targetSdkVersion="28"/>
+    <application a:label='A HelloGraal' a:icon="@mipmap/ic_launcher">
+        <activity a:name='com.gluonhq.helloandroid.MainActivity' a:configChanges="orientation|keyboardHidden">
              <intent-filter>
-                <category android:name='android.intent.category.LAUNCHER'/>
-                <action android:name='android.intent.action.MAIN'/>
+                <category a:name='android.intent.category.LAUNCHER'/>
+                <action a:name='android.intent.action.MAIN'/>
              </intent-filter>
         </activity>
     </application>
