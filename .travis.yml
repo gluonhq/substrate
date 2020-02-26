@@ -36,16 +36,16 @@ matrix:
             - libasound2-dev
       before_script:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
-        - wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-linux-20.0.0-ea+24.zip.gz
-        - unzip graalvm-svm-linux-20.0.0-ea+24.zip && cd $TRAVIS_BUILD_DIR
-        - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.0.0-ea+24
+        - wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-linux-20.1.0-ea+24.zip.gz
+        - unzip graalvm-svm-linux-20.1.0-ea+24.zip && cd $TRAVIS_BUILD_DIR
+        - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1.0-ea+24
     - os: osx
       osx_image: xcode10.2
       before_script:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
-        - wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.0.0-ea+24.zip.gz
-        - unzip graalvm-svm-darwin-20.0.0-ea+24.zip && cd $TRAVIS_BUILD_DIR
-        - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.0.0-ea+24
+        - wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.1.0-ea+24.zip.gz
+        - unzip graalvm-svm-darwin-20.1.0-ea+24.zip && cd $TRAVIS_BUILD_DIR
+        - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1.0-ea+24
 
 before_script:
   - echo $JAVA_OPTS
