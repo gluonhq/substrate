@@ -36,22 +36,16 @@ matrix:
             - libasound2-dev
       before_script:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
-        - wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0.2/graalvm-ce-java11-linux-amd64-19.3.0.2.tar.gz
-        - tar xf graalvm-ce-java11-linux-amd64-19.3.0.2.tar.gz && cd $TRAVIS_BUILD_DIR
-        - export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0.2
-        - ${GRAALVM_HOME}/bin/gu install native-image
+        - wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-linux-20.1.0-ea+24.zip
+        - unzip graalvm-svm-linux-20.1.0-ea+24.zip && cd $TRAVIS_BUILD_DIR
+        - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1.0-ea+24
     - os: osx
       osx_image: xcode10.2
       before_script:
-        - mkdir -p $HOME/llvm && cd $HOME/llvm
-        - wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
-        - tar xf clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz && cd $TRAVIS_BUILD_DIR
-        - export PATH="$PATH:$HOME/llvm/clang+llvm-6.0.0-x86_64-apple-darwin/bin"
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
-        - wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0.2/graalvm-ce-java11-darwin-amd64-19.3.0.2.tar.gz
-        - tar xf graalvm-ce-java11-darwin-amd64-19.3.0.2.tar.gz && cd $TRAVIS_BUILD_DIR
-        - export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-19.3.0.2/Contents/Home
-        - ${GRAALVM_HOME}/bin/gu install native-image
+        - wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.1.0-ea+24.zip
+        - unzip graalvm-svm-darwin-20.1.0-ea+24.zip && cd $TRAVIS_BUILD_DIR
+        - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1.0-ea+24
 
 before_script:
   - echo $JAVA_OPTS
