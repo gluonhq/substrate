@@ -23,12 +23,12 @@ def setupGraalDependencies(String platform) {
         graalVM.mkdirs()
     }
     def name = "mac" == platform ? "darwin" : "linux"
-    def version = "mac" == platform ? "21" : "20"
-    def graalFolder = new File("$graalVM/graalvm-svm-${name}-20.0.0-ea+${version}")
-    def graalZip = new File("$graalVM/graalvm-svm-${name}-20.0.0-ea+${version}.zip")
+    def version = "24"
+    def graalFolder = new File("$graalVM/graalvm-svm-${name}-20.1.0-ea+${version}")
+    def graalZip = new File("$graalVM/graalvm-svm-${name}-20.1.0-ea+${version}.zip")
     if (!graalZip.exists()) {
         println "Downloading graalZip..."
-        new URL("https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-${name}-20.0.0-ea+${version}.zip")
+        new URL("https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-${name}-20.1.0-ea+${version}.zip")
                 .withInputStream { i -> graalZip.withOutputStream { it << i } }
         copy {
             from zipTree(graalZip)
@@ -43,7 +43,7 @@ def setupJavaFXDependencies(String platform, String target) {
     if (!javafxSdk.exists()) {
         javafxSdk.mkdirs()
     }
-    def version = "14-ea+gvm4"
+    def version = "15-ea+gvm11"
     def name
     if ("linux" == platform) {
         name = "linux-x86_64"
