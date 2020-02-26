@@ -68,6 +68,8 @@ public class CodeSigning {
     private static final String EMBEDDED_PROVISIONING_PROFILE = "embedded.mobileprovision";
     private static String ERRLINK = "Please check https://docs.gluonhq.com/client/ for more information.";
 
+    private static final String KEYCHAIN_ERROR_MESSAGE = "errSecInternalComponent";
+
     private MobileProvision mobileProvision = null;
     private Identity identity = null;
     private List<MobileProvision> mobileProvisions;
@@ -116,7 +118,8 @@ public class CodeSigning {
         if ((identities == null) || identities.isEmpty()) {
             throw new RuntimeException("No valid Identity (Certificate) found for iOS development.\n"+ERRLINK);
         }
-     }
+    }
+
     private MobileProvision getProvisioningProfile() throws IOException {
         if (bundleId == null) {
             bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
@@ -243,6 +246,15 @@ public class CodeSigning {
             Logger.logSevere("Codesign process failed");
             return false;
         }
+        for (String line : runner.getResponses()) {
+            if (line.contains(KEYCHAIN_ERROR_MESSAGE)) {
+                Logger.logInfo("Error signing the application: the keychain was locked.\nYou will be required now to unlock the keychain");
+                if (unlockKeychain()) {
+                    return sign(entitlementsPath, appPath);
+                }
+                return false;
+            }
+        }
 
         if (!verifyCodesign(appPath)) {
             Logger.logSevere("Codesign validation failed");
@@ -250,6 +262,40 @@ public class CodeSigning {
         }
 
         Logger.logDebug("Signing done successfully");
+        return true;
+    }
+
+    /**
+     * When running on MacOS, if the Keychain is locked, a system dialog
+     * will show up, and the user can unlock the keychain.
+     *
+     * However running from a remote session, this won't be the case, and
+     * this method will try to unlock the user's keychain, but requires the user
+     * intervention to type the password
+     *
+     * @return true if keychain was unlocked, false otherwise
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private boolean unlockKeychain() throws IOException, InterruptedException {
+        String keychain = ProcessRunner.runProcessForSingleOutput("keychain", "security", "default-keychain", "-d", "user");
+        if (keychain == null || keychain.isEmpty()) {
+            Logger.logSevere("User's Keychain not found. Can't unlock");
+            return false;
+        }
+        keychain = keychain.trim().replaceAll("\"", "");
+        if (!Files.exists(Path.of(keychain.trim()))) {
+            Logger.logSevere("Invalid User's Keychain at " + keychain);
+            return false;
+        }
+
+        // Note: this requires user's intervention
+        String unlock = ProcessRunner.runProcessForSingleOutput("keychain unlock", "security", "unlock-keychain", keychain);
+        if (unlock == null || !unlock.isEmpty()) {
+            Logger.logSevere("Wrong keychain password. Can't unlock");
+            return false;
+        }
+        Logger.logDebug("Keychain unlocked successfully");
         return true;
     }
 
