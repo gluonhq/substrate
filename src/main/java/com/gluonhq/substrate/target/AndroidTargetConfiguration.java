@@ -27,15 +27,6 @@
  */
 package com.gluonhq.substrate.target;
 
-import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.model.ClassPath;
-import com.gluonhq.substrate.model.InternalProjectConfiguration;
-import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.util.FileOps;
-import com.gluonhq.substrate.util.Logger;
-import com.gluonhq.substrate.util.ProcessRunner;
-import com.gluonhq.substrate.util.Version;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,6 +37,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.ClassPath;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
+import com.gluonhq.substrate.util.Version;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
@@ -58,7 +58,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private List<String> androidAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
-    private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-Wl,--gc-sections",
+    private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-fuse-ld=gold", "-Wl,--rosegment,--gc-sections,-z,noexecstack",
             "-landroid", "-llog", "-lnet", "-shared", "-lffi", "-llibchelper", "-ldl");
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", "-Wl,--no-whole-archive",
@@ -348,6 +348,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 .map(s -> libPath.resolve(s).toString())
                 .collect(Collectors.toList()));
         linkFlags.add("-Wl,--no-whole-archive");
+        linkFlags.add("-Wl,--verbose");
         return linkFlags;
     }
 
