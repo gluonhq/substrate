@@ -348,7 +348,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 .map(s -> libPath.resolve(s).toString())
                 .collect(Collectors.toList()));
         linkFlags.add("-Wl,--no-whole-archive");
-        linkFlags.add("-Wl,--verbose");
         return linkFlags;
     }
 
