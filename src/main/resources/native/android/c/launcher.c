@@ -66,7 +66,7 @@ LOGE(stderr, "CREATE ARGS");
     result[origSize]=tmpArgs;
     argsize++;
     int userArgSize=13+strnlen(appDataDir, 512);
-    char* userArgs = calloc(sizeof(char), tmpArgSize);
+    char* userArgs = calloc(sizeof(char), userArgSize);
     strcpy(userArgs,"-Duser.home=");
     strcat(userArgs,appDataDir);
     result[origSize+1]=userArgs;
