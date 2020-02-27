@@ -27,6 +27,15 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.model.ClassPath;
+import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
+import com.gluonhq.substrate.util.Version;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,15 +46,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.model.ClassPath;
-import com.gluonhq.substrate.model.InternalProjectConfiguration;
-import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.util.FileOps;
-import com.gluonhq.substrate.util.Logger;
-import com.gluonhq.substrate.util.ProcessRunner;
-import com.gluonhq.substrate.util.Version;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
