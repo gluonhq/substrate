@@ -55,15 +55,21 @@ int argsize = 8;
 char** createArgs() {
 LOGE(stderr, "CREATE ARGS");
     int origSize = sizeof(origargs)/sizeof(char*);
-    char** result = malloc((origSize+1)* sizeof(char*));
+    char** result = malloc((origSize+2)* sizeof(char*));
     for (int i = 0; i < origSize; i++) {
-        result[i] = origargs[i];
+        result[i] = (char *)origargs[i];
     }
     int tmpArgSize=18+strnlen(appDataDir, 512);
     char* tmpArgs = calloc(sizeof(char), tmpArgSize);
     strcpy(tmpArgs,"-Djava.io.tmpdir=");
     strcat(tmpArgs,appDataDir);
     result[origSize]=tmpArgs;
+    argsize++;
+    int userArgSize=13+strnlen(appDataDir, 512);
+    char* userArgs = calloc(sizeof(char), tmpArgSize);
+    strcpy(userArgs,"-Duser.home=");
+    strcat(userArgs,appDataDir);
+    result[origSize+1]=userArgs;
     argsize++;
 LOGE(stderr, "CREATE ARGS done");
     return result;
