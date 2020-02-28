@@ -135,17 +135,27 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     }
 
     private static void showIME() {
-        Log.v(TAG, "Called notify_showIME, DONT show input for imm = "+imm+", mv = "+mView);
-        mView.requestFocus();
-        boolean answer = imm.showSoftInput(mView, 0);
-        Log.v(TAG, "Done calling notify_showIME, result = "+answer);
+        Log.v(TAG, "Called notify_showIME for imm = "+imm+", mv = "+mView);
+        instance.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mView.requestFocus();
+                boolean answer = imm.showSoftInput(mView, 0);
+            }
+        });
+        Log.v(TAG, "Done calling notify_showIME");
     }
 
     private static void hideIME() {
         Log.v(TAG, "Called notify_hideIME");
-        mView.requestFocus();
-        boolean answer = imm.hideSoftInputFromWindow(mView.getWindowToken(), 0);
-        Log.v(TAG, "Done Calling notify_hideIME, answer = "+answer);
+        instance.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mView.requestFocus();
+                boolean answer = imm.hideSoftInputFromWindow(mView.getWindowToken(), 0);
+            }
+        });
+        Log.v(TAG, "Done Calling notify_hideIME");
     }
 
 
