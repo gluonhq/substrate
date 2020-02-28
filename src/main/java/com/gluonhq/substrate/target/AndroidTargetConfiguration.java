@@ -156,6 +156,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path dalvikKeyCodePackage = apkClassPath.resolve("javafx/scene/input");
         FileOps.copyResource("/native/android/dalvik/MainActivity.class", dalvikActivityPackage.resolve("MainActivity.class"));
         FileOps.copyResource("/native/android/dalvik/MainActivity$1.class", dalvikActivityPackage.resolve("MainActivity$1.class"));
+        FileOps.copyResource("/native/android/dalvik/MainActivity$2.class", dalvikActivityPackage.resolve("MainActivity$2.class"));
+        FileOps.copyResource("/native/android/dalvik/MainActivity$3.class", dalvikActivityPackage.resolve("MainActivity$3.class"));
         FileOps.copyResource("/native/android/dalvik/MainActivity$InternalSurfaceView.class", dalvikActivityPackage.resolve("MainActivity$InternalSurfaceView.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode.class", dalvikKeyCodePackage.resolve("KeyCode.class"));
         FileOps.copyResource("/native/android/dalvik/KeyCode$KeyCodeClass.class", dalvikKeyCodePackage.resolve("KeyCode$KeyCodeClass.class"));
