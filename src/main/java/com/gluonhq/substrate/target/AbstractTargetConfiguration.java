@@ -322,7 +322,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
         }
   
-        int result = processRunner.runProcess("compile additional sources", workDir.toFile());
+        int result = processRunner.runProcess("compile-additional-sources", workDir.toFile());
         // we need more checks (e.g. do launcher.o and thread.o exist?)
         return result == 0;
     }
