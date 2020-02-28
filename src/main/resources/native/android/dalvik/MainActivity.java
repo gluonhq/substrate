@@ -141,9 +141,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             public void run() {
                 mView.requestFocus();
                 boolean answer = imm.showSoftInput(mView, 0);
+                Log.v(TAG, "Done calling notify_showIME, answer = " + answer);
             }
         });
-        Log.v(TAG, "Done calling notify_showIME");
     }
 
     private static void hideIME() {
@@ -153,9 +153,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             public void run() {
                 mView.requestFocus();
                 boolean answer = imm.hideSoftInputFromWindow(mView.getWindowToken(), 0);
+                Log.v(TAG, "Done Calling notify_hideIME, answer = " + answer);
             }
         });
-        Log.v(TAG, "Done Calling notify_hideIME");
     }
 
 
