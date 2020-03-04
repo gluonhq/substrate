@@ -48,7 +48,7 @@ public class ProjectConfiguration {
 
     private boolean usePrismSW = false;
     private boolean verbose = false;
-    private boolean usePrecompiledCode = false;
+    private boolean usePrecompiledCode = true;
 
     private Triplet targetTriplet;
     private Triplet hostTriplet = Triplet.fromCurrentOS();
