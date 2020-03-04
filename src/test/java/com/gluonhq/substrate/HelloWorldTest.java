@@ -43,7 +43,6 @@ class HelloWorldTest {
         String expected = "Hello World";
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
-                .withGradleVersion("5.3")
                 .withArguments(":helloWorld:clean", ":helloWorld:build", ":helloWorld:run",
                         "-Dexpected=" + expected, ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
