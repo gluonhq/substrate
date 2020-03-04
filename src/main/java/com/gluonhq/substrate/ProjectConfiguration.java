@@ -48,6 +48,7 @@ public class ProjectConfiguration {
 
     private boolean usePrismSW = false;
     private boolean verbose = false;
+    private boolean usePrecompiledCode = false;
 
     private Triplet targetTriplet;
     private Triplet hostTriplet = Triplet.fromCurrentOS();
@@ -118,6 +119,14 @@ public class ProjectConfiguration {
 
     public boolean isVerbose() {
         return verbose;
+    }
+
+    public void setUsePrecompiledCode(boolean usePrecompiledCode) {
+        this.usePrecompiledCode = usePrecompiledCode;
+    }
+
+    public boolean isUsePrecompiledCode() {
+        return usePrecompiledCode;
     }
 
     public Triplet getTargetTriplet() {
