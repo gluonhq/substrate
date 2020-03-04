@@ -43,7 +43,6 @@ class HelloFXTest {
         String expected = "QuantumRenderer: shutdown";
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
-                .withGradleVersion("6.2.1")
                 .withArguments(":helloFX:clean", ":helloFX:build",
                         "-Dexpected=" + expected,
                         ":helloFX:run", ":helloFX:runScript", "--stacktrace")

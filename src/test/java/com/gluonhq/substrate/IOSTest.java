@@ -104,7 +104,6 @@ class IOSTest {
 
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
-                .withGradleVersion("6.2.1")
                 .withArguments(":helloWorld:clean", ":helloWorld:build",
                         "-PskipGraalvmHome",
                         "-Dsubstrate.target=ios", "-Dskipsigning=" + skipSigning,
@@ -122,7 +121,6 @@ class IOSTest {
 
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
-                .withGradleVersion("6.2.1")
                 .withArguments(":helloFX:clean", ":helloFX:build",
                         "-PskipGraalvmHome",
                         "-Dsubstrate.target=ios", ":helloFX:run", ":helloFX:runScript", "--stacktrace")

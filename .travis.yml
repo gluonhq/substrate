@@ -39,6 +39,7 @@ matrix:
         - wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-linux-20.1.0-ea+25.zip
         - unzip graalvm-svm-linux-20.1.0-ea+25.zip && cd $TRAVIS_BUILD_DIR
         - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1.0-ea+25
+        - export JAVA_HOME=$GRAALVM_HOME
     - os: osx
       osx_image: xcode10.2
       before_script:
