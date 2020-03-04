@@ -24,6 +24,7 @@ class HelloGluonTest {
         String expected = "QuantumRenderer: shutdown";
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
+                .withGradleVersion("6.2.1")
                 .withArguments(":helloGluon:clean", ":helloGluon:build",
                         "-Dexpected=" + expected,
                         ":helloGluon:run", ":helloGluon:runScript", "--stacktrace")
