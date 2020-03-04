@@ -58,8 +58,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c", "touch_events.c", "glibc_shim.c");
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
-    private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-fuse-ld=gold", "-Wl,--rosegment,--gc-sections,-z,noexecstack",
-            "-landroid", "-llog", "-lnet", "-shared", "-lffi", "-llibchelper", "-ldl", "-ljaas", "-lextnet", "-lnio");
+    private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-fuse-ld=gold",
+            "-Wl,--rosegment,--gc-sections,-z,noexecstack", "-shared",
+            "-landroid", "-llog", "-lffi", "-llibchelper");
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", "-Wl,--no-whole-archive",
             "-lGLESv2", "-lEGL", "-lfreetype");
