@@ -37,8 +37,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativedispatch
 {
     LOGE(stderr, "Native Dalvik layer has to dispatch key event, pass to native Graal layer with %d chars...", cc);
     jchar *kars = (*env)->GetCharArrayElements(env, jchars, 0);
-    int realcount = (*env)->GetArrayLength(env, jchars);
-    LOGE(stderr, "passed count = %d and realcount = %d\n", cc, realcount);
+    LOGE(stderr, "passed count = %d and realcount = %d\n", cc, (*env)->GetArrayLength(env, jchars));
     LOGE(stderr, "c0 = %c and c1 = %c\n", kars[0], kars[1]);
     LOGE(stderr, "c0 = %x and c1 = %x\n", kars[0], kars[1]);
     androidJfx_gotKeyEvent(action, keyCode, kars, cc, modifiers);

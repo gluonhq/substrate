@@ -78,10 +78,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp(
     activity = activityObj;
     LOGE(stderr, "Start GraalApp, DALVIK env at %p\n", env);
     LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
-
-    int ev = (*env)->GetVersion(env);
-
-    LOGE(stderr, "EnvVersion = %d\n", ev);
+    LOGE(stderr, "EnvVersion = %d\n", (*env)->GetVersion(env));
 
     start_logger("GraalCompiled");
     char **graalArgs = createArgs();
