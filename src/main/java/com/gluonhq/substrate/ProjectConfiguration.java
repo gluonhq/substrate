@@ -48,7 +48,7 @@ public class ProjectConfiguration {
 
     private boolean usePrismSW = false;
     private boolean verbose = false;
-    private boolean usePrecompiledCode;
+    private boolean usePrecompiledCode = true;
 
     private Triplet targetTriplet;
     private Triplet hostTriplet = Triplet.fromCurrentOS();
@@ -69,8 +69,6 @@ public class ProjectConfiguration {
         this.mainClassName = Objects.requireNonNull(mainClassName, "Main class name is required")
                                .contains("/") ?
                                   mainClassName.substring( mainClassName.indexOf("/") + 1) : mainClassName;
-        this.usePrecompiledCode = Boolean.parseBoolean(System.getProperty("usePrecompiledCode", "true"));
-
     }
 
     public Path getGraalPath() {
