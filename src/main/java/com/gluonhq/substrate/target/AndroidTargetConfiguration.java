@@ -171,7 +171,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             }
         }
         
-        if (!projectConfiguration.isUsePrecompiledCode()) {
+        if (projectConfiguration.isUsePrecompiledCode()) {
             for (String classFile : compiledGlueCode) {
                 FileOps.copyResource(androidPrecompiled + classFile + ".class", apkClassPath.resolve(classFile + ".class"));
             }

@@ -71,7 +71,7 @@ int JNI_OnLoad(JavaVM *vm, void *reserved)
     return JNI_VERSION_1_6;
 }
 
-// === called from DALVIK. Minize work/dependencies here === //
+// === called from DALVIK. Minimize work/dependencies here === //
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp(JNIEnv *env, jobject activityObj)
 {

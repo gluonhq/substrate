@@ -5,17 +5,17 @@
 
 int __xstat(int ver, const char * path, struct stat64 * stat_buf) 
 {
-    return stat(path, stat_buf);
+    return stat64(path, stat_buf);
 }
 
 int __lxstat(int ver, const char * path, struct stat64 * stat_buf)
 {
-    return lstat(path, stat_buf);
+    return lstat64(path, stat_buf);
 }
 
 int __fxstat(int ver, int fildes, struct stat64 * stat_buf)
 {
-    return fstat(fildes, stat_buf);
+    return fstat64(fildes, stat_buf);
 }
 
 int __xstat64(int ver, const char * path, struct stat64 * stat_buf) 
@@ -46,5 +46,10 @@ size_t __getdelim(char **lineptr, size_t *n, int delim, FILE * stream)
 
 int __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
 {
-    return mknod(path, mode, dev);
+    return mknod(path, mode, *dev);
+}
+
+int __xmknodat(int ver, int fd, const char *path, mode_t mode, dev_t *dev)
+{
+	return mknodat(fd, path, mode, *dev);
 }
