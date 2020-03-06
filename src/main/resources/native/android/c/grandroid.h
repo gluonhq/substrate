@@ -76,4 +76,4 @@ void __attribute__((weak)) androidJfx_gotTouchEvent(int count, int *actions, int
 void __attribute__((weak)) androidJfx_gotKeyEvent(int action, int key, jchar *chars, int count, int mods) {}
 int  __attribute__((weak)) to_jfx_touch_action(int state) { return 0; }
 
-void __attribute__((weak)) attach_setLifecycleEvent(jchar *chars, int count) {}
+void __attribute__((weak)) attach_setLifecycleEvent(const jchar *chars, int count) {}
