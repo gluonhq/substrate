@@ -29,8 +29,8 @@
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchLifecycleEvent(JNIEnv *env, jobject activity, jstring event)
 {
-    LOGE(stderr, "Dispatching lifecycle event from native Dalvik layer");
-    const jchar *chars = (*env)->GetStringChars(env, event, NULL);
-    attach_setLifecycleEvent(chars, (*env)->GetStringLength(env, event));
-    (*env)->ReleaseStringChars(env, event, chars);
+    const char *chars = (*env)->GetStringUTFChars(env, event, NULL);
+    LOGE(stderr, "Dispatching lifecycle event from native Dalvik layer: %s", chars);
+    attach_setLifecycleEvent(chars);
+    (*env)->ReleaseStringUTFChars(env, event, chars);
 }
