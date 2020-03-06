@@ -301,7 +301,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     private void notifyLifecycleEvent(String event) {
         if (graalStarted) {
-            nativeDispatchLifecycleEvent(event, event.length());
+            nativeDispatchLifecycleEvent(event.toCharArray(), event.length());
         }
     }
 
