@@ -115,6 +115,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+                "--features=org.graalvm.home.HomeFinderFeature",
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getTargetArch(),

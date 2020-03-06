@@ -160,6 +160,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         }
 
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+                "--features=org.graalvm.home.HomeFinderFeature",
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
