@@ -257,6 +257,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     protected void onDestroy() {
         Log.v(TAG, "onDestroy");
         super.onDestroy();
+        notifyLifecycleEvent("destroy");
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 
@@ -264,12 +265,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     protected void onPause() {
         Log.v(TAG, "onPause");
         super.onPause();
+        notifyLifecycleEvent("pause");
     }
 
     @Override
     protected void onResume() {
         Log.v(TAG, "onResume");
         super.onResume();
+        notifyLifecycleEvent("resume");
         Log.v(TAG, "onResume done");
     }
 
@@ -277,6 +280,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     protected void onStart() {
         Log.v(TAG, "onStart");
         super.onStart();
+        notifyLifecycleEvent("start");
         Log.v(TAG, "onStart done");
     }
 
@@ -284,12 +288,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     protected void onRestart() {
         Log.v(TAG, "onRestart");
         super.onRestart();
+        notifyLifecycleEvent("restart");
     }
 
     @Override
     protected void onStop() {
         Log.v(TAG, "onStop");
         super.onStop();
+        notifyLifecycleEvent("stop");
+    }
+
+    private void notifyLifecycleEvent(String event) {
+        if (graalStarted) {
+            nativeDispatchLifecycleEvent(event, event.length());
+        }
     }
 
     public final static int PRESS   = 111;
