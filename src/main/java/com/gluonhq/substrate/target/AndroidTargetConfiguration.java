@@ -162,20 +162,17 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         String androidCodeLocation = "/native/android/dalvik";
 
-        String androidSrc = androidCodeLocation + "/source/";
-        String androidPrecompiled = androidCodeLocation + "/precompiled/class/";
-
-        if (!Files.isDirectory(apkAndroidSourcePath)) {
-            for (String srcFile : sourceGlueCode) {
-                FileOps.copyResource(androidSrc + srcFile + ".java", apkAndroidSourcePath.resolve(srcFile + ".java"));
-            }
-        }
-        
         if (projectConfiguration.isUsePrecompiledCode()) {
+            String androidPrecompiled = androidCodeLocation + "/precompiled/class/";
             for (String classFile : compiledGlueCode) {
                 FileOps.copyResource(androidPrecompiled + classFile + ".class", apkClassPath.resolve(classFile + ".class"));
             }
         } else {
+            String androidSrc = androidCodeLocation + "/source/";
+            for (String srcFile : sourceGlueCode) {
+                FileOps.copyResource(androidSrc + srcFile + ".java", apkAndroidSourcePath.resolve(srcFile + ".java"));
+            }
+
             List<String> sources = new ArrayList<>();
 
             for (String srcFile : sourceGlueCode) {
@@ -183,8 +180,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             }
 
             ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
-            "-d", apkClassPath.toString(), "-source", "1.7", "-target", "1.7", "-cp", apkAndroidSourcePath.toString(), "-bootclasspath", androidJar
-            );
+                    "-d", apkClassPath.toString(), "-source", "1.7", "-target", "1.7", "-cp", apkAndroidSourcePath.toString(), "-bootclasspath", androidJar);
             processRunner.addArgs(sources);
             int processResult = processRunner.runProcess("dalvikCompilation");
             if (processResult != 0)
