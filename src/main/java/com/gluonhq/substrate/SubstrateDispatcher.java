@@ -78,6 +78,7 @@ public class SubstrateDispatcher {
         config.setBundlesList(Strings.split(System.getProperty("bundleslist")));
         config.setVerbose(verbose);
         config.setUsePrismSW(Boolean.parseBoolean(System.getProperty("prism.sw", "false")));
+        config.setUsePrecompiledCode(Boolean.parseBoolean(System.getProperty("usePrecompiledCode", "true")));
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
 

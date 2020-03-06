@@ -55,11 +55,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final Path clang;
     private final String hostPlatformFolder;
 
-    private List<String> androidAdditionalSourceFiles = Collections.singletonList("launcher.c");
+    private List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c", "touch_events.c", "glibc_shim.c");
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
-    private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-fuse-ld=gold", "-Wl,--rosegment,--gc-sections,-z,noexecstack",
-            "-landroid", "-llog", "-lnet", "-shared", "-lffi");
+    private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-fuse-ld=gold",
+            "-Wl,--rosegment,--gc-sections,-z,noexecstack", "-shared",
+            "-landroid", "-llog", "-lffi", "-llibchelper");
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", "-Wl,--no-whole-archive",
             "-lGLESv2", "-lEGL", "-lfreetype");
@@ -70,6 +71,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final String capLocation= "/native/android/cap/";
     private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
             "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
+    private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode");
+    private final List<String> compiledGlueCode = Arrays.asList("com/gluonhq/helloandroid/MainActivity", "com/gluonhq/helloandroid/MainActivity$1", 
+            "com/gluonhq/helloandroid/MainActivity$2", "com/gluonhq/helloandroid/MainActivity$3", "com/gluonhq/helloandroid/MainActivity$InternalSurfaceView",
+            "javafx/scene/input/KeyCode", "javafx/scene/input/KeyCode$KeyCodeClass" );
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
         super(paths,configuration);
@@ -139,10 +144,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         Path apkPath = paths.getGvmPath().resolve(Constants.APK_PATH);
         Files.createDirectories(apkPath);
+
         Path apkClassPath = apkPath.resolve("class");
         Path apkBinPath = apkPath.resolve("bin");
         Path apkLibPath = apkPath.resolve("lib");
         Path apkLibArm64Path = apkLibPath.resolve("arm64-v8a");
+        Path apkAndroidSourcePath = apkPath.resolve("android-source");
 
         String unalignedApk = apkBinPath.resolve(projectConfiguration.getAppName()+".unaligned.apk").toString();
         String alignedApk = apkBinPath.resolve(projectConfiguration.getAppName()+".apk").toString();
@@ -152,16 +159,38 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Files.createDirectories(apkLibPath);
         Files.createDirectories(apkLibArm64Path);
         Path androidManifestPath = apkPath.resolve("AndroidManifest.xml");
-        Path dalvikActivityPackage = apkClassPath.resolve("com/gluonhq/helloandroid");
-        Path dalvikKeyCodePackage = apkClassPath.resolve("javafx/scene/input");
-        FileOps.copyResource("/native/android/dalvik/MainActivity.class", dalvikActivityPackage.resolve("MainActivity.class"));
-        FileOps.copyResource("/native/android/dalvik/MainActivity$1.class", dalvikActivityPackage.resolve("MainActivity$1.class"));
-        FileOps.copyResource("/native/android/dalvik/MainActivity$2.class", dalvikActivityPackage.resolve("MainActivity$2.class"));
-        FileOps.copyResource("/native/android/dalvik/MainActivity$3.class", dalvikActivityPackage.resolve("MainActivity$3.class"));
-        FileOps.copyResource("/native/android/dalvik/MainActivity$InternalSurfaceView.class", dalvikActivityPackage.resolve("MainActivity$InternalSurfaceView.class"));
-        FileOps.copyResource("/native/android/dalvik/KeyCode.class", dalvikKeyCodePackage.resolve("KeyCode.class"));
-        FileOps.copyResource("/native/android/dalvik/KeyCode$KeyCodeClass.class", dalvikKeyCodePackage.resolve("KeyCode$KeyCodeClass.class"));
 
+        String androidCodeLocation = "/native/android/dalvik";
+
+        String androidSrc = androidCodeLocation + "/source/";
+        String androidPrecompiled = androidCodeLocation + "/precompiled/class/";
+
+        if (!Files.isDirectory(apkAndroidSourcePath)) {
+            for (String srcFile : sourceGlueCode) {
+                FileOps.copyResource(androidSrc + srcFile + ".java", apkAndroidSourcePath.resolve(srcFile + ".java"));
+            }
+        }
+        
+        if (projectConfiguration.isUsePrecompiledCode()) {
+            for (String classFile : compiledGlueCode) {
+                FileOps.copyResource(androidPrecompiled + classFile + ".class", apkClassPath.resolve(classFile + ".class"));
+            }
+        } else {
+            List<String> sources = new ArrayList<>();
+
+            for (String srcFile : sourceGlueCode) {
+                sources.add(apkAndroidSourcePath.resolve(srcFile + ".java").toString());
+            }
+
+            ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
+            "-d", apkClassPath.toString(), "-source", "1.7", "-target", "1.7", "-cp", apkAndroidSourcePath.toString(), "-bootclasspath", androidJar
+            );
+            processRunner.addArgs(sources);
+            int processResult = processRunner.runProcess("dalvikCompilation");
+            if (processResult != 0)
+                return false;
+        }
+        
         Path androidManifest = androidPath.resolve(Constants.MANIFEST_FILE);
         if (!Files.exists(androidManifest)) {
             throw new IOException("File " + androidManifest.toString() + " not found");
@@ -180,7 +209,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         int processResult;
 
         ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
-                "--output="+apkBinPath.resolve("classes.dex"),apkClassPath.toString());
+                "--output=" + apkBinPath.resolve("classes.dex"), apkClassPath.toString());
         processResult = dx.runProcess("DX");
         if (processResult != 0)
             return false;
@@ -247,15 +276,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
 
         int processResult;
-
-        // Path keystorePath = Paths.get(System.getProperty("user.home")+"/android.keystore");
-        // if (!Files.exists(keystorePath)) throw new IOException ("Can't find android keystore file at "+System.getProperty("user.home"));
-
-        // ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(),"sign", "--ks",
-        // keystorePath.toString() , alignedApk);
-        // processResult = sign.runProcess("sign");
-        // if (processResult != 0)
-        //     return false;
 
         ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
                 "install", "-r", apkFilePath.toString());
@@ -419,8 +439,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                     .orElseThrow(BuildToolNotFoundException::new);
         }
         throw new BuildToolNotFoundException();
-        // TODO: If no build tool is found, we can install it using sdkmanager.
-        //  Currently, sdkmanager doesn't work with JDK 11: https://issuetracker.google.com/issues/67495440
     }
 
     /**

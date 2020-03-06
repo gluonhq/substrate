@@ -272,6 +272,10 @@ public class InternalProjectConfiguration {
         return publicConfig.isVerbose();
     }
 
+    public boolean isUsePrecompiledCode() {
+        return publicConfig.isUsePrecompiledCode();
+    }
+
     /**
      * Enables hash checking to verify integrity of Graal and Java/JavaFX files
      * @param enableCheckHash boolean to enable hash checking
