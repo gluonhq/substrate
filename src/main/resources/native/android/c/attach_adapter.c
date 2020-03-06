@@ -27,9 +27,10 @@
  */
 #include "grandroid.h"
 
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchLifecycleEvent(JNIEnv *env, jobject activity, jcharArray jchars, jint count)
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchLifecycleEvent(JNIEnv *env, jobject activity, jstring event)
 {
     LOGE(stderr, "Dispatching lifecycle event from native Dalvik layer");
-    jchar *chars = (*env)->GetCharArrayElements(env, jchars, 0);
-    attach_setLifecycleEvent(chars, count);
+    const jchar *chars = (*env)->GetStringChars(env, event, NULL);
+    attach_setLifecycleEvent(chars, (*env)->GetStringLength(env, event));
+    (*env)->ReleaseStringChars(env, event, chars);
 }

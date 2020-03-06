@@ -194,7 +194,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
     private native void nativeGotKeyEvent(int action, int keycode);
     private native void nativedispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
-    private native void nativeDispatchLifecycleEvent(char[] chars, int count);
+    private native void nativeDispatchLifecycleEvent(String event);
 
     class InternalSurfaceView extends SurfaceView {
        private static final int ACTION_POINTER_STILL = -1;
@@ -301,7 +301,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     private void notifyLifecycleEvent(String event) {
         if (graalStarted) {
-            nativeDispatchLifecycleEvent(event.toCharArray(), event.length());
+            nativeDispatchLifecycleEvent(event);
         }
     }
 
