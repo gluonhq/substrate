@@ -75,6 +75,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "com/sun/javafx/scene/control/skin/resources/controls",
             "com.sun.javafx.tk.quantum.QuantumMessagesBundle"
     ));
+    private static final List<String> ENABLED_FEATURES = Arrays.asList(
+            "org.graalvm.home.HomeFinderFeature"
+    );
 
     final FileDeps fileDeps;
     final InternalProjectConfiguration projectConfiguration;
@@ -126,6 +129,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         configResolver = new ConfigResolver(cp);
         String nativeImage = getNativeImagePath();
         ProcessRunner compileRunner = new ProcessRunner(nativeImage);
+        compileRunner.addArgs(getEnabledFeatures());
         List<String> buildTimeList = getInitializeAtBuildTimeList(suffix);
         if (!buildTimeList.isEmpty()) {
             compileRunner.addArg("--initialize-at-build-time=" + String.join(",", buildTimeList));
@@ -401,6 +405,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .resolve("bin")
                 .resolve(getNativeImageCommand())
                 .toString();
+    }
+
+    private List<String> getEnabledFeatures() {
+        return ENABLED_FEATURES.stream()
+                .map(feature -> "--features=" + feature)
+                .collect(Collectors.toList());
     }
 
     private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
