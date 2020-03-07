@@ -109,6 +109,32 @@ int main(int argc, char * argv[]) {
     gvmlog(@"[UIAPP] applicationWillTerminate");
 }
 
+- (BOOL)application:(UIApplication *)app
+            openURL:(NSURL *)url
+            options:(NSDictionary<NSString *, id> *)options {
+
+    gvmlog(@"[UIAPP] application_openURL_options");
+
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:@"UIApplicationOpenURLNotification"
+        object:self userInfo:[NSDictionary dictionaryWithObject:url forKey:@"URL"]];
+
+    return YES;
+}
+
+- (BOOL)application:(UIApplication *)application
+            openURL:(NSURL *)url
+            sourceApplication:(NSString *)sourceApplication
+            annotation:(id)annotation {
+
+    gvmlog(@"[UIAPP] application_openURL_sourceApplication_annotation");
+
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:@"UIApplicationOpenURLNotification"
+        object:self userInfo:[NSDictionary dictionaryWithObject:url forKey:@"URL"]];
+
+    return YES;
+}
 
 @end
 
