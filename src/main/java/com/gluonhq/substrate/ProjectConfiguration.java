@@ -33,6 +33,7 @@ import com.gluonhq.substrate.model.Triplet;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -57,6 +58,7 @@ public class ProjectConfiguration {
     private List<String> reflectionList = Collections.emptyList();
     private List<String> jniList = Collections.emptyList();
     private List<String> compilerArgs = Collections.emptyList();
+    private Map<String, List<String>> linkFlags = Collections.emptyMap();
 
     private String appId;
     private String appName;
@@ -206,6 +208,19 @@ public class ProjectConfiguration {
         this.compilerArgs = compilerArgs;
     }
 
+    public Map<String, List<String>> getLinkFlags() {
+        return linkFlags;
+    }
+
+    /**
+     * Sets the map of link flags. The key should be the target, and the value should be the link flags for that target.
+     *
+     * @param linkFlags a map of optional linker flags
+     */
+    public void setLinkFlags(Map<String, List<String>> linkFlags) {
+        this.linkFlags = linkFlags;
+    }
+
     public String getAppId() {
         return appId;
     }
@@ -264,6 +279,7 @@ public class ProjectConfiguration {
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
                 ", compilerArgs=" + compilerArgs +
+                ", linkFlags=" + linkFlags +
                 ", appId='" + appId + '\'' +
                 ", appName='" + appName + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +

@@ -223,6 +223,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         linkRunner.addArgs(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(),
                 projectConfiguration.isUsePrismSW()));
 
+        linkRunner.addArgs(projectConfiguration.getLinkFlags());
+
         linkRunner.addArgs(getTargetSpecificLinkOutputFlags());
 
         linkRunner.addArg(getGraalStaticLibsPath());

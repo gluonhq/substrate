@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Map;
 
 /**
  * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
@@ -227,7 +228,7 @@ public class InternalProjectConfiguration {
      */
     public Path getAndroidSdkPath() {
         String sdkEnv = System.getenv("ANDROID_SDK");
-        return (sdkEnv != null) ? Paths.get(sdkEnv) 
+        return (sdkEnv != null) ? Paths.get(sdkEnv)
                 : Constants.USER_SUBSTRATE_PATH.resolve("Android");
     }
 
@@ -236,7 +237,7 @@ public class InternalProjectConfiguration {
      */
     public Path getAndroidNdkPath() {
         String ndkEnv = System.getenv("ANDROID_NDK");
-        return (ndkEnv != null) ? Paths.get(ndkEnv) 
+        return (ndkEnv != null) ? Paths.get(ndkEnv)
                 : getAndroidSdkPath().resolve("ndk-bundle");
     }
 
@@ -331,6 +332,18 @@ public class InternalProjectConfiguration {
 
     public List<String> getCompilerArgs() {
         return Optional.ofNullable(publicConfig.getCompilerArgs())
+                .orElse(Collections.emptyList());
+    }
+
+    public List<String> getLinkFlags() {
+        Map<String, List<String>> targetLinkFlags =
+                Optional.ofNullable(publicConfig.getLinkFlags())
+                        .orElse(Collections.emptyMap());
+
+        // Get the link flags for the target OS from the map.
+        String target = getTargetTriplet().getOs();
+
+        return Optional.ofNullable(targetLinkFlags.get(target))
                 .orElse(Collections.emptyList());
     }
 
