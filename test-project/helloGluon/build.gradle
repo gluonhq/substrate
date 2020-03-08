@@ -56,7 +56,8 @@ task runScript(type: Exec) {
     def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                     "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
-                    "-Dgraalvm=$graal_path"]
+                    "-Dgraalvm=$graal_path",
+                    "-Dreflectionlist=com.gluonhq.impl.charm.glisten.control.skin.GlistenButtonSkin"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
     } else {
