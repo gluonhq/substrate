@@ -50,7 +50,7 @@ jobs:
 
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
-        run: xvfb-run --auto-servernum ./gradlew -i test
+        run: xvfb-run ./gradlew -i test
 
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
