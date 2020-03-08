@@ -50,7 +50,9 @@ jobs:
 
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
-        run: xvfb-run ./gradlew -i test
+        run: |
+          export DISPLAY=:99
+          xvfb-run ./gradlew -i test
 
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
