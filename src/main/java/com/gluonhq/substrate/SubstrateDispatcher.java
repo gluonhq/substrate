@@ -66,7 +66,7 @@ public class SubstrateDispatcher {
                 :Triplet.fromCurrentOS();
 
         String expected  = System.getProperty("expected");
-        boolean verbose = System.getProperty("verbose") != null;
+        boolean verbose = true;
 
         ProjectConfiguration config = new ProjectConfiguration(mainClass);
         config.setGraalPath(Path.of(graalVM));
