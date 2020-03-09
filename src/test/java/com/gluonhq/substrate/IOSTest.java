@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ import java.util.List;
 
 import static com.gluonhq.substrate.TestUtils.isCIMacOS;
 import static com.gluonhq.substrate.TestUtils.isLocalMacOS;
-import static com.gluonhq.substrate.TestUtils.isTravis;
+import static com.gluonhq.substrate.TestUtils.isCI;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -66,7 +66,7 @@ class IOSTest {
 
     @BeforeEach
     void notForTravis() {
-        if (!isTravis()) {
+        if (!isCI()) {
             assumeTrue(isLocalMacOS());
             assumeTrue(getDeploy().getIosDeployPath() != null);
 //            String[] devices = deploy.connectedDevices();
@@ -78,13 +78,13 @@ class IOSTest {
 
     @Test
     void iosDeployTest() {
-        assumeTrue(!isTravis());
+        assumeTrue(!isCI());
         assertNotNull(getDeploy().getIosDeployPath());
     }
 
     @Test
     void testSigning() {
-        assumeTrue(!isTravis());
+        assumeTrue(!isCI());
         List<Identity> identities = CodeSigning.retrieveAllIdentities();
         assertNotNull(identities);
         assertFalse(identities.isEmpty());
@@ -92,7 +92,7 @@ class IOSTest {
 
     @Test
     void testProvisioning() {
-        assumeTrue(!isTravis());
+        assumeTrue(!isCI());
         List<MobileProvision> provisions = CodeSigning.retrieveAllMobileProvisions();
         assertNotNull(provisions);
         assertFalse(provisions.isEmpty());
@@ -100,7 +100,7 @@ class IOSTest {
 
     @Test
     void helloWorldTest() {
-        boolean skipSigning = isTravis();
+        boolean skipSigning = isCI();
 
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
@@ -117,7 +117,7 @@ class IOSTest {
 
     @Test
     void helloFXTest() {
-        assumeTrue(!isTravis());
+        assumeTrue(!isCI());
 
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
