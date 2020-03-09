@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -154,7 +154,4 @@ public class Constants {
     public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
     public static final String JNI_JAVAFX_ARCH_FILE = "jniconfig-javafx-${archOs}.json";
     public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
-
-    public static final String LLC_NAME = "llc";
-    public static final String LLC_VERSION = "1";
 }

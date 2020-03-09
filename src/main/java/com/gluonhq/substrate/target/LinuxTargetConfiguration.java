@@ -158,15 +158,14 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         if (!crossCompile) {
             return super.getTargetSpecificAOTCompileFlags();
         }
-        Path llcPath = getLlcPath();
+
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
                 "-H:CAPCacheDir="+ getCapCacheDir().toAbsolutePath().toString(),
-                "-H:CustomLD=aarch64-linux-gnu-ld" ,
-                "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+                "-H:CustomLD=aarch64-linux-gnu-ld");
     }
 
     @Override

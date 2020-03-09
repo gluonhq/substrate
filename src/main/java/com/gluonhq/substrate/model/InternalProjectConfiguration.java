@@ -57,13 +57,10 @@ public class InternalProjectConfiguration {
     private String javaStaticLibs;
     private String javaFXStaticSDK;
 
-    private String llcPath;
-    private String staticRoot;
     private boolean useJNI = true;
     private boolean useJavaFX = false;
     private boolean usePrismSW = false;
     private boolean enableCheckHash = true;
-    private boolean verbose = false;
 
     private String backend;
     private List<String> bundlesList = Collections.emptyList();
@@ -154,12 +151,11 @@ public class InternalProjectConfiguration {
      * @return the path to the Java SDK (including at least the libs)
      */
     public Path getDefaultJavaStaticPath() {
-        Path answer = Constants.USER_SUBSTRATE_PATH
+        return Constants.USER_SUBSTRATE_PATH
                 .resolve("javaStaticSdk")
                 .resolve(getJavaStaticSdkVersion())
                 .resolve(getTargetTriplet().getOsArch())
                 .resolve("labs-staticjdk");
-        return answer;
     }
 
     private Path getDefaultJavaStaticLibsPath() {
@@ -189,16 +185,14 @@ public class InternalProjectConfiguration {
      */
     public Path getJavafxStaticPath() {
         return javaFXStaticSDK != null? Paths.get(javaFXStaticSDK): getDefaultJavafxStaticPath();
-
     }
 
-     Path getDefaultJavafxStaticPath() {
-            Path answer = Constants.USER_SUBSTRATE_PATH
+    Path getDefaultJavafxStaticPath() {
+        return Constants.USER_SUBSTRATE_PATH
                 .resolve("javafxStaticSdk")
                 .resolve(getJavafxStaticSdkVersion())
                 .resolve(getTargetTriplet().getOsArch())
                 .resolve("sdk");
-        return answer;
     }
 
     public Path getJavafxStaticLibsPath() {
@@ -208,18 +202,6 @@ public class InternalProjectConfiguration {
     public String getJavafxStaticSdkVersion() {
         return Optional.ofNullable(publicConfig.getJavafxStaticSdkVersion())
                        .orElse(Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION);
-    }
-
-    public String getLlcPath() {
-        return llcPath;
-    }
-
-    /**
-     * Sets the LLC directory by the user
-     * @param llcPath the directory (e.g "$user/Downloads/llclib") that contains LLC
-     */
-    public void setLlcPath(String llcPath) {
-        this.llcPath = llcPath;
     }
 
     /**
@@ -310,7 +292,7 @@ public class InternalProjectConfiguration {
     }
 
     public boolean isUseLLVM() {
-        return "llvm".equals(backend);
+        return Constants.BACKEND_LLVM.equals(backend);
     }
 
     public List<String> getBundlesList() {
@@ -489,13 +471,10 @@ public class InternalProjectConfiguration {
                 "graalPath='" + publicConfig.getGraalPath() + '\'' +
                 ", javaStaticSdkVersion='" + getJavaStaticSdkVersion() + '\'' +
                 ", javafxStaticSdkVersion='" + getJavafxStaticSdkVersion() + '\'' +
-                ", llcPath='" + llcPath + '\'' +
-                ", StaticRoot='" + staticRoot + '\'' +
                 ", useJNI=" + useJNI +
                 ", useJavaFX=" + useJavaFX +
                 ", usePrismSW=" + usePrismSW +
                 ", enableCheckHash=" + enableCheckHash +
-                ", verbose=" + verbose +
                 ", targetTriplet=" + getTargetTriplet() +
                 ", hostTriplet=" + getHostTriplet() +
                 ", backend='" + backend + '\'' +

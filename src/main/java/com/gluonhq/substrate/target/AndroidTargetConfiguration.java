@@ -316,18 +316,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
-        Path llcPath = getLlcPath();
-        Path internalLlcPath = projectConfiguration.getGraalPath().resolve("lib").resolve("llvm").resolve("bin");
-        
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
-                "-Dllvm.bin.dir=" + internalLlcPath,
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
-                "-H:CustomLD=" + ldlld.toAbsolutePath().toString(),
-                "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+                "-H:CustomLD=" + ldlld.toAbsolutePath().toString());
     }
 
     @Override

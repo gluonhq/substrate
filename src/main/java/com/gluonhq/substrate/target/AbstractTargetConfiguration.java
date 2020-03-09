@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +75,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "com/sun/javafx/scene/control/skin/resources/controls",
             "com.sun.javafx.tk.quantum.QuantumMessagesBundle"
     ));
+    private static final List<String> ENABLED_FEATURES = Arrays.asList(
+            "org.graalvm.home.HomeFinderFeature"
+    );
 
     final FileDeps fileDeps;
     final InternalProjectConfiguration projectConfiguration;
@@ -126,6 +129,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         configResolver = new ConfigResolver(cp);
         String nativeImage = getNativeImagePath();
         ProcessRunner compileRunner = new ProcessRunner(nativeImage);
+        compileRunner.addArgs(getEnabledFeatures());
         List<String> buildTimeList = getInitializeAtBuildTimeList(suffix);
         if (!buildTimeList.isEmpty()) {
             compileRunner.addArg("--initialize-at-build-time=" + String.join(",", buildTimeList));
@@ -403,6 +407,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .toString();
     }
 
+    private List<String> getEnabledFeatures() {
+        return ENABLED_FEATURES.stream()
+                .map(feature -> "--features=" + feature)
+                .collect(Collectors.toList());
+    }
+
     private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add(Constants.REFLECTION_JAVA_FILE);
@@ -613,30 +623,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     // --- package protected methods
-
-    /*
-     * Returns the path to an llc compiler
-     * First, the projectConfiguration is checked for llcPath.
-     * If that property is set, it will be used. If the property is set, but the llc compiler is not at the
-     * pointed location or is not working, an IllegalArgumentException will be thrown.
-     *
-     * If there is no llcPath property in the projectConfiguration, the file cache is checked for an llc version
-     * that works for the current architecture.
-     * If there is no llc in the file cache, it is retrieved from the download site, and added to the cache.
-     */
-    Path getLlcPath() throws IOException {
-        if (projectConfiguration.getLlcPath() != null) {
-            Path llcPath = Path.of(projectConfiguration.getLlcPath());
-            if (!Files.exists(llcPath)) {
-                throw new IllegalArgumentException("Configuration points to an llc that does not exist: "+llcPath);
-            } else {
-                return llcPath;
-            }
-        }
-        // there is no pre-configured llc, search it in the cache, or populare the cache
-        Path llcPath = fileDeps.getLlcPath();
-        return llcPath;
-    }
 
     // Methods below with default implementation, can be overridden by subclasses
 
