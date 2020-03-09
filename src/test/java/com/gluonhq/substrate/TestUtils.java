@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,42 +32,42 @@ import java.util.Locale;
 class TestUtils {
 
     /**
-     * Checks if the test is running on Travis CI
-     * @return true if on Travis CI
+     * Checks if the test is running on CI server
+     * @return true if on a CI server
      */
-    static boolean isTravis() {
-        return System.getenv("TRAVIS") != null;
+    static boolean isCI() {
+        return System.getenv("TRAVIS") != null || System.getenv("GITHUB_ACTIONS") != null;
     }
 
     /**
-     * Checks if the test is running on Mac OS, but not on Travis
+     * Checks if the test is running on Mac OS, but not on CI server
      * @return true if runs on a local Mac OS
      */
     static boolean isLocalMacOS() {
-        return !isTravis() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
+        return !isCI() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
     }
 
     /**
-     * Checks if the test is running on Linux, but not on Travis
+     * Checks if the test is running on Linux, but not on CI server
      * @return true if runs on a local Linux
      */
     boolean isLocalLinux() {
-        return !isTravis() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("nux");
+        return !isCI() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("nux");
     }
 
     /**
-     * Checks if the test is running on Mac OS over Travis CI
-     * @return true if runs on Mac OS over Travis CI
+     * Checks if the test is running on Mac OS over CI server
+     * @return true if runs on Mac OS over CI server
      */
     static boolean isCIMacOS() {
-        return isTravis() && "osx".equalsIgnoreCase(System.getenv("TRAVIS_OS_NAME"));
+        return isCI() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
     }
 
     /**
-     * Checks if the test is running on Linux over Travis CI
-     * @return true if runs on Linux over Travis CI
+     * Checks if the test is running on Linux over CI server
+     * @return true if runs on Linux over CI server
      */
     static boolean isCILinux() {
-        return isTravis() && "linux".equalsIgnoreCase(System.getenv("TRAVIS_OS_NAME"));
+        return isCI() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("nux");
     }
 }
