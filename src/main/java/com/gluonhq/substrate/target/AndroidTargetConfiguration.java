@@ -285,7 +285,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 clearLog.runProcess("clearLog");
 
                 ProcessRunner log = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalActivity:V", "GraalGluon:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
+                "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalActivity:V", "GraalGluon:V", "GluonAttach:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
                 log.setInfo(true);
                 log.runProcess("log");
             } catch (IOException | InterruptedException e) { 
