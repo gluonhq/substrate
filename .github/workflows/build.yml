@@ -27,7 +27,6 @@ jobs:
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
           wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-linux-20.1.0-ea+25.zip
           unzip graalvm-svm-linux-20.1.0-ea+25 && cd $GITHUB_WORKSPACE
-          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1.0-ea+25
 
       - name: Install GraalVM (MacOS)
         if: runner.os == 'macOS'
@@ -35,7 +34,6 @@ jobs:
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
           wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.1.0-ea+25.zip
           unzip graalvm-svm-darwin-20.1.0-ea+25 && cd $GITHUB_WORKSPACE
-          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1.0-ea+25
 
       - name: Checkout
         uses: actions/checkout@v2
@@ -51,13 +49,14 @@ jobs:
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
         run: |
+          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1.0-ea+25
           export DISPLAY=:99
           xvfb-run ./gradlew -i test
 
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
         run: |
-          echo $PATH
+          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1.0-ea+25
           ./gradlew -i test
 
       - name: Build project
