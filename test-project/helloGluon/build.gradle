@@ -10,7 +10,7 @@ repositories {
     }
 }
 
-def attachVersion = "4.0.2"
+def attachVersion = "4.0.5"
 def target = System.getProperty("substrate.target")
 def classifier = "ios" == target ? target : "desktop"
 
@@ -21,7 +21,7 @@ configurations {
 dependencies {
     substrate "com.gluonhq:substrate:$substrateVersion"
 
-    implementation "com.gluonhq:charm-glisten:6.0.1"
+    implementation "com.gluonhq:charm-glisten:6.0.2"
     implementation "com.gluonhq.attach:display:$attachVersion:$classifier"
     implementation "com.gluonhq.attach:lifecycle:$attachVersion:$classifier"
     if ("ios" == target) {
