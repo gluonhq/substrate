@@ -35,15 +35,15 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
-import static com.gluonhq.substrate.TestUtils.isCI;
+import static com.gluonhq.substrate.TestUtils.isTravis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class HelloGluonTest {
 
     @BeforeEach
-    void notForCI() {
-        assumeTrue(!isCI());
+    void notForTravis() {
+        assumeTrue(!isTravis());
     }
 
     @Test
@@ -60,5 +60,4 @@ class HelloGluonTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":helloGluon:run").getOutcome(), "Run failed!");
         assertEquals(TaskOutcome.SUCCESS, result.task(":helloGluon:runScript").getOutcome(), "RunScript failed!");
     }
-
 }
