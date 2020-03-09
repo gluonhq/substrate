@@ -29,6 +29,7 @@ package com.gluonhq.helloandroid;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -303,6 +304,25 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         if (graalStarted) {
             nativeDispatchLifecycleEvent(event);
         }
+    }
+
+    private static IntentHandler intentHandler;
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        Log.v(TAG, "onActivityResult with requestCode " + requestCode+" and resultCode = "+resultCode+" and intent = "+intent);
+        if (intentHandler != null) {
+            intentHandler.gotActivityResult (requestCode, resultCode, intent);
+        }
+    }
+
+    public void setOnActivityResultHandler (IntentHandler handler) {
+        intentHandler = handler;
+    }
+
+
+    private static void attach_ble_startScanner() {
+        BleService ble = new BleService(instance);
     }
 
     public final static int PRESS   = 111;

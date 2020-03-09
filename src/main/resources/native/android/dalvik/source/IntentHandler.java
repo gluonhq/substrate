@@ -25,37 +25,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "grandroid.h"
+package com.gluonhq.helloandroid;
 
-jmethodID ble_startScannerMethod;
-int handlesInitialized = 0;
+import android.content.Intent;
 
-void registerAttachMethodHandles() {
-    if (handlesInitialized > 0) return;
-    JNIEnv* androidEnv;
-    (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **)&androidEnv, NULL);
-    ble_startScannerMethod = (*androidEnv)->GetStaticMethodID(androidEnv, activityClass, "attach_ble_startScanner", "()V");
-    (*androidVM)->DetachCurrentThread(androidVM);
-    handlesInitialized = 1;
-}
+public interface IntentHandler {
 
-// From Android to native
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchLifecycleEvent(JNIEnv *env, jobject activity, jstring event)
-{
-    const char *chars = (*env)->GetStringUTFChars(env, event, NULL);
-    LOGE(stderr, "Dispatching lifecycle event from native Dalvik layer: %s", chars);
-    attach_setLifecycleEvent(chars);
-    (*env)->ReleaseStringUTFChars(env, event, chars);
-}
-
-// From Graal to Android
-
-void module_ble_startScanning() {
-    JNIEnv* androidEnv;
-    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning\n");
-    registerAttachMethodHandles();
-    (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **)&androidEnv, NULL);
-    (*androidEnv)->CallStaticVoidMethod(androidEnv, activityClass, ble_startScannerMethod);
-    (*androidVM)->DetachCurrentThread(androidVM);
+    void gotActivityResult (int requestCode, int resultCode, Intent intent);
 
 }
+

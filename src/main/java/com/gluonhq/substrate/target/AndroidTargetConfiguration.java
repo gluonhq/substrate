@@ -71,7 +71,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final String capLocation= "/native/android/cap/";
     private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
             "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
-    private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode");
+    private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode", "IntentHandler", "BleService");
     private final List<String> compiledGlueCode = Arrays.asList("com/gluonhq/helloandroid/MainActivity", "com/gluonhq/helloandroid/MainActivity$1", 
             "com/gluonhq/helloandroid/MainActivity$2", "com/gluonhq/helloandroid/MainActivity$3", "com/gluonhq/helloandroid/MainActivity$InternalSurfaceView",
             "javafx/scene/input/KeyCode", "javafx/scene/input/KeyCode$KeyCodeClass" );
@@ -180,7 +180,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             }
 
             ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
-                    "-d", apkClassPath.toString(), "-source", "1.7", "-target", "1.7", "-cp", apkAndroidSourcePath.toString(), "-bootclasspath", androidJar);
+                    "-d", apkClassPath.toString(), "-source", "1.8", "-target", "1.8", "-cp", apkAndroidSourcePath.toString(), "-bootclasspath", androidJar);
             processRunner.addArgs(sources);
             int processResult = processRunner.runProcess("dalvikCompilation");
             if (processResult != 0)
