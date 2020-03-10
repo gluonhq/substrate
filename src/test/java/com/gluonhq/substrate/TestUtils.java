@@ -32,11 +32,27 @@ import java.util.Locale;
 class TestUtils {
 
     /**
+     * Checks if the test is running on Travis CI
+     * @return true if on Travis CI
+     */
+    static boolean isTravis() {
+        return System.getenv("TRAVIS") != null;
+    }
+
+    /**
+     * Checks if the test is running on Github Actions CI
+     * @return true if on Github Actions CI
+     */
+    static boolean isGithubActions() {
+        return System.getenv("GITHUB_ACTIONS") != null;
+    }
+
+    /**
      * Checks if the test is running on CI server
      * @return true if on a CI server
      */
     static boolean isCI() {
-        return System.getenv("TRAVIS") != null || System.getenv("GITHUB_ACTIONS") != null;
+        return isTravis() || isGithubActions();
     }
 
     /**
