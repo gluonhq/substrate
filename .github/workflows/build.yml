@@ -69,7 +69,7 @@ jobs:
         run: ./gradlew -i build -x test
 
       - name: Deploy Snapshot
-        if: github.event.push.ref == 'refs/heads/master'
+        if: runner.os == 'Linux' && github.event.push.ref == 'refs/heads/master'
         run: ./gradlew publish -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
