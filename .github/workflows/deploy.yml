@@ -23,7 +23,13 @@ jobs:
         run: chmod +x gradlew
 
       - name: Deploy to Sonatype Nexus
-        run: ./gradlew publish -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD
+        run: |
+          echo $GPG_PRIVATE_KEY > sonatype.gpg
+          ./gradlew publish closeAndReleaseRepository --info -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD -Psigning.keyId=$GPG_KEYNAME -Psigning.password=$GPG_PASSPHRASE -Psigning.secretKeyRingFile=sonatype.gpg
+          rm -rf sonatype.gpg
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
