@@ -52,10 +52,14 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatch
 
 void module_ble_startScanning() {
     JNIEnv* androidEnv;
-    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning\n");
+    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 0\n");
     registerAttachMethodHandles();
+    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 1\n");
     (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **)&androidEnv, NULL);
+    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 2\n");
     (*androidEnv)->CallStaticVoidMethod(androidEnv, activityClass, ble_startScannerMethod);
+    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 3\n");
     (*androidVM)->DetachCurrentThread(androidVM);
+    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 4\n");
 
 }
