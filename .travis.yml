@@ -56,20 +56,3 @@ before_script:
 install: true
 
 script: ./gradlew --info build
-
-deploy:
-  # Deploy snapshots on every commit pushed to master
-  - provider: script
-    script: ./gradlew publish -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD
-    skip_cleanup: true
-    on:
-      branch: master
-      condition: $TRAVIS_OS_NAME = linux
-
-  # Deploy releases on every tag push
-  - provider: script
-    script: bash .ci/deploy.sh
-    skip_cleanup: true
-    on:
-      tags: true
-      condition: $TRAVIS_OS_NAME = linux
