@@ -69,7 +69,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
             "LLVMDirectives.cap", "PosixDirectives.cap"};
-    private final String capLocation= "/native/android/cap/";
+    private final String capLocation = "/native/android/cap/";
     private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
             "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
     private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode");
@@ -139,126 +139,38 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean packageApp() throws IOException, InterruptedException {
         Path androidPath = prepareAndroidResources();
 
+        ensureApkOutputDirectoriesExist();
+
         Path sdkPath = Paths.get(sdk);
         Path buildToolsPath = sdkPath.resolve("build-tools").resolve(findLatestBuildTool(sdkPath));
-
         String androidJar = sdkPath.resolve("platforms").resolve("android-27").resolve("android.jar").toString();
-        String aaptCmd = buildToolsPath.resolve("aapt").toString();
 
-        Path apkPath = paths.getGvmPath().resolve(Constants.APK_PATH);
-        Files.createDirectories(apkPath);
+        String unalignedApk = getApkBinPath().resolve(projectConfiguration.getAppName() + ".unaligned.apk").toString();
+        String alignedApk = getApkBinPath().resolve(projectConfiguration.getAppName() + ".apk").toString();
 
-        Path apkClassPath = apkPath.resolve("class");
-        Path apkBinPath = apkPath.resolve("bin");
-        Path apkLibPath = apkPath.resolve("lib");
-        Path apkLibArm64Path = apkLibPath.resolve("arm64-v8a");
-        Path apkAndroidSourcePath = apkPath.resolve("android-source");
-
-        String unalignedApk = apkBinPath.resolve(projectConfiguration.getAppName()+".unaligned.apk").toString();
-        String alignedApk = apkBinPath.resolve(projectConfiguration.getAppName()+".apk").toString();
-
-        Files.createDirectories(apkClassPath);
-        Files.createDirectories(apkBinPath);
-        Files.createDirectories(apkLibPath);
-        Files.createDirectories(apkLibArm64Path);
-        Path androidManifestPath = apkPath.resolve("AndroidManifest.xml");
-
-        String androidCodeLocation = "/native/android/dalvik";
-
-        if (projectConfiguration.isUsePrecompiledCode()) {
-            String androidPrecompiled = androidCodeLocation + "/precompiled/class/";
-            for (String classFile : compiledGlueCode) {
-                FileOps.copyResource(androidPrecompiled + classFile + ".class", apkClassPath.resolve(classFile + ".class"));
-            }
-        } else {
-            String androidSrc = androidCodeLocation + "/source/";
-            for (String srcFile : sourceGlueCode) {
-                FileOps.copyResource(androidSrc + srcFile + ".java", apkAndroidSourcePath.resolve(srcFile + ".java"));
-            }
-
-            List<String> sources = new ArrayList<>();
-
-            for (String srcFile : sourceGlueCode) {
-                sources.add(apkAndroidSourcePath.resolve(srcFile + ".java").toString());
-            }
-
-            ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
-                    "-d", apkClassPath.toString(), "-source", "1.7", "-target", "1.7", "-cp", apkAndroidSourcePath.toString(), "-bootclasspath", androidJar);
-            processRunner.addArgs(sources);
-            int processResult = processRunner.runProcess("dalvikCompilation");
-            if (processResult != 0)
-                return false;
-        }
-
-        Path androidManifest = androidPath.resolve(Constants.MANIFEST_FILE);
-        if (!Files.exists(androidManifest)) {
-            throw new IOException("File " + androidManifest.toString() + " not found");
-        }
-        FileOps.copyFile(androidManifest, androidManifestPath);
-        for (String iconFolder : iconFolders) {
-            Path iconPath = androidPath.resolve("res").resolve(iconFolder).resolve("ic_launcher.png");
-            if (!Files.exists(iconPath)) {
-                throw new IOException("File " + iconPath.toString() + " not found");
-            }
-            Path assetPath = apkPath.resolve("res").resolve(iconFolder);
-            Files.createDirectories(assetPath);
-            FileOps.copyFile(iconPath, assetPath.resolve("ic_launcher.png"));
-        }
-
-        int processResult;
-
-        ProcessRunner dx = new ProcessRunner(buildToolsPath.resolve("dx").toString(), "--dex",
-                "--output=" + apkBinPath.resolve("classes.dex"), apkClassPath.toString());
-        processResult = dx.runProcess("DX");
-        if (processResult != 0)
+        if (!processPrecompiledClasses(androidJar)) {
             return false;
-
-        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
-                "-f", "-m", "-F", unalignedApk,
-                "-M", androidManifestPath.toString(),
-                "-S", apkPath.resolve("res").toString(),
-                "-I", androidJar);
-        processResult = aaptpackage.runProcess("AAPT-package");
-        if (processResult != 0)
-            return false;
-
-        ProcessRunner aaptAddClass = new ProcessRunner(aaptCmd, "add", unalignedApk,
-                "classes.dex");
-        processResult = aaptAddClass.runProcess("AAPT-add classes", apkBinPath.toFile());
-        if (processResult != 0)
-            return false;
-
-        Path libPath = paths.getAppPath().resolve(getLinkOutputName());
-        Path graalLibPath = apkLibArm64Path.resolve("libsubstrate.so");
-        Files.copy(libPath, graalLibPath, StandardCopyOption.REPLACE_EXISTING);
-
-        boolean useJavaFX = projectConfiguration.isUseJavaFX();
-        if (useJavaFX) {
-            Path freetypeLibPath = apkLibArm64Path.resolve("libfreetype.so");
-            Files.deleteIfExists(freetypeLibPath);
-            Files.copy(fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so"), freetypeLibPath);
         }
 
-        List<String> aaptAddLibsArgs = new ArrayList<>(Arrays.asList(aaptCmd, "add", unalignedApk, "lib/arm64-v8a/libsubstrate.so"));
-        if (useJavaFX) {
-            aaptAddLibsArgs.add("lib/arm64-v8a/libfreetype.so");
+        copyAndroidManifest(androidPath);
+        copyAssets(androidPath);
+
+        int processResult = dx(buildToolsPath);
+        if (processResult != 0) {
+            return false;
         }
 
-        ProcessRunner aaptAddLibs = new ProcessRunner(aaptAddLibsArgs.toArray(String[]::new));
-        processResult = aaptAddLibs.runProcess("AAPT-add lib", apkPath.toFile());
-        if (processResult != 0) return false;
-
-        ProcessRunner zipAlign = new ProcessRunner(buildToolsPath.resolve("zipalign").toString(), "-f", "4", unalignedApk, alignedApk);
-        processResult = zipAlign.runProcess("zipalign");
-        if (processResult != 0)
+        processResult = aapt(buildToolsPath, unalignedApk, androidJar);
+        if (processResult != 0) {
             return false;
+        }
 
-        createDevelopKeystore();
+        processResult = zipAlign(buildToolsPath, unalignedApk, alignedApk);
+        if (processResult != 0) {
+            return false;
+        }
 
-        ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks",
-                Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE).toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
-        processResult = sign.runProcess("sign");
-
+        processResult = sign(buildToolsPath, alignedApk);
         return processResult == 0;
     }
 
@@ -266,18 +178,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean runUntilEnd() throws IOException, InterruptedException {
         Path sdkPath = Paths.get(sdk);
 
-        Path apkPath = paths.getGvmPath().resolve(Constants.APK_PATH);
-        Path apkBinPath = apkPath.resolve("bin");
-        Path apkFilePath = apkBinPath.resolve(projectConfiguration.getAppName()+".apk");
-        if (!Files.exists(apkFilePath)) {
-            throw new IOException("Application not found at path " + apkFilePath);
+        Path alignedApkPath = getApkBinPath().resolve(projectConfiguration.getAppName() + ".apk");
+        if (!Files.exists(alignedApkPath)) {
+            throw new IOException("Application not found at path " + alignedApkPath);
         }
 
-        int processResult;
-
-        ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "install", "-r", apkFilePath.toString());
-        processResult = install.runProcess("install");
+        int processResult = installApk(sdkPath, alignedApkPath.toString());
         if (processResult != 0) throw new IOException("Application installation failed!");
 
         Runnable logcat = () -> {
@@ -345,7 +251,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return cFlags;
     }
 
-
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         if (!useJavaFX) return linkFlags;
@@ -396,6 +301,184 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return false;
     }
 
+    private Path getApkPath() {
+        return paths.getGvmPath().resolve(Constants.APK_PATH);
+    }
+
+    private Path getApkBinPath() {
+        return getApkPath().resolve("bin");
+    }
+
+    private Path getApkClassPath() {
+        return getApkPath().resolve("class");
+    }
+
+    private Path getApkLibPath() {
+        return getApkPath().resolve("lib");
+    }
+
+    private Path getApkLibArm64Path() {
+        return getApkLibPath().resolve("arm64-v8a");
+    }
+
+    private Path getApkAndroidSourcePath() {
+        return getApkPath().resolve("android-source");
+    }
+
+    private void ensureApkOutputDirectoriesExist() throws IOException {
+        Files.createDirectories(getApkPath());
+        Files.createDirectories(getApkBinPath());
+        Files.createDirectories(getApkClassPath());
+        Files.createDirectories(getApkLibPath());
+        Files.createDirectories(getApkLibArm64Path());
+        Files.createDirectories(getApkAndroidSourcePath());
+    }
+
+    private boolean processPrecompiledClasses(String androidJar) throws IOException, InterruptedException {
+        String androidCodeLocation = "/native/android/dalvik";
+
+        if (projectConfiguration.isUsePrecompiledCode()) {
+            copyPrecompiledClasses(androidCodeLocation + "/precompiled/class/");
+        } else {
+            return compileDalvikCode(androidCodeLocation + "/source/", androidJar) == 0;
+        }
+
+        return true;
+    }
+
+    private void copyPrecompiledClasses(String androidPrecompiled) throws IOException {
+        for (String classFile : compiledGlueCode) {
+            FileOps.copyResource(androidPrecompiled + classFile + ".class",
+                    getApkClassPath().resolve(classFile + ".class"));
+        }
+    }
+
+    private int compileDalvikCode(String androidSrc, String androidJar) throws IOException, InterruptedException {
+        for (String srcFile : sourceGlueCode) {
+            FileOps.copyResource(androidSrc + srcFile + ".java", getApkAndroidSourcePath().resolve(srcFile + ".java"));
+        }
+
+        List<String> sources = new ArrayList<>();
+
+        for (String srcFile : sourceGlueCode) {
+            sources.add(getApkAndroidSourcePath().resolve(srcFile + ".java").toString());
+        }
+
+        ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
+                "-d", getApkClassPath().toString(),
+                "-source", "1.7", "-target", "1.7",
+                "-cp", getApkAndroidSourcePath().toString(),
+                "-bootclasspath", androidJar);
+        processRunner.addArgs(sources);
+        return processRunner.runProcess("dalvikCompilation");
+    }
+
+    private void copyAndroidManifest(Path androidPath) throws IOException {
+        Path androidManifest = androidPath.resolve(Constants.MANIFEST_FILE);
+        if (!Files.exists(androidManifest)) {
+            throw new IOException("File " + androidManifest.toString() + " not found");
+        }
+        Path androidManifestPath = getApkPath().resolve("AndroidManifest.xml");
+        FileOps.copyFile(androidManifest, androidManifestPath);
+    }
+
+    private void copyAssets(Path androidPath) throws IOException {
+        for (String iconFolder : iconFolders) {
+            Path iconPath = androidPath.resolve("res").resolve(iconFolder).resolve("ic_launcher.png");
+            if (!Files.exists(iconPath)) {
+                throw new IOException("File " + iconPath.toString() + " not found");
+            }
+            Path assetPath = getApkPath().resolve("res").resolve(iconFolder);
+            Files.createDirectories(assetPath);
+            FileOps.copyFile(iconPath, assetPath.resolve("ic_launcher.png"));
+        }
+    }
+
+    private int dx(Path buildToolsPath) throws IOException, InterruptedException {
+        String dxCmd = buildToolsPath.resolve("dx").toString();
+
+        ProcessRunner dx = new ProcessRunner(dxCmd, "--dex",
+                "--output=" + getApkBinPath().resolve("classes.dex"), getApkClassPath().toString());
+        return dx.runProcess("dx");
+    }
+
+    private int aapt(Path buildToolsPath, String unalignedApk, String androidJar) throws IOException, InterruptedException {
+        int processResult = aaptPackage(buildToolsPath, unalignedApk, androidJar);
+        if (processResult != 0) {
+            return processResult;
+        }
+
+        processResult = aaptAddDxClasses(buildToolsPath, unalignedApk);
+        if (processResult != 0) {
+            return processResult;
+        }
+
+        return aaptAddNativeLibs(buildToolsPath, unalignedApk);
+    }
+
+    private int aaptPackage(Path buildToolsPath, String unalignedApk, String androidJar) throws IOException, InterruptedException {
+        String aaptCmd = buildToolsPath.resolve("aapt").toString();
+        Path androidManifestPath = getApkPath().resolve("AndroidManifest.xml");
+        Path apkResPath = getApkPath().resolve("res");
+        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
+                "-f", "-m", "-F", unalignedApk,
+                "-M", androidManifestPath.toString(),
+                "-S", apkResPath.toString(),
+                "-I", androidJar);
+        return aaptpackage.runProcess("aaptPackage");
+    }
+
+    private int aaptAddDxClasses(Path buildToolsPath, String unalignedApk) throws IOException, InterruptedException {
+        String aaptCmd = buildToolsPath.resolve("aapt").toString();
+        ProcessRunner aaptAddClass = new ProcessRunner(aaptCmd, "add", unalignedApk, "classes.dex");
+        return aaptAddClass.runProcess("aaptAddDxClasses", getApkBinPath().toFile());
+    }
+
+    private int aaptAddNativeLibs(Path buildToolsPath, String unalignedApk) throws IOException, InterruptedException {
+        String aaptCmd = buildToolsPath.resolve("aapt").toString();
+
+        Path libPath = paths.getAppPath().resolve(getLinkOutputName());
+        Path substrateLibPath = getApkLibArm64Path().resolve("libsubstrate.so");
+        Files.copy(libPath, substrateLibPath, StandardCopyOption.REPLACE_EXISTING);
+
+        List<String> aaptAddLibsArgs = new ArrayList<>(Arrays.asList(aaptCmd, "add", unalignedApk, "lib/arm64-v8a/libsubstrate.so"));
+
+        if (projectConfiguration.isUseJavaFX()) {
+            Path javafxFreetypeLibPath = fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so");
+            Path freetypeLibPath = getApkLibArm64Path().resolve("libfreetype.so");
+            Files.copy(javafxFreetypeLibPath, freetypeLibPath, StandardCopyOption.REPLACE_EXISTING);
+            aaptAddLibsArgs.add("lib/arm64-v8a/libfreetype.so");
+        }
+
+        ProcessRunner aaptAddLibs = new ProcessRunner(aaptAddLibsArgs.toArray(String[]::new));
+        return aaptAddLibs.runProcess("aaptAddNativeLibs", getApkPath().toFile());
+    }
+
+    private int zipAlign(Path buildToolsPath, String unalignedApk, String alignedApk) throws IOException, InterruptedException {
+        String zipAlignCmd = buildToolsPath.resolve("zipalign").toString();
+        ProcessRunner zipAlign = new ProcessRunner(zipAlignCmd, "-f", "4", unalignedApk, alignedApk);
+        return zipAlign.runProcess("zipalign");
+    }
+
+    private int sign(Path buildToolsPath, String alignedApk) throws IOException, InterruptedException {
+        createDevelopKeystore();
+
+        String apkSignerCmd = buildToolsPath.resolve("apksigner").toString();
+        ProcessRunner sign =  new ProcessRunner(apkSignerCmd, "sign", "--ks",
+                Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE).toString(),
+                "--ks-key-alias", "androiddebugkey",
+                "--ks-pass", "pass:android",
+                "--key-pass", "pass:android",
+                alignedApk);
+        return sign.runProcess("sign");
+    }
+
+    private int installApk(Path sdkPath, String alignedApk) throws IOException, InterruptedException {
+        ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
+                "install", "-r", alignedApk);
+        return install.runProcess("install");
+    }
+
     /*
      * Copies the .cap files from the jar resource and store them in
      * a directory. Return that directory
@@ -424,8 +507,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner generateTestKey = new ProcessRunner("keytool", "-genkey", "-v", "-keystore", keystore.toString(), "-storepass",
                 "android", "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US", "-noprompt");
         processResult = generateTestKey.runProcess("generateTestKey");
-        if (processResult != 0)
+        if (processResult != 0) {
             throw new IllegalArgumentException("fatal, can not create a keystore");
+        }
 
         Logger.logDebug("Done creating " + Constants.ANDROID_KEYSTORE);
     }

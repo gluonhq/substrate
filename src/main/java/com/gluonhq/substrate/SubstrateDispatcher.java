@@ -76,24 +76,36 @@ public class SubstrateDispatcher {
 
     private static volatile boolean compiling = true;
 
-    public static void main(String[] args) throws Exception {
-        String classPath = requireSystemProperty("imagecp","Use -Dimagecp=/path/to/classes");
+    public static void main(String[] args) throws IOException {
+        String classpath = requireSystemProperty("imagecp","Use -Dimagecp=/path/to/classes");
+
+        Step step = getStepToExecute();
+
+        Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
+        ProjectConfiguration configuration = createProjectConfiguration();
+        SubstrateDispatcher dispatcher = new SubstrateDispatcher(buildRoot, configuration);
+
+        executeCompileStep(dispatcher, classpath);
+
+        if (step.requires(Step.LINK)) {
+            executeLinkStep(dispatcher, classpath);
+        }
+
+        if (step.requires(Step.PACKAGE)) {
+            executePackageStep(dispatcher);
+        }
+
+        if (step.requires(Step.RUN)) {
+            executeRunStep(dispatcher);
+        }
+    }
+
+    private static ProjectConfiguration createProjectConfiguration() {
         String graalVM = requireSystemProperty( "graalvm","Use -Dgraalvm=/path/to/graalvm");
         String mainClass = requireSystemProperty( "mainclass", "Use -Dmainclass=main.class.name");
-        Step step = Optional.ofNullable(System.getProperty("step"))
-                .map(stepProperty -> {
-                    try {
-                        return Step.valueOf(stepProperty.toUpperCase(Locale.ROOT));
-                    } catch (IllegalArgumentException e) {
-                        printUsage();
-                        throw new IllegalArgumentException(String.format("Invalid value for 'step' specified. Possible values: %s", Arrays.toString(Step.values())));
-                    }
-                })
-                .orElse(Step.RUN);
 
         String appId = Optional.ofNullable(System.getProperty("appId")).orElse("com.gluonhq.anonymousApp");
         String appName = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
-        String expected = System.getProperty("expected");
         boolean verbose = System.getProperty("verbose") != null;
 
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
@@ -115,65 +127,39 @@ public class SubstrateDispatcher {
         config.setVerbose(verbose);
         config.setUsePrismSW(usePrismSW);
         config.setUsePrecompiledCode(usePrecompiledCode);
+        return config;
+    }
 
-        Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
+    private static Step getStepToExecute() {
+        return Optional.ofNullable(System.getProperty("step"))
+                .map(stepProperty -> {
+                    try {
+                        return Step.valueOf(stepProperty.toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        printUsage();
+                        throw new IllegalArgumentException(String.format("Invalid value for 'step' specified. Possible values: %s", Arrays.toString(Step.values())));
+                    }
+                })
+                .orElse(Step.RUN);
+    }
+
+    public static void executeCompileStep(SubstrateDispatcher dispatcher, String classpath) {
+        System.err.println("Compiling...");
 
         startNativeCompileTimer();
 
-        SubstrateDispatcher dispatcher = new SubstrateDispatcher(buildRoot, config);
+        try {
+            boolean nativeCompileSucceeded = dispatcher.nativeCompile(classpath);
+            compiling = false;
 
-        System.err.println("Compiling...");
-        boolean nativeCompileSucceeded = dispatcher.nativeCompile(classPath);
-        compiling = false;
-        if (!nativeCompileSucceeded) {
-            System.err.println("Compiling failed");
+            if (!nativeCompileSucceeded) {
+                System.err.println("Compiling failed.");
+                System.exit(1);
+            }
+        } catch (Throwable t) {
+            System.err.println("Compiling failed with an exception.");
+            t.printStackTrace();
             System.exit(1);
-        }
-
-        if (step.requires(Step.LINK)) {
-            System.err.println("Linking...");
-            try {
-                if (!dispatcher.nativeLink(classPath)) {
-                    System.err.println("Linking failed");
-                    System.exit(1);
-                }
-            } catch (Throwable t) {
-                System.err.println("Linking failed with an exception");
-                t.printStackTrace();
-                System.exit(1);
-            }
-        }
-
-        if (step.requires(Step.PACKAGE)) {
-            System.err.println("Packaging...");
-            try {
-                dispatcher.nativePackage();
-            } catch (Throwable t) {
-                System.err.println("Packaging failed with an exception");
-                t.printStackTrace();
-                System.exit(1);
-            }
-        }
-
-        if (step.requires(Step.RUN)) {
-            System.err.println("Running...");
-            try {
-                if (expected != null) {
-                    String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(), appName);
-                    if (expected.equals(response)) {
-                        System.err.println("Run ended successfully, the output: " + expected + " matched the expected result.");
-                    } else {
-                        System.err.println("Run failed, expected output: " + expected + ", output: " + response);
-                        System.exit(1);
-                    }
-                } else {
-                    dispatcher.nativeRun();
-                }
-            } catch (Throwable t) {
-                System.err.println("Running failed with an exception");
-                t.printStackTrace();
-                System.exit(1);
-            }
         }
     }
 
@@ -191,6 +177,56 @@ public class SubstrateDispatcher {
         });
         timer.setDaemon(true);
         timer.start();
+    }
+
+    private static void executeLinkStep(SubstrateDispatcher dispatcher, String classpath) {
+        System.err.println("Linking...");
+        try {
+            if (!dispatcher.nativeLink(classpath)) {
+                System.err.println("Linking failed");
+                System.exit(1);
+            }
+        } catch (Throwable t) {
+            System.err.println("Linking failed with an exception");
+            t.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    private static void executePackageStep(SubstrateDispatcher dispatcher) {
+        System.err.println("Packaging...");
+        try {
+            dispatcher.nativePackage();
+        } catch (Throwable t) {
+            System.err.println("Packaging failed with an exception");
+            t.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    private static void executeRunStep(SubstrateDispatcher dispatcher) {
+        System.err.println("Running...");
+
+        String expected = System.getProperty("expected");
+
+        try {
+            if (expected != null) {
+                String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(),
+                        dispatcher.config.getAppName());
+                if (expected.equals(response)) {
+                    System.err.println("Run ended successfully, the output: " + expected + " matched the expected result.");
+                } else {
+                    System.err.println("Run failed, expected output: " + expected + ", output: " + response);
+                    System.exit(1);
+                }
+            } else {
+                dispatcher.nativeRun();
+            }
+        } catch (Throwable t) {
+            System.err.println("Running failed with an exception");
+            t.printStackTrace();
+            System.exit(1);
+        }
     }
 
     private static String requireSystemProperty(String argName, String errorMessage ) {
