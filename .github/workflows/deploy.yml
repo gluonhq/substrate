@@ -23,9 +23,11 @@ jobs:
         run: chmod +x gradlew
 
       - name: Deploy to Sonatype Nexus
+        id: deploy
         run: |
           echo $GPG_PRIVATE_KEY > sonatype.gpg
           ./gradlew publish closeAndReleaseRepository --info -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD -Psigning.keyId=$GPG_KEYNAME -Psigning.password=$GPG_PASSPHRASE -Psigning.secretKeyRingFile=sonatype.gpg
+          echo ::set-output name=exit_code::$?
           rm -rf sonatype.gpg
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
@@ -33,3 +35,12 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
+
+       - name: Commit next development version
+         if: steps.deploy.outputs.exit_code == 0
+         run: |
+           TAG=${GITHUB_REF/refs\/tags\//}
+           newVersion=${TAG%.*}.$((${TAG##*.} + 1)) # Update version by 1
+           sed -i -z "0,/version = $TAG/s//version = $newVersion-SNAPSHOT/" gradle.properties
+           git commit gradle.properties -m "Upgrade version to $newVersion-SNAPSHOT" --author "Gluon Bot <githubbot@gluonhq.com>"
+           git push https://gluon-bot:$GITHUB_PASSWORD@github.com/$GITHUB_REPOSITORY HEAD:master
