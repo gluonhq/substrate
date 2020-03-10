@@ -42,6 +42,8 @@ import com.gluonhq.substrate.util.Strings;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -50,23 +52,57 @@ import static com.gluonhq.substrate.util.Logger.title;
 
 public class SubstrateDispatcher {
 
-    private static volatile boolean run = true;
+    private enum Step {
+        COMPILE(),
+        LINK(COMPILE),
+        PACKAGE(LINK),
+        INSTALL(PACKAGE),
+        RUN(INSTALL);
+
+        private final Step dep;
+
+        Step() {
+            this.dep = null;
+        }
+
+        Step(Step dep) {
+            this.dep = dep;
+        }
+
+        public boolean requires(Step step) {
+            return this == step || (dep != null && dep.requires(step));
+        }
+    }
+
+    private static volatile boolean compiling = true;
 
     public static void main(String[] args) throws Exception {
+        String classPath = requireSystemProperty("imagecp","Use -Dimagecp=/path/to/classes");
+        String graalVM = requireSystemProperty( "graalvm","Use -Dgraalvm=/path/to/graalvm");
+        String mainClass = requireSystemProperty( "mainclass", "Use -Dmainclass=main.class.name");
+        Step step = Optional.ofNullable(System.getProperty("step"))
+                .map(stepProperty -> {
+                    try {
+                        return Step.valueOf(stepProperty.toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        printUsage();
+                        throw new IllegalArgumentException(String.format("Invalid value for 'step' specified. Possible values: %s", Arrays.toString(Step.values())));
+                    }
+                })
+                .orElse(Step.RUN);
 
-        String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
-        String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
-
-        String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
-        String appId     = Optional.ofNullable(System.getProperty("appId")).orElse("com.gluonhq.anonymousApp");
-        String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
-        String targetProfile = System.getProperty("targetProfile");
-
-        Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
-                :Triplet.fromCurrentOS();
-
-        String expected  = System.getProperty("expected");
+        String appId = Optional.ofNullable(System.getProperty("appId")).orElse("com.gluonhq.anonymousApp");
+        String appName = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
+        String expected = System.getProperty("expected");
         boolean verbose = System.getProperty("verbose") != null;
+
+        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
+        boolean usePrecompiledCode = Boolean.parseBoolean(System.getProperty("usePrecompiledCode", "true"));
+
+        String targetProfile = System.getProperty("targetProfile");
+        Triplet targetTriplet = targetProfile != null ?
+                new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase())) :
+                Triplet.fromCurrentOS();
 
         ProjectConfiguration config = new ProjectConfiguration(mainClass);
         config.setGraalPath(Path.of(graalVM));
@@ -77,14 +113,74 @@ public class SubstrateDispatcher {
         config.setJniList(Strings.split(System.getProperty("jnilist")));
         config.setBundlesList(Strings.split(System.getProperty("bundleslist")));
         config.setVerbose(verbose);
-        config.setUsePrismSW(Boolean.parseBoolean(System.getProperty("prism.sw", "false")));
-        config.setUsePrecompiledCode(Boolean.parseBoolean(System.getProperty("usePrecompiledCode", "true")));
+        config.setUsePrismSW(usePrismSW);
+        config.setUsePrecompiledCode(usePrecompiledCode);
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
 
+        startNativeCompileTimer();
+
+        SubstrateDispatcher dispatcher = new SubstrateDispatcher(buildRoot, config);
+
+        System.err.println("Compiling...");
+        boolean nativeCompileSucceeded = dispatcher.nativeCompile(classPath);
+        compiling = false;
+        if (!nativeCompileSucceeded) {
+            System.err.println("Compiling failed");
+            System.exit(1);
+        }
+
+        if (step.requires(Step.LINK)) {
+            System.err.println("Linking...");
+            try {
+                if (!dispatcher.nativeLink(classPath)) {
+                    System.err.println("Linking failed");
+                    System.exit(1);
+                }
+            } catch (Throwable t) {
+                System.err.println("Linking failed with an exception");
+                t.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+        if (step.requires(Step.PACKAGE)) {
+            System.err.println("Packaging...");
+            try {
+                dispatcher.nativePackage();
+            } catch (Throwable t) {
+                System.err.println("Packaging failed with an exception");
+                t.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+        if (step.requires(Step.RUN)) {
+            System.err.println("Running...");
+            try {
+                if (expected != null) {
+                    String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(), appName);
+                    if (expected.equals(response)) {
+                        System.err.println("Run ended successfully, the output: " + expected + " matched the expected result.");
+                    } else {
+                        System.err.println("Run failed, expected output: " + expected + ", output: " + response);
+                        System.exit(1);
+                    }
+                } else {
+                    dispatcher.nativeRun();
+                }
+            } catch (Throwable t) {
+                System.err.println("Running failed with an exception");
+                t.printStackTrace();
+                System.exit(1);
+            }
+        }
+    }
+
+    private static void startNativeCompileTimer() {
         Thread timer = new Thread(() -> {
             int counter = 1;
-            while (run) {
+            while (compiling) {
                 try {
                     Thread.sleep(60000);
                 } catch (InterruptedException e) {
@@ -95,41 +191,9 @@ public class SubstrateDispatcher {
         });
         timer.setDaemon(true);
         timer.start();
-
-        SubstrateDispatcher dispatcher = new SubstrateDispatcher(buildRoot, config);
-
-        boolean nativeCompileSucceeded = dispatcher.nativeCompile(classPath);
-        run = false;
-        if (!nativeCompileSucceeded) {
-            System.err.println("Compiling failed");
-            System.exit(1);
-        }
-
-        try {
-            System.err.println("Linking...");
-            if (!dispatcher.nativeLink(classPath)) {
-                System.err.println("Linking failed");
-                System.exit(1);
-            }
-        } catch (Throwable t) {
-            System.err.println("Linking failed with an exception");
-            t.printStackTrace();
-            System.exit(1);
-        }
-        System.err.println("Running...");
-        if (expected != null) {
-            String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(), appName);
-            if (expected.equals(response)) {
-                System.err.println("Run ended successfully, the output: " + expected + " matched the expected result.");
-            } else {
-                System.err.println("Run failed, expected output: " + expected + ", output: " + response);
-                System.exit(1);
-            }
-        } else {
-            dispatcher.nativeRun();
-        }
     }
-    private static String requireArg(String argName, String errorMessage ) {
+
+    private static String requireSystemProperty(String argName, String errorMessage ) {
         String arg = System.getProperty(argName);
         if (arg == null || arg.trim().isEmpty()) {
             printUsage();
@@ -229,7 +293,7 @@ public class SubstrateDispatcher {
     }
 
     /**
-     * This methods creates a package of the native image application, that was created after {@link #nativeLink(String)}
+     * This method creates a package of the native image application, that was created after {@link #nativeLink(String)}
      * was called and ended successfully.
      * @throws IOException
      * @throws InterruptedException

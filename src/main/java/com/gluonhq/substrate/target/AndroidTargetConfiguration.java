@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,20 +73,22 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
             "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
     private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode");
-    private final List<String> compiledGlueCode = Arrays.asList("com/gluonhq/helloandroid/MainActivity", "com/gluonhq/helloandroid/MainActivity$1", 
-            "com/gluonhq/helloandroid/MainActivity$2", "com/gluonhq/helloandroid/MainActivity$3", "com/gluonhq/helloandroid/MainActivity$InternalSurfaceView",
-            "javafx/scene/input/KeyCode", "javafx/scene/input/KeyCode$KeyCodeClass" );
+    private final List<String> compiledGlueCode = Arrays.asList("com/gluonhq/helloandroid/MainActivity",
+            "com/gluonhq/helloandroid/MainActivity$1", "com/gluonhq/helloandroid/MainActivity$2",
+            "com/gluonhq/helloandroid/MainActivity$3", "com/gluonhq/helloandroid/MainActivity$InternalSurfaceView",
+            "javafx/scene/input/KeyCode", "javafx/scene/input/KeyCode$KeyCodeClass"
+    );
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
         super(paths,configuration);
-        
+
         this.sdk = fileDeps.getAndroidSDKPath().toString();
         this.ndk = fileDeps.getAndroidNDKPath().toString();
         this.hostPlatformFolder = configuration.getHostTriplet().getOs() + "-x86_64";
 
         Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "ld.lld");
-        this.ldlld = Files.exists(ldguess) ? ldguess : null; 
-        
+        this.ldlld = Files.exists(ldguess) ? ldguess : null;
+
         Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "clang");
         this.clang = Files.exists(clangguess) ? clangguess : null;
     }
@@ -118,6 +121,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (ldlld == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/ldlld");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
+
         return super.compile(classPath);
     }
 
@@ -128,12 +132,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
 
-        boolean result = super.link();
+        return super.link();
+    }
 
-        if (!result) {
-            return false;
-        }
-
+    @Override
+    public boolean packageApp() throws IOException, InterruptedException {
         Path androidPath = prepareAndroidResources();
 
         Path sdkPath = Paths.get(sdk);
@@ -186,7 +189,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             if (processResult != 0)
                 return false;
         }
-        
+
         Path androidManifest = androidPath.resolve(Constants.MANIFEST_FILE);
         if (!Files.exists(androidManifest)) {
             throw new IOException("File " + androidManifest.toString() + " not found");
@@ -225,10 +228,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (processResult != 0)
             return false;
 
-        Path libPath = paths.getAppPath().resolve(projectConfiguration.getAppName());
-        Path graalLibPath = apkLibArm64Path.resolve("libmygraal.so");
-        Files.deleteIfExists(graalLibPath);
-        Files.copy(libPath, graalLibPath);
+        Path libPath = paths.getAppPath().resolve(getLinkOutputName());
+        Path graalLibPath = apkLibArm64Path.resolve("libsubstrate.so");
+        Files.copy(libPath, graalLibPath, StandardCopyOption.REPLACE_EXISTING);
 
         boolean useJavaFX = projectConfiguration.isUseJavaFX();
         if (useJavaFX) {
@@ -237,7 +239,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Files.copy(fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so"), freetypeLibPath);
         }
 
-        List<String> aaptAddLibsArgs = new ArrayList<>(Arrays.asList(aaptCmd, "add", unalignedApk,"lib/arm64-v8a/libmygraal.so"));
+        List<String> aaptAddLibsArgs = new ArrayList<>(Arrays.asList(aaptCmd, "add", unalignedApk, "lib/arm64-v8a/libsubstrate.so"));
         if (useJavaFX) {
             aaptAddLibsArgs.add("lib/arm64-v8a/libfreetype.so");
         }
@@ -256,7 +258,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner sign =  new ProcessRunner(buildToolsPath.resolve("apksigner").toString(), "sign", "--ks",
                 Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE).toString(), "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android",  alignedApk);
         processResult = sign.runProcess("sign");
-        
+
         return processResult == 0;
     }
 
@@ -281,18 +283,18 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Runnable logcat = () -> {
             try {
                 ProcessRunner clearLog = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "logcat", "-c");
+                        "logcat", "-c");
                 clearLog.runProcess("clearLog");
 
                 ProcessRunner log = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalActivity:V", "GraalGluon:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
+                        "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalActivity:V", "GraalGluon:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
                 log.setInfo(true);
                 log.runProcess("log");
-            } catch (IOException | InterruptedException e) { 
-                e.printStackTrace(); 
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
             }
         };
-        
+
         Thread logger = new Thread(logcat);
         logger.start();
 
@@ -300,7 +302,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 "shell", "monkey", "-p", projectConfiguration.getAppId(), "1");
         processResult += run.runProcess("run");
         if (processResult != 0) throw new IOException("Application starting failed!");
-        
+
         logger.join();
         return processResult == 0;
     }
@@ -323,9 +325,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
-       return FileOps.findFile( paths.getGvmPath(), "llvm.o").map( objectFile ->
-           Collections.singletonList(objectFile.toAbsolutePath().toString())
-       ).orElseThrow();
+        return FileOps.findFile( paths.getGvmPath(), "llvm.o").map( objectFile ->
+                Collections.singletonList(objectFile.toAbsolutePath().toString())
+        ).orElseThrow();
     }
 
     @Override
@@ -351,6 +353,16 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         answer.addAll(linkFlags);
         answer.addAll(javafxLinkFlags);
         return answer;
+    }
+
+    @Override
+    List<String> getTargetSpecificLinkOutputFlags() {
+        return Arrays.asList("-o", getAppPath(getLinkOutputName()));
+    }
+
+    private String getLinkOutputName() {
+        String appName = projectConfiguration.getAppName();
+        return "lib" + appName + ".so";
     }
 
     @Override
@@ -384,10 +396,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return false;
     }
 
-   /*
-    * Copies the .cap files from the jar resource and store them in
-    * a directory. Return that directory
-    */
+    /*
+     * Copies the .cap files from the jar resource and store them in
+     * a directory. Return that directory
+     */
     private Path getCapCacheDir() throws IOException {
         Path capPath = paths.getGvmPath().resolve("capcache");
         if (!Files.exists(capPath)) {
@@ -401,7 +413,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private void createDevelopKeystore() throws IOException, InterruptedException {
         Path keystore = Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE);
-        
+
         if (Files.exists(keystore)) {
             Logger.logDebug("The " + Constants.ANDROID_KEYSTORE + " file already exists, skipping");
             return;
@@ -410,7 +422,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         int processResult;
 
         ProcessRunner generateTestKey = new ProcessRunner("keytool", "-genkey", "-v", "-keystore", keystore.toString(), "-storepass",
-            "android", "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US", "-noprompt");
+                "android", "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US", "-noprompt");
         processResult = generateTestKey.runProcess("generateTestKey");
         if (processResult != 0)
             throw new IllegalArgumentException("fatal, can not create a keystore");

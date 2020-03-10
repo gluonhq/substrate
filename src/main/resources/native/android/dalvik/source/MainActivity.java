@@ -97,9 +97,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.v(TAG, "surfaceCreated for "+this);
-        Log.v(TAG, "loading Graallib");
-        System.loadLibrary("mygraal");
-        Log.v(TAG, "loaded Graallib");
+        Log.v(TAG, "loading substrate library");
+        System.loadLibrary("substrate");
+        Log.v(TAG, "loaded substrate library");
         nativeSetDataDir(getApplicationInfo().dataDir);
         nativeSetSurface(holder.getSurface());
         DisplayMetrics metrics = new DisplayMetrics();
