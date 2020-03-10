@@ -121,3 +121,8 @@ int startGVM() {
     gvmlog(@"Finished running GVM, done with isolatehread");
     return 0;
 }
+
+void determineCPUFeatures()
+{
+    fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
+}
