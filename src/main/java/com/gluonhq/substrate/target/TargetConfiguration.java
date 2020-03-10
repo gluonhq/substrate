@@ -34,11 +34,10 @@ public interface TargetConfiguration {
 
     /**
      * Compiles the classes to objectcode for this TargetConfiguration.
-     * @param classPath
      * @return true if compilation succeeded, false if it failed
      * @throws Exception
      */
-    boolean compile(String classPath) throws Exception;
+    boolean compile() throws Exception;
 
     boolean link() throws IOException, InterruptedException;
 

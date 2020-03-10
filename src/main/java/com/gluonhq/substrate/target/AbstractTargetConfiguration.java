@@ -100,15 +100,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * Compile sets the required command line arguments and runs
      * native-image
      *
-     * @param cp The classpath of the project to be run
      * @return true if the process ends successfully, false otherwise
      * @throws IOException
      * @throws InterruptedException
      */
     @Override
-    public boolean compile(String cp) throws IOException, InterruptedException {
-        cp = processClassPath(cp);
-        extractNativeLibs(cp);
+    public boolean compile() throws IOException, InterruptedException {
+        String processedClasspath = processClassPath(projectConfiguration.getClasspath());
+        extractNativeLibs(processedClasspath);
         Triplet target = projectConfiguration.getTargetTriplet();
         String suffix = target.getArchOs();
         String jniPlatform = getJniPlatform(target);
@@ -123,10 +122,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (mainClassName == null || mainClassName.isEmpty()) {
             throw new IllegalArgumentException("No main class is supplied. Cannot compile.");
         }
-        if (cp == null || cp.isEmpty()) {
+        if (processedClasspath == null || processedClasspath.isEmpty()) {
             throw new IllegalArgumentException("No classpath specified. Cannot compile");
         }
-        configResolver = new ConfigResolver(cp);
+        configResolver = new ConfigResolver(processedClasspath);
         String nativeImage = getNativeImagePath();
         ProcessRunner compileRunner = new ProcessRunner(nativeImage);
         compileRunner.addArgs(getEnabledFeatures());
@@ -160,7 +159,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileRunner.addArg("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
         compileRunner.addArg("-cp");
-        compileRunner.addArg(cp);
+        compileRunner.addArg(processedClasspath);
         compileRunner.addArgs(projectConfiguration.getCompilerArgs());
         compileRunner.addArg(mainClassName);
 

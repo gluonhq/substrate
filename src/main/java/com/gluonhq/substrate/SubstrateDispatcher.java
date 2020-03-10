@@ -27,7 +27,6 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
@@ -77,18 +76,16 @@ public class SubstrateDispatcher {
     private static volatile boolean compiling = true;
 
     public static void main(String[] args) throws IOException {
-        String classpath = requireSystemProperty("imagecp","Use -Dimagecp=/path/to/classes");
-
         Step step = getStepToExecute();
 
         Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
         ProjectConfiguration configuration = createProjectConfiguration();
         SubstrateDispatcher dispatcher = new SubstrateDispatcher(buildRoot, configuration);
 
-        executeCompileStep(dispatcher, classpath);
+        executeCompileStep(dispatcher);
 
         if (step.requires(Step.LINK)) {
-            executeLinkStep(dispatcher, classpath);
+            executeLinkStep(dispatcher);
         }
 
         if (step.requires(Step.PACKAGE)) {
@@ -101,8 +98,9 @@ public class SubstrateDispatcher {
     }
 
     private static ProjectConfiguration createProjectConfiguration() {
-        String graalVM = requireSystemProperty( "graalvm","Use -Dgraalvm=/path/to/graalvm");
-        String mainClass = requireSystemProperty( "mainclass", "Use -Dmainclass=main.class.name");
+        String classpath = requireSystemProperty("imagecp", "Use -Dimagecp=/path/to/classes");
+        String graalVM = requireSystemProperty("graalvm", "Use -Dgraalvm=/path/to/graalvm");
+        String mainClass = requireSystemProperty("mainclass", "Use -Dmainclass=main.class.name");
 
         String appId = Optional.ofNullable(System.getProperty("appId")).orElse("com.gluonhq.anonymousApp");
         String appName = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
@@ -116,7 +114,7 @@ public class SubstrateDispatcher {
                 new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase())) :
                 Triplet.fromCurrentOS();
 
-        ProjectConfiguration config = new ProjectConfiguration(mainClass);
+        ProjectConfiguration config = new ProjectConfiguration(mainClass, classpath);
         config.setGraalPath(Path.of(graalVM));
         config.setAppId(appId);
         config.setAppName(appName);
@@ -143,13 +141,13 @@ public class SubstrateDispatcher {
                 .orElse(Step.RUN);
     }
 
-    public static void executeCompileStep(SubstrateDispatcher dispatcher, String classpath) {
+    public static void executeCompileStep(SubstrateDispatcher dispatcher) {
         System.err.println("Compiling...");
 
         startNativeCompileTimer();
 
         try {
-            boolean nativeCompileSucceeded = dispatcher.nativeCompile(classpath);
+            boolean nativeCompileSucceeded = dispatcher.nativeCompile();
             compiling = false;
 
             if (!nativeCompileSucceeded) {
@@ -179,10 +177,10 @@ public class SubstrateDispatcher {
         timer.start();
     }
 
-    private static void executeLinkStep(SubstrateDispatcher dispatcher, String classpath) {
+    private static void executeLinkStep(SubstrateDispatcher dispatcher) {
         System.err.println("Linking...");
         try {
-            if (!dispatcher.nativeLink(classpath)) {
+            if (!dispatcher.nativeLink()) {
                 System.err.println("Linking failed");
                 System.exit(1);
             }
@@ -273,19 +271,15 @@ public class SubstrateDispatcher {
 
 
     /**
-     * This method will start native compilation for the specified configuration. The classpath needs
-     * to be provided separately.
+     * This method will start native compilation for the specified configuration.
      * The result of compilation is a at least one native file (2 files in case LLVM backend is used).
      * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails
-     * @param classPath the classpath needed to compile the application (this is not the classpath for native-image)
      * @return true if compilation succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
-    public boolean nativeCompile(String classPath) throws Exception {
+    public boolean nativeCompile() throws Exception {
         config.canRunNativeImage();
-        boolean useJavaFX = new ClassPath(classPath).contains( s -> s.contains("javafx"));
-        config.setUseJavaFX(useJavaFX);
 
         Triplet targetTriplet  = config.getTargetTriplet();
         if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
@@ -294,31 +288,27 @@ public class SubstrateDispatcher {
 
         logInit(paths.getLogPath().toString(), title("COMPILE TASK"),  config.isVerbose());
         System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
-        boolean compilationSuccess = targetConfiguration.compile(classPath);
+        boolean compilationSuccess = targetConfiguration.compile();
         System.err.println(compilationSuccess? "Compilation succeeded.": "Compilation failed. See error printed above.");
         return compilationSuccess;
     }
 
     /**
-     * This method will start native linking for the specified configuration, after {@link #nativeCompile(String)}
+     * This method will start native linking for the specified configuration, after {@link #nativeCompile()}
      * was called and ended successfully.
-     * The classpath needs to be provided separately.
      * The result of linking is a at least an native image application file.
      * This method returns <code>true</code> on successful linking and <code>false</code> when linking fails
-     * @param classPath the classpath needed to link the application (this is not the classpath for native-image)
      * @return true if linking succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
-    public boolean nativeLink(String classPath) throws IOException, InterruptedException {
+    public boolean nativeLink() throws IOException, InterruptedException {
         logInit(paths.getLogPath().toString(), title("LINK TASK"), config.isVerbose());
-        boolean useJavaFX = new ClassPath(classPath).contains(s -> s.contains("javafx"));
-        config.setUseJavaFX(useJavaFX);
         return targetConfiguration.link();
     }
 
     /**
-     * This method runs the native image application, that was created after {@link #nativeLink(String)}
+     * This method runs the native image application, that was created after {@link #nativeLink()}
      * was called and ended successfully.
      * @throws IOException
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
@@ -329,7 +319,7 @@ public class SubstrateDispatcher {
     }
 
     /**
-     * This method creates a package of the native image application, that was created after {@link #nativeLink(String)}
+     * This method creates a package of the native image application, that was created after {@link #nativeLink()}
      * was called and ended successfully.
      * @throws IOException
      * @throws InterruptedException

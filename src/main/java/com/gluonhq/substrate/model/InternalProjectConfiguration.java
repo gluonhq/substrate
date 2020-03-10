@@ -93,6 +93,9 @@ public class InternalProjectConfiguration {
         setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
         setInitBuildTimeList(Strings.split(System.getProperty("initbuildtimelist")));
 
+        boolean useJavaFX = new ClassPath(config.getClasspath()).contains(s -> s.contains("javafx"));
+        setUseJavaFX(useJavaFX);
+
         performHostChecks();
     }
 
@@ -372,6 +375,10 @@ public class InternalProjectConfiguration {
 
     public String getMainClassName() {
         return publicConfig.getMainClassName();
+    }
+
+    public String getClasspath() {
+        return publicConfig.getClasspath();
     }
 
     public IosSigningConfiguration getIosSigningConfiguration() {

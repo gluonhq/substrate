@@ -116,13 +116,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    public boolean compile(String classPath) throws IOException, InterruptedException {
+    public boolean compile() throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no ld.lld in android_ndk, we should not start compiling
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (ldlld == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/ldlld");
         if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
 
-        return super.compile(classPath);
+        return super.compile();
     }
 
     @Override

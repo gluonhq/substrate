@@ -62,13 +62,15 @@ public class ProjectConfiguration {
     private String appId;
     private String appName;
     private String mainClassName;
+    private String classpath;
 
     private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
 
-    public ProjectConfiguration( String mainClassName ) {
+    public ProjectConfiguration(String mainClassName, String classpath) {
         this.mainClassName = Objects.requireNonNull(mainClassName, "Main class name is required")
                                .contains("/") ?
-                                  mainClassName.substring( mainClassName.indexOf("/") + 1) : mainClassName;
+                                  mainClassName.substring(mainClassName.indexOf("/") + 1) : mainClassName;
+        this.classpath = Objects.requireNonNull(classpath, "Classpath is required");
     }
 
     public Path getGraalPath() {
@@ -243,6 +245,11 @@ public class ProjectConfiguration {
     public String getMainClassName() {
         // never null as it is required in constructor and there is no setter
         return mainClassName;
+    }
+
+    public String getClasspath() {
+        // never null as it is required in constructor and there is no setter
+        return classpath;
     }
 
     public IosSigningConfiguration getIosSigningConfiguration() {
