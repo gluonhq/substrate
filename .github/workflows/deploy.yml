@@ -22,8 +22,7 @@ jobs:
 
       - name: Import GPG keys
         run: |
-          echo $GPG_PRIVATE_KEY > /tmp/secret
-          gpg --import --batch /tmp/secret &> /dev/null
+          gpg --import --batch <(echo "$GPG_PRIVATE_KEY") &> /dev/null
           rm -rf /tmp/secret
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
