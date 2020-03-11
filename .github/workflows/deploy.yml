@@ -44,8 +44,10 @@ jobs:
       - name: Commit next development version
         if: steps.deploy.outputs.exit_code == 0
         run: |
+          git config user.email "githubbot@gluonhq.com"
+          git config user.name "Gluon Bot"
           TAG=${GITHUB_REF/refs\/tags\//}
           newVersion=${TAG%.*}.$((${TAG##*.} + 1)) # Update version by 1
           sed -i -z "0,/version = $TAG/s//version = $newVersion-SNAPSHOT/" gradle.properties
-          git commit gradle.properties -m "Upgrade version to $newVersion-SNAPSHOT" --author "Gluon Bot <githubbot@gluonhq.com>"
+          git commit gradle.properties -m "Prepare development of $newVersion"
           git push https://gluon-bot:$GITHUB_PASSWORD@github.com/$GITHUB_REPOSITORY HEAD:master
