@@ -252,8 +252,13 @@ public class SubstrateDispatcher {
      */
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
         this.config = new InternalProjectConfiguration(config);
-        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
+        if (this.config.isVerbose()) {
+            System.out.println("Configuration: " + this.config);
+        }
+
         Triplet targetTriplet = config.getTargetTriplet();
+
+        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), targetTriplet.getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was not found for " + targetTriplet);
     }

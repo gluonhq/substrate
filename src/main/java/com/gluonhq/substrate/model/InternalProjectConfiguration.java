@@ -495,6 +495,7 @@ public class InternalProjectConfiguration {
                 ", appName='" + getAppName() + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + getMainClassName() + '\'' +
+                ", classpath='" + getClasspath() + '\'' +
                 '}';
     }
 }
