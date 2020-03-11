@@ -20,13 +20,17 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Import GPG keys
+        run: |
+          echo $GPG_PRIVATE_KEY > /tmp/secret
+          gpg --import --batch /tmp/secret &> /dev/null
+          rm -rf /tmp/secret
+
       - name: Deploy to Sonatype Nexus
         id: deploy
         run: |
-          echo $GPG_PRIVATE_KEY > sonatype.gpg
-          ./gradlew publish closeAndReleaseRepository --info -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD -Psigning.keyId=$GPG_KEYNAME -Psigning.password=$GPG_PASSPHRASE -Psigning.secretKeyRingFile=sonatype.gpg
+          ./gradlew publish closeAndReleaseRepository --info -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD -Psigning.keyId=$GPG_KEYNAME -Psigning.password=$GPG_PASSPHRASE -Psigning.secretKeyRingFile=$HOME/.gnupg/secring.gpg
           echo ::set-output name=exit_code::$?
-          rm -rf sonatype.gpg
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
