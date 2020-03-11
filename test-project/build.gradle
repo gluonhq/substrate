@@ -58,6 +58,7 @@ def setupJavaFXDependencies(String platform, String target) {
     def nameZip = "openjfx-$version-$name-static.zip"
     def javafxZip = new File("$javafxSdk/$nameZip")
     if (!javafxFolder.exists()) {
+        javafxSdk.mkdirs()
         println "Downloading javafxZip..."
         new URL("https://download2.gluonhq.com/substrate/javafxstaticsdk/$nameZip")
                 .withInputStream { i -> javafxZip.withOutputStream { it << i } }
