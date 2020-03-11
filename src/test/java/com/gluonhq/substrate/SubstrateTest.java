@@ -67,40 +67,58 @@ class SubstrateTest {
     void testIOSTripletOnLinux() throws IOException {
         assumeTrue(Triplet.fromCurrentOS().getOs().indexOf("nux") > 0);
         Triplet iosTriplet = new Triplet(Constants.Profile.IOS);
-        ProjectConfiguration config = new ProjectConfiguration("");
+        ProjectConfiguration config = new ProjectConfiguration("", "");
         config.setTarget(iosTriplet);
         config.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
 
         var dispatcher = new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config);
         // when on linux, nativeCompile should throw an illegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> dispatcher.nativeCompile(""));
+        assertThrows(IllegalArgumentException.class, () -> dispatcher.nativeCompile());
     }
 
     @Test
     void testAssertGraal() {
-        ProjectConfiguration publicConfig = new ProjectConfiguration("");
+        ProjectConfiguration publicConfig = new ProjectConfiguration("", "");
         InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
         assertThrows(NullPointerException.class, config::canRunNativeImage);
     }
 
     @Test
     void testMainClassName() {
-        assertThrows(NullPointerException.class, () -> new ProjectConfiguration(null));;
-        var config = new InternalProjectConfiguration( new ProjectConfiguration("a.b.Foo"));
+        assertThrows(NullPointerException.class, () -> new ProjectConfiguration(null, ""));
+        var config = new InternalProjectConfiguration(new ProjectConfiguration("a.b.Foo", "a.b-1.0.jar"));
         assertEquals("a.b.Foo", config.getMainClassName());
-        config = new InternalProjectConfiguration( new ProjectConfiguration("name/a.b.Foo"));
+        config = new InternalProjectConfiguration(new ProjectConfiguration("name/a.b.Foo", ""));
         assertEquals("a.b.Foo", config.getMainClassName());
     }
 
     @Test
+    void testClasspath() {
+        assertThrows(NullPointerException.class, () -> new ProjectConfiguration("", null));
+        var config = new InternalProjectConfiguration(new ProjectConfiguration("", "a.b-1.0.jar"));
+        assertEquals("a.b-1.0.jar", config.getClasspath());
+    }
+
+    @Test
     void testAssertSW() {
-        ProjectConfiguration publicConfig = new ProjectConfiguration("a.b.Foo");
+        ProjectConfiguration publicConfig = new ProjectConfiguration("a.b.Foo", "");
         InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
         assertFalse(config.isUsePrismSW());
 
-        publicConfig = new ProjectConfiguration("a.b.Foo");
+        publicConfig = new ProjectConfiguration("a.b.Foo", "");
         publicConfig.setUsePrismSW(true);
         config = new InternalProjectConfiguration(publicConfig);
         assertTrue(config.isUsePrismSW());
+    }
+
+    @Test
+    void testAssertUseJavaFX() {
+        ProjectConfiguration publicConfig = new ProjectConfiguration("", "javafx-base-14-linux.jar");
+        InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
+        assertTrue(config.isUseJavaFX());
+
+        publicConfig = new ProjectConfiguration("", "apache-commons.jar");
+        config = new InternalProjectConfiguration(publicConfig);
+        assertFalse(config.isUsePrismSW());
     }
 }
