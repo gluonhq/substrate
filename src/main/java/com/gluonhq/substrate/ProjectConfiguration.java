@@ -61,8 +61,8 @@ public class ProjectConfiguration {
 
     private String appId;
     private String appName;
-    private String mainClassName;
-    private String classpath;
+    private final String mainClassName;
+    private final String classpath;
 
     private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
 
