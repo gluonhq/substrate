@@ -118,15 +118,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     @Override
     public boolean compile() throws IOException, InterruptedException {
-        String mainClassName = projectConfiguration.getMainClassName();
-        if (mainClassName == null || mainClassName.isEmpty()) {
-            throw new IllegalArgumentException("No main class is supplied. Cannot compile.");
-        }
-
-        String processedClasspath = processClassPath(projectConfiguration.getClasspath());
-        if (processedClasspath == null || processedClasspath.isEmpty()) {
-            throw new IllegalArgumentException("No classpath specified. Cannot compile");
-        }
+        String processedClasspath = validateCompileRequirements();
 
         extractNativeLibs(processedClasspath);
 
@@ -161,7 +153,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileRunner.addArg("-cp");
         compileRunner.addArg(processedClasspath);
         compileRunner.addArgs(projectConfiguration.getCompilerArgs());
-        compileRunner.addArg(mainClassName);
+        compileRunner.addArg(projectConfiguration.getMainClassName());
 
         postProcessCompilerArguments(compileRunner.getCmdList());
 
@@ -172,17 +164,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
         int result = compileRunner.runProcess("compile", workDir.toFile());
 
-        boolean success = result == 0;
-        if (success) {
-            // we will print the output of the process only if we don't have the resulting objectfile
-            String nameSearch = mainClassName.toLowerCase(Locale.ROOT) + "." + getObjectFileExtension();
-            if (FileOps.findFile(gvmPath, nameSearch).isEmpty()) {
-                Logger.logInfo("Additional information: Objectfile should be called " + nameSearch + " but we didn't find that under " + gvmPath.toString());
-                return false;
-            }
-        }
-
-        return success;
+        return validateCompileResult(result);
     }
 
     /**
@@ -196,7 +178,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         ensureClibs();
 
         String appName = projectConfiguration.getAppName();
-        String objectFilename = projectConfiguration.getMainClassName().toLowerCase() + "." + getObjectFileExtension();
+        String objectFilename = projectConfiguration.getMainClassName().toLowerCase(Locale.ROOT) + "." + getObjectFileExtension();
         Path gvmPath = paths.getGvmPath();
         Path objectFile = FileOps.findFile(gvmPath, objectFilename).orElseThrow( () ->
             new IllegalArgumentException(
@@ -329,6 +311,20 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return result == 0;
     }
 
+    private String validateCompileRequirements() throws IOException {
+        String mainClassName = projectConfiguration.getMainClassName();
+        if (mainClassName == null || mainClassName.isEmpty()) {
+            throw new IllegalArgumentException("No main class is supplied. Cannot compile.");
+        }
+
+        String processedClasspath = processClassPath(projectConfiguration.getClasspath());
+        if (processedClasspath == null || processedClasspath.isEmpty()) {
+            throw new IllegalArgumentException("No classpath specified. Cannot compile");
+        }
+
+        return processedClasspath;
+    }
+
     private String getJniPlatformArg() {
         String jniPlatform = getJniPlatform();
         return "-Dsvm.platform=org.graalvm.nativeimage.Platform$" + jniPlatform;
@@ -377,7 +373,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     "clibraries",
                     target.getOsArch2());
         }
-        if (!Files.exists(clibPath)) throw new IOException("No clibraries found for the required architecture in "+clibPath);
+        if (!Files.exists(clibPath)) {
+            throw new IOException("No clibraries found for the required architecture in "+clibPath);
+        }
         checkPlatformSpecificClibs(clibPath);
     }
 
@@ -501,7 +499,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 bw.write(",\n");
                 InputStream inputStream = AbstractTargetConfiguration.class.getResourceAsStream(Constants.CONFIG_FILES + javaFile);
                 if (inputStream == null) {
-                    throw new IOException("Missing a reflection configuration file named "+javaFile);
+                    throw new IOException("Missing a reflection configuration file named " + javaFile);
                 }
                 List<String> lines = FileOps.readFileLines(inputStream,
                         line -> !line.startsWith("[") && !line.startsWith("]"));
@@ -533,7 +531,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 bw.write(",\n");
                 InputStream inputStream = AbstractTargetConfiguration.class.getResourceAsStream(Constants.CONFIG_FILES + javaFile);
                 if (inputStream == null) {
-                    throw new IOException("Missing a jni configuration file named "+javaFile);
+                    throw new IOException("Missing a jni configuration file named " + javaFile);
                 }
                 List<String> lines = FileOps.readFileLines(inputStream,
                         line -> !line.startsWith("[") && !line.startsWith("]"));
@@ -663,6 +661,22 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return linkFlags;
     }
 
+    private boolean validateCompileResult(int result) throws IOException {
+        boolean success = result == 0;
+        if (success) {
+            Path gvmPath = paths.getGvmPath();
+
+            // we will print the output of the process only if we don't have the resulting objectfile
+            String nameSearch = projectConfiguration.getMainClassName().toLowerCase(Locale.ROOT) + "." + getObjectFileExtension();
+            if (FileOps.findFile(gvmPath, nameSearch).isEmpty()) {
+                Logger.logInfo("Additional information: Objectfile should be called " + nameSearch + " but we didn't find that under " + gvmPath.toString());
+                return false;
+            }
+        }
+
+        return success;
+    }
+
     // --- package protected methods
 
     // Methods below with default implementation, can be overridden by subclasses
@@ -684,7 +698,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * Allow platforms to check if specific libraries (e.g. libjvm.a) are present in the specified clib path
      * @param clibPath
      */
-    void checkPlatformSpecificClibs(Path clibPath) throws IOException {}
+    void checkPlatformSpecificClibs(Path clibPath) throws IOException {
+        // empty, override by subclasses
+    }
 
     String getAdditionalSourceFileLocation() {
         return "/native/linux/";

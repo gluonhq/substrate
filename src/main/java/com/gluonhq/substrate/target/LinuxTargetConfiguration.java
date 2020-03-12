@@ -126,10 +126,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             Process start = process.start();
             InputStream is = start.getInputStream();
             start.waitFor();
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            String line;
-            while ((line = br.readLine()) != null) {
-                Logger.logInfo("[SUB] " + line);
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    Logger.logInfo("[SUB] " + line);
+                }
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
