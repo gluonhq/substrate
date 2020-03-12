@@ -20,7 +20,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get install at-spi2-core build-essential libgtk-3-dev libxtst-dev libavcodec-dev libavformat-dev libasound2-dev
-          sudo apt-get install xvfb
+          sudo apt-get install xvfb tigervnc-standalone-server tigervnc-common
 
       - name: Install packages (MacOS)
         if: runner.os == 'macOS'
@@ -56,8 +56,13 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1-latest
-          export DISPLAY=:99
-          xvfb-run ./gradlew -i test
+          export DISPLAY=:90
+          mkdir /home/runner/.vnc
+          echo 123456 | vncpasswd -f > /home/runner/.vnc/passwd
+          chmod -v 600 /home/runner/.vnc/passwd
+          vncserver :90 -localhost -nolisten tcp
+          ./gradlew -i test
+          vncserver -kill :90
 
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
