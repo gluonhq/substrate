@@ -68,7 +68,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     boolean graalStarted = false;
 
     private static InputMethodManager imm;
-
+    private static float originalHeight;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +107,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         density = metrics.density;
         Log.v(TAG, "metrics = "+metrics+", density = "+density);
         nativeWindowPtr = surfaceReady(holder.getSurface(), density);
+        Rect currentBounds = new Rect();
+        mView.getRootView().getWindowVisibleDisplayFrame(currentBounds);
+        originalHeight = currentBounds.height() / density;
+        Log.v(TAG, "originalHeight = " + originalHeight);
+
         Log.v(TAG, "Surface created, native code informed about it, nativeWindow at "+nativeWindowPtr);
         if (graalStarted) {
             Log.v(TAG, "GraalApp is already started.");
@@ -161,6 +166,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         Log.v(TAG, "surfaceredraw needed (and wait) done");
     }
 
+    @Override
+    public void onGlobalLayout() {
+        Rect currentBounds = new Rect();
+        mView.getRootView().getWindowVisibleDisplayFrame(currentBounds);
+        float newHeight = currentBounds.height() / density;
+        float keyboardHeight = originalHeight - newHeight;
+        Log.v(TAG, "keyboardHeight = " + keyboardHeight);
+        if (graalStarted) {
+            nativeDispatchKeyboardHeight(keyboardHeight);
+        }
+    }
+
     private static void showIME() {
         Log.v(TAG, "Called notify_showIME for imm = "+imm+", mv = "+mView);
         instance.runOnUiThread(new Runnable() {
@@ -195,6 +212,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeGotKeyEvent(int action, int keycode);
     private native void nativedispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
     private native void nativeDispatchLifecycleEvent(String event);
+    private native void nativeDispatchKeyboardHeight(float height);
 
     class InternalSurfaceView extends SurfaceView {
        private static final int ACTION_POINTER_STILL = -1;
