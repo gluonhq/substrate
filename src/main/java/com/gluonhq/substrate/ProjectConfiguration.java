@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,6 +66,12 @@ public class ProjectConfiguration {
 
     private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
 
+    /**
+     * Create a new project configuration.
+     *
+     * @param mainClassName the fully qualified class name that contains the main entry point
+     * @param classpath the class path that is needed to compile the application
+     */
     public ProjectConfiguration(String mainClassName, String classpath) {
         this.mainClassName = Objects.requireNonNull(mainClassName, "Main class name is required")
                                .contains("/") ?
@@ -77,6 +83,11 @@ public class ProjectConfiguration {
         return this.graalPath;
     }
 
+    /**
+     * Sets the path to the GraalVM installation folder.
+     *
+     * @param path the path to the GraalVM installation folder
+     */
     public void setGraalPath(Path path) {
         this.graalPath = path;
     }
@@ -114,6 +125,12 @@ public class ProjectConfiguration {
         this.usePrismSW = usePrismSW;
     }
 
+    /**
+     * Specify whether verbose output should be enabled. Passing a value of <code>true</code>
+     * will enable verbose output.
+     *
+     * @param verbose <code>true</code> to enable verbose output
+     */
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
@@ -283,6 +300,7 @@ public class ProjectConfiguration {
                 ", appName='" + appName + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
+                ", classpath='" + classpath + '\'' +
                 '}';
     }
 }

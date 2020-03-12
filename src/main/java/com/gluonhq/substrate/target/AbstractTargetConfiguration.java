@@ -79,12 +79,24 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "org.graalvm.home.HomeFinderFeature"
     );
 
+    private static final List<String> baseNativeImageArguments = Arrays.asList(
+            "--report-unsupported-elements-at-runtime",
+            "-Djdk.internal.lambda.eagerlyInitialize=false",
+            "--no-server",
+            "-H:+ExitAfterRelocatableImageWrite",
+            "-H:+SharedLibrary",
+            "-H:+AddAllCharsets"
+    );
+    private static final List<String> verboseNativeImageArguments = Arrays.asList(
+            "-H:+PrintAnalysisCallTree",
+            "-H:Log=registerResource:"
+    );
+
     final FileDeps fileDeps;
     final InternalProjectConfiguration projectConfiguration;
     final ProcessPaths paths;
     protected final boolean crossCompile;
 
-    private ConfigResolver configResolver;
     private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
 
     AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
@@ -106,58 +118,46 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     @Override
     public boolean compile() throws IOException, InterruptedException {
-        String processedClasspath = processClassPath(projectConfiguration.getClasspath());
-        extractNativeLibs(processedClasspath);
-        Triplet target = projectConfiguration.getTargetTriplet();
-        String suffix = target.getArchOs();
-        String jniPlatform = getJniPlatform(target);
-        if (!compileAdditionalSources()) {
-            return false;
-        }
-        Path gvmPath = paths.getGvmPath();
-        FileOps.rmdir(paths.getTmpPath());
-        String tmpDir = paths.getTmpPath().toFile().getAbsolutePath();
         String mainClassName = projectConfiguration.getMainClassName();
-
         if (mainClassName == null || mainClassName.isEmpty()) {
             throw new IllegalArgumentException("No main class is supplied. Cannot compile.");
         }
+
+        String processedClasspath = processClassPath(projectConfiguration.getClasspath());
         if (processedClasspath == null || processedClasspath.isEmpty()) {
             throw new IllegalArgumentException("No classpath specified. Cannot compile");
         }
-        configResolver = new ConfigResolver(processedClasspath);
-        String nativeImage = getNativeImagePath();
-        ProcessRunner compileRunner = new ProcessRunner(nativeImage);
-        compileRunner.addArgs(getEnabledFeatures());
-        List<String> buildTimeList = getInitializeAtBuildTimeList(suffix);
-        if (!buildTimeList.isEmpty()) {
-            compileRunner.addArg("--initialize-at-build-time=" + String.join(",", buildTimeList));
+
+        extractNativeLibs(processedClasspath);
+
+        if (!compileAdditionalSources()) {
+            return false;
         }
-        compileRunner.addArg("--report-unsupported-elements-at-runtime");
-        compileRunner.addArg("-Djdk.internal.lambda.eagerlyInitialize=false");
-        compileRunner.addArg("--no-server");
-        compileRunner.addArg("-H:+ExitAfterRelocatableImageWrite");
-        compileRunner.addArg("-H:TempDirectory="+tmpDir);
-        compileRunner.addArg("-H:+SharedLibrary");
-        compileRunner.addArg("-H:+AddAllCharsets");
+
+        ProcessRunner compileRunner = new ProcessRunner(getNativeImagePath());
+
+        baseNativeImageArguments.forEach(compileRunner::addArg);
+
+        compileRunner.addArgs(getEnabledFeatures());
+
+        compileRunner.addArg(createTempDirectoryArg());
+
         if (allowHttps()) {
             compileRunner.addArg("-H:EnableURLProtocols=http,https");
         }
-        compileRunner.addArg("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix));
-        compileRunner.addArg("-H:JNIConfigurationFiles=" + createJNIConfig(suffix));
+
         if (projectConfiguration.isVerbose()) {
-            compileRunner.addArg("-H:+PrintAnalysisCallTree");
+            verboseNativeImageArguments.forEach(compileRunner::addArg);
         }
-        compileRunner.addArg("-H:ResourceConfigurationFiles=" + createResourceConfig(suffix));
-        if (projectConfiguration.isVerbose()) {
-            compileRunner.addArg("-H:Log=registerResource:");
-        }
+
+        compileRunner.addArgs(getConfigurationFileArgs(processedClasspath));
+
         compileRunner.addArgs(getTargetSpecificAOTCompileFlags());
         if (!getBundlesList().isEmpty()) {
             String bundles = String.join(",", getBundlesList());
             compileRunner.addArg("-H:IncludeResourceBundles=" + bundles);
         }
-        compileRunner.addArg("-Dsvm.platform=org.graalvm.nativeimage.Platform$"+jniPlatform);
+        compileRunner.addArg(getJniPlatformArg());
         compileRunner.addArg("-cp");
         compileRunner.addArg(processedClasspath);
         compileRunner.addArgs(projectConfiguration.getCompilerArgs());
@@ -167,23 +167,22 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         compileRunner.setInfo(true);
         compileRunner.setLogToFile(true);
+
+        Path gvmPath = paths.getGvmPath();
         Path workDir = gvmPath.resolve(projectConfiguration.getAppName());
         int result = compileRunner.runProcess("compile", workDir.toFile());
 
-        boolean failure = result != 0;
-        String extraMessage = null;
-        if (!failure) {
+        boolean success = result == 0;
+        if (success) {
             // we will print the output of the process only if we don't have the resulting objectfile
             String nameSearch = mainClassName.toLowerCase(Locale.ROOT) + "." + getObjectFileExtension();
             if (FileOps.findFile(gvmPath, nameSearch).isEmpty()) {
-                failure = true;
-                extraMessage = "Objectfile should be called "+nameSearch+" but we didn't find that under "+gvmPath.toString();
+                Logger.logInfo("Additional information: Objectfile should be called " + nameSearch + " but we didn't find that under " + gvmPath.toString());
+                return false;
             }
         }
-        if (failure && extraMessage != null) {
-            Logger.logInfo("Additional information: " + extraMessage);
-        }
-        return !failure;
+
+        return success;
     }
 
     /**
@@ -330,7 +329,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return result == 0;
     }
 
-    private String getJniPlatform(Triplet target) {
+    private String getJniPlatformArg() {
+        String jniPlatform = getJniPlatform();
+        return "-Dsvm.platform=org.graalvm.nativeimage.Platform$" + jniPlatform;
+    }
+
+    private String getJniPlatform() {
+        Triplet target = projectConfiguration.getTargetTriplet();
         String os = target.getOs();
         String arch = target.getArch();
         switch (os) {
@@ -412,6 +417,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .collect(Collectors.toList());
     }
 
+    private String createTempDirectoryArg() throws IOException {
+        Path  tmpPath = paths.getTmpPath();
+        FileOps.rmdir(tmpPath);
+        String tmpDir = tmpPath.toFile().getAbsolutePath();
+        return "-H:TempDirectory=" + tmpDir;
+    }
+
     private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add(Constants.REFLECTION_JAVA_FILE);
@@ -447,7 +459,37 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return list;
     }
 
-    private Path createReflectionConfig(String suffix) throws IOException {
+    private List<String> getConfigurationFileArgs(String processedClasspath) throws IOException, InterruptedException {
+        List<String> arguments = new ArrayList<>();
+
+        String suffix = projectConfiguration.getTargetTriplet().getArchOs();
+        ConfigResolver configResolver = new ConfigResolver(processedClasspath);
+
+        List<String> buildTimeList = getInitializeAtBuildTimeList(suffix, configResolver);
+        if (!buildTimeList.isEmpty()) {
+            arguments.add("--initialize-at-build-time=" + String.join(",", buildTimeList));
+        }
+
+        arguments.add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix, configResolver));
+        arguments.add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix, configResolver));
+        arguments.add("-H:ResourceConfigurationFiles=" + createResourceConfig(suffix));
+
+        return arguments;
+    }
+
+    /**
+     * Generates a list with class names that should be added to the
+     * initialize in build time flag
+     *
+     * @return a list with fully qualified class names
+     */
+    private List<String> getInitializeAtBuildTimeList(String suffix, ConfigResolver configResolver) throws IOException {
+        List<String> list = new ArrayList<>(projectConfiguration.getInitBuildTimeList());
+        list.addAll(configResolver.getUserInitBuildTimeList(suffix));
+        return list;
+    }
+
+    private Path createReflectionConfig(String suffix, ConfigResolver configResolver) throws IOException {
         Path gvmPath = paths.getGvmPath();
         Path reflectionPath = gvmPath.resolve(
                 Strings.substitute( Constants.REFLECTION_ARCH_FILE, Map.of("archOs", suffix)));
@@ -480,7 +522,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return reflectionPath;
     }
 
-    private Path createJNIConfig(String suffix) throws IOException {
+    private Path createJNIConfig(String suffix, ConfigResolver configResolver) throws IOException {
         Path gvmPath = paths.getGvmPath();
         Path jniPath = gvmPath.resolve(Strings.substitute(Constants.JNI_ARCH_FILE, Map.of("archOs", suffix)));
         Files.deleteIfExists(jniPath);
@@ -758,17 +800,4 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
         return Collections.emptyList();
     }
-
-    /**
-     * Generates a list with class names that should be added to the
-     * initialize in build time flag
-     *
-     * @return a list with fully qualified class names
-     */
-    private List<String> getInitializeAtBuildTimeList(String suffix) throws IOException {
-        List<String> list = new ArrayList<>(projectConfiguration.getInitBuildTimeList());
-        list.addAll(configResolver.getUserInitBuildTimeList(suffix));
-        return list;
-    }
-    
 }
