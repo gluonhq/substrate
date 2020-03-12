@@ -27,16 +27,25 @@
  */
 #include "grandroid.h"
 
+jclass jBleServiceClass;
+
 jmethodID ble_startScannerMethod;
 int handlesInitialized = 0;
 
-void registerAttachMethodHandles() {
+void registerAttachMethodHandles(JNIEnv* androidEnv) {
     if (handlesInitialized > 0) return;
-    JNIEnv* androidEnv;
-    (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **)&androidEnv, NULL);
-    ble_startScannerMethod = (*androidEnv)->GetStaticMethodID(androidEnv, activityClass, "attach_ble_startScanner", "()V");
-    (*androidVM)->DetachCurrentThread(androidVM);
+    // JNIEnv* androidEnv;
+    // (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **)&androidEnv, NULL);
+    // ble_startScannerMethod = (*androidEnv)->GetStaticMethodID(androidEnv, activityClass, "attach_ble_startScanner", "()V");
+    jclass jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
+    jBleServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
+    // jBleServiceClass = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
+    // (*androidVM)->DetachCurrentThread(androidVM);
     handlesInitialized = 1;
+}
+
+jclass substrateGetBleServiceClass() {
+    return jBleServiceClass;
 }
 
 // From Android to native
@@ -50,6 +59,7 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatch
 
 // From Graal to Android
 
+/*
 void module_ble_startScanning() {
     JNIEnv* androidEnv;
     fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 0\n");
@@ -63,3 +73,4 @@ void module_ble_startScanning() {
     fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 4\n");
 
 }
+*/

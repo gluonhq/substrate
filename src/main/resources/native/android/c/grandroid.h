@@ -38,7 +38,7 @@
 #include <android/log.h>
 #include <android/native_window_jni.h>
 
-#define  ENABLE_DEBUG_LOG 0
+#define  ENABLE_DEBUG_LOG 1
 #define  LOG_TAG "GraalGluon"
 
 #if ENABLE_DEBUG_LOG == 1
@@ -68,6 +68,15 @@ extern JNIEnv *androidEnv;
 extern ANativeWindow *window;
 extern jfloat density;
 extern char *appDataDir;
+
+JavaVM* substrateGetAndroidVM();
+JNIEnv* substrateGetAndroidEnv();
+jclass substrateGetActivityClass();
+jobject substrateGetActivity();
+
+jobject substrateGetActivity();
+
+void registerAttachMethodHandles(JNIEnv* env);
 
 void __attribute__((weak)) androidJfx_requestGlassToRedraw() {}
 void __attribute__((weak)) androidJfx_setNativeWindow(ANativeWindow *nativeWindow) {}

@@ -58,7 +58,7 @@ int argsize = 8;
 
 char **createArgs()
 {
-    LOGE(stderr, "CREATE ARGS");
+    LOGE(stderr, "CREATE ARGS start");
     int origSize = sizeof(origargs) / sizeof(char *);
     char **result = (char **)malloc((origSize + 2) * sizeof(char *));
     for (int i = 0; i < origSize; i++)
@@ -87,6 +87,7 @@ void registerMethodHandles(JNIEnv *aenv)
                                           (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/MainActivity"));
     activity_showIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "showIME", "()V");
     activity_hideIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "hideIME", "()V");
+
 }
 
 int JNI_OnLoad(JavaVM *vm, void *reserved)
@@ -94,15 +95,34 @@ int JNI_OnLoad(JavaVM *vm, void *reserved)
     androidVM = vm;
     (*vm)->GetEnv(vm, (void **)&androidEnv, JNI_VERSION_1_6);
     registerMethodHandles(androidEnv);
-    LOGE(stderr, "AndroidVM called into native, vm = %p, androidEnv = %p", androidVM, androidEnv);
+    registerAttachMethodHandles(androidEnv);
+    // jclass jBleServiceClass = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
+// LOGE(stderr, "BLESERVICE?? %p\n", jBleServiceClass);
+    LOGE(stderr, "AndroidVM Called into native, vm = %p, androidEnv = %p", androidVM, androidEnv);
     return JNI_VERSION_1_6;
+}
+
+JavaVM* substrateGetAndroidVM() {
+    return androidVM;
+}
+
+JNIEnv* substrateGetAndroidEnv() {
+    return androidEnv;
+}
+
+jclass substrateGetActivityClass() {
+    return activityClass;
+}
+
+jobject substrateGetActivity() {
+    return activity;
 }
 
 // === called from DALVIK. Minimize work/dependencies here === //
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp(JNIEnv *env, jobject activityObj)
 {
-    activity = activityObj;
+    activity = (*env)->NewGlobalRef(env, activityObj);
     LOGE(stderr, "Start GraalApp, DALVIK env at %p\n", env);
     LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
     LOGE(stderr, "EnvVersion = %d\n", (*env)->GetVersion(env));
