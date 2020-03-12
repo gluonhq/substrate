@@ -221,6 +221,16 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return result == 0;
     }
 
+    @Override
+    public boolean packageApp() throws IOException, InterruptedException {
+        return false;
+    }
+
+    @Override
+    public boolean install() throws IOException, InterruptedException {
+        return false;
+    }
+
     /**
      * Runs the generated native image
      * @param appPath Path to the application to be run
@@ -265,11 +275,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         ProcessRunner runProcess = new ProcessRunner(appPath.resolve(appName).toString());
         int result = runProcess.runProcess("run until end");
         return result == 0;
-    }
-
-    @Override
-    public boolean packageApp() throws IOException, InterruptedException {
-        return false;
     }
 
     // --- private methods

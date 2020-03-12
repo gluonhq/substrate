@@ -175,16 +175,25 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    public boolean runUntilEnd() throws IOException, InterruptedException {
+    public boolean install() throws IOException, InterruptedException {
         Path sdkPath = Paths.get(sdk);
 
         Path alignedApkPath = getApkBinPath().resolve(projectConfiguration.getAppName() + ".apk");
         if (!Files.exists(alignedApkPath)) {
-            throw new IOException("Application not found at path " + alignedApkPath);
+            throw new IOException("Application not found at path: " + alignedApkPath);
         }
 
-        int processResult = installApk(sdkPath, alignedApkPath.toString());
+        ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
+                "install", "-r", alignedApkPath.toString());
+        int processResult = install.runProcess("install");
         if (processResult != 0) throw new IOException("Application installation failed!");
+
+        return processResult == 0;
+    }
+
+    @Override
+    public boolean runUntilEnd() throws IOException, InterruptedException {
+        Path sdkPath = Paths.get(sdk);
 
         Runnable logcat = () -> {
             try {
@@ -193,7 +202,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 clearLog.runProcess("clearLog");
 
                 ProcessRunner log = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                        "-d", "logcat", "-v", "brief", "-v", "color", "GraalCompiled:V", "GraalActivity:V", "GraalGluon:V", "AndroidRuntime:E", "ActivityManager:W", "*:S");
+                        "-d", "logcat", "-v", "brief", "-v", "color",
+                        "GraalCompiled:V", "GraalActivity:V", "GraalGluon:V",
+                        "AndroidRuntime:E", "ActivityManager:W", "*:S");
                 log.setInfo(true);
                 log.runProcess("log");
             } catch (IOException | InterruptedException e) {
@@ -206,7 +217,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         ProcessRunner run = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
                 "shell", "monkey", "-p", projectConfiguration.getAppId(), "1");
-        processResult += run.runProcess("run");
+        int processResult = run.runProcess("run");
         if (processResult != 0) throw new IOException("Application starting failed!");
 
         logger.join();
@@ -331,7 +342,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Files.createDirectories(getApkClassPath());
         Files.createDirectories(getApkLibPath());
         Files.createDirectories(getApkLibArm64Path());
-        Files.createDirectories(getApkAndroidSourcePath());
     }
 
     private boolean processPrecompiledClasses(String androidJar) throws IOException, InterruptedException {
@@ -354,6 +364,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private int compileDalvikCode(String androidSrc, String androidJar) throws IOException, InterruptedException {
+        Files.createDirectories(getApkAndroidSourcePath());
+
         for (String srcFile : sourceGlueCode) {
             FileOps.copyResource(androidSrc + srcFile + ".java", getApkAndroidSourcePath().resolve(srcFile + ".java"));
         }
@@ -471,12 +483,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 "--key-pass", "pass:android",
                 alignedApk);
         return sign.runProcess("sign");
-    }
-
-    private int installApk(Path sdkPath, String alignedApk) throws IOException, InterruptedException {
-        ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "install", "-r", alignedApk);
-        return install.runProcess("install");
     }
 
     /*

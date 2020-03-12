@@ -36,6 +36,7 @@ import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
+import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.IOException;
@@ -46,16 +47,43 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.gluonhq.substrate.util.Logger.logInit;
-import static com.gluonhq.substrate.util.Logger.title;
-
 public class SubstrateDispatcher {
 
+    /**
+     * Define the different steps that can be handled by
+     * the SubstrateDispatcher. The steps are only used when
+     * the dispatcher is launched through the main method.
+     */
     private enum Step {
+        /**
+         * The goal of the COMPILE step is to run GraalVM
+         * native-image to generate a compiled object file.
+         */
         COMPILE(),
+        /**
+         * The goal of the LINK step is to link all the
+         * libraries into an executable or a shared library,
+         * depending on the target platform.
+         */
         LINK(COMPILE),
+        /**
+         * The goal of the PACKAGE step is to generate an
+         * application package that can be distributed.
+         */
         PACKAGE(LINK),
+        /**
+         * The goal of the INSTALL step is to install the
+         * generated application package on a supported
+         * target (either the host machine or an attached
+         * device).
+         */
         INSTALL(PACKAGE),
+        /**
+         * The goal of the RUN step is to run the installed
+         * application. It might also take a shortcut and
+         * directly run the executable that was produced by
+         * the LINK step.
+         */
         RUN(INSTALL);
 
         private final Step dep;
@@ -68,6 +96,13 @@ public class SubstrateDispatcher {
             this.dep = dep;
         }
 
+        /**
+         * Checks if the provided <code>step</code> is required to be
+         * executed for <code>this</code> step.
+         *
+         * @param step the step to check
+         * @return <code>true</code> if the provided step needs to run
+         */
         public boolean requires(Step step) {
             return this == step || (dep != null && dep.requires(step));
         }
@@ -90,6 +125,10 @@ public class SubstrateDispatcher {
 
         if (step.requires(Step.PACKAGE)) {
             executePackageStep(dispatcher);
+        }
+
+        if (step.requires(Step.INSTALL)) {
+            executeInstallStep(dispatcher);
         }
 
         if (step.requires(Step.RUN)) {
@@ -142,8 +181,6 @@ public class SubstrateDispatcher {
     }
 
     public static void executeCompileStep(SubstrateDispatcher dispatcher) {
-        System.err.println("Compiling...");
-
         startNativeCompileTimer();
 
         try {
@@ -151,13 +188,11 @@ public class SubstrateDispatcher {
             compiling = false;
 
             if (!nativeCompileSucceeded) {
-                System.err.println("Compiling failed.");
+                Logger.logSevere("Compiling failed.");
                 System.exit(1);
             }
         } catch (Throwable t) {
-            System.err.println("Compiling failed with an exception.");
-            t.printStackTrace();
-            System.exit(1);
+            Logger.logFatal(t, "Compiling failed with an exception.");
         }
     }
 
@@ -170,7 +205,7 @@ public class SubstrateDispatcher {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.err.println("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
+                Logger.logInfo("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
             }
         });
         timer.setDaemon(true);
@@ -178,52 +213,51 @@ public class SubstrateDispatcher {
     }
 
     private static void executeLinkStep(SubstrateDispatcher dispatcher) {
-        System.err.println("Linking...");
         try {
             if (!dispatcher.nativeLink()) {
-                System.err.println("Linking failed");
+                Logger.logSevere("Linking failed");
                 System.exit(1);
             }
         } catch (Throwable t) {
-            System.err.println("Linking failed with an exception");
-            t.printStackTrace();
-            System.exit(1);
+            Logger.logFatal(t, "Linking failed with an exception.");
         }
     }
 
     private static void executePackageStep(SubstrateDispatcher dispatcher) {
-        System.err.println("Packaging...");
         try {
             dispatcher.nativePackage();
         } catch (Throwable t) {
-            System.err.println("Packaging failed with an exception");
-            t.printStackTrace();
-            System.exit(1);
+            Logger.logFatal(t, "Packaging failed with an exception.");
+        }
+    }
+
+    private static void executeInstallStep(SubstrateDispatcher dispatcher) {
+        try {
+            dispatcher.nativeInstall();
+        } catch (Throwable t) {
+            Logger.logFatal(t, "Installing failed with an exception.");
         }
     }
 
     private static void executeRunStep(SubstrateDispatcher dispatcher) {
-        System.err.println("Running...");
-
-        String expected = System.getProperty("expected");
-
         try {
+            String expected = System.getProperty("expected");
             if (expected != null) {
+                Logger.logInfo(logTitle("RUN TASK (with expected)"));
+
                 String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(),
                         dispatcher.config.getAppName());
                 if (expected.equals(response)) {
-                    System.err.println("Run ended successfully, the output: " + expected + " matched the expected result.");
+                    Logger.logInfo("Run ended successfully, the output: " + expected + " matched the expected result.");
                 } else {
-                    System.err.println("Run failed, expected output: " + expected + ", output: " + response);
+                    Logger.logSevere("Run failed, expected output: " + expected + ", output: " + response);
                     System.exit(1);
                 }
             } else {
                 dispatcher.nativeRun();
             }
         } catch (Throwable t) {
-            System.err.println("Running failed with an exception");
-            t.printStackTrace();
-            System.exit(1);
+            Logger.logFatal(t, "Running failed with an exception");
         }
     }
 
@@ -236,8 +270,12 @@ public class SubstrateDispatcher {
         return arg;
     }
 
+    private static String logTitle(String text) {
+        return "==================== " + (text == null ? "": text) + " ====================";
+    }
+
     private static void printUsage() {
-        System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
+        System.out.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
     private final InternalProjectConfiguration config;
@@ -261,6 +299,8 @@ public class SubstrateDispatcher {
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), targetTriplet.getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was not found for " + targetTriplet);
+
+        Logger.logInit(paths.getLogPath().toString(), this.config.isVerbose());
     }
 
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) throws IOException {
@@ -284,18 +324,21 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public boolean nativeCompile() throws Exception {
+        Logger.logInfo(logTitle("COMPILE TASK"));
+
         config.canRunNativeImage();
 
         Triplet targetTriplet  = config.getTargetTriplet();
         if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
-            throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
+            throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
         }
 
-        logInit(paths.getLogPath().toString(), title("COMPILE TASK"),  config.isVerbose());
-        System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
-        boolean compilationSuccess = targetConfiguration.compile();
-        System.err.println(compilationSuccess? "Compilation succeeded.": "Compilation failed. See error printed above.");
-        return compilationSuccess;
+        Logger.logInfo("We will now compile your code for " + targetTriplet + ". This may take some time.");
+        boolean compilingSucceeded = targetConfiguration.compile();
+        if (!compilingSucceeded) {
+            Logger.logSevere("Compiling failed.");
+        }
+        return compilingSucceeded;
     }
 
     /**
@@ -308,19 +351,12 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public boolean nativeLink() throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("LINK TASK"), config.isVerbose());
-        return targetConfiguration.link();
-    }
-
-    /**
-     * This method runs the native image application, that was created after {@link #nativeLink()}
-     * was called and ended successfully.
-     * @throws IOException
-     * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
-     */
-    public void nativeRun() throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("RUN TASK"), config.isVerbose());
-        targetConfiguration.runUntilEnd();
+        Logger.logInfo(logTitle("LINK TASK"));
+        boolean linkingSucceeded = targetConfiguration.link();
+        if (!linkingSucceeded) {
+            Logger.logSevere("Linking failed.");
+        }
+        return linkingSucceeded;
     }
 
     /**
@@ -330,7 +366,29 @@ public class SubstrateDispatcher {
      * @throws InterruptedException
      */
     public void nativePackage() throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("PACKAGE TASK"), config.isVerbose());
+        Logger.logInfo(logTitle("PACKAGE TASK"));
         targetConfiguration.packageApp();
+    }
+
+    /**
+     * This method installs the generated package that was created after {@link #nativePackage()}
+     * was called and ended successfully.
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public void nativeInstall() throws IOException, InterruptedException {
+        Logger.logInfo(logTitle("INSTALL TASK"));
+        targetConfiguration.install();
+    }
+
+    /**
+     * This method runs the native image application, that was created after {@link #nativeLink()}
+     * was called and ended successfully.
+     * @throws IOException
+     * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
+     */
+    public void nativeRun() throws IOException, InterruptedException {
+        Logger.logInfo(logTitle("RUN TASK"));
+        targetConfiguration.runUntilEnd();
     }
 }
