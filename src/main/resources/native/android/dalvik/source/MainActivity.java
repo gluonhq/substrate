@@ -51,12 +51,13 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.FrameLayout;
 
 import javafx.scene.input.KeyCode;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback,
-        SurfaceHolder.Callback2 {
+        SurfaceHolder.Callback2, OnGlobalLayoutListener {
 
     private static MainActivity   instance;
     private static FrameLayout  mViewGroup;
@@ -87,6 +88,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
         mView = new InternalSurfaceView(this);
         mView.getHolder().addCallback(this);
+        mView.getViewTreeObserver().addOnGlobalLayoutListener(this);
         mViewGroup = new FrameLayout(this);
         mViewGroup.addView(mView);
         setContentView(mViewGroup);
