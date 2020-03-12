@@ -590,7 +590,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (Files.exists(libPath)) {
             FileOps.deleteDirectory(libPath);
         }
-        System.err.println("Extracting native libs to: " + libPath);
         Logger.logDebug("Extracting native libs to: " + libPath);
 
         List<String> jars = new ClassPath(classPath).filter(s -> s.endsWith(".jar") && !s.contains("javafx-"));
@@ -618,7 +617,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                         .filter(s -> s.startsWith("lib") && s.endsWith(".a"))
                         .collect(Collectors.toList());
             }
-System.err.println("ADD "+libs+" TO LINKFLAGS");
             linkFlags.addAll(getTargetSpecificNativeLibsFlags(libPath, libs));
         }
         return linkFlags;

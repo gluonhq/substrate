@@ -58,7 +58,7 @@ int argsize = 8;
 
 char **createArgs()
 {
-    LOGE(stderr, "CREATE ARGS start");
+    LOGE(stderr, "CREATE ARGS");
     int origSize = sizeof(origargs) / sizeof(char *);
     char **result = (char **)malloc((origSize + 2) * sizeof(char *));
     for (int i = 0; i < origSize; i++)
@@ -87,7 +87,6 @@ void registerMethodHandles(JNIEnv *aenv)
                                           (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/MainActivity"));
     activity_showIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "showIME", "()V");
     activity_hideIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "hideIME", "()V");
-
 }
 
 int JNI_OnLoad(JavaVM *vm, void *reserved)
@@ -96,8 +95,6 @@ int JNI_OnLoad(JavaVM *vm, void *reserved)
     (*vm)->GetEnv(vm, (void **)&androidEnv, JNI_VERSION_1_6);
     registerMethodHandles(androidEnv);
     registerAttachMethodHandles(androidEnv);
-    // jclass jBleServiceClass = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
-// LOGE(stderr, "BLESERVICE?? %p\n", jBleServiceClass);
     LOGE(stderr, "AndroidVM Called into native, vm = %p, androidEnv = %p", androidVM, androidEnv);
     return JNI_VERSION_1_6;
 }

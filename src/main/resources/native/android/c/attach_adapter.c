@@ -34,13 +34,8 @@ int handlesInitialized = 0;
 
 void registerAttachMethodHandles(JNIEnv* androidEnv) {
     if (handlesInitialized > 0) return;
-    // JNIEnv* androidEnv;
-    // (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **)&androidEnv, NULL);
-    // ble_startScannerMethod = (*androidEnv)->GetStaticMethodID(androidEnv, activityClass, "attach_ble_startScanner", "()V");
     jclass jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
     jBleServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
-    // jBleServiceClass = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
-    // (*androidVM)->DetachCurrentThread(androidVM);
     handlesInitialized = 1;
 }
 
@@ -57,20 +52,3 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatch
     (*env)->ReleaseStringUTFChars(env, event, chars);
 }
 
-// From Graal to Android
-
-/*
-void module_ble_startScanning() {
-    JNIEnv* androidEnv;
-    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 0\n");
-    registerAttachMethodHandles();
-    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 1\n");
-    (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **)&androidEnv, NULL);
-    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 2\n");
-    (*androidEnv)->CallStaticVoidMethod(androidEnv, activityClass, ble_startScannerMethod);
-    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 3\n");
-    (*androidVM)->DetachCurrentThread(androidVM);
-    fprintf(stderr, "[JVDBG] AttachSubstrate, startScanning 4\n");
-
-}
-*/
