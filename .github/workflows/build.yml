@@ -56,14 +56,10 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1-latest
-#          export DISPLAY=:99.0
-#          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16
-#          sleep 3
-          mkdir ~/.vnc
-          echo 123456 | vncpasswd -f > ~/.vnc/passwd
-          chmod -v 600 ~/.vnc/passwd
-          copy .github/xstartup ~/.vnc/xstartup
-          chmod -v +x ~/.vnc/xstartup
+          export DISPLAY=:90
+          mkdir /home/runner/.vnc
+          echo 123456 | vncpasswd -f > /home/runner/.vnc/passwd
+          chmod -v 600 /home/runner/.vnc/passwd
           vncserver :90 -localhost -nolisten tcp
           ./gradlew -i test
           vncserver -kill :90
