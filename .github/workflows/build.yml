@@ -57,7 +57,8 @@ jobs:
         run: |
           export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1-latest
           export DISPLAY=:99
-          xvfb-run ./gradlew -i test
+          Xvfb :99 &
+          ./gradlew -i test
 
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
