@@ -119,6 +119,6 @@ class SubstrateTest {
 
         publicConfig = new ProjectConfiguration("", "apache-commons.jar");
         config = new InternalProjectConfiguration(publicConfig);
-        assertFalse(config.isUsePrismSW());
+        assertFalse(config.isUseJavaFX());
     }
 }
