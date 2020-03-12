@@ -88,7 +88,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
-                "-arch", getArch(),
+                "-arch", getTargetArch(),
                 "-mios-version-min=11.0",
                 "-isysroot", getSysroot()));
         if (useJavaFX) {
@@ -106,31 +106,19 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     @Override
     List<String> getTargetSpecificCCompileFlags() {
         return Arrays.asList("-xobjective-c",
-                "-arch", getArch(),
+                "-arch", getTargetArch(),
                 "-mios-version-min=11.0",
                 "-isysroot", getSysroot());
     }
 
     @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
-        boolean graalvm22 = true;
-        Path internalLlcPath = projectConfiguration.getGraalPath().resolve("lib").resolve("llvm").resolve("bin");
-        if (!Files.exists(internalLlcPath.resolve("llc"))) {
-            graalvm22 = false; // and use customLLC
-        }
-        List<String> answer = new ArrayList<>();
-        answer.addAll(Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
-                "-Dllvm.bin.dir=" + internalLlcPath,
-                "-H:+UseCAPCache",
-                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-Dsvm.targetName=iOS",
-                "-Dsvm.targetArch=" + getArch()));
-        if (!graalvm22) {
-            Path llcPath = getLlcPath();
-            answer.add("-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
-        }
-        return answer;
+                "-Dsvm.targetArch=" + getTargetArch(),
+                "-H:+UseCAPCache",
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString());
     }
 
     @Override
@@ -273,7 +261,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         return false;
     }
 
-    private String getArch() {
+    private String getTargetArch() {
         return projectConfiguration.getTargetTriplet().getArch();
     }
 
@@ -299,7 +287,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     private boolean lipoMatch(Path path) {
         try {
-            return lipoInfo(path).indexOf(getArch()) > 0;
+            return lipoInfo(path).indexOf(getTargetArch()) > 0;
         } catch (IOException | InterruptedException e) {
             Logger.logSevere("Error processing lipo for " + path);
         }

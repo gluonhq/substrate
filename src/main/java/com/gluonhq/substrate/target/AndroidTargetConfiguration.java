@@ -55,7 +55,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final Path clang;
     private final String hostPlatformFolder;
 
-    private List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c", "touch_events.c", "glibc_shim.c");
+    private List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c", "touch_events.c", "glibc_shim.c", "attach_adapter.c");
     private List<String> androidAdditionalHeaderFiles = Collections.singletonList("grandroid.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
     private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-fuse-ld=gold",
@@ -162,20 +162,17 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         String androidCodeLocation = "/native/android/dalvik";
 
-        String androidSrc = androidCodeLocation + "/source/";
-        String androidPrecompiled = androidCodeLocation + "/precompiled/class/";
-
-        if (!Files.isDirectory(apkAndroidSourcePath)) {
-            for (String srcFile : sourceGlueCode) {
-                FileOps.copyResource(androidSrc + srcFile + ".java", apkAndroidSourcePath.resolve(srcFile + ".java"));
-            }
-        }
-        
         if (projectConfiguration.isUsePrecompiledCode()) {
+            String androidPrecompiled = androidCodeLocation + "/precompiled/class/";
             for (String classFile : compiledGlueCode) {
                 FileOps.copyResource(androidPrecompiled + classFile + ".class", apkClassPath.resolve(classFile + ".class"));
             }
         } else {
+            String androidSrc = androidCodeLocation + "/source/";
+            for (String srcFile : sourceGlueCode) {
+                FileOps.copyResource(androidSrc + srcFile + ".java", apkAndroidSourcePath.resolve(srcFile + ".java"));
+            }
+
             List<String> sources = new ArrayList<>();
 
             for (String srcFile : sourceGlueCode) {
@@ -183,8 +180,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             }
 
             ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
-            "-d", apkClassPath.toString(), "-source", "1.7", "-target", "1.7", "-cp", apkAndroidSourcePath.toString(), "-bootclasspath", androidJar
-            );
+                    "-d", apkClassPath.toString(), "-source", "1.7", "-target", "1.7", "-cp", apkAndroidSourcePath.toString(), "-bootclasspath", androidJar);
             processRunner.addArgs(sources);
             int processResult = processRunner.runProcess("dalvikCompilation");
             if (processResult != 0)
@@ -316,18 +312,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
-        Path llcPath = getLlcPath();
-        Path internalLlcPath = projectConfiguration.getGraalPath().resolve("lib").resolve("llvm").resolve("bin");
-        
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
-                "-Dllvm.bin.dir=" + internalLlcPath,
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
-                "-H:CustomLD=" + ldlld.toAbsolutePath().toString(),
-                "-H:CustomLLC=" + llcPath.toAbsolutePath().toString());
+                "-H:CustomLD=" + ldlld.toAbsolutePath().toString());
     }
 
     @Override

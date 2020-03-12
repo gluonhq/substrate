@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,13 +37,10 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public final class FileDeps {
 
@@ -51,7 +48,6 @@ public final class FileDeps {
     private static final String JAVA_STATIC_URL = "https://download2.gluonhq.com/substrate/staticjdk/";
     private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static.zip";
     private static final String JAVAFX_STATIC_URL = "https://download2.gluonhq.com/substrate/javafxstaticsdk/";
-    private static final String LLC_URL = "https://download2.gluonhq.com/substrate/llvm/";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
             "libjava.a", "libnet.a", "libnio.a", "libzip.a", "libprefs.a"
@@ -276,11 +272,11 @@ public final class FileDeps {
         }
         try {
             if (downloadJavaStatic) {
-                downloadJavaZip(target, Constants.USER_SUBSTRATE_PATH);
+                downloadJavaZip(target);
             }
 
             if (downloadJavaFXStatic) {
-                downloadJavaFXZip(target, Constants.USER_SUBSTRATE_PATH);
+                downloadJavaFXZip(target);
             }
 
             if (downloadAndroidSdk) { // First we get SDK
@@ -312,44 +308,6 @@ public final class FileDeps {
     }
 
     /**
-     * Returns the path to the llc compiler that is working for the provided configuration.
-     * The <code>configuration</code> object must have its host triplet set correctly.
-     * If the llc compiler is found in the file cache, it will be returned. Otherwise, it will
-     * be downloaded and stored in the cache. After calling this method, it is guaranteed that an
-     * llc compiler is in the specified path.
-     * <p>
-     *     There might be different versions for the llc compiler, but this is handled inside
-     *     Substrate. If the developer wants a specific flavour of llc, it is recommended to
-     *     use <code>configuration.setLlcPath()</code> which takes precedence over calling this method.
-     * </p>
-     * @return the path to a working llc compiler.
-     * @throws IOException in case the required directories can't be created or navigated into.
-     */
-    public Path getLlcPath() throws IOException {
-        Path llcRootPath = Constants.USER_SUBSTRATE_PATH.resolve(Constants.LLC_NAME);
-        String archos = configuration.getHostTriplet().getArchOs();
-        Path archosPath = llcRootPath.resolve(archos).resolve(Constants.LLC_VERSION);
-        if (!Files.exists(archosPath)) {
-            Files.createDirectories(archosPath);
-        }
-        String llcname = Constants.LLC_NAME + "-" + archos + "-" + Constants.LLC_VERSION;
-        Path llcPath = archosPath.resolve(llcname);
-        if (Files.exists(llcPath)) {
-            return llcPath;
-        }
-        // we don't have the required llc. Download it and store it in llcPath.
-
-        URL url = new URL(LLC_URL + llcname);
-        FileOps.downloadFile(url, llcPath);
-        Set<PosixFilePermission> perms = new HashSet<>();
-        perms.add(PosixFilePermission.OWNER_READ);
-        perms.add(PosixFilePermission.OWNER_EXECUTE);
-        Files.setPosixFilePermissions(llcPath, perms);
-        // now llcPath contains the llc, return it.
-        return llcPath;
-    }
-
-    /**
      * Generates standardized checksum file name for a given os architecture
      * @param base base path, parent of which will be used
      * @param customPart custom part of the name
@@ -360,14 +318,14 @@ public final class FileDeps {
         return base.getParent().resolve(String.format("%s-%s.md5", customPart, osArch)).toString();
     }
 
-    private void downloadJavaZip(String target, Path substratePath) throws IOException {
+    private void downloadJavaZip(String target) throws IOException {
         Logger.logDebug("Process zip javaStaticSdk, target = "+target);
 
         String javaZip = Strings.substitute(JAVA_STATIC_ZIP, Map.of(
             "version", configuration.getJavaStaticSdkVersion(),
             "target", target));
         FileOps.downloadAndUnzip(JAVA_STATIC_URL + javaZip,
-                substratePath,
+                Constants.USER_SUBSTRATE_PATH,
                 javaZip,
                 "javaStaticSdk",
                 configuration.getJavaStaticSdkVersion(),
@@ -376,14 +334,14 @@ public final class FileDeps {
         Logger.logDebug("Processing zip java done");
     }
 
-    private void downloadJavaFXZip(String osarch, Path substratePath ) throws IOException {
+    private void downloadJavaFXZip(String osarch) throws IOException {
         Logger.logDebug("Process zip javafxStaticSdk");
 
         String javafxZip = Strings.substitute(JAVAFX_STATIC_ZIP, Map.of(
             "version", configuration.getJavafxStaticSdkVersion(),
             "target", osarch));
         FileOps.downloadAndUnzip(JAVAFX_STATIC_URL + javafxZip,
-                substratePath,
+                Constants.USER_SUBSTRATE_PATH,
                 javafxZip,
                 "javafxStaticSdk",
                 configuration.getJavafxStaticSdkVersion(),
@@ -416,7 +374,7 @@ public final class FileDeps {
         Logger.logDebug("Downloading additional libs ...");
         for (String url : ANDROID_DEPS) {
             URL link = new URL(url);
-            String filename = url.substring(url.lastIndexOf('/')+1, url.length());
+            String filename = url.substring(url.lastIndexOf('/') + 1);
             FileOps.downloadFile(link, libsLocation.resolve(filename));
         }
         Logger.logDebug("Done downloading additional libs");
