@@ -39,25 +39,28 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 
 import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.InputMethodManager;
 
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.KeyCharacterMap;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.WindowManager.LayoutParams;
 import android.view.inputmethod.InputMethodManager;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.FrameLayout;
+import android.widget.PopupWindow;
 
 import javafx.scene.input.KeyCode;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback,
-        SurfaceHolder.Callback2, OnGlobalLayoutListener {
+        SurfaceHolder.Callback2 {
 
     private static MainActivity   instance;
     private static FrameLayout  mViewGroup;
@@ -70,7 +73,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     boolean graalStarted = false;
 
     private static InputMethodManager imm;
-    private static float originalHeight;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,12 +90,22 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
         mView = new InternalSurfaceView(this);
         mView.getHolder().addCallback(this);
-        mView.getViewTreeObserver().addOnGlobalLayoutListener(this);
         mViewGroup = new FrameLayout(this);
         mViewGroup.addView(mView);
         setContentView(mViewGroup);
         instance = this;
+
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        new KeyboardView(this, new KeyboardHeightListener() {
+            @Override
+            public void onHeightChanged(float height) {
+                float keyboardHeight = height / density;
+                Log.v(TAG, "Keyboard height = " + keyboardHeight);
+                if (graalStarted) {
+                    nativeDispatchKeyboardHeight(keyboardHeight);
+                }
+            }
+        });
         Log.v(TAG, "onCreate done");
     }
 
@@ -112,8 +124,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         nativeWindowPtr = surfaceReady(holder.getSurface(), density);
         Rect currentBounds = new Rect();
         mView.getRootView().getWindowVisibleDisplayFrame(currentBounds);
-        originalHeight = currentBounds.height() / density;
-        Log.v(TAG, "originalHeight = " + originalHeight);
 
         Log.v(TAG, "Surface created, native code informed about it, nativeWindow at "+nativeWindowPtr);
         if (graalStarted) {
@@ -169,18 +179,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         Log.v(TAG, "surfaceredraw needed (and wait) done");
     }
 
-    @Override
-    public void onGlobalLayout() {
-        Rect currentBounds = new Rect();
-        mView.getRootView().getWindowVisibleDisplayFrame(currentBounds);
-        float newHeight = currentBounds.height() / density;
-        float keyboardHeight = originalHeight - newHeight;
-        Log.v(TAG, "keyboardHeight = " + keyboardHeight);
-        if (graalStarted) {
-            nativeDispatchKeyboardHeight(keyboardHeight);
-        }
-    }
-
     private static void showIME() {
         Log.v(TAG, "Called notify_showIME for imm = "+imm+", mv = "+mView);
         instance.runOnUiThread(new Runnable() {
@@ -218,9 +216,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeDispatchKeyboardHeight(float height);
 
     class InternalSurfaceView extends SurfaceView {
-       private static final int ACTION_POINTER_STILL = -1;
+        private static final int ACTION_POINTER_STILL = -1;
 
-       public InternalSurfaceView(Context context) {
+        public InternalSurfaceView(Context context) {
             super(context);
             setFocusableInTouchMode(true);
         }
@@ -328,7 +326,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     public final static int PRESS   = 111;
     public final static int RELEASE = 112;
-    public final static int TYPED   = 113; 
+    public final static int TYPED   = 113;
 
     private int deadKey = 0;
 
@@ -559,6 +557,55 @@ System.out.println ("[JVDBG] eventkeycode = "+event.getKeyCode()+" and jfxkc = "
         }
     }
 
+    interface KeyboardHeightListener {
+        void onHeightChanged(float height);
+    }
 
+    class KeyboardView extends PopupWindow implements OnGlobalLayoutListener {
+        private final Activity activity;
+        private final View rootView;
+        private final KeyboardHeightListener listener;
+        private int maxHeight;
+
+        public KeyboardView(Activity activity, KeyboardHeightListener listener) {
+            super(activity);
+            this.activity = activity;
+            this.listener = listener;
+
+            rootView = new View(activity);
+            setContentView(rootView);
+
+            rootView.getViewTreeObserver().addOnGlobalLayoutListener(this);
+
+            setWidth(0);
+            setHeight(LayoutParams.MATCH_PARENT);
+            setSoftInputMode(LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+            setInputMethodMode(PopupWindow.INPUT_METHOD_NEEDED);
+
+            if (!isShowing()) {
+                final View view = activity.getWindow().getDecorView();
+                view.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showAtLocation(view, Gravity.NO_GRAVITY, 0, 0);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onGlobalLayout() {
+            Rect bounds = new Rect();
+            rootView.getWindowVisibleDisplayFrame(bounds);
+            if (bounds.bottom > maxHeight) {
+                maxHeight = bounds.bottom;
+            }
+
+            int keyboardHeight = maxHeight - bounds.bottom;
+            if (listener != null) {
+                listener.onHeightChanged((float) keyboardHeight);
+            }
+        }
+    }
 
 }
