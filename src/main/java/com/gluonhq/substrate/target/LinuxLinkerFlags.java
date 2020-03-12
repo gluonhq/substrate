@@ -45,7 +45,7 @@ import static com.gluonhq.substrate.target.LinuxLinkerFlags.PkgInfo.hardwired;
  * Defines linker flags for a given linux flavor (debian/fedora).
  */
 public class LinuxLinkerFlags {
-    private static final Flavor flavor = new LinuxFlavor().getFlavor();
+    private static final Flavor flavor = LinuxFlavor.getFlavor();
 
     /**
      * Defines per-flavor pkg-config package names and the associated OS package
@@ -96,6 +96,13 @@ public class LinuxLinkerFlags {
     );
 
     /**
+     * List of packages found missing on computer.
+     */
+    private List<String> missingPackages = new ArrayList<>();
+    
+    private LinuxLinkerFlags() {}
+
+    /**
      * Returns linker flag appropriate for the current linux variant.
      *
      * Consults the system pkg-config for all required packages
@@ -106,16 +113,21 @@ public class LinuxLinkerFlags {
      * to be installed.
      *
      * @return linker flag appropriate for the current linux variant.
+     * @throws InterruptedException 
+     * @throws IOException 
      */
-    public List<String> getLinkerFlags() {
-        List<String> missingPackages = new ArrayList<>();
+    public static List<String> getLinkerFlags() throws IOException, InterruptedException {
+        return new LinuxLinkerFlags().doGetLinkerFlags();
+    }
+    
+    private List<String> doGetLinkerFlags() throws IOException, InterruptedException {
+        List<String> pkgFlags = new ArrayList<>();
+        for (PkgInfo pkg : LINK_DEPENDENCIES) {
+            pkgFlags.addAll(lookupPackageFlags(pkg));
+        }
 
-        List<String> pkgFlags = LINK_DEPENDENCIES.stream()
-                .flatMap(pkg -> lookupPackageFlags(pkg, missingPackages).stream())
-                .collect(Collectors.toList());
-
-        if (!missingPackages.isEmpty()) {
-            printUpdateInstructionsAndFail(missingPackages);
+        if (anyOsPackageIsMissing()) {
+            printUpdateInstructionsAndFail();
         }
 
         Logger.logDebug("All flags: " + pkgFlags);
@@ -127,20 +139,16 @@ public class LinuxLinkerFlags {
      *
      * If pkg-config fails, adds amendment instructions to missingPackages.
      */
-    private List<String> lookupPackageFlags(PkgInfo pkgInfo, List<String> missingPackages) {
+    private List<String> lookupPackageFlags(PkgInfo pkgInfo) throws IOException, InterruptedException {
         if (pkgInfo.hardwired != null) {
             return List.of(pkgInfo.hardwired);
         }
 
         String pkgName = pkgInfo.pkgName;
         ProcessRunner process = new ProcessRunner("/usr/bin/pkg-config", "--libs", pkgName);
-        try {
-            if (process.runProcess("Get config for " + pkgName) != 0) {
-                missingPackages.add(pkgInfo.installName + " (for pkgConfig " + pkgName + ")");
-                return List.of();
-            }
-        } catch (IOException | InterruptedException e) {
-            throw new IllegalStateException("Failed to lookup linker flags", e);
+        if (process.runProcess("Get config for " + pkgName) != 0) {
+            missingPackages.add(pkgInfo.installName + " (for pkgConfig " + pkgName + ")");
+            return List.of();
         }
 
         List<String> flags = List.of(process.getResponse().trim().split(" "));
@@ -148,7 +156,11 @@ public class LinuxLinkerFlags {
         return flags;
     }
 
-    private void printUpdateInstructionsAndFail(List<String> missingPackages) {
+    private boolean anyOsPackageIsMissing() {
+        return !missingPackages.isEmpty();
+    }    
+    
+    private void printUpdateInstructionsAndFail() {
         String nl = System.lineSeparator();
         String nlIndent = nl + "  ";
         String instructions = missingPackages.stream()

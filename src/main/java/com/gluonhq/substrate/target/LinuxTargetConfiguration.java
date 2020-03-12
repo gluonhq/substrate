@@ -108,13 +108,13 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) throws IOException, InterruptedException {
         List<String> answer = new LinkedList<>();
         answer.add("-rdynamic");
         if (!useJavaFX) return answer;
 
         answer.addAll(linuxfxlibs);
-        answer.addAll(new LinuxLinkerFlags().getLinkerFlags());
+        answer.addAll(LinuxLinkerFlags.getLinkerFlags());
         if (usePrismSW) {
             answer.addAll(linuxfxSWlibs);
         }

@@ -64,8 +64,19 @@ public class LinuxFlavor {
             return packagingSystem == PackagingSystem.RPM;
         }
     }
+    
+    private LinuxFlavor() {}
 
-    public Flavor getFlavor() {
+    /**
+     * Returns flavor of linux system, based on os-release
+     *
+     * @return flavor of linux system
+     */
+    public static Flavor getFlavor() {
+        return new LinuxFlavor().doGetFlavor();
+    }
+    
+    private Flavor doGetFlavor() {
         List<String> osReleaseLines = readOsRelease();
         if (osReleaseLines.stream().anyMatch(l -> isFedora(l))) {
             return Flavor.FEDORA;
