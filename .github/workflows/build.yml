@@ -56,10 +56,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1-latest
-          export DISPLAY=0:0
-          xhost +
-          export DISPLAY=$IP:0
-          xvfb-run ./gradlew -i test
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          ./gradlew -i test
 
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
