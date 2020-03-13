@@ -34,6 +34,7 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
+import com.gluonhq.substrate.util.linux.LinuxLinkerFlags;
 
 import java.io.BufferedReader;
 import java.io.IOException;

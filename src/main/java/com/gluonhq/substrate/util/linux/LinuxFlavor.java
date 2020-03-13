@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.target;
+package com.gluonhq.substrate.util.linux;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -77,14 +77,14 @@ public class LinuxFlavor {
     }
     
     private Flavor doGetFlavor() {
-        List<String> osReleaseLines = readOsRelease();
+        List<String> osReleaseLines = readOSRelease();
         if (osReleaseLines.stream().anyMatch(l -> isFedora(l))) {
             return Flavor.FEDORA;
         }
         return Flavor.DEBIAN;
     }
 
-    private List<String> readOsRelease() {
+    private List<String> readOSRelease() {
         return List.of("/etc/os-release", "/usr/lib/os-release").stream()
                 .map(Paths::get)
                 .filter(Files::exists)

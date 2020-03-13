@@ -25,21 +25,21 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.target;
+package com.gluonhq.substrate.util.linux;
+
+import static com.gluonhq.substrate.util.linux.LinuxLinkerFlags.PkgInfo.activeOf;
+import static com.gluonhq.substrate.util.linux.LinuxLinkerFlags.PkgInfo.debian;
+import static com.gluonhq.substrate.util.linux.LinuxLinkerFlags.PkgInfo.fedora;
+import static com.gluonhq.substrate.util.linux.LinuxLinkerFlags.PkgInfo.hardwired;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.gluonhq.substrate.target.LinuxFlavor.Flavor;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
-
-import static com.gluonhq.substrate.target.LinuxLinkerFlags.PkgInfo.activeOf;
-import static com.gluonhq.substrate.target.LinuxLinkerFlags.PkgInfo.debian;
-import static com.gluonhq.substrate.target.LinuxLinkerFlags.PkgInfo.fedora;
-import static com.gluonhq.substrate.target.LinuxLinkerFlags.PkgInfo.hardwired;
+import com.gluonhq.substrate.util.linux.LinuxFlavor.Flavor;
 
 /**
  * Defines linker flags for a given linux flavor (debian/fedora).
@@ -126,7 +126,7 @@ public class LinuxLinkerFlags {
             pkgFlags.addAll(lookupPackageFlags(pkg));
         }
 
-        if (anyOsPackageIsMissing()) {
+        if (isOSPackageMissing()) {
             printUpdateInstructionsAndFail();
         }
 
@@ -156,7 +156,7 @@ public class LinuxLinkerFlags {
         return flags;
     }
 
-    private boolean anyOsPackageIsMissing() {
+    private boolean isOSPackageMissing() {
         return !missingPackages.isEmpty();
     }    
     
