@@ -34,15 +34,37 @@ public interface TargetConfiguration {
 
     /**
      * Compiles the classes to objectcode for this TargetConfiguration.
-     * @param classPath
      * @return true if compilation succeeded, false if it failed
      * @throws Exception
      */
-    boolean compile(String classPath) throws Exception;
+    boolean compile() throws Exception;
 
     boolean link() throws IOException, InterruptedException;
 
-    boolean runUntilEnd() throws IOException, InterruptedException;
+    /**
+     * Creates a package of the application (including at least executable and
+     * other possible files) in a given format.
+     *
+     * This operation has to be called only after link has successfully produced
+     * a valid application
+     * @return true if packaging succeeded, false if failed or not supported
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    boolean packageApp() throws IOException, InterruptedException;
+
+    /**
+     * Installs the packaged application on the local system or on a device
+     * that is attached to the local system.
+     *
+     * This operation has to be called only after {@link #packageApp()} has successfully produced
+     * a valid package.
+     *
+     * @return true if installing succeeded, false if failed or not supported
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    boolean install() throws IOException, InterruptedException;
 
     /**
      * Runs the application at the given path, and if successful, returns the last line
@@ -55,16 +77,6 @@ public interface TargetConfiguration {
      */
     String run(Path appPath, String appName) throws IOException, InterruptedException;
 
-    /**
-     * It creates a package of the application (including at least executable and
-     * other possible files), in a given format.
-     *
-     * This operation has to be called only after link has successfully produced
-     * a valid application
-     * @return true if packaging succeeded, false if failed or not supported
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    boolean packageApp() throws IOException, InterruptedException;
+    boolean runUntilEnd() throws IOException, InterruptedException;
 
 }

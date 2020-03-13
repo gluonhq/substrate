@@ -28,7 +28,6 @@
 package com.gluonhq.substrate.model;
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.target.*;
 
 import java.util.Locale;
 

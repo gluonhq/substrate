@@ -80,11 +80,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    public boolean compile(String cp) throws IOException, InterruptedException {
+    public boolean compile() throws IOException, InterruptedException {
         if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
             projectConfiguration.setUsePrismSW(true); // for now, when compiling for AArch64, we should not assume hw rendering
         }
-        return super.compile(cp);
+        return super.compile();
     }
 
     @Override

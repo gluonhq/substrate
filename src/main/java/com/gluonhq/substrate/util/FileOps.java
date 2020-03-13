@@ -211,7 +211,7 @@ public class FileOps {
             throw new RuntimeException("Error: path " + start + " doesn't exist");
         }
 
-        Files.walkFileTree(start, new HashSet(), Integer.MAX_VALUE, new FileVisitor<>() {
+        Files.walkFileTree(start, new HashSet<>(), Integer.MAX_VALUE, new FileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                 return FileVisitResult.CONTINUE;

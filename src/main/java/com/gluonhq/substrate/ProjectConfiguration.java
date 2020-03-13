@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,20 +61,33 @@ public class ProjectConfiguration {
 
     private String appId;
     private String appName;
-    private String mainClassName;
+    private final String mainClassName;
+    private final String classpath;
 
     private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
 
-    public ProjectConfiguration( String mainClassName ) {
+    /**
+     * Create a new project configuration.
+     *
+     * @param mainClassName the fully qualified class name that contains the main entry point
+     * @param classpath the class path that is needed to compile the application
+     */
+    public ProjectConfiguration(String mainClassName, String classpath) {
         this.mainClassName = Objects.requireNonNull(mainClassName, "Main class name is required")
                                .contains("/") ?
-                                  mainClassName.substring( mainClassName.indexOf("/") + 1) : mainClassName;
+                                  mainClassName.substring(mainClassName.indexOf("/") + 1) : mainClassName;
+        this.classpath = Objects.requireNonNull(classpath, "Classpath is required");
     }
 
     public Path getGraalPath() {
         return this.graalPath;
     }
 
+    /**
+     * Sets the path to the GraalVM installation folder.
+     *
+     * @param path the path to the GraalVM installation folder
+     */
     public void setGraalPath(Path path) {
         this.graalPath = path;
     }
@@ -112,6 +125,12 @@ public class ProjectConfiguration {
         this.usePrismSW = usePrismSW;
     }
 
+    /**
+     * Specify whether verbose output should be enabled. Passing a value of <code>true</code>
+     * will enable verbose output.
+     *
+     * @param verbose <code>true</code> to enable verbose output
+     */
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
@@ -245,6 +264,11 @@ public class ProjectConfiguration {
         return mainClassName;
     }
 
+    public String getClasspath() {
+        // never null as it is required in constructor and there is no setter
+        return classpath;
+    }
+
     public IosSigningConfiguration getIosSigningConfiguration() {
         return iosSigningConfiguration;
     }
@@ -276,6 +300,7 @@ public class ProjectConfiguration {
                 ", appName='" + appName + '\'' +
                 ", iosConfiguration='" + iosSigningConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
+                ", classpath='" + classpath + '\'' +
                 '}';
     }
 }
