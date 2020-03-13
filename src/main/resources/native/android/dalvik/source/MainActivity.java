@@ -33,24 +33,29 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
 import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.InputMethodManager;
 
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.KeyCharacterMap;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.WindowManager.LayoutParams;
 import android.view.inputmethod.InputMethodManager;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.FrameLayout;
+import android.widget.PopupWindow;
 
 import javafx.scene.input.KeyCode;
 
@@ -68,7 +73,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     boolean graalStarted = false;
 
     private static InputMethodManager imm;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,7 +94,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         mViewGroup.addView(mView);
         setContentView(mViewGroup);
         instance = this;
+
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        new KeyboardView(this, new KeyboardHeightListener() {
+            @Override
+            public void onHeightChanged(float height) {
+                float keyboardHeight = height / density;
+                Log.v(TAG, "Keyboard height = " + keyboardHeight);
+                if (graalStarted) {
+                    nativeDispatchKeyboardHeight(keyboardHeight);
+                }
+            }
+        });
         Log.v(TAG, "onCreate done");
     }
 
@@ -107,6 +122,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         density = metrics.density;
         Log.v(TAG, "metrics = "+metrics+", density = "+density);
         nativeWindowPtr = surfaceReady(holder.getSurface(), density);
+        Rect currentBounds = new Rect();
+        mView.getRootView().getWindowVisibleDisplayFrame(currentBounds);
+
         Log.v(TAG, "Surface created, native code informed about it, nativeWindow at "+nativeWindowPtr);
         if (graalStarted) {
             Log.v(TAG, "GraalApp is already started.");
@@ -195,11 +213,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeGotKeyEvent(int action, int keycode);
     private native void nativedispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
     private native void nativeDispatchLifecycleEvent(String event);
+    private native void nativeDispatchKeyboardHeight(float height);
 
     class InternalSurfaceView extends SurfaceView {
-       private static final int ACTION_POINTER_STILL = -1;
+        private static final int ACTION_POINTER_STILL = -1;
 
-       public InternalSurfaceView(Context context) {
+        public InternalSurfaceView(Context context) {
             super(context);
             setFocusableInTouchMode(true);
         }
@@ -307,7 +326,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     public final static int PRESS   = 111;
     public final static int RELEASE = 112;
-    public final static int TYPED   = 113; 
+    public final static int TYPED   = 113;
 
     private int deadKey = 0;
 
@@ -538,6 +557,55 @@ System.out.println ("[JVDBG] eventkeycode = "+event.getKeyCode()+" and jfxkc = "
         }
     }
 
+    interface KeyboardHeightListener {
+        void onHeightChanged(float height);
+    }
 
+    class KeyboardView extends PopupWindow implements OnGlobalLayoutListener {
+        private final Activity activity;
+        private final View rootView;
+        private final KeyboardHeightListener listener;
+        private int maxHeight;
+
+        public KeyboardView(Activity activity, KeyboardHeightListener listener) {
+            super(activity);
+            this.activity = activity;
+            this.listener = listener;
+
+            rootView = new View(activity);
+            setContentView(rootView);
+
+            rootView.getViewTreeObserver().addOnGlobalLayoutListener(this);
+
+            setWidth(0);
+            setHeight(LayoutParams.MATCH_PARENT);
+            setSoftInputMode(LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+            setInputMethodMode(PopupWindow.INPUT_METHOD_NEEDED);
+
+            if (!isShowing()) {
+                final View view = activity.getWindow().getDecorView();
+                view.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showAtLocation(view, Gravity.NO_GRAVITY, 0, 0);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onGlobalLayout() {
+            Rect bounds = new Rect();
+            rootView.getWindowVisibleDisplayFrame(bounds);
+            if (bounds.bottom > maxHeight) {
+                maxHeight = bounds.bottom;
+            }
+
+            int keyboardHeight = maxHeight - bounds.bottom;
+            if (listener != null) {
+                listener.onHeightChanged((float) keyboardHeight);
+            }
+        }
+    }
 
 }

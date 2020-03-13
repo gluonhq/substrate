@@ -27,10 +27,18 @@
  */
 #include "grandroid.h"
 
+// Lifecycle
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchLifecycleEvent(JNIEnv *env, jobject activity, jstring event)
 {
     const char *chars = (*env)->GetStringUTFChars(env, event, NULL);
     LOGE(stderr, "Dispatching lifecycle event from native Dalvik layer: %s", chars);
     attach_setLifecycleEvent(chars);
     (*env)->ReleaseStringUTFChars(env, event, chars);
+}
+
+// Keyboard
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchKeyboardHeight(JNIEnv *env, jobject activity, jfloat jheight)
+{
+    LOGE(stderr, "Dispatching keyboard height from native Dalvik layer: %.3f", jheight);
+    attach_sendVisibleHeight(jheight);
 }
