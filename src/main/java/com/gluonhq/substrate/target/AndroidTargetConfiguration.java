@@ -36,6 +36,7 @@ import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,9 +45,15 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import static com.gluonhq.substrate.Constants.DALVIK_PRECOMPILED_CLASS;
+import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_DALVIK;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
@@ -349,7 +356,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         String androidCodeLocation = "/native/android/dalvik";
 
         if (projectConfiguration.isUsePrecompiledCode()) {
-            copyPrecompiledClasses(androidCodeLocation + "/precompiled/class/");
+            copyPrecompiledClasses(androidCodeLocation + Constants.DALVIK_PRECOMPILED_CLASS);
+            copyOtherDalvikClasses();
         } else {
             return compileDalvikCode(androidCodeLocation + "/source/", androidJar) == 0;
         }
@@ -384,6 +392,36 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 "-bootclasspath", androidJar);
         processRunner.addArgs(sources);
         return processRunner.runProcess("dalvikCompilation");
+    }
+
+    /**
+     * Walks through the jars in the classpath, excluding the JavaFX ones,
+     * and looks for META-INF/substrate/dalvik/*.class files.
+     *
+     * The method will copy all the class files found into the target folder
+     *
+     * @throws IOException
+     */
+    private void copyOtherDalvikClasses() throws IOException, InterruptedException {
+        Path targetFolder = getApkClassPath();
+        Logger.logDebug("Scanning for dalvik classes");
+        final List<File> jars = new ClassPath(projectConfiguration.getClasspath()).getJars(true);
+        String prefix = META_INF_SUBSTRATE_DALVIK + DALVIK_PRECOMPILED_CLASS;
+        for (File jar : jars) {
+            try (ZipFile zip = new ZipFile(jar)) {
+                Logger.logDebug("Scanning " + jar);
+                for (Enumeration e = zip.entries(); e.hasMoreElements(); ) {
+                    ZipEntry zipEntry = (ZipEntry) e.nextElement();
+                    String name = zipEntry.getName();
+                    if (!zipEntry.isDirectory() && name.startsWith(prefix)) {
+                        Logger.logDebug("Adding classes from " + zip.getName() + "::" + name + " into " + targetFolder);
+                        FileOps.copyStream(zip.getInputStream(zipEntry), targetFolder.resolve(name.substring(prefix.length())));
+                    }
+                }
+            } catch (IOException e) {
+                throw new IOException("Error processing dalvik classes from jar: " + jar + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
+            }
+        }
     }
 
     private void copyAndroidManifest(Path androidPath) throws IOException {

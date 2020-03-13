@@ -30,26 +30,22 @@ package com.gluonhq.substrate.config;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
-import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_CONFIG;
 import static com.gluonhq.substrate.Constants.USER_INIT_BUILD_TIME_ARCHOS_FILE;
 import static com.gluonhq.substrate.Constants.USER_INIT_BUILD_TIME_FILE;
-import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_CONFIG;
 import static com.gluonhq.substrate.Constants.USER_JNI_ARCHOS_FILE;
 import static com.gluonhq.substrate.Constants.USER_JNI_FILE;
 import static com.gluonhq.substrate.Constants.USER_REFLECTION_ARCHOS_FILE;
@@ -72,25 +68,7 @@ public class ConfigResolver {
      * @throws InterruptedException
      */
     public ConfigResolver(String classpath) throws IOException, InterruptedException {
-        ClassPath cp = new ClassPath(classpath);
-        this.jars = cp
-                .filter(s -> s.endsWith(".jar")).stream()
-                .map(File::new)
-                .collect(Collectors.toList());
-
-        // Add project's classes as a jar to the list so it can be scanned as well
-        String classes = cp.filter(s -> s.endsWith("classes")).stream()
-                    .findFirst()
-                    .orElse(null);
-        if (classes != null) {
-            Path jar = Files.createTempDirectory("classes").resolve("classes.jar");
-            ProcessRunner runner = new ProcessRunner("jar", "cf", jar.toString(), "-C", classes, ".");
-            if (runner.runProcess("jar") == 0 && Files.exists(jar)) {
-                jars.add(jar.toFile());
-            } else {
-                throw new IOException("Error creating classes.jar");
-            }
-        }
+        this.jars = new ClassPath(classpath).getJars(true);
     }
 
     /**
