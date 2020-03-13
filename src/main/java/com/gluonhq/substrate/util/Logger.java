@@ -62,6 +62,7 @@ public class Logger {
      * Fails with Runtime Exception
      * @param ex Exception that caused the failure
      * @param s Message to be logged
+     * @throws RuntimeException a RuntimeException is always thrown when the method ends
      */
     public static void logFatal(Throwable ex, String s) {
         logSevere(s);
@@ -70,7 +71,7 @@ public class Logger {
     }
 
 
-    public static void logInit(String logPath, String message, boolean verbose) {
+    public static void logInit(String logPath, boolean verbose) {
         System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc][%4$s] %5$s%n"); // [Date][Level] Message
         logDirectory = logPath;
 
@@ -97,11 +98,6 @@ public class Logger {
         } catch (Exception e) {
             LOGGER.severe("Error: Logger couldn't be created");
         }
-        LOGGER.fine(message);
-    }
-
-    public static String title( String text ) {
-        return "==================== " + (text == null? "": text) +" ====================";
     }
 
 }

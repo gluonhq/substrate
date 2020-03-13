@@ -27,7 +27,6 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
@@ -37,38 +36,124 @@ import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
+import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.gluonhq.substrate.util.Logger.logInit;
-import static com.gluonhq.substrate.util.Logger.title;
-
 public class SubstrateDispatcher {
 
-    private static volatile boolean run = true;
+    /**
+     * Define the different steps that can be handled by
+     * the SubstrateDispatcher. The steps are only used when
+     * the dispatcher is launched through the main method.
+     */
+    private enum Step {
+        /**
+         * The goal of the COMPILE step is to run GraalVM
+         * native-image to generate a compiled object file.
+         */
+        COMPILE(),
+        /**
+         * The goal of the LINK step is to link all the
+         * libraries into an executable or a shared library,
+         * depending on the target platform.
+         */
+        LINK(COMPILE),
+        /**
+         * The goal of the PACKAGE step is to generate an
+         * application package that can be distributed.
+         */
+        PACKAGE(LINK),
+        /**
+         * The goal of the INSTALL step is to install the
+         * generated application package on a supported
+         * target (either the host machine or an attached
+         * device).
+         */
+        INSTALL(PACKAGE),
+        /**
+         * The goal of the RUN step is to run the installed
+         * application. It might also take a shortcut and
+         * directly run the executable that was produced by
+         * the LINK step.
+         */
+        RUN(INSTALL);
 
-    public static void main(String[] args) throws Exception {
+        private final Step dep;
 
-        String classPath = requireArg("imagecp","Use -Dimagecp=/path/to/classes");
-        String graalVM   = requireArg( "graalvm","Use -Dgraalvm=/path/to/graalvm");
+        Step() {
+            this.dep = null;
+        }
 
-        String mainClass = requireArg( "mainclass", "Use -Dmainclass=main.class.name" );
-        String appId     = Optional.ofNullable(System.getProperty("appId")).orElse("com.gluonhq.anonymousApp");
-        String appName   = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
-        String targetProfile = System.getProperty("targetProfile");
+        Step(Step dep) {
+            this.dep = dep;
+        }
 
-        Triplet targetTriplet = targetProfile != null? new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase()))
-                :Triplet.fromCurrentOS();
+        /**
+         * Checks if the provided <code>step</code> is required to be
+         * executed for <code>this</code> step.
+         *
+         * @param step the step to check
+         * @return <code>true</code> if the provided step needs to run
+         */
+        public boolean requires(Step step) {
+            return this == step || (dep != null && dep.requires(step));
+        }
+    }
 
-        String expected  = System.getProperty("expected");
+    private static volatile boolean compiling = true;
+
+    public static void main(String[] args) throws IOException {
+        Step step = getStepToExecute();
+
+        Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
+        ProjectConfiguration configuration = createProjectConfiguration();
+        SubstrateDispatcher dispatcher = new SubstrateDispatcher(buildRoot, configuration);
+
+        executeCompileStep(dispatcher);
+
+        if (step.requires(Step.LINK)) {
+            executeLinkStep(dispatcher);
+        }
+
+        if (step.requires(Step.PACKAGE)) {
+            executePackageStep(dispatcher);
+        }
+
+        if (step.requires(Step.INSTALL)) {
+            executeInstallStep(dispatcher);
+        }
+
+        if (step.requires(Step.RUN)) {
+            executeRunStep(dispatcher);
+        }
+    }
+
+    private static ProjectConfiguration createProjectConfiguration() {
+        String classpath = requireSystemProperty("imagecp", "Use -Dimagecp=/path/to/classes");
+        String graalVM = requireSystemProperty("graalvm", "Use -Dgraalvm=/path/to/graalvm");
+        String mainClass = requireSystemProperty("mainclass", "Use -Dmainclass=main.class.name");
+
+        String appId = Optional.ofNullable(System.getProperty("appId")).orElse("com.gluonhq.anonymousApp");
+        String appName = Optional.ofNullable(System.getProperty("appname")).orElse("anonymousApp");
         boolean verbose = System.getProperty("verbose") != null;
 
-        ProjectConfiguration config = new ProjectConfiguration(mainClass);
+        boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
+        boolean usePrecompiledCode = Boolean.parseBoolean(System.getProperty("usePrecompiledCode", "true"));
+
+        String targetProfile = System.getProperty("targetProfile");
+        Triplet targetTriplet = targetProfile != null ?
+                new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase())) :
+                Triplet.fromCurrentOS();
+
+        ProjectConfiguration config = new ProjectConfiguration(mainClass, classpath);
         config.setGraalPath(Path.of(graalVM));
         config.setAppId(appId);
         config.setAppName(appName);
@@ -77,59 +162,106 @@ public class SubstrateDispatcher {
         config.setJniList(Strings.split(System.getProperty("jnilist")));
         config.setBundlesList(Strings.split(System.getProperty("bundleslist")));
         config.setVerbose(verbose);
-        config.setUsePrismSW(Boolean.parseBoolean(System.getProperty("prism.sw", "false")));
-        config.setUsePrecompiledCode(Boolean.parseBoolean(System.getProperty("usePrecompiledCode", "true")));
+        config.setUsePrismSW(usePrismSW);
+        config.setUsePrecompiledCode(usePrecompiledCode);
+        return config;
+    }
 
-        Path buildRoot = Paths.get(System.getProperty("user.dir"), "build", "autoclient");
+    private static Step getStepToExecute() {
+        return Optional.ofNullable(System.getProperty("step"))
+                .map(stepProperty -> {
+                    try {
+                        return Step.valueOf(stepProperty.toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        printUsage();
+                        throw new IllegalArgumentException(String.format("Invalid value for 'step' specified. Possible values: %s", Arrays.toString(Step.values())));
+                    }
+                })
+                .orElse(Step.RUN);
+    }
 
+    public static void executeCompileStep(SubstrateDispatcher dispatcher) {
+        startNativeCompileTimer();
+
+        try {
+            boolean nativeCompileSucceeded = dispatcher.nativeCompile();
+            compiling = false;
+
+            if (!nativeCompileSucceeded) {
+                Logger.logSevere("Compiling failed.");
+                System.exit(1);
+            }
+        } catch (Throwable t) {
+            Logger.logFatal(t, "Compiling failed with an exception.");
+        }
+    }
+
+    private static void startNativeCompileTimer() {
         Thread timer = new Thread(() -> {
             int counter = 1;
-            while (run) {
+            while (compiling) {
                 try {
                     Thread.sleep(60000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.err.println("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
+                Logger.logInfo("NativeCompile is still running, please hold [" + counter++ + " minute(s)]");
             }
         });
         timer.setDaemon(true);
         timer.start();
+    }
 
-        SubstrateDispatcher dispatcher = new SubstrateDispatcher(buildRoot, config);
-
-        boolean nativeCompileSucceeded = dispatcher.nativeCompile(classPath);
-        run = false;
-        if (!nativeCompileSucceeded) {
-            System.err.println("Compiling failed");
-            System.exit(1);
-        }
-
+    private static void executeLinkStep(SubstrateDispatcher dispatcher) {
         try {
-            System.err.println("Linking...");
-            if (!dispatcher.nativeLink(classPath)) {
-                System.err.println("Linking failed");
+            if (!dispatcher.nativeLink()) {
+                Logger.logSevere("Linking failed");
                 System.exit(1);
             }
         } catch (Throwable t) {
-            System.err.println("Linking failed with an exception");
-            t.printStackTrace();
-            System.exit(1);
-        }
-        System.err.println("Running...");
-        if (expected != null) {
-            String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(), appName);
-            if (expected.equals(response)) {
-                System.err.println("Run ended successfully, the output: " + expected + " matched the expected result.");
-            } else {
-                System.err.println("Run failed, expected output: " + expected + ", output: " + response);
-                System.exit(1);
-            }
-        } else {
-            dispatcher.nativeRun();
+            Logger.logFatal(t, "Linking failed with an exception.");
         }
     }
-    private static String requireArg(String argName, String errorMessage ) {
+
+    private static void executePackageStep(SubstrateDispatcher dispatcher) {
+        try {
+            dispatcher.nativePackage();
+        } catch (Throwable t) {
+            Logger.logFatal(t, "Packaging failed with an exception.");
+        }
+    }
+
+    private static void executeInstallStep(SubstrateDispatcher dispatcher) {
+        try {
+            dispatcher.nativeInstall();
+        } catch (Throwable t) {
+            Logger.logFatal(t, "Installing failed with an exception.");
+        }
+    }
+
+    private static void executeRunStep(SubstrateDispatcher dispatcher) {
+        try {
+            String expected = System.getProperty("expected");
+            if (expected != null) {
+                Logger.logInfo(logTitle("RUN TASK (with expected)"));
+
+                String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(),
+                        dispatcher.config.getAppName());
+                if (expected.equals(response)) {
+                    Logger.logInfo("Run ended successfully, the output: " + expected + " matched the expected result.");
+                } else {
+                    Logger.logSevere("Run failed, expected output: " + expected + ", output: " + response);
+                    System.exit(1);
+                }
+            } else {
+                dispatcher.nativeRun();
+            }
+        } catch (Throwable t) {
+            Logger.logFatal(t, "Running failed with an exception");
+        }
+    }
+
+    private static String requireSystemProperty(String argName, String errorMessage ) {
         String arg = System.getProperty(argName);
         if (arg == null || arg.trim().isEmpty()) {
             printUsage();
@@ -138,8 +270,12 @@ public class SubstrateDispatcher {
         return arg;
     }
 
+    private static String logTitle(String text) {
+        return "==================== " + (text == null ? "": text) + " ====================";
+    }
+
     private static void printUsage() {
-        System.err.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
+        System.out.println("Usage:\n java -Dimagecp=... -Dgraalvm=... -Dmainclass=... com.gluonhq.substrate.SubstrateDispatcher");
     }
 
     private final InternalProjectConfiguration config;
@@ -154,10 +290,17 @@ public class SubstrateDispatcher {
      */
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
         this.config = new InternalProjectConfiguration(config);
-        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), config.getTargetTriplet().getArchOs());
+        if (this.config.isVerbose()) {
+            System.out.println("Configuration: " + this.config);
+        }
+
         Triplet targetTriplet = config.getTargetTriplet();
+
+        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), targetTriplet.getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was not found for " + targetTriplet);
+
+        Logger.logInit(paths.getLogPath().toString(), this.config.isVerbose());
     }
 
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) throws IOException {
@@ -173,69 +316,79 @@ public class SubstrateDispatcher {
 
 
     /**
-     * This method will start native compilation for the specified configuration. The classpath needs
-     * to be provided separately.
+     * This method will start native compilation for the specified configuration.
      * The result of compilation is a at least one native file (2 files in case LLVM backend is used).
      * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails
-     * @param classPath the classpath needed to compile the application (this is not the classpath for native-image)
      * @return true if compilation succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
-    public boolean nativeCompile(String classPath) throws Exception {
+    public boolean nativeCompile() throws Exception {
+        Logger.logInfo(logTitle("COMPILE TASK"));
+
         config.canRunNativeImage();
-        boolean useJavaFX = new ClassPath(classPath).contains( s -> s.contains("javafx"));
-        config.setUseJavaFX(useJavaFX);
 
         Triplet targetTriplet  = config.getTargetTriplet();
         if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
-            throw new IllegalArgumentException("We currently can't compile to "+targetTriplet+" when running on "+config.getHostTriplet());
+            throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
         }
 
-        logInit(paths.getLogPath().toString(), title("COMPILE TASK"),  config.isVerbose());
-        System.err.println("We will now compile your code for "+targetTriplet.toString()+". This may take some time.");
-        boolean compilationSuccess = targetConfiguration.compile(classPath);
-        System.err.println(compilationSuccess? "Compilation succeeded.": "Compilation failed. See error printed above.");
-        return compilationSuccess;
+        Logger.logInfo("We will now compile your code for " + targetTriplet + ". This may take some time.");
+        boolean compilingSucceeded = targetConfiguration.compile();
+        if (!compilingSucceeded) {
+            Logger.logSevere("Compiling failed.");
+        }
+        return compilingSucceeded;
     }
 
     /**
-     * This method will start native linking for the specified configuration, after {@link #nativeCompile(String)}
+     * This method will start native linking for the specified configuration, after {@link #nativeCompile()}
      * was called and ended successfully.
-     * The classpath needs to be provided separately.
      * The result of linking is a at least an native image application file.
      * This method returns <code>true</code> on successful linking and <code>false</code> when linking fails
-     * @param classPath the classpath needed to link the application (this is not the classpath for native-image)
      * @return true if linking succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
-    public boolean nativeLink(String classPath) throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("LINK TASK"), config.isVerbose());
-        boolean useJavaFX = new ClassPath(classPath).contains(s -> s.contains("javafx"));
-        config.setUseJavaFX(useJavaFX);
-        return targetConfiguration.link();
+    public boolean nativeLink() throws IOException, InterruptedException {
+        Logger.logInfo(logTitle("LINK TASK"));
+        boolean linkingSucceeded = targetConfiguration.link();
+        if (!linkingSucceeded) {
+            Logger.logSevere("Linking failed.");
+        }
+        return linkingSucceeded;
     }
 
     /**
-     * This method runs the native image application, that was created after {@link #nativeLink(String)}
-     * was called and ended successfully.
-     * @throws IOException
-     * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
-     */
-    public void nativeRun() throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("RUN TASK"), config.isVerbose());
-        targetConfiguration.runUntilEnd();
-    }
-
-    /**
-     * This methods creates a package of the native image application, that was created after {@link #nativeLink(String)}
+     * This method creates a package of the native image application, that was created after {@link #nativeLink()}
      * was called and ended successfully.
      * @throws IOException
      * @throws InterruptedException
      */
     public void nativePackage() throws IOException, InterruptedException {
-        logInit(paths.getLogPath().toString(), title("PACKAGE TASK"), config.isVerbose());
+        Logger.logInfo(logTitle("PACKAGE TASK"));
         targetConfiguration.packageApp();
+    }
+
+    /**
+     * This method installs the generated package that was created after {@link #nativePackage()}
+     * was called and ended successfully.
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public void nativeInstall() throws IOException, InterruptedException {
+        Logger.logInfo(logTitle("INSTALL TASK"));
+        targetConfiguration.install();
+    }
+
+    /**
+     * This method runs the native image application, that was created after {@link #nativeLink()}
+     * was called and ended successfully.
+     * @throws IOException
+     * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
+     */
+    public void nativeRun() throws IOException, InterruptedException {
+        Logger.logInfo(logTitle("RUN TASK"));
+        targetConfiguration.runUntilEnd();
     }
 }

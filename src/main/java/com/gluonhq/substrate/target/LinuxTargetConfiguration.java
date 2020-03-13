@@ -87,11 +87,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    public boolean compile(String cp) throws IOException, InterruptedException {
+    public boolean compile() throws IOException, InterruptedException {
         if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
             projectConfiguration.setUsePrismSW(true); // for now, when compiling for AArch64, we should not assume hw rendering
         }
-        return super.compile(cp);
+        return super.compile();
     }
 
     @Override
@@ -126,10 +126,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             Process start = process.start();
             InputStream is = start.getInputStream();
             start.waitFor();
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            String line;
-            while ((line = br.readLine()) != null) {
-                Logger.logInfo("[SUB] " + line);
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    Logger.logInfo("[SUB] " + line);
+                }
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();

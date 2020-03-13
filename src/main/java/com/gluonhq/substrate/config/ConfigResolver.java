@@ -154,20 +154,21 @@ public class ConfigResolver {
         Objects.requireNonNull(configName, "configName can't be null");
         List<String> list = new ArrayList<>();
         for (File jar : jars) {
-            ZipFile zip = new ZipFile(jar);
-            Logger.logDebug("Scanning " + jar);
-            for (Enumeration e = zip.entries(); e.hasMoreElements(); ) {
-                ZipEntry zipEntry = (ZipEntry) e.nextElement();
-                String name = zipEntry.getName();
-                if (!zipEntry.isDirectory() &&
-                        ((META_INF_SUBSTRATE_CONFIG + configName).equals(name) ||
-                            (configArchosName != null && (META_INF_SUBSTRATE_CONFIG + configArchosName).equals(name)))) {
-                    if (initLine != null) {
-                        // first line content before adding the file's content
-                        list.add(initLine);
+            try (ZipFile zip = new ZipFile(jar)) {
+                Logger.logDebug("Scanning " + jar);
+                for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements(); ) {
+                    ZipEntry zipEntry = e.nextElement();
+                    String name = zipEntry.getName();
+                    if (!zipEntry.isDirectory() &&
+                            ((META_INF_SUBSTRATE_CONFIG + configName).equals(name) ||
+                                (configArchosName != null && (META_INF_SUBSTRATE_CONFIG + configArchosName).equals(name)))) {
+                        if (initLine != null) {
+                            // first line content before adding the file's content
+                            list.add(initLine);
+                        }
+                        Logger.logDebug("Adding classes from " + zip.getName() + "::" + zipEntry.getName());
+                        list.addAll(FileOps.readFileLines(zip.getInputStream(zipEntry), filter));
                     }
-                    Logger.logDebug("Adding classes from " + zip.getName() + "::" + zipEntry.getName());
-                    list.addAll(FileOps.readFileLines(zip.getInputStream(zipEntry), filter));
                 }
             }
         }

@@ -166,16 +166,16 @@ public class ProcessRunner {
 
     /**
      * Runs a process with a given set of command line arguments, in a given
-     * working directory
+     * working directory.
      *
      * @param processName the name of the process
-     * @param directory a file with the working directory of the process
+     * @param workingDirectory a file with the working directory of the process
      * @return 0 if the process ends successfully, non-zero values indicate a failure
      * @throws IOException
      * @throws InterruptedException
      */
-    public int runProcess(String processName, File directory) throws IOException, InterruptedException {
-        Process p = setupProcess(processName, directory);
+    public int runProcess(String processName, File workingDirectory) throws IOException, InterruptedException {
+        Process p = setupProcess(processName, workingDirectory);
 
         Thread logThread = mergeProcessOutput(p.getInputStream());
         int result = p.waitFor();
@@ -208,14 +208,14 @@ public class ProcessRunner {
      * working directory, within a given time frame
      *
      * @param processName the name of the process
-     * @param directory a file with the working directory of the process
+     * @param workingDirectory a file with the working directory of the process
      * @param timeout the maximum time allowed to run the process
      * @return true if the process ended successfully, false otherwise
      * @throws IOException
      * @throws InterruptedException
      */
-    public boolean runTimedProcess(String processName, File directory, long timeout) throws IOException, InterruptedException {
-        Process p = setupProcess(processName, directory);
+    public boolean runTimedProcess(String processName, File workingDirectory, long timeout) throws IOException, InterruptedException {
+        Process p = setupProcess(processName, workingDirectory);
         Thread logThread = mergeProcessOutput(p.getInputStream());
         boolean result = p.waitFor(timeout, TimeUnit.SECONDS);
         logThread.join();
