@@ -80,11 +80,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
             "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
     private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode");
-    private final List<String> compiledGlueCode = Arrays.asList("com/gluonhq/helloandroid/MainActivity",
-            "com/gluonhq/helloandroid/MainActivity$1", "com/gluonhq/helloandroid/MainActivity$2",
-            "com/gluonhq/helloandroid/MainActivity$3", "com/gluonhq/helloandroid/MainActivity$InternalSurfaceView",
-            "javafx/scene/input/KeyCode", "javafx/scene/input/KeyCode$KeyCodeClass"
-    );
+    private final List<String> compiledGlueCodeActivity = Arrays.asList("MainActivity",
+            "MainActivity$1", "MainActivity$2", "MainActivity$3", "MainActivity$4", "MainActivity$InternalSurfaceView");
+    private final List<String> compiledGlueCodeJavaFX = Arrays.asList(
+            "javafx/scene/input/KeyCode", "javafx/scene/input/KeyCode$KeyCodeClass");
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
         super(paths,configuration);
@@ -355,9 +354,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private boolean processPrecompiledClasses(String androidJar) throws IOException, InterruptedException {
         String androidCodeLocation = "/native/android/dalvik";
 
+        copyOtherDalvikClasses();
         if (projectConfiguration.isUsePrecompiledCode()) {
             copyPrecompiledClasses(androidCodeLocation + Constants.DALVIK_PRECOMPILED_CLASS);
-            copyOtherDalvikClasses();
         } else {
             return compileDalvikCode(androidCodeLocation + "/source/", androidJar) == 0;
         }
@@ -366,9 +365,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private void copyPrecompiledClasses(String androidPrecompiled) throws IOException {
-        for (String classFile : compiledGlueCode) {
-            FileOps.copyResource(androidPrecompiled + classFile + ".class",
-                    getApkClassPath().resolve(classFile + ".class"));
+        for (String classFile : compiledGlueCodeActivity) {
+            FileOps.copyResource(androidPrecompiled + Constants.DALVIK_ACTIVITY_PACKAGE + classFile + ".class",
+                    getApkClassPath().resolve(Constants.DALVIK_ACTIVITY_PACKAGE + classFile + ".class"));
+        }
+        for (String classFile : compiledGlueCodeJavaFX) {
+            FileOps.copyResource(androidPrecompiled + Constants.DALVIK_JAVAFX_PACKAGE + classFile + ".class",
+                    getApkClassPath().resolve(Constants.DALVIK_JAVAFX_PACKAGE + classFile + ".class"));
         }
     }
 
@@ -388,7 +391,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
                 "-d", getApkClassPath().toString(),
                 "-source", "1.7", "-target", "1.7",
-                "-cp", getApkAndroidSourcePath().toString(),
+                "-cp", getApkAndroidSourcePath().toString() + File.pathSeparator + getApkClassPath().toString(),
                 "-bootclasspath", androidJar);
         processRunner.addArgs(sources);
         return processRunner.runProcess("dalvikCompilation");
@@ -413,9 +416,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 for (Enumeration e = zip.entries(); e.hasMoreElements(); ) {
                     ZipEntry zipEntry = (ZipEntry) e.nextElement();
                     String name = zipEntry.getName();
-                    if (!zipEntry.isDirectory() && name.startsWith(prefix)) {
-                        Logger.logDebug("Adding classes from " + zip.getName() + "::" + name + " into " + targetFolder);
-                        FileOps.copyStream(zip.getInputStream(zipEntry), targetFolder.resolve(name.substring(prefix.length())));
+                    if (!zipEntry.isDirectory() && name.startsWith(META_INF_SUBSTRATE_DALVIK)) {
+                        Path classPath = targetFolder.resolve(name.substring(prefix.length() + 2));
+                        Logger.logDebug("Adding classes from " + zip.getName() + " :: " + name + " into " + classPath);
+                        FileOps.copyStream(zip.getInputStream(zipEntry), classPath);
                     }
                 }
             } catch (IOException e) {
