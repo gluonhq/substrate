@@ -40,22 +40,18 @@ import android.util.Log;
 
 import android.view.inputmethod.InputConnection;
 
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.KeyCharacterMap;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.view.inputmethod.InputMethodManager;
-import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.FrameLayout;
-import android.widget.PopupWindow;
 
 import javafx.scene.input.KeyCode;
 
@@ -554,57 +550,6 @@ System.out.println ("[JVDBG] eventkeycode = "+event.getKeyCode()+" and jfxkc = "
             case KeyEvent.KEYCODE_KANA: return KeyCode.KANA;
             default:
                 return KeyCode.UNDEFINED;
-        }
-    }
-
-    interface KeyboardHeightListener {
-        void onHeightChanged(float height);
-    }
-
-    class KeyboardView extends PopupWindow implements OnGlobalLayoutListener {
-        private final Activity activity;
-        private final View rootView;
-        private final KeyboardHeightListener listener;
-        private int maxHeight;
-
-        public KeyboardView(Activity activity, KeyboardHeightListener listener) {
-            super(activity);
-            this.activity = activity;
-            this.listener = listener;
-
-            rootView = new View(activity);
-            setContentView(rootView);
-
-            rootView.getViewTreeObserver().addOnGlobalLayoutListener(this);
-
-            setWidth(0);
-            setHeight(LayoutParams.MATCH_PARENT);
-            setSoftInputMode(LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-            setInputMethodMode(PopupWindow.INPUT_METHOD_NEEDED);
-
-            if (!isShowing()) {
-                final View view = activity.getWindow().getDecorView();
-                view.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        showAtLocation(view, Gravity.NO_GRAVITY, 0, 0);
-                    }
-                });
-            }
-        }
-
-        @Override
-        public void onGlobalLayout() {
-            Rect bounds = new Rect();
-            rootView.getWindowVisibleDisplayFrame(bounds);
-            if (bounds.bottom > maxHeight) {
-                maxHeight = bounds.bottom;
-            }
-
-            int keyboardHeight = maxHeight - bounds.bottom;
-            if (listener != null) {
-                listener.onHeightChanged((float) keyboardHeight);
-            }
         }
     }
 
