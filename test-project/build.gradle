@@ -18,15 +18,13 @@ def setupGraalDependencies(String platform) {
         throw new GradleException("Platform $platform not supported")
     }
 
-    def graalVM = new File("${System.properties['user.home']}/.gluon/substrate/graalvm")
-    if (!graalVM.exists()) {
-        graalVM.mkdirs()
-    }
     def name = "mac" == platform ? "darwin" : "linux"
     def version = "24"
+    def graalVM = new File("${System.properties['user.home']}/.gluon/substrate/graalvm")
     def graalFolder = new File("$graalVM/graalvm-svm-${name}-20.1.0-ea+${version}")
-    def graalZip = new File("$graalVM/graalvm-svm-${name}-20.1.0-ea+${version}.zip")
-    if (!graalZip.exists()) {
+    if (!graalFolder.exists()) {
+        graalVM.mkdirs()
+        def graalZip = new File("$graalVM/graalvm-svm-${name}-20.1.0-ea+${version}.zip")
         println "Downloading graalZip..."
         new URL("https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-${name}-20.1.0-ea+${version}.zip")
                 .withInputStream { i -> graalZip.withOutputStream { it << i } }
@@ -34,15 +32,12 @@ def setupGraalDependencies(String platform) {
             from zipTree(graalZip)
             into graalVM
         }
+        graalZip.delete()
     }
     return "${graalFolder}"
 }
 
 def setupJavaFXDependencies(String platform, String target) {
-    def javafxSdk = new File("${System.properties['user.home']}/.gluon/substrate/javafxStaticSdk")
-    if (!javafxSdk.exists()) {
-        javafxSdk.mkdirs()
-    }
     def version = "15-ea+gvm11"
     def name
     if ("linux" == platform) {
@@ -58,21 +53,21 @@ def setupJavaFXDependencies(String platform, String target) {
     } else {
         throw new GradleException("Platform $platform or Target $target not supported")
     }
+    def javafxSdk = new File("${System.properties['user.home']}/.gluon/substrate/javafxStaticSdk")
     def javafxFolder = new File("$javafxSdk/$version/$name")
     def nameZip = "openjfx-$version-$name-static.zip"
     def javafxZip = new File("$javafxSdk/$nameZip")
     if (!javafxFolder.exists()) {
-        javafxFolder.mkdirs()
-    }
-
-    if (!javafxZip.exists()) {
+        javafxSdk.mkdirs()
         println "Downloading javafxZip..."
         new URL("https://download2.gluonhq.com/substrate/javafxstaticsdk/$nameZip")
                 .withInputStream { i -> javafxZip.withOutputStream { it << i } }
+        javafxFolder.mkdirs()
         copy {
             from zipTree(javafxZip)
             into javafxFolder
         }
+        javafxZip.delete()
     }
     return "$javafxFolder" + "/sdk/lib"
 }
