@@ -328,7 +328,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return getApkPath().resolve("bin");
     }
 
-    private Path getApkClassPath() {
+    private Path getApkClassesPath() {
         return getApkPath().resolve("classes");
     }
 
@@ -347,7 +347,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private void ensureApkOutputDirectoriesExist() throws IOException {
         Files.createDirectories(getApkPath());
         Files.createDirectories(getApkBinPath());
-        Files.createDirectories(getApkClassPath());
+        Files.createDirectories(getApkClassesPath());
         Files.createDirectories(getApkLibPath());
         Files.createDirectories(getApkLibArm64Path());
     }
@@ -368,11 +368,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private void copyPrecompiledClasses(String androidPrecompiled) throws IOException {
         for (String classFile : compiledGlueCodeActivity) {
             FileOps.copyResource(androidPrecompiled + DALVIK_ACTIVITY_PACKAGE + classFile + ".class",
-                    getApkClassPath().resolve(DALVIK_ACTIVITY_PACKAGE + classFile + ".class"));
+                    getApkClassesPath().resolve(DALVIK_ACTIVITY_PACKAGE + classFile + ".class"));
         }
         for (String classFile : compiledGlueCodeJavaFX) {
             FileOps.copyResource(androidPrecompiled + DALVIK_JAVAFX_PACKAGE + classFile + ".class",
-                    getApkClassPath().resolve(DALVIK_JAVAFX_PACKAGE + classFile + ".class"));
+                    getApkClassesPath().resolve(DALVIK_JAVAFX_PACKAGE + classFile + ".class"));
         }
     }
 
@@ -390,9 +390,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
 
         ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
-                "-d", getApkClassPath().toString(),
+                "-d", getApkClassesPath().toString(),
                 "-source", "1.7", "-target", "1.7",
-                "-cp", getApkAndroidSourcePath().toString() + File.pathSeparator + getApkClassPath().toString(),
+                "-cp", getApkAndroidSourcePath().toString() + File.pathSeparator + getApkClassesPath().toString(),
                 "-bootclasspath", androidJar);
         processRunner.addArgs(sources);
         return processRunner.runProcess("dalvikCompilation");
@@ -407,7 +407,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
      * @throws IOException
      */
     private void copyOtherDalvikClasses() throws IOException, InterruptedException {
-        Path targetFolder = getApkClassPath();
+        Path targetFolder = getApkClassesPath();
         Logger.logDebug("Scanning for dalvik classes");
         final List<File> jars = new ClassPath(projectConfiguration.getClasspath()).getJars(true);
         String prefix = META_INF_SUBSTRATE_DALVIK + DALVIK_PRECOMPILED_CLASSES;
@@ -454,7 +454,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         String dxCmd = buildToolsPath.resolve("dx").toString();
 
         ProcessRunner dx = new ProcessRunner(dxCmd, "--dex",
-                "--output=" + getApkBinPath().resolve("classes.dex"), getApkClassPath().toString());
+                "--output=" + getApkBinPath().resolve("classes.dex"), getApkClassesPath().toString());
         return dx.runProcess("dx");
     }
 
