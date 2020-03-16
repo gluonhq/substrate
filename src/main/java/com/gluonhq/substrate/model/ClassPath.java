@@ -1,6 +1,10 @@
 package com.gluonhq.substrate.model;
 
+import com.gluonhq.substrate.util.ProcessRunner;
+
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -22,7 +26,7 @@ public class ClassPath {
      * Creates the class path
      * @param classPath standard java classpath, delimited with {@code File.pathSeparator}. Should not be null.
      */
-    public ClassPath(String classPath ) {
+    public ClassPath(String classPath) {
         this.classPath = Objects.requireNonNull(classPath);
     }
 
@@ -37,7 +41,7 @@ public class ClassPath {
      * @return {@code true} if any elements of the stream match the provided
      *  predicate, otherwise {@code false}
      */
-    public boolean contains( Predicate<String> predicate ) {
+    public boolean contains(Predicate<String> predicate) {
         Objects.requireNonNull(predicate);
         return asStream().anyMatch( predicate);
     }
@@ -48,7 +52,7 @@ public class ClassPath {
      * @param predicate predicate to apply to elements of this classpath. Should not be null.
      * @return filtered list of elements of this classpath
      */
-    public List<String> filter( Predicate<String> predicate ) {
+    public List<String> filter(Predicate<String> predicate) {
         Objects.requireNonNull(predicate);
         return asStream().filter(predicate).collect(Collectors.toList());
     }
@@ -73,7 +77,7 @@ public class ClassPath {
      * @param mapper function to apply to each element. Should not be null.
      * @return the string classpath
      */
-    public String mapToString( Function<String, String> mapper) {
+    public String mapToString(Function<String, String> mapper) {
         Objects.requireNonNull(mapper);
         return asStream().map(mapper).collect(Collectors.joining(File.pathSeparator));
     }
@@ -85,7 +89,7 @@ public class ClassPath {
      * @param libNames library names to look for
      * @return the string classpath
      */
-    public String mapWithLibs(Path libsPath, String... libNames ) {
+    public String mapWithLibs(Path libsPath, String... libNames) {
         Objects.requireNonNull(libsPath);
         return mapToString(s -> Arrays.stream(libNames)
                 .filter(s::contains)
@@ -94,4 +98,27 @@ public class ClassPath {
                 .orElse(s));
     }
 
+    public List<File> getJars(boolean includeClasses) throws IOException, InterruptedException {
+        List<File> jars = filter(s -> s.endsWith(".jar")).stream()
+                .map(File::new)
+                .collect(Collectors.toList());
+
+        if (includeClasses) {
+            // Add project's classes as a jar to the list so it can be scanned as well
+            String classes = filter(s -> s.endsWith("classes")).stream()
+                    .findFirst()
+                    .orElse(null);
+            if (classes != null) {
+                Path jar = Files.createTempDirectory("classes").resolve("classes.jar");
+                ProcessRunner runner = new ProcessRunner("jar", "cf", jar.toString(), "-C", classes, ".");
+                if (runner.runProcess("jar") == 0 && Files.exists(jar)) {
+                    jars.add(jar.toFile());
+                } else {
+                    throw new IOException("Error creating classes.jar");
+                }
+            }
+        }
+
+        return jars;
+    }
 }
