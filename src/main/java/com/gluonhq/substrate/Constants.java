@@ -133,7 +133,7 @@ public class Constants {
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
     public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik";
-    public static final String DALVIK_PRECOMPILED_CLASS = "/precompiled/class/";
+    public static final String DALVIK_PRECOMPILED_CLASSES = "/precompiled/classes/";
     public static final String DALVIK_ACTIVITY_PACKAGE = "com/gluonhq/helloandroid/";
     public static final String DALVIK_JAVAFX_PACKAGE = "javafx/scene/input/";
 

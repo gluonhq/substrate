@@ -54,7 +54,7 @@ import java.util.zip.ZipFile;
 
 import static com.gluonhq.substrate.Constants.DALVIK_ACTIVITY_PACKAGE;
 import static com.gluonhq.substrate.Constants.DALVIK_JAVAFX_PACKAGE;
-import static com.gluonhq.substrate.Constants.DALVIK_PRECOMPILED_CLASS;
+import static com.gluonhq.substrate.Constants.DALVIK_PRECOMPILED_CLASSES;
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_DALVIK;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
@@ -357,7 +357,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         copyOtherDalvikClasses();
         if (projectConfiguration.isUsePrecompiledCode()) {
-            copyPrecompiledClasses(androidCodeLocation + DALVIK_PRECOMPILED_CLASS);
+            copyPrecompiledClasses(androidCodeLocation + DALVIK_PRECOMPILED_CLASSES);
         } else {
             return compileDalvikCode(androidCodeLocation + "/source/", androidJar) == 0;
         }
@@ -410,15 +410,15 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path targetFolder = getApkClassPath();
         Logger.logDebug("Scanning for dalvik classes");
         final List<File> jars = new ClassPath(projectConfiguration.getClasspath()).getJars(true);
-        String prefix = META_INF_SUBSTRATE_DALVIK + DALVIK_PRECOMPILED_CLASS;
+        String prefix = META_INF_SUBSTRATE_DALVIK + DALVIK_PRECOMPILED_CLASSES;
         for (File jar : jars) {
             try (ZipFile zip = new ZipFile(jar)) {
                 Logger.logDebug("Scanning " + jar);
                 for (Enumeration e = zip.entries(); e.hasMoreElements(); ) {
                     ZipEntry zipEntry = (ZipEntry) e.nextElement();
                     String name = zipEntry.getName();
-                    if (!zipEntry.isDirectory() && name.startsWith(META_INF_SUBSTRATE_DALVIK)) {
-                        Path classPath = targetFolder.resolve(name.substring(prefix.length() + 2));
+                    if (!zipEntry.isDirectory() && name.startsWith(prefix)) {
+                        Path classPath = targetFolder.resolve(name.substring(prefix.length()));
                         Logger.logDebug("Adding classes from " + zip.getName() + " :: " + name + " into " + classPath);
                         FileOps.copyStream(zip.getInputStream(zipEntry), classPath);
                     }
