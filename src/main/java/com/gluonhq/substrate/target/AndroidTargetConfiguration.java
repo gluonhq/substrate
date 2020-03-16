@@ -52,6 +52,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static com.gluonhq.substrate.Constants.DALVIK_ACTIVITY_PACKAGE;
+import static com.gluonhq.substrate.Constants.DALVIK_JAVAFX_PACKAGE;
 import static com.gluonhq.substrate.Constants.DALVIK_PRECOMPILED_CLASS;
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_DALVIK;
 
@@ -355,7 +357,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         copyOtherDalvikClasses();
         if (projectConfiguration.isUsePrecompiledCode()) {
-            copyPrecompiledClasses(androidCodeLocation + Constants.DALVIK_PRECOMPILED_CLASS);
+            copyPrecompiledClasses(androidCodeLocation + DALVIK_PRECOMPILED_CLASS);
         } else {
             return compileDalvikCode(androidCodeLocation + "/source/", androidJar) == 0;
         }
@@ -365,12 +367,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private void copyPrecompiledClasses(String androidPrecompiled) throws IOException {
         for (String classFile : compiledGlueCodeActivity) {
-            FileOps.copyResource(androidPrecompiled + Constants.DALVIK_ACTIVITY_PACKAGE + classFile + ".class",
-                    getApkClassPath().resolve(Constants.DALVIK_ACTIVITY_PACKAGE + classFile + ".class"));
+            FileOps.copyResource(androidPrecompiled + DALVIK_ACTIVITY_PACKAGE + classFile + ".class",
+                    getApkClassPath().resolve(DALVIK_ACTIVITY_PACKAGE + classFile + ".class"));
         }
         for (String classFile : compiledGlueCodeJavaFX) {
-            FileOps.copyResource(androidPrecompiled + Constants.DALVIK_JAVAFX_PACKAGE + classFile + ".class",
-                    getApkClassPath().resolve(Constants.DALVIK_JAVAFX_PACKAGE + classFile + ".class"));
+            FileOps.copyResource(androidPrecompiled + DALVIK_JAVAFX_PACKAGE + classFile + ".class",
+                    getApkClassPath().resolve(DALVIK_JAVAFX_PACKAGE + classFile + ".class"));
         }
     }
 
