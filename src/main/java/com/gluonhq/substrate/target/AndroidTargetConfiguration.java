@@ -329,7 +329,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private Path getApkClassPath() {
-        return getApkPath().resolve("class");
+        return getApkPath().resolve("classes");
     }
 
     private Path getApkLibPath() {
