@@ -785,7 +785,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             .collect(Collectors.toList());
     }
 
-    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) throws IOException, InterruptedException {
         return Collections.emptyList();
     }
 

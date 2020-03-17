@@ -26,6 +26,22 @@ available that show you how to get started
 with Gluon Substrate. We recommend using your favourite IDE to run those
 samples.
 
+## Compilation
+
+### Linux hosts
+
+To compile Gluon Substrate on Linux you need to install these development packages:
+
+    # on ubuntu (debian flavors)
+    apt-get install libasound2-dev libavcodec-dev libavformat-dev libavutil-dev libfreetype6-dev
+    apt-get install libgl-dev libglib2.0-dev libgtk-3-dev libpango1.0-dev libx11-dev libxtst-dev zlib1g-dev
+
+    # on fedora (redhat flavors), requires https://rpmfusion.org/
+    dnf install alsa-lib-devel freetype-devel glib2-devel gtk3-devel libX11-devel
+    dnf install libXtst-devel mesa-libGL-devel pango-devel zlib-devel
+    dnf install ffmpeg-devel
+
+
 ## Issues and Contributions ##
 
  Issues can be reported to the [Issue tracker](https://github.com/gluonhq/substrate/issues)
