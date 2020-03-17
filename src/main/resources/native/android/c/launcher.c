@@ -58,7 +58,7 @@ int argsize = 8;
 
 char **createArgs()
 {
-    LOGE(stderr, "CREATE ARGS");
+    LOGE(stderr, "createArgs for run_main");
     int origSize = sizeof(origargs) / sizeof(char *);
     char **result = (char **)malloc((origSize + 2) * sizeof(char *));
     for (int i = 0; i < origSize; i++)
@@ -94,15 +94,34 @@ int JNI_OnLoad(JavaVM *vm, void *reserved)
     androidVM = vm;
     (*vm)->GetEnv(vm, (void **)&androidEnv, JNI_VERSION_1_6);
     registerMethodHandles(androidEnv);
-    LOGE(stderr, "AndroidVM called into native, vm = %p, androidEnv = %p", androidVM, androidEnv);
+    LOGE(stderr, "AndroidVM called JNI_OnLoad, vm = %p, androidEnv = %p", androidVM, androidEnv);
+    registerAttachMethodHandles(androidEnv);
+    LOGE(stderr, "Attach method handles registered.");
     return JNI_VERSION_1_6;
 }
+
+JavaVM* substrateGetAndroidVM() {
+    return androidVM;
+}
+
+JNIEnv* substrateGetAndroidEnv() {
+    return androidEnv;
+}
+
+jclass substrateGetActivityClass() {
+    return activityClass;
+}
+
+jobject substrateGetActivity() {
+    return activity;
+}
+
 
 // === called from DALVIK. Minimize work/dependencies here === //
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp(JNIEnv *env, jobject activityObj)
 {
-    activity = activityObj;
+    activity = (*env)->NewGlobalRef(env, activityObj);
     LOGE(stderr, "Start GraalApp, DALVIK env at %p\n", env);
     LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
     LOGE(stderr, "EnvVersion = %d\n", (*env)->GetVersion(env));
