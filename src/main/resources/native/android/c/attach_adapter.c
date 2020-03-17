@@ -33,7 +33,13 @@ int handlesInitialized = 0;
 void registerAttachMethodHandles(JNIEnv* androidEnv) {
     if (handlesInitialized > 0) return;
     jclass jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
-    jBleServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
+    jthrowable t = (*androidEnv)->ExceptionOccurred(androidEnv);
+    if (t) {
+        (*androidEnv)->ExceptionClear(androidEnv);
+    }
+    if ((t == NULL) && (jtmp != NULL)) {
+        jBleServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
+    }
     handlesInitialized = 1;
 }
 
