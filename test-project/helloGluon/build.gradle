@@ -45,18 +45,17 @@ def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.ja
 task runScript(type: Exec) {
     dependsOn 'build'
 
-    def graal_path = setupGraalDependencies(platform)
-
     if (java_home == null) {
         throw new RuntimeException("java_home is not defined.")
     }
 
-    def javafx_path = setupJavaFXDependencies(platform, target)
+    def graalvmPath = getGraalVMPath()
+    def javafxPath = setupJavaFXDependencies(platform, target)
 
     def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
-                    "-Dimagecp=${javafx_path}/javafx.base.jar:${javafx_path}/javafx.graphics.jar:${javafx_path}/javafx.controls.jar:" +
+                    "-Dimagecp=${javafxPath}/javafx.base.jar:${javafxPath}/javafx.graphics.jar:${javafxPath}/javafx.controls.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
-                    "-Dgraalvm=$graal_path"]
+                    "-Dgraalvm=$graalvmPath"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
     } else {
