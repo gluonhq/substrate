@@ -41,7 +41,7 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     if (t) {
         (*androidEnv)->ExceptionClear(androidEnv);
     }
-    if (t == NULL && jtmp != NULL) {
+    if ((t == NULL) && (jtmp != NULL)) {
         jBleServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
     }
 
@@ -51,7 +51,7 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     if (t) {
         (*androidEnv)->ExceptionClear(androidEnv);
     }
-    if (t == NULL && jtmp != NULL) {
+    if ((t == NULL) && (jtmp != NULL)) {
         jKeyboardServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
     }
     handlesInitialized = 1;
