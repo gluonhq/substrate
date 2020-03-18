@@ -27,6 +27,26 @@
  */
 #include "grandroid.h"
 
+jclass jBleServiceClass;
+int handlesInitialized = 0;
+
+void registerAttachMethodHandles(JNIEnv* androidEnv) {
+    if (handlesInitialized > 0) return;
+    jclass jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
+    jthrowable t = (*androidEnv)->ExceptionOccurred(androidEnv);
+    if (t) {
+        (*androidEnv)->ExceptionClear(androidEnv);
+    }
+    if ((t == NULL) && (jtmp != NULL)) {
+        jBleServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
+    }
+    handlesInitialized = 1;
+}
+
+jclass substrateGetBleServiceClass() {
+    return jBleServiceClass;
+}
+
 // Lifecycle
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchLifecycleEvent(JNIEnv *env, jobject activity, jstring event)
 {
