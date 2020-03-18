@@ -70,6 +70,7 @@ public final class FileDeps {
             "https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar",
             "https://repo1.maven.org/maven2/com/sun/istack/istack-commons-runtime/3.0.10/istack-commons-runtime-3.0.10.jar" };
 
+    private static final String ANDROID_KEY = "24333f8a63b6825ea9c5514f83c2829b004d1fee";
     private static final String[] ANDROID_SDK_PACKAGES = {
             "platforms;android-27", "build-tools;27.0.3", "platform-tools", 
             "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle" };
@@ -392,13 +393,18 @@ public final class FileDeps {
         Path libs = tools.resolve("lib");
         Path additionalLibs = libs.resolve("java11");
 
+        Path license = sdk.resolve("licenses").resolve("android-sdk-license");
+        if (!Files.exists(license)) {
+            Logger.logDebug("Adding Android key");
+            Files.createDirectories(license.getParent());
+            Files.write(license, ANDROID_KEY.getBytes());
+        }
+
         ProcessRunner sdkmanager = new ProcessRunner(Paths.get(configuration.getGraalPath().toString(), "bin", "java").toString(), "-Dcom.android.sdklib.toolsdir=" + tools, "-classpath",
                 libs + "/*:" + additionalLibs + "/*", "com.android.sdklib.tool.sdkmanager.SdkManagerCli");
         sdkmanager.addArgs(args);
-        sdkmanager.setInteractive(true); // Needed to accept EULA and show download progress
 
         Logger.logDebug("Running sdkmanager with: " + sdkmanager.getCmd());
-        Logger.logDebug("You might be prompted to accept EULA.");
         int result = sdkmanager.runProcess("sdkmanager");
         if (result != 0) {
             throw new IOException("Could not run the Android sdk manager");
