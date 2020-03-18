@@ -92,16 +92,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         instance = this;
 
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        new KeyboardView(this, new KeyboardHeightListener() {
-            @Override
-            public void onHeightChanged(float height) {
-                float keyboardHeight = height / density;
-                Log.v(TAG, "Keyboard height = " + keyboardHeight);
-                if (graalStarted) {
-                    nativeDispatchKeyboardHeight(keyboardHeight);
-                }
-            }
-        });
         Log.v(TAG, "onCreate done");
     }
 
@@ -209,7 +199,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeGotKeyEvent(int action, int keycode);
     private native void nativedispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
     private native void nativeDispatchLifecycleEvent(String event);
-    private native void nativeDispatchKeyboardHeight(float height);
 
     class InternalSurfaceView extends SurfaceView {
         private static final int ACTION_POINTER_STILL = -1;
