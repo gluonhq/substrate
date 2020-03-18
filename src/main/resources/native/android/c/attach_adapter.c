@@ -28,10 +28,14 @@
 #include "grandroid.h"
 
 jclass jBleServiceClass;
+jclass jKeyboardServiceClass;
 int handlesInitialized = 0;
 
 void registerAttachMethodHandles(JNIEnv* androidEnv) {
-    if (handlesInitialized > 0) return;
+    if (handlesInitialized > 0) {
+        return;
+    }
+    // BLE
     jclass jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
     jthrowable t = (*androidEnv)->ExceptionOccurred(androidEnv);
     if (t) {
@@ -40,11 +44,25 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     if ((t == NULL) && (jtmp != NULL)) {
         jBleServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
     }
+
+    // Keyboard
+    jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/KeyboardService");
+    t = (*androidEnv)->ExceptionOccurred(androidEnv);
+    if (t) {
+        (*androidEnv)->ExceptionClear(androidEnv);
+    }
+    if ((t == NULL) && (jtmp != NULL)) {
+        jKeyboardServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
+    }
     handlesInitialized = 1;
 }
 
 jclass substrateGetBleServiceClass() {
     return jBleServiceClass;
+}
+
+jclass substrateGetKeyboardServiceClass() {
+    return jKeyboardServiceClass;
 }
 
 // Lifecycle
@@ -54,11 +72,4 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatch
     LOGE(stderr, "Dispatching lifecycle event from native Dalvik layer: %s", chars);
     attach_setLifecycleEvent(chars);
     (*env)->ReleaseStringUTFChars(env, event, chars);
-}
-
-// Keyboard
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchKeyboardHeight(JNIEnv *env, jobject activity, jfloat jheight)
-{
-    LOGE(stderr, "Dispatching keyboard height from native Dalvik layer: %.3f", jheight);
-    attach_sendVisibleHeight(jheight);
 }

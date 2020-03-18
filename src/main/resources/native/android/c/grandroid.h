@@ -75,9 +75,6 @@ JNIEnv* substrateGetAndroidEnv();
 jclass substrateGetActivityClass();
 jobject substrateGetActivity();
 
-void registerAttachMethodHandles(JNIEnv* env);
-
-
 void __attribute__((weak)) androidJfx_requestGlassToRedraw() {}
 void __attribute__((weak)) androidJfx_setNativeWindow(ANativeWindow *nativeWindow) {}
 void __attribute__((weak)) androidJfx_setDensity(float nativeDensity) {}
@@ -86,5 +83,5 @@ void __attribute__((weak)) androidJfx_gotKeyEvent(int action, int key, jchar *ch
 int  __attribute__((weak)) to_jfx_touch_action(int state) { return 0; }
 
 // Attach
+void registerAttachMethodHandles(JNIEnv* env);
 void __attribute__((weak)) attach_setLifecycleEvent(const char *event) {}
-void __attribute__((weak)) attach_sendVisibleHeight(jfloat jheight) {}

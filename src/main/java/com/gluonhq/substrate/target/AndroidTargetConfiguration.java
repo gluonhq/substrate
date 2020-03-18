@@ -83,7 +83,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
     private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode");
     private final List<String> compiledGlueCodeActivity = Arrays.asList("MainActivity",
-            "MainActivity$1", "MainActivity$2", "MainActivity$3", "MainActivity$4", "MainActivity$InternalSurfaceView");
+            "MainActivity$1", "MainActivity$2", "MainActivity$3", "MainActivity$InternalSurfaceView");
     private final List<String> compiledGlueCodeJavaFX = Arrays.asList("KeyCode", "KeyCode$KeyCodeClass");
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
