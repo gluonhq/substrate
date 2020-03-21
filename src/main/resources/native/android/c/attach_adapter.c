@@ -73,3 +73,10 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatch
     attach_setLifecycleEvent(chars);
     (*env)->ReleaseStringUTFChars(env, event, chars);
 }
+
+// Intent
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchActivityResult(JNIEnv *env, jobject activity, jint requestCode, jint resultCode, jobject intent)
+{
+    LOGE(stderr, "Dispatching activity result from native Dalvik layer: %d %d", requestCode, resultCode);
+    attach_setActivityResult(env, requestCode, resultCode, intent);
+}

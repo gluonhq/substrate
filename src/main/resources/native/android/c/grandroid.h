@@ -86,3 +86,4 @@ int  __attribute__((weak)) to_jfx_touch_action(int state) { return 0; }
 // Attach
 void registerAttachMethodHandles(JNIEnv* env);
 void __attribute__((weak)) attach_setLifecycleEvent(const char *event) {}
+void __attribute__((weak)) attach_setActivityResult(JNIEnv *env, jint requestCode, jint resultCode) {}
