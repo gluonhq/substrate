@@ -73,6 +73,7 @@ extern char *appDataDir;
 JavaVM* substrateGetAndroidVM();
 JNIEnv* substrateGetAndroidEnv();
 jclass substrateGetActivityClass();
+jclass substrateGetPermissionActivityClass();
 jobject substrateGetActivity();
 
 void __attribute__((weak)) androidJfx_requestGlassToRedraw() {}
