@@ -110,11 +110,13 @@ public class PermissionRequestActivity extends Activity {
         return true;
     }
 
-    public static void verifyPermissions(final Activity activity, final String[] permissionsName) {
+    public static boolean verifyPermissions(final Activity activity, final String[] permissionsName) {
         Log.v(TAG, String.format("PermissionRequestActivity::Calling verifyPermissions"));
-        if (!verify(activity, permissionsName)) {
-            requestPermission(activity, permissionsName);
+        if (verify(activity, permissionsName)) {
+            return true;
         }
+        requestPermission(activity, permissionsName);
+        return false;
     }
 
 }
