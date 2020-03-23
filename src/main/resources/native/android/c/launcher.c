@@ -30,6 +30,7 @@
 extern int *run_main(int argc, char *argv[]);
 
 jclass activityClass;
+jclass permissionActivityClass;
 jobject activity;
 jmethodID activity_showIME;
 jmethodID activity_hideIME;
@@ -83,8 +84,8 @@ char **createArgs()
 
 void registerMethodHandles(JNIEnv *aenv)
 {
-    activityClass = (*aenv)->NewGlobalRef(aenv,
-                                          (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/MainActivity"));
+    activityClass = (*aenv)->NewGlobalRef(aenv, (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/MainActivity"));
+    permissionActivityClass = (*aenv)->NewGlobalRef(aenv, (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/PermissionRequestActivity"));
     activity_showIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "showIME", "()V");
     activity_hideIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "hideIME", "()V");
 }
@@ -110,6 +111,10 @@ JNIEnv* substrateGetAndroidEnv() {
 
 jclass substrateGetActivityClass() {
     return activityClass;
+}
+
+jclass substrateGetPermissionActivityClass() {
+    return permissionActivityClass;
 }
 
 jobject substrateGetActivity() {

@@ -81,7 +81,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final String capLocation = "/native/android/cap/";
     private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
             "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
-    private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode");
+    private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode", "PermissionRequestActivity");
     private final List<String> compiledGlueCodeActivity = Arrays.asList("MainActivity",
             "MainActivity$1", "MainActivity$2", "MainActivity$3", "MainActivity$InternalSurfaceView");
     private final List<String> compiledGlueCodeJavaFX = Arrays.asList("KeyCode", "KeyCode$KeyCodeClass");
@@ -454,7 +454,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         String dxCmd = buildToolsPath.resolve("dx").toString();
 
         ProcessRunner dx = new ProcessRunner(dxCmd, "--dex",
-                "--output=" + getApkBinPath().resolve("classes.dex"), getApkClassesPath().toString());
+                "--output=" + getApkBinPath().resolve("classes.dex"),
+                getApkClassesPath().toString());
         return dx.runProcess("dx");
     }
 

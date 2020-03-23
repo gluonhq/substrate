@@ -27,6 +27,7 @@
  */
 #include "grandroid.h"
 
+jclass jUtilClass;
 jclass jBleServiceClass;
 jclass jKeyboardServiceClass;
 int handlesInitialized = 0;
@@ -35,9 +36,19 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     if (handlesInitialized > 0) {
         return;
     }
-    // BLE
-    jclass jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
+    // Util
+    jclass jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/Util");
     jthrowable t = (*androidEnv)->ExceptionOccurred(androidEnv);
+    if (t) {
+        (*androidEnv)->ExceptionClear(androidEnv);
+    }
+    if ((t == NULL) && (jtmp != NULL)) {
+        jUtilClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
+    }
+
+    // BLE
+    jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
+    t = (*androidEnv)->ExceptionOccurred(androidEnv);
     if (t) {
         (*androidEnv)->ExceptionClear(androidEnv);
     }
@@ -57,6 +68,10 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     handlesInitialized = 1;
 }
 
+jclass substrateGetUtilClass() {
+    return jUtilClass;
+}
+
 jclass substrateGetBleServiceClass() {
     return jBleServiceClass;
 }
@@ -72,4 +87,11 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatch
     LOGE(stderr, "Dispatching lifecycle event from native Dalvik layer: %s", chars);
     attach_setLifecycleEvent(chars);
     (*env)->ReleaseStringUTFChars(env, event, chars);
+}
+
+// Intent
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchActivityResult(JNIEnv *env, jobject activity, jint requestCode, jint resultCode, jobject intent)
+{
+    LOGE(stderr, "Dispatching activity result from native Dalvik layer: %d %d", requestCode, resultCode);
+    attach_setActivityResult(env, requestCode, resultCode, intent);
 }

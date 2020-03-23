@@ -29,6 +29,7 @@ package com.gluonhq.helloandroid;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -165,6 +166,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         Log.v(TAG, "surfaceredraw needed (and wait) done");
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        Log.v(TAG, "onActivityResult with requestCode " + requestCode + " and resultCode = " + resultCode + " and intent = " + intent);
+        nativeDispatchActivityResult(requestCode, resultCode, intent);
+    }
+
     private static void showIME() {
         Log.v(TAG, "Called notify_showIME for imm = "+imm+", mv = "+mView);
         instance.runOnUiThread(new Runnable() {
@@ -199,6 +206,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeGotKeyEvent(int action, int keycode);
     private native void nativedispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
     private native void nativeDispatchLifecycleEvent(String event);
+    private native void nativeDispatchActivityResult(int requestCode, int resultCode, Intent intent);
 
     class InternalSurfaceView extends SurfaceView {
         private static final int ACTION_POINTER_STILL = -1;
