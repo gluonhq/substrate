@@ -392,8 +392,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
                 "-d", getApkClassesPath().toString(),
                 "-source", "1.7", "-target", "1.7",
-                "-cp", getApkAndroidSourcePath().toString() + File.pathSeparator + getApkClassesPath().toString()
-                    + File.pathSeparator + getCompatJarPath().toString(),
+                "-cp", getApkAndroidSourcePath().toString() + File.pathSeparator + getApkClassesPath().toString(),
                 "-bootclasspath", androidJar);
         processRunner.addArgs(sources);
         return processRunner.runProcess("dalvikCompilation");
@@ -456,7 +455,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         ProcessRunner dx = new ProcessRunner(dxCmd, "--dex",
                 "--output=" + getApkBinPath().resolve("classes.dex"),
-                getApkClassesPath().toString(), getCompatJarPath().toString());
+                getApkClassesPath().toString());
         return dx.runProcess("dx");
     }
 
@@ -616,26 +615,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
         // use manifest and assets from src/android
         return targetSourcePath;
-    }
-
-    /**
-     * Returns the path to support-compat.jar, extracting it from the .aar file if required.
-     *
-     * @return the path to support-compat jar
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    private Path getCompatJarPath() throws IOException, InterruptedException {
-        final String compatPath = "/extras/android/m2repository/com/android/support/support-compat/25.3.1";
-        Path compatJar = Path.of(projectConfiguration.getAndroidSdkPath().toString() + compatPath + "/extracted/classes.jar");
-        if (!Files.exists(compatJar)) {
-            Path compatAar = Path.of(projectConfiguration.getAndroidSdkPath().toString() + compatPath + "/support-compat-25.3.1.aar");
-            ProcessRunner aarRunner = new ProcessRunner("unzip", compatAar.toString(), "classes.jar", "-d", compatJar.getParent().toString());
-            if (aarRunner.runProcess("extract classes.jar") != 0) {
-                throw new IOException("Error extracting classes.jar from support-compat-25.3.1.aar");
-            }
-        }
-        return compatJar;
     }
 
     private static class BuildToolNotFoundException extends IOException {

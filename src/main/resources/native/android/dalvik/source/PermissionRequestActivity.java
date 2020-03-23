@@ -30,8 +30,7 @@ package com.gluonhq.helloandroid;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import android.os.Build;
 import android.util.Log;
 
 /**
@@ -72,10 +71,13 @@ public class PermissionRequestActivity extends Activity {
         }
 
         Log.v(TAG, "PermissionRequestActivity::requesting permissions");
-        ActivityCompat.requestPermissions(this, permissions, requestCode);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(permissions, requestCode);
+        } else {
+            Log.v(TAG, "requestPermissions requires Build.VERSION.SDK_INT (" + Build.VERSION.SDK_INT+ ") >= 23");
+        }
     }
 
-    // Requires SDK 23+
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         if (PermissionRequestActivity.requestCode == requestCode) {
@@ -95,8 +97,11 @@ public class PermissionRequestActivity extends Activity {
     }
 
     private static boolean verify(Activity activity, String[] permissionsName) {
+        if (activity == null || permissionsName == null) {
+            return false;
+        }
         for (String permission : permissionsName) {
-            int result = ContextCompat.checkSelfPermission(activity, permission);
+            int result = activity.checkSelfPermission(permission);
             if (result != PackageManager.PERMISSION_GRANTED) {
                 Log.v(TAG, String.format("Permission %s not granted", permission));
                 return false;
