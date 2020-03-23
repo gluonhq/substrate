@@ -39,7 +39,7 @@ import android.util.Log;
  *
  * <pre>
  * {@code
- * <activity android:name="com.gluonhq.impl.charm.down.plugins.android.PermissionRequestActivity" />
+ * <activity a:name="com.gluonhq.helloandroid.PermissionRequestActivity" />
  * }
  * </pre>
  *
