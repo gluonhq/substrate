@@ -50,7 +50,6 @@ public class PermissionRequestActivity extends Activity {
     private static final String TAG     = "GraalActivity";
 
     private static final String KEY_PERMISSIONS = "permissions";
-    private static final String KEY_MESSENGER = "messenger";
     private static final String KEY_REQUEST_CODE = "requestCode";
     private static final int PERMISSION_REQUEST_CODE = 10010;
 
