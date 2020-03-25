@@ -33,50 +33,27 @@ jclass jKeyboardServiceClass;
 jclass jPositionServiceClass;
 int handlesInitialized = 0;
 
-void registerAttachMethodHandles(JNIEnv* androidEnv) {
-    if (handlesInitialized > 0) {
-        return;
-    }
-    // Util
-    jclass jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/Util");
+jclass registerClass(JNIEnv* androidEnv, const char* name) {
+    jclass jtmp = (*androidEnv)->FindClass(androidEnv, name);
     jthrowable t = (*androidEnv)->ExceptionOccurred(androidEnv);
     if (t) {
         (*androidEnv)->ExceptionClear(androidEnv);
     }
     if ((t == NULL) && (jtmp != NULL)) {
-        jUtilClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
+        return (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
     }
+    return NULL;
 
-    // BLE
-    jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/BleService");
-    t = (*androidEnv)->ExceptionOccurred(androidEnv);
-    if (t) {
-        (*androidEnv)->ExceptionClear(androidEnv);
-    }
-    if ((t == NULL) && (jtmp != NULL)) {
-        jBleServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
-    }
+}
 
-    // Keyboard
-    jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/KeyboardService");
-    t = (*androidEnv)->ExceptionOccurred(androidEnv);
-    if (t) {
-        (*androidEnv)->ExceptionClear(androidEnv);
+void registerAttachMethodHandles(JNIEnv* androidEnv) {
+    if (handlesInitialized > 0) {
+        return;
     }
-    if ((t == NULL) && (jtmp != NULL)) {
-        jKeyboardServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
-    }
-
-    // Position
-    jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
-    t = (*androidEnv)->ExceptionOccurred(androidEnv);
-    if (t) {
-        (*androidEnv)->ExceptionClear(androidEnv);
-    }
-    if ((t == NULL) && (jtmp != NULL)) {
-        jPositionServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
-    }
-
+    jUtilClass = registerClass(androidEnv, "com/gluonhq/helloandroid/Util");
+    jBleServiceClass= registerClass(androidEnv, "com/gluonhq/helloandroid/BleService");
+    jKeyboardServiceClass=registerClass(androidEnv, "com/gluonhq/helloandroid/KeyboardService");
+    jPositionServiceClass=registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
     handlesInitialized = 1;
 }
 

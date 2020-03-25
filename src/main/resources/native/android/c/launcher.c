@@ -94,6 +94,7 @@ int JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     androidVM = vm;
     (*vm)->GetEnv(vm, (void **)&androidEnv, JNI_VERSION_1_6);
+    start_logger("GraalCompiled");
     registerMethodHandles(androidEnv);
     LOGE(stderr, "AndroidVM called JNI_OnLoad, vm = %p, androidEnv = %p", androidVM, androidEnv);
     registerAttachMethodHandles(androidEnv);
@@ -131,7 +132,6 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp(
     LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
     LOGE(stderr, "EnvVersion = %d\n", (*env)->GetVersion(env));
 
-    start_logger("GraalCompiled");
     char **graalArgs = createArgs();
     
     LOGE(stderr, "calling JavaMainWrapper_run with %d argsize\n", argsize);
