@@ -30,6 +30,7 @@
 jclass jUtilClass;
 jclass jBleServiceClass;
 jclass jKeyboardServiceClass;
+jclass jPositionServiceClass;
 int handlesInitialized = 0;
 
 void registerAttachMethodHandles(JNIEnv* androidEnv) {
@@ -65,6 +66,17 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     if ((t == NULL) && (jtmp != NULL)) {
         jKeyboardServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
     }
+
+    // Position
+    jtmp = (*androidEnv)->FindClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
+    t = (*androidEnv)->ExceptionOccurred(androidEnv);
+    if (t) {
+        (*androidEnv)->ExceptionClear(androidEnv);
+    }
+    if ((t == NULL) && (jtmp != NULL)) {
+        jPositionServiceClass= (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
+    }
+
     handlesInitialized = 1;
 }
 
@@ -78,6 +90,10 @@ jclass substrateGetBleServiceClass() {
 
 jclass substrateGetKeyboardServiceClass() {
     return jKeyboardServiceClass;
+}
+
+jclass substrateGetPositionServiceClass() {
+    return jPositionServiceClass;
 }
 
 // Lifecycle
