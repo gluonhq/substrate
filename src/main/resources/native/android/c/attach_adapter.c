@@ -42,6 +42,7 @@ jclass registerClass(JNIEnv* androidEnv, const char* name) {
     if ((t == NULL) && (jtmp != NULL)) {
         return (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
     }
+    return NULL;
 
 }
 
