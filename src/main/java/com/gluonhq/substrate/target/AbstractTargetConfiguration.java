@@ -475,7 +475,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         arguments.add("-H:ReflectionConfigurationFiles=" + createReflectionConfig(suffix, configResolver));
         arguments.add("-H:JNIConfigurationFiles=" + createJNIConfig(suffix, configResolver));
-        arguments.add("-H:ResourceConfigurationFiles=" + createResourceConfig(suffix));
+        arguments.add("-H:ResourceConfigurationFiles=" + createResourceConfig(suffix, configResolver));
 
         return arguments;
     }
@@ -557,7 +557,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return jniPath;
     }
 
-    private Path createResourceConfig(String suffix) throws IOException {
+    private Path createResourceConfig(String suffix, ConfigResolver configResolver) throws IOException {
         Path gvmPath = paths.getGvmPath();
         Path resourcePath = gvmPath.resolve(
                 Strings.substitute(Constants.RESOURCE_ARCH_FILE, Map.of("archOs", suffix)));
@@ -582,7 +582,16 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 }
                 writePatternEntry(bw, configurationResource);
             }
-            if (patternHasBeenWritten) {
+
+            List<String> userResourcesList = configResolver.getUserResourcesList(suffix);
+            if (!userResourcesList.isEmpty()) {
+                if (patternHasBeenWritten) {
+                    bw.write(",\n");
+                }
+                for (String line : userResourcesList) {
+                    bw.write(line + "\n");
+                }
+            } else if (patternHasBeenWritten) {
                 bw.write("\n");
             }
 

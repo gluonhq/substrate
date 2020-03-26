@@ -50,6 +50,8 @@ import static com.gluonhq.substrate.Constants.USER_JNI_ARCHOS_FILE;
 import static com.gluonhq.substrate.Constants.USER_JNI_FILE;
 import static com.gluonhq.substrate.Constants.USER_REFLECTION_ARCHOS_FILE;
 import static com.gluonhq.substrate.Constants.USER_REFLECTION_FILE;
+import static com.gluonhq.substrate.Constants.USER_RESOURCE_ARCHOS_FILE;
+import static com.gluonhq.substrate.Constants.USER_RESOURCE_FILE;
 
 /**
  * Helper class that helps scanning jars in the classpath looking for
@@ -91,7 +93,7 @@ public class ConfigResolver {
     }
 
     /**
-     * Walks through the jars in the classpath, excluding the JavaFX ones,
+     * Walks through the jars in the classpath,
      * and looks for META-INF/substrate/config/reflectionconfig or
      * META-INF/substrate/config/reflectionconfig-${archos} files.
      *
@@ -110,7 +112,7 @@ public class ConfigResolver {
     }
 
     /**
-     * Walks through the jars in the classpath, excluding the JavaFX ones,
+     * Walks through the jars in the classpath,
      * and looks for META-INF/substrate/config/jniconfig or
      * META-INF/substrate/config/jniconfig-${archos} files.
      *
@@ -126,6 +128,25 @@ public class ConfigResolver {
                 getFileNameForArchOs(USER_JNI_ARCHOS_FILE, archOs),
                 ",",
                 line -> !line.startsWith("[") && !line.startsWith("]"));
+    }
+
+    /**
+     * Walks through the jars in the classpath,
+     * and looks for META-INF/substrate/config/resourceconfig or
+     * META-INF/substrate/config/resourceconfig-${archos} files.
+     *
+     * The method will return a list of lines from all the files found
+     *
+     * @param archOs a string with the arch and os, it can be null
+     * @return a list of lines that should be added to the resourceconfig.json file
+     * @throws IOException
+     */
+    public List<String> getUserResourcesList(String archOs) throws IOException {
+        Logger.logDebug("Scanning for resource files");
+        return scanJars(USER_RESOURCE_FILE,
+                getFileNameForArchOs(USER_RESOURCE_ARCHOS_FILE, archOs),
+                null,
+                line -> line.trim().startsWith("{\"pattern\""));
     }
 
     private List<String> scanJars(String configName, String configArchosName, String initLine, Predicate<String> filter) throws IOException {
