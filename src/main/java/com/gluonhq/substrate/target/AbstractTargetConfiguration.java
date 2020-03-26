@@ -85,7 +85,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "--no-server",
             "-H:+ExitAfterRelocatableImageWrite",
             "-H:+SharedLibrary",
-            "-H:+AddAllCharsets"
+            "-H:+AddAllCharsets",
+            "-H:+ReportExceptionStackTraces",
+            "-H:+AllowIncompleteClasspath",
+            "-H:-DeadlockWatchdogExitOnTimeout",
+            "-H:DeadlockWatchdogInterval=0"
     );
     private static final List<String> verboseNativeImageArguments = Arrays.asList(
             "-H:+PrintAnalysisCallTree",
