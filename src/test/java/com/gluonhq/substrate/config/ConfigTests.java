@@ -116,4 +116,13 @@ class ConfigTests {
                 .count());
     }
 
+    @Test
+    void testResourcesNullArch() throws IOException {
+        List<String> resourcesList = resolver.getUserResourcesList(null);
+        assertNotNull(resourcesList);
+        assertEquals(2, resourcesList.size());
+        assertTrue(resourcesList.stream()
+                .anyMatch(s -> s.contains("\".*\\\\.ptn$\"")));
+    }
+
 }

@@ -144,6 +144,8 @@ public class Constants {
     public static final String USER_REFLECTION_ARCHOS_FILE = "reflectionconfig-${archOs}.json";
     public static final String USER_JNI_FILE = "jniconfig.json";
     public static final String USER_JNI_ARCHOS_FILE = "jniconfig-${archOs}.json";
+    public static final String USER_RESOURCE_FILE = "resourceconfig.json";
+    public static final String USER_RESOURCE_ARCHOS_FILE = "resourceconfig-${archOs}.json";
 
     public static final String CONFIG_FILES = "/config/";
     public static final String REFLECTION_JAVA_FILE = "reflectionconfig-java.json";
