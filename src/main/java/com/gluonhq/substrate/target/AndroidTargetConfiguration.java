@@ -444,10 +444,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             if (!Files.exists(iconPath)) {
                 throw new IOException("File " + iconPath.toString() + " not found");
             }
-            Path assetPath = getApkPath().resolve("res").resolve(iconFolder);
-            Files.createDirectories(assetPath);
-            FileOps.copyFile(iconPath, assetPath.resolve("ic_launcher.png"));
         }
+        FileOps.copyDirectory(androidPath.resolve("res"),  getApkPath().resolve("res"));
     }
 
     private int dx(Path buildToolsPath) throws IOException, InterruptedException {
