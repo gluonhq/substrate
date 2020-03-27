@@ -87,7 +87,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "-H:+SharedLibrary",
             "-H:+AddAllCharsets",
             "-H:+ReportExceptionStackTraces",
-            "-H:+AllowIncompleteClasspath",
             "-H:-DeadlockWatchdogExitOnTimeout",
             "-H:DeadlockWatchdogInterval=0"
     );
