@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,17 +75,16 @@ int main(int argc, char * argv[]) {
     NSString *documentsDir = [documentPaths objectAtIndex:0];
     NSString *folder = @"gluon";
     NSString *folderPath = [documentsDir stringByAppendingPathComponent:folder];
+    if (!folderPath) {
+        NSLog(@"Could not create user.home dir");
+    }
     NSString *prop = @"-Duser.home=";
     NSString *userhomeProp = [prop stringByAppendingString: folderPath];
-
-    if (!folderPath) {
-        NSLog(@"Error getting the private storage path");
-    }
 
     NSFileManager *manager = [NSFileManager defaultManager];
     [manager createDirectoryAtPath: folderPath withIntermediateDirectories: NO attributes: nil error: nil];
 
-    NSLog(@"Done creating private storage %@", folderPath);
+    NSLog(@"Done creating user.home at %@", folderPath);
     const char *userHome = [userhomeProp UTF8String];
     startGVM(userHome);
 }
