@@ -297,8 +297,8 @@ public final class FileDeps {
         }
         Logger.logDebug("Setup dependencies done");
 
-        if (!Files.exists(javaStaticLibs)) {
-            Logger.logSevere("Error: path " + javaStaticLibs + " doesn't exist");
+        if (!Files.exists(javaStaticLibs) && (!configuration.getHostTriplet().equals(configuration.getTargetTriplet()))) {
+            Logger.logSevere("Error: path " + javaStaticLibs + " doesn't exist but required for crosscompilation");
             return false;
         }
         if (configuration.isUseJavaFX() && !Files.exists(configuration.getJavafxStaticLibsPath())) {
