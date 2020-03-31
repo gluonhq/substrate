@@ -185,7 +185,7 @@ public final class FileDeps {
         // Java Static
         Logger.logDebug("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
 
-        if (configuration.isUseJNI()) {
+        if ((configuration.isUseJNI()) && (!configuration.getHostTriplet().equals(configuration.getTargetTriplet()))) {
             if (!Files.isDirectory(javaStaticLibs)) {
                 System.err.println("Not a dir");
                 if (customJavaLocation) {
@@ -297,8 +297,8 @@ public final class FileDeps {
         }
         Logger.logDebug("Setup dependencies done");
 
-        if (!Files.exists(javaStaticLibs)) {
-            Logger.logSevere("Error: path " + javaStaticLibs + " doesn't exist");
+        if (!Files.exists(javaStaticLibs) && (!configuration.getHostTriplet().equals(configuration.getTargetTriplet()))) {
+            Logger.logSevere("Error: path " + javaStaticLibs + " doesn't exist but required for crosscompilation");
             return false;
         }
         if (configuration.isUseJavaFX() && !Files.exists(configuration.getJavafxStaticLibsPath())) {
