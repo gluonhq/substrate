@@ -31,29 +31,30 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
-    private static final List<String> javaLibs = List.of(
-            "msvcrt", "advapi32", "iphlpapi", "ws2_32", "userenv",
+    private static final List<String> libsForJava = List.of(
+            "advapi32", "iphlpapi", "ws2_32", "userenv",
             "java", "jvm", "libchelper", "net", "nio",
             "strictmath", "zip", "prefs", "j2pkcs11", "sunec"
     );
 
-    private static final List<String> windowsLibsForFx = List.of(
-            "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",
-            "uiautomationcore", "urlmon", "winmm"
+    private static final List<String> libsForJavaFX = List.of(
+            "comdlg32", "dwmapi", "gdi32", "imm32",
+            "shell32", "uiautomationcore", "urlmon", "winmm"
     );
 
-    private static final List<String> windowsFxLibs = List.of(
+    private static final List<String> fxLibs = List.of(
             "glass", "javafx_font", "javafx_iio",
             "prism_common", "prism_d3d"
     );
 
-    private static final List<String> windowsFxSwLibs = List.of(
+    private static final List<String> fxSwLibs = List.of(
             "prism_sw"
     );
 
@@ -73,7 +74,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
-        return Collections.singletonList("/MT");
+        return Arrays.asList("/MD", "/D_UNICODE", "/DUNICODE", "/DWIN32", "/D_WINDOWS");
     }
 
     @Override
@@ -122,13 +123,18 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkOutputFlags() {
+        return Collections.singletonList("/OUT:" + getAppPath(getLinkOutputName()));
+    }
+
+    @Override
+    String getLinkOutputName() {
         String appName = projectConfiguration.getAppName();
-        return Collections.singletonList("/OUT:" + getAppPath(appName + ".exe"));
+        return appName + ".exe";
     }
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        return asListOfLibraryLinkFlags(javaLibs);
+        return asListOfLibraryLinkFlags(libsForJava);
     }
 
     @Override
@@ -137,16 +143,18 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         flags.add("/NODEFAULTLIB:libcmt.lib");
 
         if (useJavaFX) {
-            flags.addAll(asListOfLibraryLinkFlags(windowsFxLibs));
-            flags.addAll(asListOfWholeArchiveLinkFlags(windowsFxLibs));
+            flags.addAll(asListOfLibraryLinkFlags(libsForJavaFX));
+            flags.addAll(asListOfLibraryLinkFlags(fxLibs));
+            flags.addAll(asListOfWholeArchiveLinkFlags(fxLibs));
 
             if (usePrismSW) {
-                flags.addAll(asListOfLibraryLinkFlags(windowsFxSwLibs));
-                flags.addAll(asListOfWholeArchiveLinkFlags(windowsFxSwLibs));
+                flags.addAll(asListOfLibraryLinkFlags(fxSwLibs));
+                flags.addAll(asListOfWholeArchiveLinkFlags(fxSwLibs));
             }
         }
 
-        return flags;    }
+        return flags;
+    }
 
     @Override
     String getLinkLibraryPathOption() {

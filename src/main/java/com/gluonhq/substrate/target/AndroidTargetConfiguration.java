@@ -281,11 +281,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkOutputFlags() {
-        return Arrays.asList("-o", getAppPath(getLinkOutputName()));
-    }
-
-    private String getLinkOutputName() {
+    String getLinkOutputName() {
         String appName = projectConfiguration.getAppName();
         return "lib" + appName + ".so";
     }
@@ -415,8 +411,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         for (File jar : jars) {
             try (ZipFile zip = new ZipFile(jar)) {
                 Logger.logDebug("Scanning " + jar);
-                for (Enumeration e = zip.entries(); e.hasMoreElements(); ) {
-                    ZipEntry zipEntry = (ZipEntry) e.nextElement();
+                for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements(); ) {
+                    ZipEntry zipEntry = e.nextElement();
                     String name = zipEntry.getName();
                     if (!zipEntry.isDirectory() && name.startsWith(prefix)) {
                         Path classPath = targetFolder.resolve(name.substring(prefix.length()));

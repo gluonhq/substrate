@@ -269,7 +269,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     public boolean runUntilEnd() throws IOException, InterruptedException {
         Path appPath = Objects.requireNonNull(paths.getAppPath(),
                 "Application path can't be null");
-        String appName = Objects.requireNonNull(projectConfiguration.getAppName(),
+        String appName = Objects.requireNonNull(getLinkOutputName(),
                 "Application name can't be null");
         Path app = appPath.resolve(appName);
         if (!Files.exists(app)) {
@@ -777,8 +777,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     List<String> getTargetSpecificLinkOutputFlags() {
-        String appName = projectConfiguration.getAppName();
-        return Arrays.asList("-o", getAppPath(appName));
+        return Arrays.asList("-o", getAppPath(getLinkOutputName()));
+    }
+
+    String getLinkOutputName() {
+        return projectConfiguration.getAppName();
     }
 
     protected List<String> getTargetNativeCodeExtensions() {
