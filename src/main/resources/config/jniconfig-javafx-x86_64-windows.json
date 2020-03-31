@@ -1,0 +1,179 @@
+[
+  {
+    "name" : "com.sun.glass.ui.win.WinApplication"
+  }
+,
+  {
+    "name" : "com.sun.glass.ui.win.WinGestureSupport",
+    "methods" : [
+      { "name" : "gesturePerformed", "parameterTypes" : [ "com.sun.glass.ui.View", "int", "boolean", "boolean", "int", "int", "int", "int", "float", "float", "float", "float", "float", "float", "float" ] },
+      { "name" : "inertiaGestureFinished", "parameterTypes" : [ "com.sun.glass.ui.View" ] },
+      { "name" : "notifyBeginTouchEvent", "parameterTypes" : [ "com.sun.glass.ui.View", "int", "boolean", "int" ] },
+      { "name" : "notifyNextTouchEvent", "parameterTypes" : [ "com.sun.glass.ui.View", "int", "long", "int", "int", "int", "int" ] },
+      { "name" : "notifyEndTouchEvent", "parameterTypes" : [ "com.sun.glass.ui.View" ] }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.glass.ui.win.WinPixels"
+  }
+,
+  {
+    "name" : "com.sun.glass.ui.win.WinView"
+  }
+,
+  {
+    "name" : "com.sun.glass.ui.win.WinWindow",
+    "methods" : [
+      {"name":"notifyMoving","parameterTypes":["int","int","int","int","float","float","int","int","int","int","int","int","int"] },
+      {"name":"notifyResize","parameterTypes":["int","int","int"] }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.D2D1_COLOR_F",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "r" },
+      { "name" : "g" },
+      { "name" : "b" },
+      { "name" : "a" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.D2D1_MATRIX_3X2_F",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "_11" },
+      { "name" : "_12" },
+      { "name" : "_21" },
+      { "name" : "_22" },
+      { "name" : "_31" },
+      { "name" : "_32" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.D2D1_PIXEL_FORMAT",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "alphaMode" },
+      { "name" : "format" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.D2D1_POINT_2F",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "x" },
+      { "name" : "y" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.D2D1_RENDER_TARGET_PROPERTIES",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "dpiX" },
+      { "name" : "dpiY" },
+      { "name" : "minLevel" },
+      { "name" : "pixelFormat" },
+      { "name" : "type" },
+      { "name" : "usage" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.DWRITE_GLYPH_METRICS",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "advanceHeight" },
+      { "name" : "advanceWidth" },
+      { "name" : "bottomSideBearing" },
+      { "name" : "leftSideBearing" },
+      { "name" : "rightSideBearing" },
+      { "name" : "topSideBearing" },
+      { "name" : "verticalOriginY" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.DWRITE_GLYPH_RUN",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "advanceOffset" },
+      { "name" : "ascenderOffset" },
+      { "name" : "bidiLevel" },
+      { "name" : "fontFace" },
+      { "name" : "fontEmSize" },
+      { "name" : "glyphAdvances" },
+      { "name" : "glyphIndices" },
+      { "name" : "isSideways" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.DWRITE_MATRIX",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "m11" },
+      { "name" : "m12" },
+      { "name" : "m21" },
+      { "name" : "m22" },
+      { "name" : "dx" },
+      { "name" : "dy" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.DWRITE_SCRIPT_ANALYSIS",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "script" },
+      { "name" : "shapes" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.javafx.font.directwrite.RECT",
+    "methods" : [
+      { "name" : "<init>", "parameterTypes" : [] }
+    ],
+    "fields" : [
+      { "name" : "bottom" },
+      { "name" : "left" },
+      { "name" : "right" },
+      { "name" : "top" }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.prism.impl.PrismSettings",
+    "fields" : [
+      { "name" : "disableD3D9Ex" },
+      { "name" : "forceGPU" },
+      { "name" : "isVsyncEnabled" },
+      { "name" : "verbose" }
+    ]
+  }
+]

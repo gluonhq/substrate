@@ -30,12 +30,32 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
+    private static final List<String> javaLibs = List.of(
+            "msvcrt", "advapi32", "iphlpapi", "ws2_32", "userenv",
+            "java", "jvm", "libchelper", "net", "nio",
+            "strictmath", "zip", "prefs", "j2pkcs11", "sunec"
+    );
+
+    private static final List<String> windowsLibsForFx = List.of(
+            "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",
+            "uiautomationcore", "urlmon", "winmm"
+    );
+
+    private static final List<String> windowsFxLibs = List.of(
+            "glass", "javafx_font", "javafx_iio",
+            "prism_common", "prism_d3d"
+    );
+
+    private static final List<String> windowsFxSwLibs = List.of(
+            "prism_sw"
+    );
 
     public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
@@ -108,20 +128,40 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        return Arrays.asList("msvcrt.lib", "advapi32.lib", "iphlpapi.lib", "ws2_32.lib", "java.lib", "jvm.lib",
-                "libchelper.lib", "net.lib", "nio.lib", "strictmath.lib", "zip.lib", "prefs.lib", "j2pkcs11.lib", "sunec.lib");
+        return asListOfLibraryLinkFlags(javaLibs);
     }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        return Arrays.asList(
-                "/NODEFAULTLIB:msvcrt.lib",
-                "/NODEFAULTLIB:libcmt.lib"
-        );
-    }
+        List<String> flags = new ArrayList<>();
+        flags.add("/NODEFAULTLIB:libcmt.lib");
+
+        if (useJavaFX) {
+            flags.addAll(asListOfLibraryLinkFlags(windowsFxLibs));
+            flags.addAll(asListOfWholeArchiveLinkFlags(windowsFxLibs));
+
+            if (usePrismSW) {
+                flags.addAll(asListOfLibraryLinkFlags(windowsFxSwLibs));
+                flags.addAll(asListOfWholeArchiveLinkFlags(windowsFxSwLibs));
+            }
+        }
+
+        return flags;    }
 
     @Override
     String getLinkLibraryPathOption() {
         return "/LIBPATH:";
+    }
+
+    private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
+        return libraries.stream()
+                .map(library -> library + ".lib")
+                .collect(Collectors.toList());
+    }
+
+    private List<String> asListOfWholeArchiveLinkFlags(List<String> libraries) {
+        return libraries.stream()
+                .map(library -> "/WHOLEARCHIVE:" + library + ".lib")
+                .collect(Collectors.toList());
     }
 }

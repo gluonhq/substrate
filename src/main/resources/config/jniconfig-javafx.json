@@ -28,6 +28,7 @@
   {
     "name" : "com.sun.glass.ui.Clipboard",
     "methods" : [
+      {"name":"actionPerformed","parameterTypes":["int"] },
       {"name":"contentChanged","parameterTypes":[] }
     ]
   }
@@ -142,6 +143,13 @@
     "name" : "com.sun.javafx.geom.Path2D",
     "methods" : [
       {"name":"<init>","parameterTypes":["int","byte[]","int","float[]","int"] }
+    ]
+  }
+,
+  {
+    "name" : "com.sun.glass.ui.CommonDialogs",
+    "methods" : [
+      {"name":"createFileChooserResult","parameterTypes": ["java.lang.String[]","com.sun.glass.ui.CommonDialogs$ExtensionFilter[]","int"]}
     ]
   }
 ,
