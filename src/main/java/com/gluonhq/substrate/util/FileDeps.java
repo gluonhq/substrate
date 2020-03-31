@@ -185,7 +185,7 @@ public final class FileDeps {
         // Java Static
         Logger.logDebug("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
 
-        if (configuration.isUseJNI()) {
+        if ((configuration.isUseJNI()) && (!configuration.getHostTriplet().equals(configuration.getTargetTriplet()))) {
             if (!Files.isDirectory(javaStaticLibs)) {
                 System.err.println("Not a dir");
                 if (customJavaLocation) {
