@@ -294,6 +294,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (projectConfiguration.isVerbose()) {
             processRunner.addArg("-DGVM_VERBOSE");
         }
+        processRunner.addArg("-DSUBSTRATE");
         processRunner.addArgs(getTargetSpecificCCompileFlags());
 
         processRunner.addArg("-I" + workDir.toString());
