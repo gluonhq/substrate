@@ -83,7 +83,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
     private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode", "PermissionRequestActivity");
     private final List<String> compiledGlueCodeActivity = Arrays.asList("MainActivity",
-            "MainActivity$1", "MainActivity$2", "MainActivity$3", "MainActivity$InternalSurfaceView", "PermissionRequestActivity");
+            "MainActivity$1", "MainActivity$2", "MainActivity$3", "MainActivity$InternalSurfaceView",
+            "PermissionRequestActivity", "PermissionRequestActivity$1");
     private final List<String> compiledGlueCodeJavaFX = Arrays.asList("KeyCode", "KeyCode$KeyCodeClass");
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
@@ -444,10 +445,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             if (!Files.exists(iconPath)) {
                 throw new IOException("File " + iconPath.toString() + " not found");
             }
-            Path assetPath = getApkPath().resolve("res").resolve(iconFolder);
-            Files.createDirectories(assetPath);
-            FileOps.copyFile(iconPath, assetPath.resolve("ic_launcher.png"));
         }
+        FileOps.copyDirectory(androidPath.resolve("res"),  getApkPath().resolve("res"));
     }
 
     private int dx(Path buildToolsPath) throws IOException, InterruptedException {

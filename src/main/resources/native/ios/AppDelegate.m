@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,12 +51,9 @@ static __inline__ void gvmlog(NSString* format, ...)
 
 @end
 
-int startGVM();
+int startGVM(const char* userHome);
 
-extern int *run_main(int argc, char* argv[]);
-const char * args[] = {"myapp",
-          "-Dcom.sun.javafx.isEmbedded=true",
-          "-Djavafx.platform=ios"};
+extern int *run_main(int argc, const char* argv[]);
 
 @interface AppDelegate ()
 
@@ -74,7 +71,22 @@ int main(int argc, char * argv[]) {
 
 -(void)startVM:(id)selector {
     gvmlog(@"Starting vm...");
-    startGVM();
+    NSArray *documentPaths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+    NSString *documentsDir = [documentPaths objectAtIndex:0];
+    NSString *folder = @"gluon";
+    NSString *folderPath = [documentsDir stringByAppendingPathComponent:folder];
+    if (!folderPath) {
+        NSLog(@"Could not create user.home dir");
+    }
+    NSString *prop = @"-Duser.home=";
+    NSString *userhomeProp = [prop stringByAppendingString: folderPath];
+
+    NSFileManager *manager = [NSFileManager defaultManager];
+    [manager createDirectoryAtPath: folderPath withIntermediateDirectories: NO attributes: nil error: nil];
+
+    NSLog(@"Done creating user.home at %@", folderPath);
+    const char *userHome = [userhomeProp UTF8String];
+    startGVM(userHome);
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -113,10 +125,14 @@ int main(int argc, char * argv[]) {
 @end
 
 
-int startGVM() {
+int startGVM(const char* userHome) {
     gvmlog(@"Starting GVM for ios");
 
-    (*run_main)(3, args);
+
+const char* args[] = {"myapp",
+          "-Dcom.sun.javafx.isEmbedded=true",
+          "-Djavafx.platform=ios", userHome};
+    (*run_main)(4, args);
 
     gvmlog(@"Finished running GVM, done with isolatehread");
     return 0;
