@@ -260,6 +260,7 @@ public final class FileDeps {
             Path libsLocation = androidSdk.resolve("tools").resolve("lib").resolve("java11");
 
             if (!Files.exists(androidSdk)) {
+                Logger.logInfo("ANDROID_SDK not found and will be downloaded.");
                 downloadAndroidSdk = true;
             } 
 
@@ -268,6 +269,7 @@ public final class FileDeps {
             }
 
             if (!Files.exists(androidNdk)) {
+                Logger.logInfo("ANDROID_NDK not found and will be downloaded.");
                 downloadAndroidNdk = true;
             }
         }
@@ -320,8 +322,7 @@ public final class FileDeps {
     }
 
     private void downloadJavaZip(String target) throws IOException {
-        Logger.logDebug("Process zip javaStaticSdk, target = "+target);
-
+        Logger.logInfo("Downloading Java Static Libs...");
         String javaZip = Strings.substitute(JAVA_STATIC_ZIP, Map.of(
             "version", configuration.getJavaStaticSdkVersion(),
             "target", target));
@@ -331,13 +332,11 @@ public final class FileDeps {
                 "javaStaticSdk",
                 configuration.getJavaStaticSdkVersion(),
                 configuration.getTargetTriplet().getOsArch());
-
-        Logger.logDebug("Processing zip java done");
+        Logger.logInfo("Java static libs downloaded successfully");
     }
 
     private void downloadJavaFXZip(String osarch) throws IOException {
-        Logger.logDebug("Process zip javafxStaticSdk");
-
+        Logger.logInfo("Downloading JavaFX static libs...");
         String javafxZip = Strings.substitute(JAVAFX_STATIC_ZIP, Map.of(
             "version", configuration.getJavafxStaticSdkVersion(),
             "target", osarch));
@@ -347,8 +346,7 @@ public final class FileDeps {
                 "javafxStaticSdk",
                 configuration.getJavafxStaticSdkVersion(),
                 configuration.getTargetTriplet().getOsArch());
-
-        Logger.logDebug("Process zip javafx done");
+        Logger.logInfo("JavaFX static libs downloaded successfully");
     }
 
     /**
@@ -356,29 +354,29 @@ public final class FileDeps {
      * @throws IOException in case anything goes wrong.
      */
     private void downloadAndroidSdkZip() throws IOException {
+        Logger.logInfo("Downloading Android SDK...");
         Path sdk = configuration.getAndroidSdkPath();
         String hostOs = configuration.getHostTriplet().getOs();
         String androidSdkUrl = Strings.substitute(ANDROID_SDK_URL, Map.of("host", hostOs));
-        Logger.logDebug("Downloading Android SDK...");
         FileOps.downloadAndUnzip(androidSdkUrl, sdk.getParent(), "android-sdk.zip", sdk.getFileName().toString(), "");
-        Logger.logDebug("Done downloading Android SDK");
+        Logger.logInfo("Android SDK downloaded successfully");
     }
     /**
      * Downloads libraries needed for Android SDK's sdkmanager 
      * @throws IOException in case anything goes wrong.
      */
     private void downloadAdditionalAndroidLibs() throws IOException {
+        Logger.logInfo("Downloading additional libs for Android ...");
         Path sdk = configuration.getAndroidSdkPath();
         Path libsLocation = sdk.resolve("tools").resolve("lib").resolve("java11");
 
         Files.createDirectories(libsLocation);
-        Logger.logDebug("Downloading additional libs ...");
         for (String url : ANDROID_DEPS) {
             URL link = new URL(url);
             String filename = url.substring(url.lastIndexOf('/') + 1);
             FileOps.downloadFile(link, libsLocation.resolve(filename));
         }
-        Logger.logDebug("Done downloading additional libs");
+        Logger.logInfo("Additional libs for Android downloaded successfully");
     }
 
     /**
@@ -417,8 +415,8 @@ public final class FileDeps {
      * @throws InterruptedException in case anything goes wrong.
      */
     private void fetchFromSdkManager() throws IOException, InterruptedException {
-        Logger.logDebug("Downloading Android toolchain...");
+        Logger.logInfo("Downloading Android NDK and toolchain...");
         androidSdkManager(ANDROID_SDK_PACKAGES);
-        Logger.logDebug("Done downloading Android toolchain");
+        Logger.logInfo("Android NDK and toolchain downloaded successfully");
     }
 } 

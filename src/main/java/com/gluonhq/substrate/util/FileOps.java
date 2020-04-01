@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,9 +39,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -413,13 +414,7 @@ public class FileOps {
     public static void downloadFile(URL fileUrl, Path filePath) throws IOException {
         Objects.requireNonNull(fileUrl);
         Objects.requireNonNull(filePath);
-        try (ReadableByteChannel readableByteChannel = Channels.newChannel(fileUrl.openStream());
-             FileOutputStream fileOutputStream = new FileOutputStream(filePath.toFile());
-             FileChannel fileChannel = fileOutputStream.getChannel()) {
-            fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-        } catch (IOException e) {
-            throw new IOException("Error downloading from " + fileUrl + " into " + filePath + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
-        }
+        ProgressDownloader.downloadFile(fileUrl, filePath);
     }
 
     /**
@@ -524,6 +519,76 @@ public class FileOps {
                      new FileOutputStream(zipDir.resolve(md5name).toFile());
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(hashes);
+        }
+    }
+
+    /**
+     * Prints the progress of a file download
+     */
+    private static final class ProgressDownloader {
+        
+        public static void downloadFile(URL fileUrl, Path filePath) {
+            new ProgressDownloader(fileUrl, filePath);
+            System.out.println();
+        }
+
+        private ProgressDownloader(URL fileUrl, Path filePath) {
+            try (
+                    ReadableByteChannel rbc = new RBCWrapper(Channels.newChannel(fileUrl.openStream()), contentLength(fileUrl), this);
+                    FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
+                fos.getChannel().transferFrom( rbc, 0, Long.MAX_VALUE );
+            } catch ( Exception e ) {
+                Logger.logSevere("Downloading failed: " + e.getMessage());
+            }
+        }
+
+        public void rbcProgressCallback(RBCWrapper rbc) {
+            System.out.print("\r" + String.format("Download Progress: %.2f / %.2fM", toMB(rbc.readSoFar), toMB(rbc.expectedSize)));
+        }
+
+        private double toMB(long sizeInBytes) {
+            return (double) sizeInBytes / (1024 * 1024);
+        }
+
+        private int contentLength( URL url ) {
+            HttpURLConnection connection;
+            int contentLength = -1;
+
+            try {
+                HttpURLConnection.setFollowRedirects( false );
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("HEAD");
+                contentLength = connection.getContentLength();
+            } catch ( Exception e ) { }
+            return contentLength;
+        }
+    }
+
+    private static final class RBCWrapper implements ReadableByteChannel {
+        private long readSoFar;
+        private long expectedSize;
+        private ReadableByteChannel rbc;
+        private ProgressDownloader progressDownloader;
+
+        RBCWrapper( ReadableByteChannel rbc, long expectedSize, ProgressDownloader progressDownloader) {
+            this.progressDownloader = progressDownloader;
+            this.expectedSize = expectedSize;
+            this.rbc = rbc;
+        }
+
+        public boolean isOpen() { return rbc.isOpen(); }
+        public void close() throws IOException { rbc.close(); }
+
+        public int read(ByteBuffer bb) throws IOException {
+            int n;
+            double progress;
+
+            if ((n = rbc.read(bb)) > 0) {
+                readSoFar += n;
+                // progress = expectedSize > 0 ? (double) readSoFar / (double) expectedSize * 100.0 : -1.0;
+                progressDownloader.rbcProgressCallback(this);
+            }
+            return n;
         }
     }
 }
