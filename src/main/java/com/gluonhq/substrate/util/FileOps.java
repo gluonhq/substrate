@@ -582,7 +582,7 @@ public class FileOps {
 
         public int read(ByteBuffer bb) throws IOException {
             int n;
-            double progress;
+            // double progress;
 
             if ((n = rbc.read(bb)) > 0) {
                 readSoFar += n;
