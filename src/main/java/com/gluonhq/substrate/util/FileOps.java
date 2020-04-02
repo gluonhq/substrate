@@ -544,6 +544,7 @@ public class FileOps {
 
         public void rbcProgressCallback(RBCWrapper rbc) {
             System.out.print("\r" + String.format("Download Progress: %.2f / %.2fM", toMB(rbc.readSoFar), toMB(rbc.expectedSize)));
+            System.out.flush();
         }
 
         private double toMB(long sizeInBytes) {
