@@ -27,7 +27,6 @@
  */
 package com.gluonhq.substrate.util;
 
-
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 
@@ -41,9 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.Callable;
 
 public final class FileDeps {
 
@@ -401,12 +397,15 @@ public final class FileDeps {
             Files.write(license, ANDROID_KEY.getBytes());
         }
 
-        ProcessRunner sdkmanager = new ProcessRunner(Paths.get(configuration.getGraalPath().toString(), "bin", "java").toString(), "-Dcom.android.sdklib.toolsdir=" + tools, "-classpath",
-                libs + "/*:" + additionalLibs + "/*", "com.android.sdklib.tool.sdkmanager.SdkManagerCli");
-        sdkmanager.addArgs(args);
+        String[] sdkmanagerArgs = new String[] {
+                Paths.get(configuration.getGraalPath().toString(), "bin", "java").toString(),
+                "-Dcom.android.sdklib.toolsdir=" + tools,
+                "-classpath", libs + "/*:" + additionalLibs + "/*",
+                "com.android.sdklib.tool.sdkmanager.SdkManagerCli"
+        };
 
-        Logger.logDebug("Running sdkmanager with: " + sdkmanager.getCmd());
-        int result = ProcessWithFeedback.execute(sdkmanager, "sdkmanager");
+        Logger.logDebug("Running sdkmanager with: " + String.join(" ", sdkmanagerArgs));
+        int result = ProcessRunner.executeWithFeedback("sdkmanager", sdkmanagerArgs);
         if (result != 0) {
             throw new IOException("Could not run the Android sdk manager");
         }
@@ -421,42 +420,5 @@ public final class FileDeps {
         Logger.logInfo("Downloading Android NDK and toolchain...");
         androidSdkManager(ANDROID_SDK_PACKAGES);
         Logger.logInfo("Android NDK and toolchain downloaded successfully");
-    }
-
-    /**
-     * Prints "." every second the background process is running.
-     * The feedback is helpful for end user. A lack of feedback can lead to an impression that the process is stuck.
-     */
-    private static class ProcessWithFeedback implements Callable<Integer> {
-
-        private final ProcessRunner processRunner;
-        private final String processName;
-        private final Timer timer;
-        
-        static Integer execute(ProcessRunner processRunner, String processName) throws IOException, InterruptedException {
-            return new ProcessWithFeedback(processRunner, processName).call();
-        }
-
-        private ProcessWithFeedback(ProcessRunner processRunner, String processName) {
-            this.processRunner = processRunner;
-            this.processName = processName;
-            timer = new Timer(true);
-        }
-
-        @Override
-        public Integer call() throws IOException, InterruptedException {
-            timer.schedule(new PrintTask(), 0, 1000);
-            final int result = processRunner.runProcess(processName);
-            timer.cancel();
-            return result;
-        }
-
-        private static class PrintTask extends TimerTask {
-            @Override
-            public void run() {
-                System.out.print(".");
-                System.out.flush();
-            }
-        }
     }
 } 
