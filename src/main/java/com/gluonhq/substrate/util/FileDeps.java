@@ -55,8 +55,11 @@ public final class FileDeps {
 
     private static final List<String> JAVAFX_FILES = Arrays.asList(
             "javafx.base.jar", "javafx.controls.jar", "javafx.graphics.jar",
-            "javafx.fxml.jar", "javafx.media.jar", "javafx.web.jar",
-            "libglass.a"
+            "javafx.fxml.jar", "javafx.media.jar", "javafx.web.jar"
+    );
+
+    private static final List<String> JAVAFX_STATIC_FILES = Arrays.asList(
+            "libglass.a", "libglass_monocle.a"
     );
 
     private static final String ANDROID_SDK_URL = "https://dl.google.com/android/repository/sdk-tools-${host}-4333796.zip";
@@ -231,10 +234,9 @@ public final class FileDeps {
                 downloadJavaFXStatic = true;
             } else {
                 String path = javafxStatic.toString();
-                if (JAVAFX_FILES.stream()
-                        .map(s -> new File(path, s))
-                        .anyMatch(f -> !f.exists())) {
-                    Logger.logDebug("jar file not found");
+                if (JAVAFX_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists()) ||
+                        JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).noneMatch(File::exists)) {
+                    Logger.logDebug("JavaFX file not found");
                     downloadJavaFXStatic = true;
                 } else if (configuration.isEnableCheckHash()) {
                     Logger.logDebug("Checking javafx static sdk hashes");
@@ -246,7 +248,7 @@ public final class FileDeps {
                     } else if (JAVAFX_FILES.stream()
                             .map(s -> new File(path, s))
                             .anyMatch(f -> !hashes.get(f.getName()).equals(FileOps.calculateCheckSum(f)))) {
-                        Logger.logDebug("jar file has invalid hashcode");
+                        Logger.logDebug("JavaFX jar file has invalid hashcode");
                         downloadJavaFXStatic = true;
                     }
                 }
