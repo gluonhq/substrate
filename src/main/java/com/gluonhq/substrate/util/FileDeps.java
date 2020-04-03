@@ -417,7 +417,7 @@ public final class FileDeps {
      * @throws InterruptedException in case anything goes wrong.
      */
     private void fetchFromSdkManager() throws IOException, InterruptedException {
-        Logger.logInfo("Downloading Android NDK and toolchain...");
+        Logger.logInfo("Downloading Android NDK and toolchain. It may take several minutes depending on your bandwidth.");
         androidSdkManager(ANDROID_SDK_PACKAGES);
         Logger.logInfo("Android NDK and toolchain downloaded successfully");
     }
