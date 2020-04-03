@@ -12,7 +12,7 @@ def getGraalVMPath() {
 }
 
 def setupJavaFXDependencies(String platform, String target) {
-    def version = "15-ea+gvm11"
+    def version = "15-ea+gvm16"
     def name
     if ("linux" == platform) {
         name = "linux-x86_64"
