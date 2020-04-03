@@ -234,8 +234,8 @@ public final class FileDeps {
                 downloadJavaFXStatic = true;
             } else {
                 String path = javafxStatic.toString();
-                if (JAVAFX_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists()) &&
-                        JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).anyMatch(File::exists)) {
+                if (JAVAFX_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists()) ||
+                        JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).noneMatch(File::exists)) {
                     Logger.logDebug("JavaFX file not found");
                     downloadJavaFXStatic = true;
                 } else if (configuration.isEnableCheckHash()) {
