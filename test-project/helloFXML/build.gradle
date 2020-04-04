@@ -24,24 +24,19 @@ javafx {
 
 mainClassName = "com.gluonhq.substrate.test.Main"
 
-def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
-
 task runScript(type: Exec) {
     dependsOn 'build'
 
-    if (java_home == null) {
-        throw new RuntimeException("java_home is not defined.")
-    }
-
-    def graalvmPath = getGraalVMPath()
-    def javafxPath = setupJavaFXDependencies(platform, target)
+    def javaHome = validateJavaHome()
+    def graalvmHome = validateGraalvmHome()
+    def javafxStaticLibs = validateJavafxStaticLibs()
 
     def expected = System.getProperty("expected")
 
-    def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
-                    "-Dimagecp=${javafxPath}/javafx.base.jar:${javafxPath}/javafx.graphics.jar:${javafxPath}/javafx.controls.jar:${javafxPath}/javafx.fxml.jar:" +
+    def argsList = ["${javaHome}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
+                    "-Dimagecp=${javafxStaticLibs}/javafx.base.jar:${javafxStaticLibs}/javafx.graphics.jar:${javafxStaticLibs}/javafx.controls.jar:${javafxStaticLibs}/javafx.fxml.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
-                    "-Dgraalvm=$graalvmPath",
+                    "-Dgraalvm=${graalvmHome}",
                     "-Dbundleslist=com.gluonhq.substrate.test.bundle",
                     "-Dreflectionlist=javafx.fxml.FXMLLoader,com.gluonhq.substrate.test.MainController,javafx.scene.control.Button,javafx.scene.control.Label",
             ]
