@@ -52,7 +52,7 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     }
     jUtilClass = registerClass(androidEnv, "com/gluonhq/helloandroid/Util");
     jLifecycleServiceClass= registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikLifecycleService");
-    jBleServiceClass= registerClass(androidEnv, "com/gluonhq/helloandroid/BleService");
+    jBleServiceClass= registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBleService");
     jKeyboardServiceClass=registerClass(androidEnv, "com/gluonhq/helloandroid/KeyboardService");
     jPositionServiceClass=registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
     handlesInitialized = 1;
