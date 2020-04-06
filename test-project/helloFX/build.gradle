@@ -29,13 +29,14 @@ task runScript(type: Exec) {
 
     def javaHome = validateJavaHome()
     def graalvmHome = validateGraalvmHome()
-    def javafxStaticLibs = validateJavafxStaticLibs()
+    def javafxStaticSdk = validateJavafxStaticSdk()
 
     def expected = System.getProperty("expected")
 
     def argsList = ["${javaHome}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
-                    "-Dimagecp=${javafxStaticLibs}/javafx.base.jar:${javafxStaticLibs}/javafx.graphics.jar:${javafxStaticLibs}/javafx.controls.jar:" +
+                    "-Dimagecp=${javafxStaticSdk}/lib/javafx.base.jar:${javafxStaticSdk}/lib/javafx.graphics.jar:${javafxStaticSdk}/lib/javafx.controls.jar:" +
                             "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
+                    "-Djavafxsdk=${javafxStaticSdk}",
                     "-Dgraalvm=${graalvmHome}"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]

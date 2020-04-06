@@ -78,7 +78,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1-latest
-          export JAVAFX_STATIC_LIBS=$HOME/javafx-static-libs-linux/sdk/lib
+          export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-linux/sdk
           export DISPLAY=:90
           mkdir /home/runner/.vnc
           echo 123456 | vncpasswd -f > /home/runner/.vnc/passwd
@@ -91,8 +91,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1-latest
-          export JAVAFX_STATIC_LIBS=$HOME/javafx-static-libs-darwin/sdk/lib
-          export JAVAFX_STATIC_LIBS_IOS=$HOME/javafx-static-libs-ios/sdk/lib
+          export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-darwin/sdk
+          export JAVAFX_STATIC_SDK_IOS=$HOME/javafx-static-libs-ios/sdk
           ./gradlew -i test
 
       - name: Build project

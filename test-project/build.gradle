@@ -14,12 +14,12 @@ def validateGraalvmHome() {
     return graalvmHome
 }
 
-def validateJavafxStaticLibs() {
-    def javafxStaticLibs = hasProperty('javafx.static.libs') ? getProperty('javafx.static.libs') : System.getenv('JAVAFX_STATIC_LIBS')
-    if (javafxStaticLibs == null || !file(javafxStaticLibs).exists()) {
-        throw new GradleException("JAVAFX_STATIC_LIBS is not defined or is pointing to a non-existing directory: ${javafxStaticLibs}")
+def validateJavafxStaticSdk() {
+    def javafxStaticSdk = hasProperty('javafx.static.sdk') ? getProperty('javafx.static.sdk') : System.getenv('JAVAFX_STATIC_SDK')
+    if (javafxStaticSdk == null || !file(javafxStaticSdk).exists()) {
+        throw new GradleException("JAVAFX_STATIC_SDK is not defined or is pointing to a non-existing directory: ${javafxStaticSdk}")
     }
-    return javafxStaticLibs
+    return javafxStaticSdk
 }
 
 subprojects {

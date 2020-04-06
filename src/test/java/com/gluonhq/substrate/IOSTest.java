@@ -105,7 +105,7 @@ class IOSTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloWorld:clean", ":helloWorld:build",
-                        "-Djavafx.static.libs=" + System.getenv("JAVAFX_STATIC_LIBS_IOS"),
+                        "-Djavafx.static.sdk=" + System.getenv("JAVAFX_STATIC_SDK_IOS"),
                         "-Dsubstrate.target=ios", "-Dskipsigning=" + skipSigning,
                         ":helloWorld:run", ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
@@ -122,7 +122,7 @@ class IOSTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFX:clean", ":helloFX:build",
-                        "-Djavafx.static.libs=" + System.getenv("JAVAFX_STATIC_LIBS_IOS"),
+                        "-Djavafx.static.sdk=" + System.getenv("JAVAFX_STATIC_SDK_IOS"),
                         "-Dsubstrate.target=ios", ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
