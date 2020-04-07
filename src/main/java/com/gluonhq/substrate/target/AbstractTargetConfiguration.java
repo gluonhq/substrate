@@ -703,7 +703,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return cp;
     }
 
-    // by default, we allow the HTTPS protocol, but subclasses can decide against it.
+    /**
+     * Returns whether or not this target allows for the HTTPS protocol
+     * By default, this method returns true, but subclasses can decide against it.
+     */
     boolean allowHttps() {
         return true;
     }
