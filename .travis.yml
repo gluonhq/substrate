@@ -39,7 +39,11 @@ matrix:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
         - wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-linux-20.1-latest.zip
         - unzip graalvm-svm-linux-20.1-latest.zip && cd $TRAVIS_BUILD_DIR
+        - mkdir -p $HOME/javafx-static-libs-linux && cd $HOME/javafx-static-libs-linux
+        - wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-linux-x86_64-static.zip
+        - unzip openjfx-15-latest-linux-x86_64-static.zip && cd $TRAVIS_BUILD_DIR
         - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.1-latest
+        - export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-linux/sdk
         - export JAVA_HOME=$GRAALVM_HOME
     - os: osx
       osx_image: xcode10.2
@@ -47,7 +51,15 @@ matrix:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
         - wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.1-latest.zip
         - unzip graalvm-svm-darwin-20.1-latest.zip && cd $TRAVIS_BUILD_DIR
+        - mkdir -p $HOME/javafx-static-libs-darwin && cd $HOME/javafx-static-libs-darwin
+        - wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-darwin-x86_64-static.zip
+        - unzip openjfx-15-latest-darwin-x86_64-static.zip && cd $TRAVIS_BUILD_DIR
+        - mkdir -p $HOME/javafx-static-libs-ios && cd $HOME/javafx-static-libs-ios
+        - wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-ios-arm64-static.zip
+        - unzip openjfx-15-latest-ios-arm64-static.zip && cd $TRAVIS_BUILD_DIR
         - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1-latest
+        - export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-darwin/sdk
+        - export JAVAFX_STATIC_SDK_IOS=$HOME/javafx-static-libs-ios/sdk
         - export JAVA_HOME=$GRAALVM_HOME
 
 before_script:

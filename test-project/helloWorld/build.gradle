@@ -1,4 +1,3 @@
-
 repositories {
     mavenLocal()
     mavenCentral()
@@ -16,21 +15,16 @@ dependencies {
 
 mainClassName = "com.gluonhq.substrate.test.Main"
 
-def java_home = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
-
 task runScript(type: Exec) {
-    if (java_home == null) {
-        throw new RuntimeException("java_home is not defined.")
-    }
-
-    def graalvmPath = getGraalVMPath()
+    def javaHome = validateJavaHome()
+    def graalvmHome = validateGraalvmHome()
 
     def skipsigning = System.getProperty("skipsigning")
     def expected = System.getProperty("expected")
 
-    def argsList = ["${java_home}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
+    def argsList = ["${javaHome}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                    "-Dimagecp=${project.sourceSets.main.runtimeClasspath.asPath}",
-                   "-Dgraalvm=$graalvmPath"]
+                   "-Dgraalvm=${graalvmHome}"]
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
     }
