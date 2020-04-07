@@ -58,7 +58,7 @@ matrix:
         - wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-ios-arm64-static.zip
         - unzip openjfx-15-latest-ios-arm64-static.zip && cd $TRAVIS_BUILD_DIR
         - export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.1-latest
-        - export JAVAFX_STATICSDK=$HOME/javafx-static-libs-darwin/sdk
+        - export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-darwin/sdk
         - export JAVAFX_STATIC_SDK_IOS=$HOME/javafx-static-libs-ios/sdk
         - export JAVA_HOME=$GRAALVM_HOME
 
