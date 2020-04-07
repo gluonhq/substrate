@@ -215,7 +215,7 @@ public class SubstrateDispatcher {
     private static void executeLinkStep(SubstrateDispatcher dispatcher) {
         try {
             if (!dispatcher.nativeLink()) {
-                Logger.logSevere("Linking failed");
+                Logger.logSevere("Linking failed.");
                 System.exit(1);
             }
         } catch (Throwable t) {
@@ -225,7 +225,10 @@ public class SubstrateDispatcher {
 
     private static void executePackageStep(SubstrateDispatcher dispatcher) {
         try {
-            dispatcher.nativePackage();
+            if (!dispatcher.nativePackage()) {
+                Logger.logSevere("Packaging failed.");
+                System.exit(1);
+            }
         } catch (Throwable t) {
             Logger.logFatal(t, "Packaging failed with an exception.");
         }
@@ -233,7 +236,10 @@ public class SubstrateDispatcher {
 
     private static void executeInstallStep(SubstrateDispatcher dispatcher) {
         try {
-            dispatcher.nativeInstall();
+            if (!dispatcher.nativeInstall()) {
+                Logger.logSevere("Installing failed.");
+                System.exit(1);
+            }
         } catch (Throwable t) {
             Logger.logFatal(t, "Installing failed with an exception.");
         }
@@ -318,7 +324,7 @@ public class SubstrateDispatcher {
     /**
      * This method will start native compilation for the specified configuration.
      * The result of compilation is a at least one native file (2 files in case LLVM backend is used).
-     * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails
+     * This method returns <code>true</code> on successful compilation and <code>false</code> when compilations fails.
      * @return true if compilation succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
@@ -345,7 +351,7 @@ public class SubstrateDispatcher {
      * This method will start native linking for the specified configuration, after {@link #nativeCompile()}
      * was called and ended successfully.
      * The result of linking is a at least an native image application file.
-     * This method returns <code>true</code> on successful linking and <code>false</code> when linking fails
+     * This method returns <code>true</code> on successful linking and <code>false</code> when linking fails.
      * @return true if linking succeeded, false if it fails
      * @throws Exception
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
@@ -362,23 +368,35 @@ public class SubstrateDispatcher {
     /**
      * This method creates a package of the native image application, that was created after {@link #nativeLink()}
      * was called and ended successfully.
+     * This method returns <code>true</code> on successful packaging and <code>false</code> when packaging fails.
+     * @return true if packaging succeeded, false if it fails
      * @throws IOException
      * @throws InterruptedException
      */
-    public void nativePackage() throws IOException, InterruptedException {
+    public boolean nativePackage() throws IOException, InterruptedException {
         Logger.logInfo(logTitle("PACKAGE TASK"));
-        targetConfiguration.packageApp();
+        boolean packagingSucceeded = targetConfiguration.packageApp();
+        if (!packagingSucceeded) {
+            Logger.logSevere("Packaging failed.");
+        }
+        return packagingSucceeded;
     }
 
     /**
      * This method installs the generated package that was created after {@link #nativePackage()}
      * was called and ended successfully.
+     * This method returns <code>true</code> on successful installation and <code>false</code> when installation fails.
+     * @return true if installing succeeded, false if it fails
      * @throws IOException
      * @throws InterruptedException
      */
-    public void nativeInstall() throws IOException, InterruptedException {
+    public boolean nativeInstall() throws IOException, InterruptedException {
         Logger.logInfo(logTitle("INSTALL TASK"));
-        targetConfiguration.install();
+        boolean installingSucceeded = targetConfiguration.install();
+        if (!installingSucceeded) {
+            Logger.logSevere("Installing failed.");
+        }
+        return installingSucceeded;
     }
 
     /**
