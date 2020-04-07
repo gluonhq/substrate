@@ -234,11 +234,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    boolean allowHttps() {
-        return true;
-    }
-
-    @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
