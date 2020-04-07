@@ -235,7 +235,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     boolean allowHttps() {
-        return false;
+        return true;
     }
 
     @Override
