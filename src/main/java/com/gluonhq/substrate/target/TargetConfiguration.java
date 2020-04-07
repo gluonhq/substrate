@@ -34,7 +34,8 @@ public interface TargetConfiguration {
 
     /**
      * Compiles the classes to objectcode for this TargetConfiguration.
-     * @return true if compilation succeeded, false if it failed
+     *
+     * @return true if compilation succeeded, false if it failed.
      * @throws Exception
      */
     boolean compile() throws Exception;
@@ -47,7 +48,8 @@ public interface TargetConfiguration {
      *
      * This operation has to be called only after link has successfully produced
      * a valid application
-     * @return true if packaging succeeded, false if failed or not supported
+     *
+     * @return true if packaging succeeded or is a no-op, false if it failed.
      * @throws IOException
      * @throws InterruptedException
      */
@@ -60,7 +62,7 @@ public interface TargetConfiguration {
      * This operation has to be called only after {@link #packageApp()} has successfully produced
      * a valid package.
      *
-     * @return true if installing succeeded, false if failed or not supported
+     * @return true if installing succeeded or is a no-op, false if it failed.
      * @throws IOException
      * @throws InterruptedException
      */
