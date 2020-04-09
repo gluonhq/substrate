@@ -526,7 +526,9 @@ public class FileOps {
      * Prints the progress of a file download
      */
     private static final class ProgressDownloader {
-        
+
+        private int printPercentage = 0;
+
         public static void downloadFile(URL fileUrl, Path filePath) {
             new ProgressDownloader(fileUrl, filePath);
             System.out.println();
@@ -541,10 +543,13 @@ public class FileOps {
                 Logger.logSevere("Downloading failed: " + e.getMessage());
             }
         }
-
-        public void rbcProgressCallback(RBCWrapper rbc) {
-            System.out.print("\r" + String.format("Download progress: %.2f / %.2fM", toMB(rbc.readSoFar), toMB(rbc.expectedSize)));
-            System.out.flush();
+        
+        public void rbcProgressCallback(RBCWrapper rbc, double progress) {
+            if (((int)progress) >= printPercentage) {
+                printPercentage += 10;
+                System.out.print("\r" + String.format("Download progress: %.2f / %.2fM", toMB(rbc.readSoFar), toMB(rbc.expectedSize)));
+                System.out.flush();
+            }
         }
 
         private double toMB(long sizeInBytes) {
@@ -582,12 +587,12 @@ public class FileOps {
 
         public int read(ByteBuffer bb) throws IOException {
             int n;
-            // double progress;
+            double progress;
 
             if ((n = rbc.read(bb)) > 0) {
                 readSoFar += n;
-                // progress = expectedSize > 0 ? (double) readSoFar / (double) expectedSize * 100.0 : -1.0;
-                progressDownloader.rbcProgressCallback(this);
+                progress = expectedSize > 0 ? (double) readSoFar / (double) expectedSize * 100.0 : -1.0;
+                progressDownloader.rbcProgressCallback(this, progress);
             }
             return n;
         }
