@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public final class FileDeps {
 
@@ -399,12 +400,15 @@ public final class FileDeps {
             Files.write(license, ANDROID_KEY.getBytes());
         }
 
-        String[] sdkmanagerArgs = new String[] {
+        String[] cliArgs = new String[] {
                 Paths.get(configuration.getGraalPath().toString(), "bin", "java").toString(),
                 "-Dcom.android.sdklib.toolsdir=" + tools,
                 "-classpath", libs + "/*:" + additionalLibs + "/*",
                 "com.android.sdklib.tool.sdkmanager.SdkManagerCli"
         };
+        String[] sdkmanagerArgs = Stream.of(cliArgs, args)
+                .flatMap(Stream::of)
+                .toArray(String[]::new);
 
         Logger.logDebug("Running sdkmanager with: " + String.join(" ", sdkmanagerArgs));
         int result = ProcessRunner.executeWithFeedback("sdkmanager", sdkmanagerArgs);
