@@ -28,9 +28,10 @@
 #include "grandroid.h"
 
 jclass jUtilClass;
-jclass jLifecycleServiceClass;
 jclass jBleServiceClass;
+jclass jDisplayServiceClass;
 jclass jKeyboardServiceClass;
+jclass jLifecycleServiceClass;
 jclass jPositionServiceClass;
 int handlesInitialized = 0;
 
@@ -51,10 +52,11 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
         return;
     }
     jUtilClass = registerClass(androidEnv, "com/gluonhq/helloandroid/Util");
-    jLifecycleServiceClass= registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikLifecycleService");
-    jBleServiceClass= registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBleService");
-    jKeyboardServiceClass=registerClass(androidEnv, "com/gluonhq/helloandroid/KeyboardService");
-    jPositionServiceClass=registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
+    jBleServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBleService");
+    jDisplayServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikDisplayService");
+    jKeyboardServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/KeyboardService");
+    jLifecycleServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikLifecycleService");
+    jPositionServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
     handlesInitialized = 1;
 }
 
@@ -62,16 +64,20 @@ jclass substrateGetUtilClass() {
     return jUtilClass;
 }
 
-jclass substrateGetLifecycleServiceClass() {
-    return jLifecycleServiceClass;
-}
-
 jclass substrateGetBleServiceClass() {
     return jBleServiceClass;
 }
 
+jclass substrateGetDisplayServiceClass() {
+    return jDisplayServiceClass;
+}
+
 jclass substrateGetKeyboardServiceClass() {
     return jKeyboardServiceClass;
+}
+
+jclass substrateGetLifecycleServiceClass() {
+    return jLifecycleServiceClass;
 }
 
 jclass substrateGetPositionServiceClass() {
