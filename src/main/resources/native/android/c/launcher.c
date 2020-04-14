@@ -51,11 +51,14 @@ const char *origargs[] = {
     "-Dmonocle.platform=Android", // used in com.sun.glass.ui.monocle.NativePlatformFactory
     "-Dembedded=monocle",
     "-Dglass.platform=Monocle",
+    "-Dcom.sun.javafx.gestures.zoom=true",
+    "-Dcom.sun.javafx.gestures.rotate=true",
+    "-Dcom.sun.javafx.gestures.scroll=true",
     "-Djavafx.verbose=true",
     "-Dmonocle.input.traceEvents.verbose=true",
     "-Dprism.verbose=true"};
 
-int argsize = 8;
+int argsize = 11;
 
 char **createArgs()
 {
