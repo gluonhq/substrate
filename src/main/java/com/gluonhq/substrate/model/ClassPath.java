@@ -112,11 +112,12 @@ public class ClassPath {
             if (classes != null) {
                 Path classesPath = Files.createTempDirectory("classes");
                 FileOps.copyDirectory(Path.of(classes), classesPath);
-                String resources = filter(s -> s.endsWith("resources/main")).stream()
+                Path resourcesPath = filter(s -> s.endsWith("resources/main")).stream()
                         .findFirst()
+                        .map(Path::of)
                         .orElse(null);
-                if (resources != null) {
-                    FileOps.copyDirectory(Path.of(resources), classesPath);
+                if (resourcesPath != null && Files.exists(resourcesPath)) {
+                    FileOps.copyDirectory(resourcesPath, classesPath);
                 }
                 Path jar = classesPath.resolve("classes.jar");
                 ProcessRunner runner = new ProcessRunner("jar", "cf", jar.toString(), "-C", classesPath.toString(), ".");
