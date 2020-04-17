@@ -25,6 +25,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <stdlib.h>
+#include <string.h>
 #include "grandroid.h"
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurface(JNIEnv *env, jobject activity, jobject surface)
@@ -80,12 +82,11 @@ JNI_OnLoad_javafx_font(JavaVM *vm, void *reserved)
 
 void showSoftwareKeyboard()
 {
-    JNIEnv *menv;
-    (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **)&menv, NULL);
-    LOGE(stderr, "now I have to show keyboard, invoke method %p on env %p (old = %p)\n", activity_showIME, menv, androidEnv);
-    (*menv)->CallStaticVoidMethod(menv, activityClass, activity_showIME);
-    (*androidVM)->DetachCurrentThread(androidVM);
+    ATTACH_DALVIK();
+    LOGE(stderr, "now I have to show keyboard, invoke method %p on env %p\n", activity_showIME, dalvikEnv);
+    (*dalvikEnv)->CallStaticVoidMethod(dalvikEnv, activityClass, activity_showIME);
     LOGE(stderr, "I did show keyboard\n");
+    DETACH_DALVIK();
 }
 
 JNIEXPORT void JNICALL
@@ -102,12 +103,11 @@ Java_javafx_scene_control_skin_TextFieldSkinAndroid_showSoftwareKeyboard(JNIEnv 
 
 void hideSoftwareKeyboard()
 {
-    JNIEnv *menv;
-    (*androidVM)->AttachCurrentThread(androidVM, (JNIEnv **)&menv, NULL);
-    LOGE(stderr, "now I have to hide keyboard, invoke method %p on env %p (old = %p)\n", activity_hideIME, menv, androidEnv);
-    (*menv)->CallStaticVoidMethod(menv, activityClass, activity_hideIME);
-    (*androidVM)->DetachCurrentThread(androidVM);
+    ATTACH_DALVIK();
+    LOGE(stderr, "now I have to hide keyboard, invoke method %p on env %p\n", activity_hideIME, dalvikEnv);
+    (*dalvikEnv)->CallStaticVoidMethod(dalvikEnv, activityClass, activity_hideIME);
     LOGE(stderr, "I did hide keyboard\n");
+    DETACH_DALVIK();
 }
 
 JNIEXPORT void JNICALL
