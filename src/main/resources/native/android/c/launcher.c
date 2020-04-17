@@ -62,29 +62,27 @@ const char *origargs[] = {
     "-Dprism.verbose=true",
     "-Xmx4g"};
 
-int argsize = 11;
+int argsize;
 
 char **createArgs()
 {
     LOGE(stderr, "createArgs for run_main");
-    int origSize = sizeof(origargs) / sizeof(char *);
-    char **result = (char **)malloc((origSize + 2) * sizeof(char *));
-    for (int i = 0; i < origSize; i++)
+    argsize = sizeof(origargs) / sizeof(char *);
+    char **result = (char **)malloc((argsize + 2) * sizeof(char *));
+    for (int i = 0; i < argsize; i++)
     {
         result[i] = (char *)origargs[i];
     }
     int tmpArgSize = 18 + strnlen(appDataDir, 512);
-    char *tmpArgs = calloc(sizeof(char), tmpArgSize);
+    char *tmpArgs = (char *)calloc(sizeof(char), tmpArgSize);
     strcpy(tmpArgs, "-Djava.io.tmpdir=");
     strcat(tmpArgs, appDataDir);
-    result[origSize] = tmpArgs;
-    argsize++;
+    result[argsize++] = tmpArgs;
     int userArgSize = 13 + strnlen(appDataDir, 512);
-    char *userArgs = calloc(sizeof(char), userArgSize);
+    char *userArgs = (char *)calloc(sizeof(char), userArgSize);
     strcpy(userArgs, "-Duser.home=");
     strcat(userArgs, appDataDir);
-    result[origSize + 1] = userArgs;
-    argsize++;
+    result[argsize++] = userArgs;
     LOGE(stderr, "CREATE ARGS done");
     return result;
 }
