@@ -59,7 +59,8 @@ const char *origargs[] = {
     "-Dcom.sun.javafx.gestures.scroll=true",
     "-Djavafx.verbose=true",
     "-Dmonocle.input.traceEvents.verbose=true",
-    "-Dprism.verbose=true"};
+    "-Dprism.verbose=true",
+    "-Xmx4g"};
 
 int argsize = 11;
 
