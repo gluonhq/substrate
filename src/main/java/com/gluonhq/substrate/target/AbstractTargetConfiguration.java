@@ -73,6 +73,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "license", "frag", "vert");
     private static final List<String> BUNDLES_LIST = new ArrayList<>(Arrays.asList(
             "com/sun/javafx/scene/control/skin/resources/controls",
+            "com/sun/javafx/scene/control/skin/resources/controls-nt",
             "com.sun.javafx.tk.quantum.QuantumMessagesBundle"
     ));
     private static final List<String> ENABLED_FEATURES = Arrays.asList(
