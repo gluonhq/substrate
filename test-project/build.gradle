@@ -1,53 +1,28 @@
-plugins {
-    id "com.google.osdetector" version "1.6.2" apply false
+def validateJavaHome() {
+    def javaHome = hasProperty('org.gradle.java.home') ? getProperty('org.gradle.java.home') : System.getenv('JAVA_HOME')
+    if (javaHome == null || !file(javaHome).exists()) {
+        throw new GradleException("JAVA_HOME is not defined or is pointing to a non-existing directory: ${javaHome}")
+    }
+    return javaHome
 }
 
-def getGraalVMPath() {
-    def gvmHome = System.getenv("GRAALVM_HOME")
-    if (gvmHome != null && new File(gvmHome).exists()) {
-        return gvmHome
+def validateGraalvmHome() {
+    def graalvmHome = System.getenv('GRAALVM_HOME')
+    if (graalvmHome == null || !file(graalvmHome).exists()) {
+        throw new GradleException("GRAALVM_HOME is not defined or is pointing to a non-existing directory: ${graalvmHome}")
     }
-
-    throw new GradleException("GRAALVM_HOME is not set or is pointing to a non-existing directory: $gvmHome")
+    return graalvmHome
 }
 
-def setupJavaFXDependencies(String platform, String target) {
-    def version = "15-ea+gvm11"
-    def name
-    if ("linux" == platform) {
-        name = "linux-x86_64"
-    } else if ("mac" == platform) {
-        if ("ios" == "$target") {
-            name = "ios-arm64"
-        } else {
-            name = "darwin-x86_64"
-        }
-    } else if ("win" == platform) {
-        name = "windows-x86_64"
-    } else {
-        throw new GradleException("Platform $platform or Target $target not supported")
+def validateJavafxStaticSdk() {
+    def javafxStaticSdk = hasProperty('javafx.static.sdk') ? getProperty('javafx.static.sdk') : System.getenv('JAVAFX_STATIC_SDK')
+    if (javafxStaticSdk == null || !file(javafxStaticSdk).exists()) {
+        throw new GradleException("JAVAFX_STATIC_SDK is not defined or is pointing to a non-existing directory: ${javafxStaticSdk}")
     }
-    def javafxSdk = new File("${System.properties['user.home']}/.gluon/substrate/javafxStaticSdk")
-    def javafxFolder = new File("$javafxSdk/$version/$name")
-    def nameZip = "openjfx-$version-$name-static.zip"
-    def javafxZip = new File("$javafxSdk/$nameZip")
-    if (!javafxFolder.exists()) {
-        javafxSdk.mkdirs()
-        println "Downloading javafxZip..."
-        new URL("https://download2.gluonhq.com/substrate/javafxstaticsdk/$nameZip")
-                .withInputStream { i -> javafxZip.withOutputStream { it << i } }
-        javafxFolder.mkdirs()
-        copy {
-            from zipTree(javafxZip)
-            into javafxFolder
-        }
-        javafxZip.delete()
-    }
-    return "$javafxFolder" + "/sdk/lib"
+    return javafxStaticSdk
 }
 
 subprojects {
-    apply plugin: 'com.google.osdetector'
     apply plugin: 'application'
 
     ext.substrateVersion = "0.0.3"
@@ -59,10 +34,7 @@ subprojects {
             ext.substrateVersion = props['version']
         }
     }
-    ext.platform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
 
     sourceCompatibility = 11
     targetCompatibility = 11
 }
-
-

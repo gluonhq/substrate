@@ -29,7 +29,10 @@
 
 jclass jUtilClass;
 jclass jBleServiceClass;
+jclass jBrowserServiceClass;
+jclass jDisplayServiceClass;
 jclass jKeyboardServiceClass;
+jclass jLifecycleServiceClass;
 jclass jPositionServiceClass;
 int handlesInitialized = 0;
 
@@ -43,7 +46,6 @@ jclass registerClass(JNIEnv* androidEnv, const char* name) {
         return (jclass)(*androidEnv)->NewGlobalRef(androidEnv, jtmp);
     }
     return NULL;
-
 }
 
 void registerAttachMethodHandles(JNIEnv* androidEnv) {
@@ -51,9 +53,12 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
         return;
     }
     jUtilClass = registerClass(androidEnv, "com/gluonhq/helloandroid/Util");
-    jBleServiceClass= registerClass(androidEnv, "com/gluonhq/helloandroid/BleService");
-    jKeyboardServiceClass=registerClass(androidEnv, "com/gluonhq/helloandroid/KeyboardService");
-    jPositionServiceClass=registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
+    jBleServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBleService");
+    jBrowserServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBrowserService");
+    jDisplayServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikDisplayService");
+    jKeyboardServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/KeyboardService");
+    jLifecycleServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikLifecycleService");
+    jPositionServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
     handlesInitialized = 1;
 }
 
@@ -65,8 +70,20 @@ jclass substrateGetBleServiceClass() {
     return jBleServiceClass;
 }
 
+jclass substrateGetBrowserServiceClass() {
+    return jBrowserServiceClass;
+}
+
+jclass substrateGetDisplayServiceClass() {
+    return jDisplayServiceClass;
+}
+
 jclass substrateGetKeyboardServiceClass() {
     return jKeyboardServiceClass;
+}
+
+jclass substrateGetLifecycleServiceClass() {
+    return jLifecycleServiceClass;
 }
 
 jclass substrateGetPositionServiceClass() {
@@ -86,5 +103,5 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatch
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchActivityResult(JNIEnv *env, jobject activity, jint requestCode, jint resultCode, jobject intent)
 {
     LOGE(stderr, "Dispatching activity result from native Dalvik layer: %d %d", requestCode, resultCode);
-    attach_setActivityResult(env, requestCode, resultCode, intent);
+    attach_setActivityResult(requestCode, resultCode, intent);
 }

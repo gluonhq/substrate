@@ -27,19 +27,62 @@
  */
 
 #include <jni.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <android/log.h>
+#include <android/native_window_jni.h>
+
+#define  ENABLE_DEBUG_LOG 1
+#define  LOG_TAG "GraalGluon"
+
+#if ENABLE_DEBUG_LOG == 1
+#define  LOGD(ignore, ...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__) 
+#define  LOGE(ignore, ...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#else
+#define  LOGD(ignore, ...)
+#define  LOGE(ignore, ...)
+#endif
+
 
 extern jclass activityClass;
 extern jobject activity;
 
-extern JavaVM *androidVM;
-extern JNIEnv *androidEnv;
-
-// expose AndroidVM, Env, MainActivity and its class
+// expose AndroidVM, MainActivity and its class
 JavaVM* substrateGetAndroidVM();
-JNIEnv* substrateGetAndroidEnv();
 jclass substrateGetActivityClass();
 jclass substrateGetPermissionActivityClass();
 jobject substrateGetActivity();
 
 // Attach
 void registerAttachMethodHandles(JNIEnv* env);
+
+#ifdef SUBSTRATE
+void __attribute__((weak)) attach_setActivityResult(jint requestCode, jint resultCode, jobject intent) {}
+void __attribute__((weak)) attach_setLifecycleEvent(const char *event) {}
+#else
+void attach_setActivityResult(jint requestCode, jint resultCode, jobject intent);
+void attach_setLifecycleEvent(const char *event);
+#endif
+
+#define ATTACH_GRAAL() \
+    JNIEnv *graalEnv; \
+    JavaVM* graalVM = getGraalVM(); \
+    int attach_graal_det = ((*graalVM)->GetEnv(graalVM, (void **)&graalEnv, JNI_VERSION_1_6) == JNI_OK); \
+    (*graalVM)->AttachCurrentThreadAsDaemon(graalVM, (void **) &graalEnv, NULL); \
+    LOGD(stderr, "ATTACH_GRAAL, tid = %d, existed? %d, graalEnv at %p\n", gettid(), attach_graal_det, graalEnv);
+
+#define DETACH_GRAAL() \
+    LOGD(stderr, "DETACH_GRAAL, tid = %d, graalVM = %p, existed = %d, env at %p\n", gettid(), graalVM, attach_graal_det, graalEnv); \
+    if (attach_graal_det == 0) (*graalVM)->DetachCurrentThread(graalVM); 
+
+#define ATTACH_DALVIK() \
+    JNIEnv *dalvikEnv; \
+    JavaVM* dalvikVM = substrateGetAndroidVM(); \
+    int attach_dalvik_det = ((*dalvikVM)->GetEnv(dalvikVM, (void **)&dalvikEnv, JNI_VERSION_1_6) == JNI_OK); \
+    (*dalvikVM)->AttachCurrentThreadAsDaemon(dalvikVM, (void **) &dalvikEnv, NULL); \
+    LOGD(stderr, "ATTACH_DALVIK, tid = %d, existed? %d, dalvikEnv at %p\n", gettid(), attach_dalvik_det, dalvikEnv);
+
+#define DETACH_DALVIK() \
+    LOGD(stderr, "DETACH_DALVIK, tid = %d, existed = %d, env at %p\n", gettid(), attach_dalvik_det, dalvikEnv); \
+    if (attach_dalvik_det == 0) (*dalvikVM)->DetachCurrentThread(dalvikVM); 
+

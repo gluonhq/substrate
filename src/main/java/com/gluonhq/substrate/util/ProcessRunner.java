@@ -42,6 +42,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -285,6 +288,19 @@ public class ProcessRunner {
         return null;
     }
 
+    /**
+     * Executes a process while printing "." every second the process is running.
+     * The feedback is helpful for end user. A lack of feedback can lead to an impression that the process is stuck.
+     * @param name the name of the process
+     * @param args a varargs list of command line arguments
+     * @return Integer result of the process
+     *                      
+     */
+    public static Integer executeWithFeedback(String name, String... args) throws IOException, InterruptedException {
+        ProcessRunner process = new ProcessRunner(args);
+        return new ProcessWithFeedback(process, name).call();
+    }
+
     private Process setupProcess(String processName, File directory) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(args);
         Logger.logDebug("PB Command for " +  processName + ": " + String.join(" ", pb.command()));
@@ -351,5 +367,39 @@ public class ProcessRunner {
                 "Command Line\n============\n" + getCmd() + "\n\n" +
                 "Output\n======\n" + answer.toString() + "\n\n" +
                 "Result\n======\n" + result;
+    }
+
+    /**
+     * Prints "." every second the background process is running.
+     * The feedback is helpful for end user. A lack of feedback can lead to an impression that the process is stuck.
+     */
+    private static class ProcessWithFeedback implements Callable<Integer> {
+
+        private final ProcessRunner processRunner;
+        private final String processName;
+        private final Timer timer;
+
+        private ProcessWithFeedback(ProcessRunner processRunner, String processName) {
+            this.processRunner = processRunner;
+            this.processName = processName;
+            timer = new Timer(true);
+        }
+
+        @Override
+        public Integer call() throws IOException, InterruptedException {
+            timer.schedule(new PrintTask(), 0, 1000);
+            final int result = processRunner.runProcess(processName);
+            timer.cancel();
+            System.out.println();
+            return result;
+        }
+
+        private static class PrintTask extends TimerTask {
+            @Override
+            public void run() {
+                System.out.print(".");
+                System.out.flush();
+            }
+        }
     }
 }

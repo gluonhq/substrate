@@ -224,14 +224,24 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return result == 0;
     }
 
+    /**
+     * Creates a package of the application (including at least executable and
+     * other possible files) in a given format. By default, this method is no-op
+     * returning true.
+     */
     @Override
     public boolean packageApp() throws IOException, InterruptedException {
-        return false;
+        return true;
     }
 
+    /**
+     * Installs the packaged application on the local system or on a device
+     * that is attached to the local system. By default, this method is no-op
+     * returning true.
+     */
     @Override
     public boolean install() throws IOException, InterruptedException {
-        return false;
+        return true;
     }
 
     /**
@@ -294,6 +304,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         if (projectConfiguration.isVerbose()) {
             processRunner.addArg("-DGVM_VERBOSE");
         }
+        processRunner.addArg("-DSUBSTRATE");
         processRunner.addArgs(getTargetSpecificCCompileFlags());
 
         processRunner.addArg("-I" + workDir.toString());
@@ -702,7 +713,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return cp;
     }
 
-    // by default, we allow the HTTPS protocol, but subclasses can decide against it.
+    /**
+     * Returns whether or not this target allows for the HTTPS protocol
+     * By default, this method returns true, but subclasses can decide against it.
+     */
     boolean allowHttps() {
         return true;
     }

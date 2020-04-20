@@ -225,17 +225,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         logger.start();
 
         ProcessRunner run = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "shell", "monkey", "-p", projectConfiguration.getAppId(), "1");
+                "shell", "monkey", "-p", getAndroidPackageName(), "1");
         int processResult = run.runProcess("run");
         if (processResult != 0) throw new IOException("Application starting failed!");
 
         logger.join();
         return processResult == 0;
-    }
-
-    @Override
-    boolean allowHttps() {
-        return false;
     }
 
     @Override
@@ -594,7 +589,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Path genManifest = androidPath.resolve(Constants.MANIFEST_FILE);
             Logger.logDebug("Copy " + Constants.MANIFEST_FILE + " to " + genManifest.toString());
             FileOps.copyResource("/native/android/AndroidManifest.xml", genManifest);
-            FileOps.replaceInFile(genManifest, "package='com.gluonhq.helloandroid'", "package='" + projectConfiguration.getAppId() + "'");
+            FileOps.replaceInFile(genManifest, "package='com.gluonhq.helloandroid'", "package='" + getAndroidPackageName() + "'");
             FileOps.replaceInFile(genManifest, "A HelloGraal", projectConfiguration.getAppName());
 
             Path androidResources = androidPath.resolve("res");
@@ -610,6 +605,18 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
         // use manifest and assets from src/android
         return targetSourcePath;
+    }
+
+    /**
+     * Takes the appId from the project configuration and translates it to an
+     * android package name friendly version. It does this by removing all
+     * characters that don't match the following characters: a-z, A-Z, 0-9,
+     * dot or underscore.
+     * @return
+     */
+    private String getAndroidPackageName() {
+        String appId = projectConfiguration.getAppId();
+        return appId.replaceAll("[^a-zA-Z0-9\\._]", "");
     }
 
     private static class BuildToolNotFoundException extends IOException {
