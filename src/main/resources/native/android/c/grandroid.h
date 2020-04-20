@@ -25,28 +25,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- #include "grandroid_ext.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "grandroid_ext.h"
 
-#include <errno.h>
-#include <unistd.h>
-#include <pthread.h>
-
-#include <android/log.h>
 #include <android/native_window_jni.h>
-
-#define  ENABLE_DEBUG_LOG 1
-#define  LOG_TAG "GraalGluon"
-
-#if ENABLE_DEBUG_LOG == 1
-    #define  LOGD(ignore, ...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__) 
-    #define  LOGE(ignore, ...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#else
-    #define  LOGD(ignore, ...)
-    #define  LOGE(ignore, ...)
-#endif
 
 #undef com_sun_glass_events_TouchEvent_TOUCH_PRESSED
 #define com_sun_glass_events_TouchEvent_TOUCH_PRESSED 811L

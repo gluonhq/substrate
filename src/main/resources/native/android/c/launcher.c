@@ -25,6 +25,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include "grandroid.h"
 
 extern int *run_main(int argc, char *argv[]);
@@ -51,33 +54,36 @@ const char *origargs[] = {
     "-Dmonocle.platform=Android", // used in com.sun.glass.ui.monocle.NativePlatformFactory
     "-Dembedded=monocle",
     "-Dglass.platform=Monocle",
+    "-Dcom.sun.javafx.touch=true",
+    "-Dcom.sun.javafx.gestures.zoom=true",
+    "-Dcom.sun.javafx.gestures.rotate=true",
+    "-Dcom.sun.javafx.gestures.scroll=true",
     "-Djavafx.verbose=true",
     "-Dmonocle.input.traceEvents.verbose=true",
-    "-Dprism.verbose=true"};
+    "-Dprism.verbose=true",
+    "-Xmx4g"};
 
-int argsize = 8;
+int argsize;
 
 char **createArgs()
 {
     LOGE(stderr, "createArgs for run_main");
-    int origSize = sizeof(origargs) / sizeof(char *);
-    char **result = (char **)malloc((origSize + 2) * sizeof(char *));
-    for (int i = 0; i < origSize; i++)
+    argsize = sizeof(origargs) / sizeof(char *);
+    char **result = (char **)malloc((argsize + 2) * sizeof(char *));
+    for (int i = 0; i < argsize; i++)
     {
         result[i] = (char *)origargs[i];
     }
     int tmpArgSize = 18 + strnlen(appDataDir, 512);
-    char *tmpArgs = calloc(sizeof(char), tmpArgSize);
+    char *tmpArgs = (char *)calloc(sizeof(char), tmpArgSize);
     strcpy(tmpArgs, "-Djava.io.tmpdir=");
     strcat(tmpArgs, appDataDir);
-    result[origSize] = tmpArgs;
-    argsize++;
+    result[argsize++] = tmpArgs;
     int userArgSize = 13 + strnlen(appDataDir, 512);
-    char *userArgs = calloc(sizeof(char), userArgSize);
+    char *userArgs = (char *)calloc(sizeof(char), userArgSize);
     strcpy(userArgs, "-Duser.home=");
     strcat(userArgs, appDataDir);
-    result[origSize + 1] = userArgs;
-    argsize++;
+    result[argsize++] = userArgs;
     LOGE(stderr, "CREATE ARGS done");
     return result;
 }
