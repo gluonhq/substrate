@@ -149,16 +149,12 @@ public class Constants {
 
     public static final String CONFIG_FILES = "/config/";
     public static final String REFLECTION_JAVA_FILE = "reflectionconfig-java.json";
-    public static final String REFLECTION_JAVAFX_FILE = "reflectionconfig-javafx.json";
     public static final String REFLECTION_JAVAFXSW_FILE = "reflectionconfig-javafxsw.json";
-    public static final String REFLECTION_JAVAFX_ARCH_FILE = "reflectionconfig-javafx-${archOs}.json";
     public static final String REFLECTION_ARCH_FILE = "reflectionconfig-${archOs}.json";
 
     public static final String RESOURCE_ARCH_FILE = "resourceconfig-${archOs}.json";
 
     public static final String JNI_JAVA_FILE = "jniconfig-java.json";
-    public static final String JNI_JAVAFX_FILE = "jniconfig-javafx.json";
     public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
-    public static final String JNI_JAVAFX_ARCH_FILE = "jniconfig-javafx-${archOs}.json";
     public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
 }

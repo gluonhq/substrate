@@ -444,13 +444,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add(Constants.REFLECTION_JAVA_FILE);
-        if (useJavaFX) {
-            answer.add(Constants.REFLECTION_JAVAFX_FILE);
-            answer.add(Strings.substitute(Constants.REFLECTION_JAVAFX_ARCH_FILE, Map.of("archOs", suffix)));
-
-            if (usePrismSW) {
-                answer.add(Constants.REFLECTION_JAVAFXSW_FILE);
-            }
+        if (useJavaFX && usePrismSW) {
+            answer.add(Constants.REFLECTION_JAVAFXSW_FILE);
         }
         return answer;
     }
@@ -458,12 +453,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private List<String> getJNIClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add(Constants.JNI_JAVA_FILE);
-        if (useJavaFX) {
-            answer.add(Constants.JNI_JAVAFX_FILE);
-            answer.add(Strings.substitute(Constants.JNI_JAVAFX_ARCH_FILE, Map.of("archOs", suffix)));
-            if (usePrismSW) {
-                answer.add(Constants.JNI_JAVAFXSW_FILE);
-            }
+        if (useJavaFX && usePrismSW) {
+            answer.add(Constants.JNI_JAVAFXSW_FILE);
         }
         return answer;
     }
