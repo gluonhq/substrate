@@ -461,11 +461,16 @@ public class InternalProjectConfiguration {
         }
         Logger.logDebug("Checking execution permissions for " + graalvmHome);
         try {
-            String response = ProcessRunner.runProcessForSingleOutput("check attr", "xattr", "-p", "com.apple.quarantine", graalvmHome);
-            if (response != null && !response.contains("No such xattr")) {
-                ProcessRunner runner = new ProcessRunner("xattr", "-r", "-d", "com.apple.quarantine", graalvmHome);
-                runner.runProcess("remove quarantine");
-                Logger.logDebug("Quarantine attributes removed successfully");
+            ProcessRunner xattrRunner = new ProcessRunner("xattr", graalvmHome);
+            xattrRunner.runProcess("check xattr");
+            if (xattrRunner.getResponses().stream().anyMatch("com.apple.quarantine"::equals)) {
+                Logger.logInfo("Removing quarantine attributes from GraalVM files.\nYou might be prompted for admin rights.");
+                ProcessRunner runner = new ProcessRunner("sudo", "xattr", "-r", "-d", "com.apple.quarantine", graalvmHome);
+                runner.setInteractive(true);
+                boolean result = runner.runTimedProcess("remove quarantine", 60L);
+                if (result) {
+                    Logger.logInfo("Quarantine attributes removed successfully");
+                }
             }
         } catch (IOException | InterruptedException e) {
             Logger.logFatal(e,"Error checking execution permissions for " + graalvmHome);
