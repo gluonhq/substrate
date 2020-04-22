@@ -444,13 +444,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private List<String> getReflectionClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add(Constants.REFLECTION_JAVA_FILE);
-        if (useJavaFX) {
-            answer.add(Constants.REFLECTION_JAVAFX_FILE);
-            answer.add(Strings.substitute(Constants.REFLECTION_JAVAFX_ARCH_FILE, Map.of("archOs", suffix)));
-
-            if (usePrismSW) {
-                answer.add(Constants.REFLECTION_JAVAFXSW_FILE);
-            }
+        if (useJavaFX && usePrismSW) {
+            answer.add(Constants.REFLECTION_JAVAFXSW_FILE);
         }
         return answer;
     }
@@ -458,12 +453,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private List<String> getJNIClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
         answer.add(Constants.JNI_JAVA_FILE);
-        if (useJavaFX) {
-            answer.add(Constants.JNI_JAVAFX_FILE);
-            answer.add(Strings.substitute(Constants.JNI_JAVAFX_ARCH_FILE, Map.of("archOs", suffix)));
-            if (usePrismSW) {
-                answer.add(Constants.JNI_JAVAFXSW_FILE);
-            }
+        if (useJavaFX && usePrismSW) {
+            answer.add(Constants.JNI_JAVAFXSW_FILE);
         }
         return answer;
     }
@@ -515,15 +506,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             bw.write("[\n");
             writeSingleEntry(bw, projectConfiguration.getMainClassName(), false);
             for (String javaFile : getReflectionClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
-                bw.write(",\n");
                 InputStream inputStream = AbstractTargetConfiguration.class.getResourceAsStream(Constants.CONFIG_FILES + javaFile);
-                if (inputStream == null) {
-                    throw new IOException("Missing a reflection configuration file named " + javaFile);
-                }
-                List<String> lines = FileOps.readFileLines(inputStream,
-                        line -> !line.startsWith("[") && !line.startsWith("]"));
-                for (String line : lines) {
-                    bw.write(line + "\n");
+                if (inputStream != null) {
+                    bw.write(",\n");
+                    List<String> lines = FileOps.readFileLines(inputStream,
+                            line -> !line.startsWith("[") && !line.startsWith("]"));
+                    for (String line : lines) {
+                        bw.write(line + "\n");
+                    }
                 }
             }
 
@@ -547,15 +537,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             bw.write("[\n");
             bw.write("  {\n    \"name\" : \"" + projectConfiguration.getMainClassName() + "\"\n  }\n");
             for (String javaFile : getJNIClassList(suffix, projectConfiguration.isUseJavaFX(), projectConfiguration.isUsePrismSW())) {
-                bw.write(",\n");
                 InputStream inputStream = AbstractTargetConfiguration.class.getResourceAsStream(Constants.CONFIG_FILES + javaFile);
-                if (inputStream == null) {
-                    throw new IOException("Missing a jni configuration file named " + javaFile);
-                }
-                List<String> lines = FileOps.readFileLines(inputStream,
-                        line -> !line.startsWith("[") && !line.startsWith("]"));
-                for (String line : lines) {
-                    bw.write(line + "\n");
+                if (inputStream != null) {
+                    bw.write(",\n");
+                    List<String> lines = FileOps.readFileLines(inputStream,
+                            line -> !line.startsWith("[") && !line.startsWith("]"));
+                    for (String line : lines) {
+                        bw.write(line + "\n");
+                    }
                 }
             }
 
@@ -709,8 +698,23 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     // Methods below with default implementation, can be overridden by subclasses
 
+    /**
+     * If we are not using JavaFX, we immediately return the provided classpath, no further processing needed
+     * If we use JavaFX, we will first obtain the location of the JavaFX SDK for this configuration.
+     * This may throw an IOException.
+     * After the path to the JavaFX SDK is obtained, the JavaFX jars for the host platform are replaced by
+     * the JavaFX jars for the target platform.
+     * @param cp The provided classpath
+     * @return A string with the modified classpath if JavaFX is used
+     * @throws IOException
+     */
     String processClassPath(String cp) throws IOException {
-        return cp;
+        if (!projectConfiguration.isUseJavaFX()) {
+            return cp;
+        }
+
+        return new ClassPath(cp).mapWithLibs(fileDeps.getJavaFXSDKLibsPath(),
+                "javafx-base", "javafx-graphics", "javafx-controls", "javafx-fxml", "javafx-media");
     }
 
     /**
