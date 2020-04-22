@@ -101,28 +101,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         this.clang = Files.exists(clangguess) ? clangguess : null;
     }
 
-    /**
-     * // TODO: this is 100% similar to what we do on iOS. We need something like CrossPlatformTools for this.
-     * If we are not using JavaFX, we immediately return the provided classpath, no further processing needed
-     * If we use JavaFX, we will first obtain the location of the JavaFX SDK for this configuration.
-     * This may throw an IOException.
-     * After the path to the JavaFX SDK is obtained, the JavaFX jars for the host platform are replaced by
-     * the JavaFX jars for the target platform.
-     * @param classPath The provided classpath
-     * @return A string with the modified classpath if JavaFX is used
-     * @throws IOException
-     */
-    @Override
-    String processClassPath(String classPath) throws IOException {
-        if (!projectConfiguration.isUseJavaFX()) {
-            return classPath;
-        }
-
-        return new ClassPath(classPath).mapWithLibs(
-                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls");
-
-    }
-
     @Override
     public boolean compile() throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no ld.lld in android_ndk, we should not start compiling

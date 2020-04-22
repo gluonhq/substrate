@@ -28,7 +28,6 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
@@ -146,17 +145,6 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 "-H:+UseCAPCache",
                 "-H:CAPCacheDir="+ getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CustomLD=aarch64-linux-gnu-ld");
-    }
-
-    @Override
-    String processClassPath(String classPath) throws IOException {
-        if (!projectConfiguration.isUseJavaFX()) {
-            return classPath;
-        }
-
-        return new ClassPath(classPath).mapWithLibs(
-                fileDeps.getJavaFXSDKLibsPath(), "javafx-graphics", "javafx-base", "javafx-controls", "javafx-media");
-
     }
 
     @Override
