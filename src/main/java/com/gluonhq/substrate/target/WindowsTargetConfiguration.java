@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,31 +33,28 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
-    private static final List<String> libsForJava = List.of(
-            "advapi32", "iphlpapi", "ws2_32", "userenv",
-            "java", "jvm", "libchelper", "net", "nio",
-            "strictmath", "zip", "prefs", "j2pkcs11", "sunec"
-    );
+    private static final List<String> javaWindowsLibs = Arrays.asList(
+            "msvcrt", "advapi32", "iphlpapi", "userenv", "ws2_32");
+    private static final List<String> staticJavaLibs = Arrays.asList(
+            "j2pkcs11", "java", "net", "nio", "prefs", "sunec", "zip");
+    private static final List<String> staticJvmLibs = Arrays.asList(
+            "ffi", "jvm", "libchelper", "strictmath");
 
-    private static final List<String> libsForJavaFX = List.of(
-            "comdlg32", "dwmapi", "gdi32", "imm32",
-            "shell32", "uiautomationcore", "urlmon", "winmm"
-    );
-
-    private static final List<String> fxLibs = List.of(
+    private static final List<String> javaFxWindowsLibs = List.of(
+            "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",
+            "uiautomationcore", "urlmon", "winmm");
+    private static final List<String> staticJavaFxLibs = List.of(
             "glass", "javafx_font", "javafx_iio",
-            "prism_common", "prism_d3d"
-    );
-
-    private static final List<String> fxSwLibs = List.of(
-            "prism_sw"
-    );
+            "prism_common", "prism_d3d");
+    private static final List<String> staticJavaFxSwLibs = List.of(
+            "prism_sw");
 
     public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
@@ -138,7 +135,13 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        return asListOfLibraryLinkFlags(libsForJava);
+        List<String> targetLibraries = new ArrayList<>();
+
+        targetLibraries.addAll(asListOfLibraryLinkFlags(javaWindowsLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
+
+        return targetLibraries;
     }
 
     @Override
@@ -147,13 +150,13 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         flags.add("/NODEFAULTLIB:libcmt.lib");
 
         if (useJavaFX) {
-            flags.addAll(asListOfLibraryLinkFlags(libsForJavaFX));
-            flags.addAll(asListOfLibraryLinkFlags(fxLibs));
-            flags.addAll(asListOfWholeArchiveLinkFlags(fxLibs));
+            flags.addAll(asListOfLibraryLinkFlags(javaFxWindowsLibs));
+            flags.addAll(asListOfLibraryLinkFlags(staticJavaFxLibs));
+            flags.addAll(asListOfWholeArchiveLinkFlags(staticJavaFxLibs));
 
             if (usePrismSW) {
-                flags.addAll(asListOfLibraryLinkFlags(fxSwLibs));
-                flags.addAll(asListOfWholeArchiveLinkFlags(fxSwLibs));
+                flags.addAll(asListOfLibraryLinkFlags(staticJavaFxSwLibs));
+                flags.addAll(asListOfWholeArchiveLinkFlags(staticJavaFxSwLibs));
             }
         }
 
