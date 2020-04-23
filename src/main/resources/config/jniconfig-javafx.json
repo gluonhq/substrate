@@ -14,6 +14,7 @@
       {"name":"notifyWillUnhide","parameterTypes":[] },
       {"name":"notifyDidUnhide","parameterTypes":[] },
       {"name":"notifyOpenFiles","parameterTypes":["java.lang.String[]"] },
+      {"name":"notifyThemeChanged","parameterTypes":["java.lang.String"] },
       {"name":"notifyWillQuit","parameterTypes":[] },
       {"name":"createPixels","parameterTypes":["int", "int", "int[]", "float", "float"] },
       {"name":"getScaleFactor","parameterTypes":["int", "int", "int", "int"] },
@@ -35,6 +36,10 @@
 ,
   {
     "name" : "com.sun.glass.ui.Cursor",
+    "methods" : [
+      {"name":"getNativeCursor","parameterTypes":[] },
+      {"name":"getType","parameterTypes":[] }
+    ],
     "fields" : [
       {"name":"ptr" }
     ]
@@ -103,7 +108,9 @@
       {"name":"notifyKey","parameterTypes":["int","int","char[]","int"] },
       {"name":"notifyInputMethod","parameterTypes":["java.lang.String","int[]","int[]","byte[]","int","int","int"] },
       {"name":"notifyInputMethodCandidatePosRequest","parameterTypes":["int"] },
-      {"name":"getAccessible","parameterTypes":[] }
+      {"name":"getAccessible","parameterTypes":[] },
+      {"name":"getWidth","parameterTypes":[] },
+      {"name":"getHeight","parameterTypes":[] }
     ],
     "fields" : [
       {"name":"ptr" },
