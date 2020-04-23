@@ -1,5 +1,6 @@
 package com.gluonhq.substrate.model;
 
+import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.File;
@@ -105,12 +106,21 @@ public class ClassPath {
 
         if (includeClasses) {
             // Add project's classes as a jar to the list so it can be scanned as well
-            String classes = filter(s -> s.endsWith("classes")).stream()
+            String classes = filter(s -> s.endsWith("classes") || s.endsWith("classes/java/main")).stream()
                     .findFirst()
                     .orElse(null);
             if (classes != null) {
-                Path jar = Files.createTempDirectory("classes").resolve("classes.jar");
-                ProcessRunner runner = new ProcessRunner("jar", "cf", jar.toString(), "-C", classes, ".");
+                Path classesPath = Files.createTempDirectory("classes");
+                FileOps.copyDirectory(Path.of(classes), classesPath);
+                Path resourcesPath = filter(s -> s.endsWith("resources/main")).stream()
+                        .findFirst()
+                        .map(Path::of)
+                        .orElse(null);
+                if (resourcesPath != null && Files.exists(resourcesPath)) {
+                    FileOps.copyDirectory(resourcesPath, classesPath);
+                }
+                Path jar = classesPath.resolve("classes.jar");
+                ProcessRunner runner = new ProcessRunner("jar", "cf", jar.toString(), "-C", classesPath.toString(), ".");
                 if (runner.runProcess("jar") == 0 && Files.exists(jar)) {
                     jars.add(jar.toFile());
                 } else {
