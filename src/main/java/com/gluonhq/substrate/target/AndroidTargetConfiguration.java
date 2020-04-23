@@ -254,11 +254,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkOutputFlags() {
-        return Arrays.asList("-o", getAppPath(getLinkOutputName()));
-    }
-
-    private String getLinkOutputName() {
+    String getLinkOutputName() {
         String appName = projectConfiguration.getAppName();
         return "lib" + appName + ".so";
     }

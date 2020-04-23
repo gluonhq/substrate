@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,11 +31,19 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
+    private static final List<String> javaWindowsLibs = Arrays.asList(
+            "msvcrt", "advapi32", "iphlpapi", "userenv", "ws2_32");
+    private static final List<String> staticJavaLibs = Arrays.asList(
+            "j2pkcs11", "java", "net", "nio", "prefs", "sunec", "zip");
+    private static final List<String> staticJvmLibs = Arrays.asList(
+            "ffi", "jvm", "libchelper", "strictmath");
 
     public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
@@ -53,7 +61,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
-        return Collections.singletonList("/MT");
+        return Arrays.asList("/MD", "/D_UNICODE", "/DUNICODE", "/DWIN32", "/D_WINDOWS");
     }
 
     @Override
@@ -102,20 +110,29 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkOutputFlags() {
+        return Collections.singletonList("/OUT:" + getAppPath(getLinkOutputName()));
+    }
+
+    @Override
+    String getLinkOutputName() {
         String appName = projectConfiguration.getAppName();
-        return Collections.singletonList("/OUT:" + getAppPath(appName + ".exe"));
+        return appName + ".exe";
     }
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        return Arrays.asList("msvcrt.lib", "advapi32.lib", "iphlpapi.lib", "ws2_32.lib", "java.lib", "jvm.lib",
-                "libchelper.lib", "net.lib", "nio.lib", "strictmath.lib", "zip.lib", "prefs.lib", "j2pkcs11.lib", "sunec.lib");
+        List<String> targetLibraries = new ArrayList<>();
+
+        targetLibraries.addAll(asListOfLibraryLinkFlags(javaWindowsLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
+
+        return targetLibraries;
     }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         return Arrays.asList(
-                "/NODEFAULTLIB:msvcrt.lib",
                 "/NODEFAULTLIB:libcmt.lib"
         );
     }
@@ -123,5 +140,11 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     String getLinkLibraryPathOption() {
         return "/LIBPATH:";
+    }
+
+    private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
+        return libraries.stream()
+                .map(library -> library + ".lib")
+                .collect(Collectors.toList());
     }
 }
