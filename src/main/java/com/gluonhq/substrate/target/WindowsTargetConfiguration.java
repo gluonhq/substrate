@@ -30,6 +30,7 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -96,9 +97,12 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         }
     }
 
+    /**
+     * On windows, the classpath needs to be wrapped in double quotes.
+     */
     @Override
-    String processClassPath(String cp) {
-        return "\"" + cp + "\"";
+    String processClassPath(String cp) throws IOException {
+        return "\"" + super.processClassPath(cp) + "\"";
     }
 
     @Override
