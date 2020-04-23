@@ -59,7 +59,7 @@ public class ProcessRunner {
     private StringBuffer answer;
     private boolean info;
     private boolean logToFile;
-    private final Path processLogPath;
+    private Path processLogPath;
     private boolean interactive;
 
     /**
@@ -70,8 +70,6 @@ public class ProcessRunner {
         this.args.addAll(Arrays.asList(args));
         this.answer = new StringBuffer();
         this.map = new HashMap<>();
-        // TODO: This is a path for Maven only
-        processLogPath = Path.of(System.getProperty("user.dir"),"target", Constants.CLIENT_PATH, Constants.LOG_PATH);
     }
 
     /**
@@ -348,7 +346,14 @@ public class ProcessRunner {
      */
     private void logProcess(String processName, String result, boolean failure) throws IOException {
         if (processLogPath == null) {
-            return;
+            Path buildPath = Path.of(System.getProperty("user.dir"),"target");
+            if (!Files.exists(buildPath)) {
+                buildPath = Path.of(System.getProperty("user.dir"), "build");
+                if (!Files.exists(buildPath)) {
+                    throw new IOException("Build folder not found");
+                }
+            }
+            processLogPath = buildPath.resolve(Constants.CLIENT_PATH).resolve(Constants.LOG_PATH);
         }
         if (!Files.exists(processLogPath)) {
             Files.createDirectories(processLogPath);

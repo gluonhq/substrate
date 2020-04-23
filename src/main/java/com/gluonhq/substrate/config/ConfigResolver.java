@@ -153,6 +153,9 @@ public class ConfigResolver {
         Objects.requireNonNull(configName, "configName can't be null");
         List<String> list = new ArrayList<>();
         for (File jar : jars) {
+            if (!jar.exists()) {
+                continue;
+            }
             try (ZipFile zip = new ZipFile(jar)) {
                 Logger.logDebug("Scanning " + jar);
                 for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements(); ) {
