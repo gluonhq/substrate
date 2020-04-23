@@ -27,7 +27,12 @@ public class ClassPath {
      * @param classPath standard java classpath, delimited with {@code File.pathSeparator}. Should not be null.
      */
     public ClassPath(String classPath) {
-        this.classPath = Objects.requireNonNull(classPath);
+        String rawClassPath = Objects.requireNonNull(classPath);
+        if (rawClassPath.startsWith("\"") && rawClassPath.endsWith("\"")) {
+            this.classPath = rawClassPath.substring(1, rawClassPath.length() - 1);
+        } else {
+            this.classPath = rawClassPath;
+        }
     }
 
     private Stream<String> asStream() {
