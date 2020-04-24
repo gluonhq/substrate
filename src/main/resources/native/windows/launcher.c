@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,14 +27,15 @@
  */
 #include <stdio.h>
 
-extern int *run_main(int argc, char* argv[]);
-const char* args[] = {"myapp"};
+extern int *run_main(int argc, const char* argv[]);
+int argc = 1;
+const char* argv[] = { "myapp" };
 
 int main() {
     #ifdef GVM_VERBOSE
       fprintf(stderr, "Main\n");
     #endif
-    (*run_main)(1, args);
+    (*run_main)(argc, argv);
 }
 
 // the following functions are used in Java 11 but not in 14
