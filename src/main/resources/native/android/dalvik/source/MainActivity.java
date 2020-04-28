@@ -235,13 +235,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     for (int i = 0; i < pcount; i++) {
                         actions[i] = pointerIndex == i ? actionCode : ACTION_POINTER_STILL;
                         ids[i] = event.getPointerId(i);
-                        touchXs[i] = (int) (event.getX(i)/density);
-                        touchYs[i] = (int) (event.getY(i)/density);
+                        touchXs[i] = (int) (event.getX(i));
+                        touchYs[i] = (int) (event.getY(i));
                     }
                 } else if (actionCode == MotionEvent.ACTION_MOVE) {
                     for (int i = 0; i < pcount; i++) {
-                        touchXs[i] = (int) (event.getX(i)/density);
-                        touchYs[i] = (int) (event.getY(i)/density);
+                        touchXs[i] = (int) (event.getX(i));
+                        touchYs[i] = (int) (event.getY(i));
                         actions[i] = MotionEvent.ACTION_MOVE;
                         ids[i] = event.getPointerId(i);
                     }
@@ -250,8 +250,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 //single touch
                 actions[0] = actionCode;
                 ids[0] = event.getPointerId(0);
-                touchXs[0] = (int) (event.getX()/density);
-                touchYs[0] = (int) (event.getY()/density);
+                touchXs[0] = (int) (event.getX());
+                touchYs[0] = (int) (event.getY());
             }
             nativeGotTouchEvent(pcount, actions, ids, touchXs, touchYs);
             return true;
