@@ -52,4 +52,6 @@ jobs:
           newVersion=${TAG%.*}.$((${TAG##*.} + 1)) # Update version by 1
           sed -i -z "0,/version = $TAG/s//version = $newVersion-SNAPSHOT/" gradle.properties
           git commit gradle.properties -m "Prepare development of $newVersion"
-          git push https://gluon-bot:$GITHUB_PASSWORD@github.com/$GITHUB_REPOSITORY HEAD:master
+          git push https://gluon-bot:$PAT@github.com/$GITHUB_REPOSITORY HEAD:master
+        env:
+          PAT: ${{ secrets.PAT }}
