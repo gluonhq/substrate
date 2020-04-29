@@ -416,7 +416,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 throw new IOException("File " + iconPath.toString() + " not found");
             }
         }
-        FileOps.copyDirectory(androidPath.resolve(Constants.RES_FOLDER),  getApkPath().resolve(Constants.RES_FOLDER));
+        FileOps.copyDirectory(androidPath.resolve(Constants.ANDROID_RES_FOLDER),  getApkPath().resolve(Constants.ANDROID_RES_FOLDER));
     }
 
     private int dx(Path buildToolsPath) throws IOException, InterruptedException {
@@ -445,7 +445,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private int aaptPackage(Path buildToolsPath, String unalignedApk, String androidJar) throws IOException, InterruptedException {
         String aaptCmd = buildToolsPath.resolve("aapt").toString();
         Path androidManifestPath = getApkPath().resolve("AndroidManifest.xml");
-        Path apkResPath = getApkPath().resolve(Constants.RES_FOLDER);
+        Path apkResPath = getApkPath().resolve(Constants.ANDROID_RES_FOLDER);
         ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
                 "-f", "-m", "-F", unalignedApk,
                 "-M", androidManifestPath.toString(),
@@ -592,11 +592,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         String targetOS = projectConfiguration.getTargetTriplet().getOs();
         Path targetSourcePath = paths.getSourcePath().resolve(targetOS);
 
-        Path userAssets = targetSourcePath.resolve(Constants.RES_FOLDER);
+        Path userAssets = targetSourcePath.resolve(Constants.ANDROID_RES_FOLDER);
         if (!Files.exists(userAssets) || !(Files.isDirectory(userAssets) && Files.list(userAssets).count() > 0)) {
             // copy assets to gensrc/android
             Path androidPath = paths.getGenPath().resolve(targetOS);
-            Path androidResources = androidPath.resolve(Constants.RES_FOLDER);
+            Path androidResources = androidPath.resolve(Constants.ANDROID_RES_FOLDER);
             Logger.logDebug("Copy assets to " + androidResources.toString());
             for (String iconFolder : iconFolders) {
                 Path assetPath = androidResources.resolve(iconFolder);

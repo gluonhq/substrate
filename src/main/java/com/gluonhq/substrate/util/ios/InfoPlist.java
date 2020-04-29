@@ -113,11 +113,11 @@ public class InfoPlist {
                     "Consider copying it to " + rootPath.toString() + " before performing any modification");
         }
 
-        Path userAssets = rootPath.resolve(Constants.ASSETS_FOLDER);
+        Path userAssets = rootPath.resolve(Constants.IOS_ASSETS_FOLDER);
         if (!Files.exists(userAssets) || !(Files.isDirectory(userAssets) && Files.list(userAssets).count() > 0)) {
             // copy assets to gensrc/ios
             Path iosPath = paths.getGenPath().resolve(sourceOS);
-            Path iosAssets = iosPath.resolve(Constants.ASSETS_FOLDER);
+            Path iosAssets = iosPath.resolve(Constants.IOS_ASSETS_FOLDER);
             InfoPlist.assets.forEach(a -> {
                 try {
                     FileOps.copyResource("/native/ios/assets/" + a, iosAssets.resolve(a));
