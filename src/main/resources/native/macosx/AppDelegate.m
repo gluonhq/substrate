@@ -28,9 +28,7 @@
 #import <Cocoa/Cocoa.h>
 #include <pthread.h>
 
-extern void *run_main(int argc, char* argv[]);
-
-const char* args[] = {"myapp"};
+extern void *run_main(int argc, const char* argv[]);
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @end
@@ -44,8 +42,18 @@ const char* args[] = {"myapp"};
     NSLog(@"Starting Gluon VM...");
     pthread_t me = pthread_self();
     // fprintf(stderr, "Starting on thread: %p\n",me);
-    (*run_main)(1, args);
+
+    // generate char** CLI arguments from NSProcessInfo
+    NSArray *nsargs = [[NSProcessInfo processInfo] arguments];
+    unsigned count = [nsargs count];
+    const char **args = (const char **)malloc((count + 1) * sizeof(char*));
+    for (unsigned int i = 0; i < count; ++i) {
+        args[i] = strdup([[nsargs objectAtIndex:i] UTF8String]);
+    }
+    args[count] = NULL;
+    (*run_main)(count, args);
     NSLog(@"Started Gluon VM...");
+    free(args);
 }
 
 - (void)applicationWillFinishLaunching:(NSNotification *)aNotification  {
@@ -69,7 +77,7 @@ const char* args[] = {"myapp"};
 
 @end
 
-void outBox(int argc, char** argv) {
+void outBox(int argc, const char** argv) {
     pthread_t me = pthread_self();
     // fprintf(stderr, "in outbox, on thread %p, argc = %d and argv = %p\n", me,argc, argv);
 
