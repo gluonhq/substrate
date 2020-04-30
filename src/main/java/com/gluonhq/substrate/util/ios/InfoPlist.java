@@ -104,11 +104,20 @@ public class InfoPlist {
         Path userPlist = rootPath.resolve(Constants.PLIST_FILE);
         boolean inited = true;
         if (!Files.exists(userPlist)) {
-            Path iosPath = paths.getGenPath().resolve(sourceOS);
-            Path genPlist = iosPath.resolve(Constants.PLIST_FILE);
-            Path iosAssets = iosPath.resolve("assets");
+            // copy plist to gensrc/ios
+            Path genPlist = paths.getGenPath().resolve(sourceOS).resolve(Constants.PLIST_FILE);
             Logger.logDebug("Copy " + Constants.PLIST_FILE + " to " + genPlist.toString());
             FileOps.copyResource("/native/ios/Default-Info.plist", genPlist);
+            inited = false;
+            Logger.logInfo("Default iOS plist generated in " + genPlist.toString() + ".\n" +
+                    "Consider copying it to " + rootPath.toString() + " before performing any modification");
+        }
+
+        Path userAssets = rootPath.resolve(Constants.IOS_ASSETS_FOLDER);
+        if (!Files.exists(userAssets) || !(Files.isDirectory(userAssets) && Files.list(userAssets).count() > 0)) {
+            // copy assets to gensrc/ios
+            Path iosPath = paths.getGenPath().resolve(sourceOS);
+            Path iosAssets = iosPath.resolve(Constants.IOS_ASSETS_FOLDER);
             InfoPlist.assets.forEach(a -> {
                 try {
                     FileOps.copyResource("/native/ios/assets/" + a, iosAssets.resolve(a));
@@ -129,10 +138,9 @@ public class InfoPlist {
             copyVerifyAssets(iosAssets);
             Logger.logInfo("Default iOS resources generated in " + iosPath.toString() + ".\n" +
                     "Consider copying them to " + rootPath.toString() + " before performing any modification");
-            inited = false;
         } else {
-            copyVerifyAssets(rootPath.resolve("assets"));
-            copyOtherAssets(rootPath.resolve("assets"));
+            copyVerifyAssets(userAssets);
+            copyOtherAssets(userAssets);
         }
 
         Path plist = getPlistPath(paths, sourceOS);
