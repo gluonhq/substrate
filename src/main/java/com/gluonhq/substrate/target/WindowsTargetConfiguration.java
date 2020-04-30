@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> javaWindowsLibs = Arrays.asList(
-            "advapi32", "iphlpapi", "userenv", "ws2_32");
+            "advapi32", "iphlpapi", "secur32", "userenv", "ws2_32");
     private static final List<String> staticJavaLibs = Arrays.asList(
             "j2pkcs11", "java", "net", "nio", "prefs", "sunec", "zip");
     private static final List<String> staticJvmLibs = Arrays.asList(
@@ -62,11 +62,6 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getTargetSpecificCCompileFlags() {
         return Arrays.asList("/MD", "/D_UNICODE", "/DUNICODE", "/DWIN32", "/D_WINDOWS");
-    }
-
-    @Override
-    boolean allowHttps() {
-        return false;
     }
 
     /**
