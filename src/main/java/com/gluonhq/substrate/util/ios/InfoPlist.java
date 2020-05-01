@@ -178,6 +178,24 @@ public class InfoPlist {
                 dict.put("CFBundleVersion", bundleVersion);
                 dict.put("CFBundleShortVersionString", bundleShortVersion);
                 dict.saveAsXML(plist);
+            } else {
+                boolean modified = false;
+                if (!bundleName.equals(appName) && !bundleName.equals(dict.get("CFBundleName").toString())) {
+                    dict.put("CFBundleName", bundleName);
+                    modified = true;
+                }
+                if (!bundleVersion.equals(DEFAULT_BUNDLE_VERSION) && !bundleVersion.equals(dict.get("CFBundleVersion").toString())) {
+                    dict.put("CFBundleVersion", bundleVersion);
+                    modified = true;
+                }
+                if (!bundleShortVersion.equals(DEFAULT_BUNDLE_VERSION) && !bundleShortVersion.equals(dict.get("CFBundleShortVersionString").toString())) {
+                    dict.put("CFBundleShortVersionString", bundleShortVersion);
+                    modified = true;
+                }
+                if (modified) {
+                    Logger.logDebug("Updating " + plist.toString() + " with new values from releaseConfiguration");
+                    dict.saveAsXML(plist);
+                }
             }
             dict.put("DTPlatformName", xcodeUtil.getPlatformName());
             dict.put("DTSDKName", xcodeUtil.getSDKName());
@@ -190,12 +208,8 @@ public class InfoPlist {
             dict.put("DTXcodeBuild", xcodeUtil.getDTXcodeBuild());
             dict.put("BuildMachineOSBuild", xcodeUtil.getBuildMachineOSBuild());
             NSDictionaryEx orderedDict = new NSDictionaryEx();
-            orderedDict.put("CFBundleName", !bundleName.equals(appName) ? bundleName : dict.get("CFBundleName"));
-            dict.remove("CFBundleName");
-            orderedDict.put("CFBundleVersion", !bundleVersion.equals(DEFAULT_BUNDLE_VERSION) ? bundleVersion : dict.get("CFBundleVersion"));
+            orderedDict.put("CFBundleVersion", dict.get("CFBundleVersion"));
             dict.remove("CFBundleVersion");
-            orderedDict.put("CFBundleShortVersionString", !bundleShortVersion.equals(DEFAULT_BUNDLE_VERSION) ? bundleShortVersion : dict.get("CFBundleShortVersionString"));
-            dict.remove("CFBundleShortVersionString");
             dict.getKeySet().forEach(k -> orderedDict.put(k, dict.get(k)));
 
             if (partialPListDir != null) {
