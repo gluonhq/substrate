@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.IosSigningConfiguration;
+import com.gluonhq.substrate.model.ReleaseConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 
 import java.nio.file.Path;
@@ -64,7 +64,7 @@ public class ProjectConfiguration {
     private final String mainClassName;
     private final String classpath;
 
-    private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
+    private ReleaseConfiguration releaseConfiguration = new ReleaseConfiguration();
 
     /**
      * Create a new project configuration.
@@ -269,16 +269,16 @@ public class ProjectConfiguration {
         return classpath;
     }
 
-    public IosSigningConfiguration getIosSigningConfiguration() {
-        return iosSigningConfiguration;
+    public ReleaseConfiguration getReleaseConfiguration() {
+        return releaseConfiguration;
     }
 
     /**
      * Sets some iOS specific parameters
-     * @param iosSigningConfiguration iOS configuration
+     * @param releaseConfiguration iOS configuration
      */
-    public void setIosSigningConfiguration(IosSigningConfiguration iosSigningConfiguration) {
-        this.iosSigningConfiguration = iosSigningConfiguration;
+    public void setReleaseConfiguration(ReleaseConfiguration releaseConfiguration) {
+        this.releaseConfiguration = releaseConfiguration;
     }
 
     @Override
@@ -298,7 +298,7 @@ public class ProjectConfiguration {
                 ", compilerArgs=" + compilerArgs +
                 ", appId='" + appId + '\'' +
                 ", appName='" + appName + '\'' +
-                ", iosConfiguration='" + iosSigningConfiguration + '\'' +
+                ", iosConfiguration='" + releaseConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
                 ", classpath='" + classpath + '\'' +
                 '}';

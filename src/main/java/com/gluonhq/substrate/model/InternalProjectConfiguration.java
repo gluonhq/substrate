@@ -63,17 +63,17 @@ public class InternalProjectConfiguration {
     private boolean enableCheckHash = true;
 
     private String backend;
-    private List<String> bundlesList = Collections.emptyList();
-    private List<String> resourcesList = Collections.emptyList();
-    private List<String> reflectionList = Collections.emptyList();
-    private List<String> jniList = Collections.emptyList();
+    private final List<String> bundlesList = Collections.emptyList();
+    private final List<String> resourcesList = Collections.emptyList();
+    private final List<String> reflectionList = Collections.emptyList();
+    private final List<String> jniList = Collections.emptyList();
     private List<String> initBuildTimeList;
     private List<String> runtimeArgsList;
     private List<String> releaseSymbolsList;
 
-    private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
+    private final ReleaseConfiguration releaseConfiguration = new ReleaseConfiguration();
 
-    private ProjectConfiguration publicConfig;
+    private final ProjectConfiguration publicConfig;
 
     /**
      * Private projects configuration, which includes everything, including public settings
@@ -83,12 +83,11 @@ public class InternalProjectConfiguration {
 
         this.publicConfig = Objects.requireNonNull(config);
 
-        boolean skipCompile = Boolean.parseBoolean(System.getProperty("skipcompile", "false"));
-        boolean skipSigning = Boolean.parseBoolean(System.getProperty("skipsigning", "false"));
-
         setUsePrismSW(config.isUsePrismSW());
-        getIosSigningConfiguration().setSkipSigning(skipSigning);
-
+        if (Boolean.getBoolean("skipsigning")) {
+            // override value from client plugin when system property is set:
+            getReleaseConfiguration().setSkipSigning(true);
+        }
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
         setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
         setInitBuildTimeList(Strings.split(System.getProperty("initbuildtimelist")));
@@ -381,8 +380,8 @@ public class InternalProjectConfiguration {
         return publicConfig.getClasspath();
     }
 
-    public IosSigningConfiguration getIosSigningConfiguration() {
-        return Optional.ofNullable(publicConfig.getIosSigningConfiguration()).orElse(new IosSigningConfiguration());
+    public ReleaseConfiguration getReleaseConfiguration() {
+        return Optional.ofNullable(publicConfig.getReleaseConfiguration()).orElse(new ReleaseConfiguration());
     }
 
     /**
@@ -498,7 +497,7 @@ public class InternalProjectConfiguration {
                 ", runtimeArgsList=" + runtimeArgsList +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + getAppName() + '\'' +
-                ", iosConfiguration='" + iosSigningConfiguration + '\'' +
+                ", iosConfiguration='" + releaseConfiguration + '\'' +
                 ", mainClassName='" + getMainClassName() + '\'' +
                 ", classpath='" + getClasspath() + '\'' +
                 '}';
