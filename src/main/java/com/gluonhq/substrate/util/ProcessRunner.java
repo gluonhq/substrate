@@ -46,6 +46,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to run processes based on command line arguments
@@ -56,6 +57,7 @@ public class ProcessRunner {
 
     private final List<String> args = new ArrayList<>();
     private final Map<String, String> map;
+    private final List<String> passwords;
     private StringBuffer answer;
     private boolean info;
     private boolean logToFile;
@@ -70,6 +72,7 @@ public class ProcessRunner {
         this.args.addAll(Arrays.asList(args));
         this.answer = new StringBuffer();
         this.map = new HashMap<>();
+        this.passwords = new ArrayList<>();
     }
 
     /**
@@ -100,12 +103,24 @@ public class ProcessRunner {
     public void setLogToFile(boolean logToFile) {
         this.logToFile = logToFile;
     }
+
     /**
      * Adds a command line argument to the list of existing list of
      * command line arguments
      * @param arg a string passed to the command line arguments
      */
     public void addArg(String arg) {
+        args.add(arg);
+    }
+
+    /**
+     * Adds a command line argument to the list of existing list of
+     * command line arguments, marking it as secret argument, in
+     * order to avoid logging
+     * @param arg a string passed to the command line arguments
+     */
+    public void addSecretArg(String arg) {
+        passwords.add(arg);
         args.add(arg);
     }
 
@@ -301,7 +316,13 @@ public class ProcessRunner {
 
     private Process setupProcess(String processName, File directory) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(args);
-        Logger.logDebug("PB Command for " +  processName + ": " + String.join(" ", pb.command()));
+        String join = pb.command().stream().map(s -> {
+            if (passwords.contains(s)) {
+                return s.substring(0, 1) + "******";
+            }
+            return s;
+        }).collect(Collectors.joining(" "));
+        Logger.logDebug("PB Command for " +  processName + ": " + join);
         pb.redirectErrorStream(true);
         if (interactive) {
             pb.inheritIO();
