@@ -28,7 +28,15 @@
 package com.gluonhq.substrate.util;
 
 import com.gluonhq.substrate.SubstrateDispatcher;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -302,7 +310,7 @@ public class FileOps {
     }
 
     /**
-     * Replaces all occurences of one parameter in file with another
+     * Replaces all occurrences of one parameter in file with another
      * @param file Path to file
      * @param original String which should be replaced
      * @param replacement Replacement string
@@ -311,9 +319,47 @@ public class FileOps {
     public static void replaceInFile(Path file, String original, String replacement) throws IOException {
         InputStream inputStream = Files.newInputStream(file);
         List<String> lines = readFileLines(inputStream);
-        for (int i=0; i<lines.size(); i++)
+        for (int i = 0; i < lines.size(); i++) {
             lines.set(i, lines.get(i).replaceAll(original, replacement));
+        }
         writeFileLines(file, lines);
+    }
+
+    /**
+     * Parses an xml file, looking for a given item within a given tag, and retrieves
+     * its value, if found
+     *
+     * @param fileName the full path of an xml file
+     * @param tag the tag name
+     * @param itemName the item name
+     * @return the value if found, null otherwise
+     * @throws IOException
+     */
+    public static String getNodeValue(String fileName, String tag, String itemName) throws IOException {
+        try {
+            File xmlFile = new File(Objects.requireNonNull(fileName));
+            if (!xmlFile.exists() || !fileName.endsWith(".xml")) {
+                throw new IOException("Not a valid file: " + fileName);
+            }
+
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document document = builder.parse(xmlFile);
+
+            NodeList nodeList = document.getElementsByTagName(tag);
+            for (int n = 0; n < nodeList.getLength(); n++) {
+                NamedNodeMap attributes = nodeList.item(n).getAttributes();
+                for (int i = 0; i < attributes.getLength(); i++) {
+                    Node item = attributes.item(i);
+                    String name = item.getNodeName();
+                    if (name != null && name.contains(itemName)) {
+                        return item.getNodeValue();
+                    }
+                }
+            }
+        } catch (SAXException | ParserConfigurationException ex) {
+            Logger.logSevere("Error parsing: " + ex.getMessage());
+        }
+        return null;
     }
 
     /**
