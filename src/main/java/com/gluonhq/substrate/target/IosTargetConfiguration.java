@@ -154,7 +154,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         if (result) {
             createInfoPlist(paths);
 
-            if (!isSimulator() && !projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
+            if (!isSimulator() && !projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
                 CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
                 if (!codeSigning.signApp()) {
                     throw new RuntimeException("Error signing the app");
@@ -173,7 +173,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
-        if (!isSimulator() && projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
+        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
             // without signing, app can't be deployed
             return true;
         }

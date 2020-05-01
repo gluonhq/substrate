@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ import com.dd.plist.PropertyListParser;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.ReleaseConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -48,7 +49,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_SHORT_VERSION;
+import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_VERSION;
 
 public class InfoPlist {
 
@@ -100,6 +105,10 @@ public class InfoPlist {
         String appName = projectConfiguration.getAppName();
         String executableName = getExecutableName(appName, sourceOS);
         String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getMainClassName());
+        ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
+        String bundleName = Optional.ofNullable(releaseConfiguration.getBundleName()).orElse(appName);
+        String bundleVersion = Optional.ofNullable(releaseConfiguration.getBundleVersion()).orElse(DEFAULT_BUNDLE_VERSION);
+        String bundleShortVersion = Optional.ofNullable(releaseConfiguration.getBundleShortVersion()).orElse(DEFAULT_BUNDLE_SHORT_VERSION);
 
         Path userPlist = rootPath.resolve(Constants.PLIST_FILE);
         boolean inited = true;
@@ -162,10 +171,12 @@ public class InfoPlist {
 
         try {
             NSDictionaryEx dict = new NSDictionaryEx(plist.toFile());
-            if (! inited) {
+            if (!inited) {
                 dict.put("CFBundleIdentifier", bundleIdName);
                 dict.put("CFBundleExecutable", executableName);
-                dict.put("CFBundleName", appName);
+                dict.put("CFBundleName", bundleName);
+                dict.put("CFBundleVersion", bundleVersion);
+                dict.put("CFBundleShortVersionString", bundleShortVersion);
                 dict.saveAsXML(plist);
             }
             dict.put("DTPlatformName", xcodeUtil.getPlatformName());
@@ -179,8 +190,12 @@ public class InfoPlist {
             dict.put("DTXcodeBuild", xcodeUtil.getDTXcodeBuild());
             dict.put("BuildMachineOSBuild", xcodeUtil.getBuildMachineOSBuild());
             NSDictionaryEx orderedDict = new NSDictionaryEx();
-            orderedDict.put("CFBundleVersion", dict.get("CFBundleVersion"));
+            orderedDict.put("CFBundleName", !bundleName.equals(appName) ? bundleName : dict.get("CFBundleName"));
+            dict.remove("CFBundleName");
+            orderedDict.put("CFBundleVersion", !bundleVersion.equals(DEFAULT_BUNDLE_VERSION) ? bundleVersion : dict.get("CFBundleVersion"));
             dict.remove("CFBundleVersion");
+            orderedDict.put("CFBundleShortVersionString", !bundleShortVersion.equals(DEFAULT_BUNDLE_VERSION) ? bundleShortVersion : dict.get("CFBundleShortVersionString"));
+            dict.remove("CFBundleShortVersionString");
             dict.getKeySet().forEach(k -> orderedDict.put(k, dict.get(k)));
 
             if (partialPListDir != null) {
