@@ -586,11 +586,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         Path userManifest = targetSourcePath.resolve(Constants.MANIFEST_FILE);
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
-        Path androidPath = paths.getGenPath().resolve(targetOS);
-        Path genManifest = androidPath.resolve(Constants.MANIFEST_FILE);
 
         if (!Files.exists(userManifest)) {
             // copy manifest to gensrc/android
+            Path androidPath = paths.getGenPath().resolve(targetOS);
+            Path genManifest = androidPath.resolve(Constants.MANIFEST_FILE);
             Logger.logDebug("Copy " + Constants.MANIFEST_FILE + " to " + genManifest.toString());
             FileOps.copyResource("/native/android/AndroidManifest.xml", genManifest);
             FileOps.replaceInFile(genManifest, "package='com.gluonhq.helloandroid'", "package='" + getAndroidPackageName() + "'");
@@ -605,30 +605,29 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             FileOps.replaceInFile(genManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
             Logger.logInfo("Default Android manifest generated in " + genManifest.toString() + ".\n" +
                     "Consider copying it to " + targetSourcePath.toString() + " before performing any modification");
+            return androidPath;
         } else {
-            // update manifest in gensrc/android
-            Logger.logDebug("Copy " + userManifest.toString() + " to " + genManifest.toString());
-            FileOps.copyFile(userManifest, genManifest);
-            String versionCode = FileOps.getNodeValue(genManifest.toString(), "manifest", ":versionCode");
+            // update manifest in src/android
+            String versionCode = FileOps.getNodeValue(userManifest.toString(), "manifest", ":versionCode");
             String newVersionCode = Optional.ofNullable(releaseConfiguration.getVersionCode()).orElse(versionCode);
             if (newVersionCode != null) {
-                FileOps.replaceInFile(genManifest, ":versionCode='" + versionCode + "'", ":versionCode='" +
+                FileOps.replaceInFile(userManifest, ":versionCode='" + versionCode + "'", ":versionCode='" +
                         newVersionCode + "'");
             }
-            String versionName = FileOps.getNodeValue(genManifest.toString(), "manifest", ":versionName");
+            String versionName = FileOps.getNodeValue(userManifest.toString(), "manifest", ":versionName");
             String newVersionName = Optional.ofNullable(releaseConfiguration.getVersionName()).orElse(versionName);
             if (newVersionName != null) {
-                FileOps.replaceInFile(genManifest, ":versionName='" + versionName + "'", ":versionName='" +
+                FileOps.replaceInFile(userManifest, ":versionName='" + versionName + "'", ":versionName='" +
                         newVersionName + "'");
             }
-            String appLabel = FileOps.getNodeValue(genManifest.toString(), "application", ":label");
+            String appLabel = FileOps.getNodeValue(userManifest.toString(), "application", ":label");
             String newAppLabel = Optional.ofNullable(releaseConfiguration.getAppLabel()).orElse(appLabel);
             if (newAppLabel != null) {
-                FileOps.replaceInFile(genManifest, ":label='" + appLabel + "'", ":label='" +
+                FileOps.replaceInFile(userManifest, ":label='" + appLabel + "'", ":label='" +
                         newAppLabel + "'");
             }
         }
-        return androidPath;
+        return targetSourcePath;
     }
 
     /**
