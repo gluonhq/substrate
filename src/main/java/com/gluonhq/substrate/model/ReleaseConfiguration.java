@@ -151,8 +151,6 @@ public class ReleaseConfiguration {
      */
     private String providedKeyAliasPassword;
 
-    public ReleaseConfiguration() {}
-
     public String getBundleName() {
         return bundleName;
     }
