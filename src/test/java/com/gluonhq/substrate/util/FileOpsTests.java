@@ -27,7 +27,6 @@
  */
 package com.gluonhq.substrate.util;
 
-import com.gluonhq.substrate.target.AndroidTargetConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
