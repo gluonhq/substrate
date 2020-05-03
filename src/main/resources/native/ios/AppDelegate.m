@@ -27,6 +27,7 @@
  */
 #import <UIKit/UIKit.h>
 #include <stdarg.h>
+#include "jni.h"
 
 static __inline__ void gvmlog(NSString* format, ...)
 {
