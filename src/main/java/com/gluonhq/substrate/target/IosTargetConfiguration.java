@@ -107,6 +107,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         return Arrays.asList("-xobjective-c",
                 "-arch", getTargetArch(),
                 "-mios-version-min=11.0",
+                "-I"+projectConfiguration.getGraalPath().resolve("include").toString(),
+                "-I"+projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
                 "-isysroot", getSysroot());
     }
 

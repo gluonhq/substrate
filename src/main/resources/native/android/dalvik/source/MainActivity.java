@@ -54,6 +54,7 @@ import android.view.WindowManager.LayoutParams;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
+import java.util.TimeZone;
 import javafx.scene.input.KeyCode;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback,
@@ -103,6 +104,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         System.loadLibrary("substrate");
         Log.v(TAG, "loaded substrate library");
         nativeSetDataDir(getApplicationInfo().dataDir);
+        nativeSetTimezone(TimeZone.getDefault().getID());
         nativeSetSurface(holder.getSurface());
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -201,6 +203,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native long surfaceReady(Surface surface, float density);
     private native void nativeSetSurface(Surface surface);
     private native void nativeSetDataDir(String datadir);
+    private native void nativeSetTimezone(String timeZone);
     private native void nativeSurfaceRedrawNeeded();
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
     private native void nativeGotKeyEvent(int action, int keycode);

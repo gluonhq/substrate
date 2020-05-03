@@ -43,6 +43,7 @@ JNIEnv *androidEnv;
 ANativeWindow *window;
 jfloat density;
 char *appDataDir;
+char *timeZone;
 
 int start_logger(const char *app_name);
 static int pfd[2];
@@ -74,16 +75,28 @@ char **createArgs()
     {
         result[i] = (char *)origargs[i];
     }
+
+    // user time zone
+    int timeArgSize = 17 + strnlen(timeZone, 512);
+    char *timeArgs = (char *)calloc(sizeof(char), timeArgSize);
+    strcpy(timeArgs, "-Duser.timezone=");
+    strcat(timeArgs, timeZone);
+    result[argsize++] = timeArgs;
+
+    // tmp dir
     int tmpArgSize = 18 + strnlen(appDataDir, 512);
     char *tmpArgs = (char *)calloc(sizeof(char), tmpArgSize);
     strcpy(tmpArgs, "-Djava.io.tmpdir=");
     strcat(tmpArgs, appDataDir);
     result[argsize++] = tmpArgs;
+
+    // user home
     int userArgSize = 13 + strnlen(appDataDir, 512);
     char *userArgs = (char *)calloc(sizeof(char), userArgSize);
     strcpy(userArgs, "-Duser.home=");
     strcat(userArgs, appDataDir);
     result[argsize++] = userArgs;
+
     LOGE(stderr, "CREATE ARGS done");
     return result;
 }
@@ -217,3 +230,9 @@ void determineCPUFeatures()
 {
     fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
 }
+
+JNIEXPORT jint JNICALL JNI_OnLoad_extnet(JavaVM *vm, void *reserved) {
+    fprintf(stderr, "libextnet.a loaded\n");
+    return JNI_TRUE;
+}
+

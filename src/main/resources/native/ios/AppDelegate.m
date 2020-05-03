@@ -27,6 +27,7 @@
  */
 #import <UIKit/UIKit.h>
 #include <stdarg.h>
+#include "jni.h"
 
 static __inline__ void gvmlog(NSString* format, ...)
 {
@@ -51,7 +52,7 @@ static __inline__ void gvmlog(NSString* format, ...)
 
 @end
 
-int startGVM(const char* userHome);
+int startGVM(const char* userHome, const char* userTimeZone);
 
 extern int *run_main(int argc, const char* argv[]);
 
@@ -86,7 +87,11 @@ int main(int argc, char * argv[]) {
 
     NSLog(@"Done creating user.home at %@", folderPath);
     const char *userHome = [userhomeProp UTF8String];
-    startGVM(userHome);
+
+    NSTimeZone *timeZone = [NSTimeZone localTimeZone];
+    NSString *tzName = [@"-Duser.timezone=" stringByAppendingString: [timeZone name]];
+    const char *userTimeZone = [tzName UTF8String];
+    startGVM(userHome, userTimeZone);
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -125,17 +130,24 @@ int main(int argc, char * argv[]) {
 @end
 
 
-int startGVM(const char* userHome) {
+int startGVM(const char* userHome, const char* userTimeZone) {
     gvmlog(@"Starting GVM for ios");
 
 
-const char* args[] = {"myapp",
+    const char* args[] = {"myapp",
           "-Dcom.sun.javafx.isEmbedded=true",
-          "-Djavafx.platform=ios", userHome};
-    (*run_main)(4, args);
+          "-Djavafx.platform=ios",
+          userHome, userTimeZone};
+    int argc = sizeof(args) / sizeof(char *);
+    (*run_main)(argc, args);
 
     gvmlog(@"Finished running GVM, done with isolatehread");
     return 0;
+}
+
+JNIEXPORT jint JNICALL JNI_OnLoad_extnet(JavaVM *vm, void *reserved) {
+    fprintf(stderr, "libextnet.a loaded\n");
+    return JNI_TRUE;
 }
 
 void determineCPUFeatures()
