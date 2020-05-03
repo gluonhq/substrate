@@ -27,6 +27,7 @@
  */
 #import <UIKit/UIKit.h>
 #include <stdarg.h>
+#include "jni.h"
 
 static __inline__ void gvmlog(NSString* format, ...)
 {
@@ -136,6 +137,11 @@ const char* args[] = {"myapp",
 
     gvmlog(@"Finished running GVM, done with isolatehread");
     return 0;
+}
+
+JNIEXPORT jint JNICALL JNI_OnLoad_extnet(JavaVM *vm, void *reserved) {
+    fprintf(stderr, "libextnet.a loaded\n");
+    return JNI_TRUE;
 }
 
 void determineCPUFeatures()
