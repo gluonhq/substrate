@@ -217,3 +217,9 @@ void determineCPUFeatures()
 {
     fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
 }
+
+JNIEXPORT jint JNICALL JNI_OnLoad_extnet(JavaVM *vm, void *reserved) {
+    fprintf(stderr, "libextnet.a loaded\n");
+    return JNI_TRUE;
+}
+
