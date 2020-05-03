@@ -46,6 +46,15 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetDataD
     LOGE(stderr, "appDataDir: %s", appDataDir);
 }
 
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetTimezone(JNIEnv *env, jobject that, jstring jtz)
+{
+    const char *ctz = (*env)->GetStringUTFChars(env, jtz, 0);
+    int len = strnlen(ctz, 512);
+    timeZone = (char *)malloc(len + 1);
+    strcpy(timeZone, ctz);
+    LOGE(stderr, "timeZone: %s", timeZone);
+}
+
 JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady(JNIEnv *env, jobject activity, jobject surface, jfloat mydensity)
 {
     LOGE(stderr, "SurfaceReady, surface at %p\n", surface);
