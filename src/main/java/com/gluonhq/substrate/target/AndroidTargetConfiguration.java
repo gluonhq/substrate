@@ -501,7 +501,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         String keyPass = releaseConfiguration.getProvidedKeyAliasPassword();
         if (keyStorePath == null ||
                 !keyStorePath.endsWith(".keystore") || !Files.exists(Path.of(keyStorePath)) ||
-            keyStorePass == null || keyPass == null) {
+                keyAlias == null || keyStorePass == null || keyPass == null) {
             // default to debug keystore
             keyStorePath = createDevelopKeystore().toString();
             keyStorePass = DEFAULT_DEBUG_KEY_STORE_PASSWORD;
