@@ -63,10 +63,6 @@ public class InternalProjectConfiguration {
     private boolean enableCheckHash = true;
 
     private String backend;
-    private final List<String> bundlesList = Collections.emptyList();
-    private final List<String> resourcesList = Collections.emptyList();
-    private final List<String> reflectionList = Collections.emptyList();
-    private final List<String> jniList = Collections.emptyList();
     private List<String> initBuildTimeList;
     private List<String> runtimeArgsList;
     private List<String> releaseSymbolsList;
