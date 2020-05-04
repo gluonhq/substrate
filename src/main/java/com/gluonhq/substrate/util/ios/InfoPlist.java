@@ -106,9 +106,9 @@ public class InfoPlist {
         String executableName = getExecutableName(appName, sourceOS);
         String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getMainClassName());
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
-        String bundleName = Optional.ofNullable(releaseConfiguration.getBundleName()).orElse(appName);
-        String bundleVersion = Optional.ofNullable(releaseConfiguration.getBundleVersion()).orElse(DEFAULT_BUNDLE_VERSION);
-        String bundleShortVersion = Optional.ofNullable(releaseConfiguration.getBundleShortVersion()).orElse(DEFAULT_BUNDLE_SHORT_VERSION);
+        String bundleName = Objects.requireNonNullElse(releaseConfiguration.getBundleName(), appName);
+        String bundleVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleVersion(), DEFAULT_BUNDLE_VERSION);
+        String bundleShortVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleShortVersion(), DEFAULT_BUNDLE_SHORT_VERSION);
 
         Path userPlist = rootPath.resolve(Constants.PLIST_FILE);
         boolean inited = true;

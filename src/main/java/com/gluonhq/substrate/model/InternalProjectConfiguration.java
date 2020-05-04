@@ -497,7 +497,7 @@ public class InternalProjectConfiguration {
                 ", runtimeArgsList=" + runtimeArgsList +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + getAppName() + '\'' +
-                ", iosConfiguration='" + releaseConfiguration + '\'' +
+                ", releaseConfiguration='" + releaseConfiguration + '\'' +
                 ", mainClassName='" + getMainClassName() + '\'' +
                 ", classpath='" + getClasspath() + '\'' +
                 '}';

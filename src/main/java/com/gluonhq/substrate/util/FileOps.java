@@ -326,16 +326,16 @@ public class FileOps {
     }
 
     /**
-     * Parses an xml file, looking for a given item within a given tag, and retrieves
-     * its value, if found
+     * Parses an xml file, looking for a given attribute name within a given tag, and retrieves
+     * its value, when an attribute of that tag contains that given name.
      *
      * @param fileName the full path of an xml file
      * @param tag the tag name
-     * @param itemName the item name
+     * @param attributeName the item name
      * @return the value if found, null otherwise
      * @throws IOException
      */
-    public static String getNodeValue(String fileName, String tag, String itemName) throws IOException {
+    public static String getNodeValue(String fileName, String tag, String attributeName) throws IOException {
         try {
             File xmlFile = new File(Objects.requireNonNull(fileName));
             if (!xmlFile.exists() || !fileName.endsWith(".xml")) {
@@ -351,7 +351,7 @@ public class FileOps {
                 for (int i = 0; i < attributes.getLength(); i++) {
                     Node item = attributes.item(i);
                     String name = item.getNodeName();
-                    if (name != null && name.contains(itemName)) {
+                    if (name != null && name.contains(attributeName)) {
                         return item.getNodeValue();
                     }
                 }

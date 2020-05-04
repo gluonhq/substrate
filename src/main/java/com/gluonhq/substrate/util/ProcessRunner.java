@@ -317,7 +317,7 @@ public class ProcessRunner {
     private Process setupProcess(String processName, File directory) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(args);
         String join = pb.command().stream().map(s -> {
-            if (passwords.contains(s)) {
+            if (!s.isEmpty() && passwords.contains(s)) {
                 return s.substring(0, 1) + "******";
             }
             return s;

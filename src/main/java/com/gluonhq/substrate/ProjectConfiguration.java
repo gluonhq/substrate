@@ -274,8 +274,9 @@ public class ProjectConfiguration {
     }
 
     /**
-     * Sets some iOS specific parameters
-     * @param releaseConfiguration iOS configuration
+     * Sets some iOS and Android specific parameters that are required for
+     * the release of mobile apps
+     * @param releaseConfiguration release configuration
      */
     public void setReleaseConfiguration(ReleaseConfiguration releaseConfiguration) {
         this.releaseConfiguration = releaseConfiguration;
@@ -298,7 +299,7 @@ public class ProjectConfiguration {
                 ", compilerArgs=" + compilerArgs +
                 ", appId='" + appId + '\'' +
                 ", appName='" + appName + '\'' +
-                ", iosConfiguration='" + releaseConfiguration + '\'' +
+                ", releaseConfiguration='" + releaseConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
                 ", classpath='" + classpath + '\'' +
                 '}';

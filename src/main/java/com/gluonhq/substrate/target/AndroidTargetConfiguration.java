@@ -609,20 +609,20 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         } else {
             // update manifest in src/android
             String versionCode = FileOps.getNodeValue(userManifest.toString(), "manifest", ":versionCode");
-            String newVersionCode = Optional.ofNullable(releaseConfiguration.getVersionCode()).orElse(versionCode);
-            if (newVersionCode != null) {
+            String newVersionCode = releaseConfiguration.getVersionCode();
+            if (versionCode != null && newVersionCode != null) {
                 FileOps.replaceInFile(userManifest, ":versionCode='" + versionCode + "'", ":versionCode='" +
                         newVersionCode + "'");
             }
             String versionName = FileOps.getNodeValue(userManifest.toString(), "manifest", ":versionName");
-            String newVersionName = Optional.ofNullable(releaseConfiguration.getVersionName()).orElse(versionName);
-            if (newVersionName != null) {
+            String newVersionName = releaseConfiguration.getVersionName();
+            if (versionName != null && newVersionName != null) {
                 FileOps.replaceInFile(userManifest, ":versionName='" + versionName + "'", ":versionName='" +
                         newVersionName + "'");
             }
             String appLabel = FileOps.getNodeValue(userManifest.toString(), "application", ":label");
-            String newAppLabel = Optional.ofNullable(releaseConfiguration.getAppLabel()).orElse(appLabel);
-            if (newAppLabel != null) {
+            String newAppLabel = releaseConfiguration.getAppLabel();
+            if (appLabel != null && newAppLabel != null) {
                 FileOps.replaceInFile(userManifest, ":label='" + appLabel + "'", ":label='" +
                         newAppLabel + "'");
             }
