@@ -101,7 +101,7 @@ public class Constants {
     public static final String PROFILE_ANDROID = "android";
     public static final String PROFILE_LINUX_AARCH64 = "linux-aarch64";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+2";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+3";
     public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "15-ea+gvm17";
 
     /**
@@ -129,7 +129,9 @@ public class Constants {
      * Supported files
      */
     public static final String PLIST_FILE = "Default-Info.plist";
+    public static final String IOS_ASSETS_FOLDER = "assets";
     public static final String MANIFEST_FILE = "AndroidManifest.xml";
+    public static final String ANDROID_RES_FOLDER = "res";
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
     public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik";

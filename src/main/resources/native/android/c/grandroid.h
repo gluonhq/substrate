@@ -44,6 +44,7 @@ extern jmethodID activity_hideIME;
 extern ANativeWindow *window;
 extern jfloat density;
 extern char *appDataDir;
+extern char *timeZone;
 
 void __attribute__((weak)) androidJfx_requestGlassToRedraw() {}
 void __attribute__((weak)) androidJfx_setNativeWindow(ANativeWindow *nativeWindow) {}

@@ -123,7 +123,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     public boolean packageApp() throws IOException, InterruptedException {
-        Path androidPath = prepareAndroidResources();
+        Path androidPathForManifest = prepareAndroidManifest();
+        Path androidPathForRes = prepareAndroidResources();
 
         ensureApkOutputDirectoriesExist();
 
@@ -138,8 +139,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             return false;
         }
 
-        copyAndroidManifest(androidPath);
-        copyAssets(androidPath);
+        copyAndroidManifest(androidPathForManifest);
+        copyAssets(androidPathForRes);
 
         int processResult = dx(buildToolsPath);
         if (processResult != 0) {
@@ -415,7 +416,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 throw new IOException("File " + iconPath.toString() + " not found");
             }
         }
-        FileOps.copyDirectory(androidPath.resolve("res"),  getApkPath().resolve("res"));
+        FileOps.copyDirectory(androidPath.resolve(Constants.ANDROID_RES_FOLDER),  getApkPath().resolve(Constants.ANDROID_RES_FOLDER));
     }
 
     private int dx(Path buildToolsPath) throws IOException, InterruptedException {
@@ -444,7 +445,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private int aaptPackage(Path buildToolsPath, String unalignedApk, String androidJar) throws IOException, InterruptedException {
         String aaptCmd = buildToolsPath.resolve("aapt").toString();
         Path androidManifestPath = getApkPath().resolve("AndroidManifest.xml");
-        Path apkResPath = getApkPath().resolve("res");
+        Path apkResPath = getApkPath().resolve(Constants.ANDROID_RES_FOLDER);
         ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
                 "-f", "-m", "-F", unalignedApk,
                 "-M", androidManifestPath.toString(),
@@ -548,29 +549,54 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     /**
-     * If android manifest and icons are present in src/android, then, this
+     * If android manifest is present in src/android, then, this
      * path will be returned.
      *
-     * Else, default android manifest and icons are copied into gvm/genSrc/android and
+     * Else, default android manifest is copied into gvm/genSrc/android and
      * this path is returned
      *
-     * @return the path where android manifest and resources are located
+     * @return the path where android manifest is located
      * @throws IOException
      */
-    private Path prepareAndroidResources() throws IOException {
+    private Path prepareAndroidManifest() throws IOException {
         String targetOS = projectConfiguration.getTargetTriplet().getOs();
         Path targetSourcePath = paths.getSourcePath().resolve(targetOS);
+
         Path userManifest = targetSourcePath.resolve(Constants.MANIFEST_FILE);
         if (!Files.exists(userManifest)) {
-            // copy manifest and assets to gensrc/android
+            // copy manifest to gensrc/android
             Path androidPath = paths.getGenPath().resolve(targetOS);
             Path genManifest = androidPath.resolve(Constants.MANIFEST_FILE);
             Logger.logDebug("Copy " + Constants.MANIFEST_FILE + " to " + genManifest.toString());
             FileOps.copyResource("/native/android/AndroidManifest.xml", genManifest);
             FileOps.replaceInFile(genManifest, "package='com.gluonhq.helloandroid'", "package='" + getAndroidPackageName() + "'");
             FileOps.replaceInFile(genManifest, "A HelloGraal", projectConfiguration.getAppName());
+            Logger.logInfo("Default Android manifest generated in " + genManifest.toString() + ".\n" +
+                    "Consider copying it to " + targetSourcePath.toString() + " before performing any modification");
+            return androidPath;
+        }
+        return targetSourcePath;
+    }
 
-            Path androidResources = androidPath.resolve("res");
+    /**
+     * If resources are present in src/android, then, this
+     * path will be returned.
+     *
+     * Else, default resources are copied into gvm/genSrc/android and
+     * this path is returned
+     *
+     * @return the path where resources are located
+     * @throws IOException
+     */
+    private Path prepareAndroidResources() throws IOException {
+        String targetOS = projectConfiguration.getTargetTriplet().getOs();
+        Path targetSourcePath = paths.getSourcePath().resolve(targetOS);
+
+        Path userAssets = targetSourcePath.resolve(Constants.ANDROID_RES_FOLDER);
+        if (!Files.exists(userAssets) || !(Files.isDirectory(userAssets) && Files.list(userAssets).count() > 0)) {
+            // copy assets to gensrc/android
+            Path androidPath = paths.getGenPath().resolve(targetOS);
+            Path androidResources = androidPath.resolve(Constants.ANDROID_RES_FOLDER);
             Logger.logDebug("Copy assets to " + androidResources.toString());
             for (String iconFolder : iconFolders) {
                 Path assetPath = androidResources.resolve(iconFolder);
@@ -581,7 +607,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                     "Consider copying them to " + targetSourcePath.toString() + " before performing any modification");
             return androidPath;
         }
-        // use manifest and assets from src/android
         return targetSourcePath;
     }
 
