@@ -71,8 +71,6 @@ public class InternalProjectConfiguration {
     private List<String> runtimeArgsList;
     private List<String> releaseSymbolsList;
 
-    private final ReleaseConfiguration releaseConfiguration = new ReleaseConfiguration();
-
     private final ProjectConfiguration publicConfig;
 
     /**
@@ -489,15 +487,15 @@ public class InternalProjectConfiguration {
                 ", targetTriplet=" + getTargetTriplet() +
                 ", hostTriplet=" + getHostTriplet() +
                 ", backend='" + backend + '\'' +
-                ", bundlesList=" + bundlesList +
-                ", resourcesList=" + resourcesList +
-                ", reflectionList=" + reflectionList +
-                ", jniList=" + jniList +
-                ", initBuildTimeList=" + initBuildTimeList +
+                ", bundlesList=" + getBundlesList() +
+                ", resourcesList=" + getResourcesList() +
+                ", reflectionList=" + getReflectionList() +
+                ", jniList=" + getJniList() +
+                ", initBuildTimeList=" + getInitBuildTimeList() +
                 ", runtimeArgsList=" + runtimeArgsList +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + getAppName() + '\'' +
-                ", releaseConfiguration='" + releaseConfiguration + '\'' +
+                ", releaseConfiguration='" + getReleaseConfiguration() + '\'' +
                 ", mainClassName='" + getMainClassName() + '\'' +
                 ", classpath='" + getClasspath() + '\'' +
                 '}';
