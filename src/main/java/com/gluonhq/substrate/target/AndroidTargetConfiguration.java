@@ -502,6 +502,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (keyStorePath == null ||
                 !keyStorePath.endsWith(".keystore") || !Files.exists(Path.of(keyStorePath)) ||
                 keyAlias == null || keyStorePass == null || keyPass == null) {
+            if (keyStorePath != null) {
+                Logger.logSevere("The key store path " + keyStorePass + " is not valid. Signing with debug keystore.");
+            }
             // default to debug keystore
             keyStorePath = createDevelopKeystore().toString();
             keyStorePass = DEFAULT_DEBUG_KEY_STORE_PASSWORD;
