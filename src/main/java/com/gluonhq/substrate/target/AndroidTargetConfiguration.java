@@ -516,9 +516,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner sign =  new ProcessRunner(apkSignerCmd, "sign", "--ks",
                 keyStorePath, "--ks-key-alias", keyAlias);
         sign.addArg("--ks-pass");
-        sign.addSecretArg("pass:" + keyPass);
-        sign.addArg("--key-pass");
         sign.addSecretArg("pass:" + keyStorePass);
+        sign.addArg("--key-pass");
+        sign.addSecretArg("pass:" + keyPass);
         sign.addArg(alignedApk);
         return sign.runProcess("sign");
     }
