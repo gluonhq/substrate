@@ -233,6 +233,6 @@ void determineCPUFeatures()
 
 JNIEXPORT jint JNICALL JNI_OnLoad_extnet(JavaVM *vm, void *reserved) {
     fprintf(stderr, "libextnet.a loaded\n");
-    return JNI_VERSION_1_8;
+    return JNI_VERSION_1_6;
 }
 
