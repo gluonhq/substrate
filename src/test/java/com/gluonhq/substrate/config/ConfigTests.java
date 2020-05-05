@@ -31,6 +31,7 @@ import com.gluonhq.substrate.util.FileOps;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +39,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ConfigTests {
@@ -123,6 +125,22 @@ class ConfigTests {
         assertEquals(2, resourcesList.size());
         assertTrue(resourcesList.stream()
                 .anyMatch(s -> s.contains("\".*\\\\.ptn$\"")));
+    }
+
+    @Test
+    void testResourcesListFormat() throws IOException, InterruptedException {
+        Path jarPath1 = Files.createTempDirectory("substrate-tests1").resolve("substrate-test.jar");
+        Path resourcePath1 = FileOps.copyResource("/substrate-test.jar", jarPath1);
+        Path jarPath2 = Files.createTempDirectory("substrate-tests2").resolve("substrate-test.jar");
+        Path resourcePath2 = FileOps.copyResource("/substrate-test.jar", jarPath2);
+        ConfigResolver resolver = new ConfigResolver(resourcePath1.toString() + File.pathSeparator + resourcePath2.toString());
+
+        List<String> userResourcesList = resolver.getUserResourcesList(null);
+        assertTrue(userResourcesList.size() > 0);
+        for (int i = 0; i < userResourcesList.size() - 1; i++) {
+            assertTrue(userResourcesList.get(i).endsWith(","));
+        }
+        assertFalse(userResourcesList.get(userResourcesList.size() - 1).endsWith(","));
     }
 
 }

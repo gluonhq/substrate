@@ -102,6 +102,7 @@ public class ClassPath {
     public List<File> getJars(boolean includeClasses) throws IOException, InterruptedException {
         List<File> jars = filter(s -> s.endsWith(".jar")).stream()
                 .map(File::new)
+                .distinct()
                 .collect(Collectors.toList());
 
         if (includeClasses) {
