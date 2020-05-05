@@ -28,10 +28,8 @@
 #include <stdio.h>
 
 extern int *run_main(int argc, const char* argv[]);
-int argc = 1;
-const char* argv[] = { "myapp" };
 
-int main() {
+int main(int argc, const char* argv[]) {
     #ifdef GVM_VERBOSE
       fprintf(stderr, "Main\n");
     #endif

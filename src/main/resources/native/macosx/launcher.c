@@ -29,9 +29,9 @@
 #include <pthread.h>
 #include <unistd.h>
 
-extern void outBox(int argc, char** argv);
+extern void outBox(int argc, const char** argv);
 
-int main(int argc, char** argv) {
+int main(int argc, const char** argv) {
     #ifdef GVM_VERBOSE
       fprintf(stderr, "Hello, JAVA main, argc = %d, argv = %p\n", argc, argv);
     #endif
