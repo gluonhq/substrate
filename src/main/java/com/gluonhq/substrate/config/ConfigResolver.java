@@ -39,7 +39,9 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -143,10 +145,15 @@ public class ConfigResolver {
      */
     public List<String> getUserResourcesList(String archOs) throws IOException {
         Logger.logDebug("Scanning for resource files");
-        return scanJars(USER_RESOURCE_FILE,
+        List<String> resources = scanJars(USER_RESOURCE_FILE,
                 getFileNameForArchOs(USER_RESOURCE_ARCHOS_FILE, archOs),
                 null,
                 line -> line.trim().startsWith("{\"pattern\""));
+        AtomicInteger index = new AtomicInteger();
+        return resources.stream()
+                .map(r -> (index.getAndIncrement() < resources.size() - 1 && !r.endsWith(",")) ?
+                                r.concat(",") : r)
+                .collect(Collectors.toList());
     }
 
     private List<String> scanJars(String configName, String configArchosName, String initLine, Predicate<String> filter) throws IOException {
