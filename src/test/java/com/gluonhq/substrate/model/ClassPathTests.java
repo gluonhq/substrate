@@ -2,9 +2,12 @@ package com.gluonhq.substrate.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,5 +45,11 @@ public class ClassPathTests {
         assertEquals(newCp, "/aa/bb/javafx-base.jar:/aa/bb/javafx-graphics.jar");
     }
 
+    @Test
+    public void duplicatedJarTest() throws IOException, InterruptedException {
+        var cp = new ClassPath("aaa.jar:bbb.jar:ccc.jar:aaa.jar");
+        var jars = cp.getJars(false);
+        assertEquals(3, jars.size());
+    }
 
 }
