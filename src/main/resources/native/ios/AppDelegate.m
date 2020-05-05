@@ -147,7 +147,7 @@ int startGVM(const char* userHome, const char* userTimeZone) {
 
 JNIEXPORT jint JNICALL JNI_OnLoad_extnet(JavaVM *vm, void *reserved) {
     fprintf(stderr, "libextnet.a loaded\n");
-    return JNI_TRUE;
+    return JNI_VERSION_1_8;
 }
 
 void determineCPUFeatures()
