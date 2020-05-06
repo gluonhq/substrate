@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -95,8 +95,8 @@ public class CodeSigning {
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
         tmpPath = paths.getTmpPath();
 
-        providedIdentityName = projectConfiguration.getIosSigningConfiguration().getProvidedSigningIdentity();
-        providedMobileProvision = projectConfiguration.getIosSigningConfiguration().getProvidedProvisioningProfile();
+        providedIdentityName = projectConfiguration.getReleaseConfiguration().getProvidedSigningIdentity();
+        providedMobileProvision = projectConfiguration.getReleaseConfiguration().getProvidedProvisioningProfile();
     }
 
     public boolean signApp() throws IOException, InterruptedException {

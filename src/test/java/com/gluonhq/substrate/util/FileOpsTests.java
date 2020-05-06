@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -196,5 +196,24 @@ class FileOpsTests {
             assertNotNull(hashMap);
             assertEquals(hashMap.get(testFile.getFileName().toString()), FileOps.calculateCheckSum(testFile.toFile()));
         });
+    }
+
+    @Test
+    void parseXMLFile() throws IOException {
+        Path xmlPath = FileOps.copyResource("/test-ops.xml", getTempDir().resolve("test-ops.xml"));
+        assertTrue(Files.exists(xmlPath));
+        assertNull(FileOps.getNodeValue(xmlPath.toString(), "aa", "bb"));
+        assertNull(FileOps.getNodeValue(xmlPath.toString(), "manifest", "aa"));
+        assertEquals("1", FileOps.getNodeValue(xmlPath.toString(), "manifest", ":versionCode"));
+        assertEquals("HelloTest", FileOps.getNodeValue(xmlPath.toString(), "application", ":label"));
+        Files.deleteIfExists(xmlPath);
+    }
+
+    @Test
+    void parseNonXMLFile() throws IOException {
+        assertThrows(IOException.class, () -> FileOps.getNodeValue("non.existent.path", "aa", "bb"));
+        Path resourcePath = FileOps.copyResource("/test-resource.txt", getTempDir().resolve("test-resource.txt"));
+        assertThrows(IOException.class, () -> FileOps.getNodeValue(resourcePath.toString(), "aa", "bb"));
+        Files.deleteIfExists(resourcePath);
     }
 }

@@ -31,6 +31,7 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.model.ReleaseConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -48,6 +49,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -56,6 +58,11 @@ import static com.gluonhq.substrate.Constants.DALVIK_ACTIVITY_PACKAGE;
 import static com.gluonhq.substrate.Constants.DALVIK_JAVAFX_PACKAGE;
 import static com.gluonhq.substrate.Constants.DALVIK_PRECOMPILED_CLASSES;
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_DALVIK;
+import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_NAME;
+import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_VERSION;
+import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_DEBUG_KEY_ALIAS;
+import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_DEBUG_KEY_ALIAS_PASSWORD;
+import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_DEBUG_KEY_STORE_PASSWORD;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
@@ -487,15 +494,32 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private int sign(Path buildToolsPath, String alignedApk) throws IOException, InterruptedException {
-        createDevelopKeystore();
+        ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
+        String keyStorePath = releaseConfiguration.getProvidedKeyStorePath();
+        String keyStorePass = releaseConfiguration.getProvidedKeyStorePassword();
+        String keyAlias = releaseConfiguration.getProvidedKeyAlias();
+        String keyPass = releaseConfiguration.getProvidedKeyAliasPassword();
+        if (keyStorePath == null ||
+                !keyStorePath.endsWith(".keystore") || !Files.exists(Path.of(keyStorePath)) ||
+                keyAlias == null || keyStorePass == null || keyPass == null) {
+            if (keyStorePath != null) {
+                Logger.logSevere("The key store path " + keyStorePass + " is not valid. Signing with debug keystore.");
+            }
+            // default to debug keystore
+            keyStorePath = createDevelopKeystore().toString();
+            keyStorePass = DEFAULT_DEBUG_KEY_STORE_PASSWORD;
+            keyAlias = DEFAULT_DEBUG_KEY_ALIAS;
+            keyPass = DEFAULT_DEBUG_KEY_ALIAS_PASSWORD;
+        }
 
         String apkSignerCmd = buildToolsPath.resolve("apksigner").toString();
         ProcessRunner sign =  new ProcessRunner(apkSignerCmd, "sign", "--ks",
-                Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE).toString(),
-                "--ks-key-alias", "androiddebugkey",
-                "--ks-pass", "pass:android",
-                "--key-pass", "pass:android",
-                alignedApk);
+                keyStorePath, "--ks-key-alias", keyAlias);
+        sign.addArg("--ks-pass");
+        sign.addSecretArg("pass:" + keyStorePass);
+        sign.addArg("--key-pass");
+        sign.addSecretArg("pass:" + keyPass);
+        sign.addArg(alignedApk);
         return sign.runProcess("sign");
     }
 
@@ -514,24 +538,25 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return capPath;
     }
 
-    private void createDevelopKeystore() throws IOException, InterruptedException {
+    private Path createDevelopKeystore() throws IOException, InterruptedException {
         Path keystore = Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE);
 
         if (Files.exists(keystore)) {
             Logger.logDebug("The " + Constants.ANDROID_KEYSTORE + " file already exists, skipping");
-            return;
+            return keystore;
         }
 
         int processResult;
 
         ProcessRunner generateTestKey = new ProcessRunner("keytool", "-genkey", "-v", "-keystore", keystore.toString(), "-storepass",
-                "android", "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US", "-noprompt");
+                DEFAULT_DEBUG_KEY_STORE_PASSWORD, "-alias", DEFAULT_DEBUG_KEY_ALIAS, "-keypass", DEFAULT_DEBUG_KEY_ALIAS_PASSWORD, "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US", "-noprompt");
         processResult = generateTestKey.runProcess("generateTestKey");
         if (processResult != 0) {
             throw new IllegalArgumentException("fatal, can not create a keystore");
         }
 
         Logger.logDebug("Done creating " + Constants.ANDROID_KEYSTORE);
+        return keystore;
     }
 
     private String findLatestBuildTool(Path sdkPath) throws IOException {
@@ -563,6 +588,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path targetSourcePath = paths.getSourcePath().resolve(targetOS);
 
         Path userManifest = targetSourcePath.resolve(Constants.MANIFEST_FILE);
+        ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
+
         if (!Files.exists(userManifest)) {
             // copy manifest to gensrc/android
             Path androidPath = paths.getGenPath().resolve(targetOS);
@@ -570,10 +597,38 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Logger.logDebug("Copy " + Constants.MANIFEST_FILE + " to " + genManifest.toString());
             FileOps.copyResource("/native/android/AndroidManifest.xml", genManifest);
             FileOps.replaceInFile(genManifest, "package='com.gluonhq.helloandroid'", "package='" + getAndroidPackageName() + "'");
-            FileOps.replaceInFile(genManifest, "A HelloGraal", projectConfiguration.getAppName());
+            String newAppLabel = Optional.ofNullable(releaseConfiguration.getAppLabel())
+                    .orElse(projectConfiguration.getAppName());
+            FileOps.replaceInFile(genManifest, "A HelloGraal", newAppLabel);
+            String newVersionCode = Optional.ofNullable(releaseConfiguration.getVersionCode())
+                    .orElse(DEFAULT_CODE_VERSION);
+            FileOps.replaceInFile(genManifest, ":versionCode='1'", ":versionCode='" + newVersionCode + "'");
+            String newVersionName = Optional.ofNullable(releaseConfiguration.getVersionName())
+                    .orElse(DEFAULT_CODE_NAME);
+            FileOps.replaceInFile(genManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
             Logger.logInfo("Default Android manifest generated in " + genManifest.toString() + ".\n" +
                     "Consider copying it to " + targetSourcePath.toString() + " before performing any modification");
             return androidPath;
+        } else {
+            // update manifest in src/android
+            String versionCode = FileOps.getNodeValue(userManifest.toString(), "manifest", ":versionCode");
+            String newVersionCode = releaseConfiguration.getVersionCode();
+            if (versionCode != null && newVersionCode != null) {
+                FileOps.replaceInFile(userManifest, ":versionCode='" + versionCode + "'", ":versionCode='" +
+                        newVersionCode + "'");
+            }
+            String versionName = FileOps.getNodeValue(userManifest.toString(), "manifest", ":versionName");
+            String newVersionName = releaseConfiguration.getVersionName();
+            if (versionName != null && newVersionName != null) {
+                FileOps.replaceInFile(userManifest, ":versionName='" + versionName + "'", ":versionName='" +
+                        newVersionName + "'");
+            }
+            String appLabel = FileOps.getNodeValue(userManifest.toString(), "application", ":label");
+            String newAppLabel = releaseConfiguration.getAppLabel();
+            if (appLabel != null && newAppLabel != null) {
+                FileOps.replaceInFile(userManifest, ":label='" + appLabel + "'", ":label='" +
+                        newAppLabel + "'");
+            }
         }
         return targetSourcePath;
     }
