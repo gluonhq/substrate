@@ -70,7 +70,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json",
-            "license", "frag", "vert");
+            "license", "frag", "vert", "obj");
     private static final List<String> BUNDLES_LIST = new ArrayList<>(Arrays.asList(
             "com/sun/javafx/scene/control/skin/resources/controls",
             "com/sun/javafx/scene/control/skin/resources/controls-nt",
