@@ -154,7 +154,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             compileRunner.addArg("-H:IncludeResourceBundles=" + bundles);
         }
         compileRunner.addArg(getJniPlatformArg());
-        compileRunner.addArg("-cp");
+        compileRunner.addArg(Constants.NATIVE_IMAGE_ARG_CLASSPATH);
         compileRunner.addArg(processedClasspath);
         compileRunner.addArgs(projectConfiguration.getCompilerArgs());
         compileRunner.addArg(projectConfiguration.getMainClassName());
@@ -700,21 +700,22 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     // Methods below with default implementation, can be overridden by subclasses
 
     /**
-     * If we are not using JavaFX, we immediately return the provided classpath, no further processing needed
-     * If we use JavaFX, we will first obtain the location of the JavaFX SDK for this configuration.
-     * This may throw an IOException.
-     * After the path to the JavaFX SDK is obtained, the JavaFX jars for the host platform are replaced by
-     * the JavaFX jars for the target platform.
-     * @param cp The provided classpath
+     * If we are not using JavaFX, we immediately return the provided classpath: no further processing
+     * is needed. If we do use JavaFX, we will first {@link FileDeps#getJavaFXSDKLibsPath obtain
+     * the location of the JavaFX SDK} for this configuration. After the path to the JavaFX SDK is
+     * obtained, the JavaFX jars of the host platform are replaced by the JavaFX jars for the target
+     * platform.
+     *
+     * @param classPath The provided classpath
      * @return A string with the modified classpath if JavaFX is used
-     * @throws IOException
+     * @throws IOException when something went wrong while resolving the location of the JavaFX SDK.
      */
-    String processClassPath(String cp) throws IOException {
+    private String processClassPath(String classPath) throws IOException {
         if (!projectConfiguration.isUseJavaFX()) {
-            return cp;
+            return classPath;
         }
 
-        return new ClassPath(cp).mapWithLibs(fileDeps.getJavaFXSDKLibsPath(),
+        return new ClassPath(classPath).mapWithLibs(fileDeps.getJavaFXSDKLibsPath(),
                 "javafx-base", "javafx-graphics", "javafx-controls", "javafx-fxml", "javafx-media");
     }
 

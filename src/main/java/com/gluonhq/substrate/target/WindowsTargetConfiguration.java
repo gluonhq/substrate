@@ -27,13 +27,12 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -76,25 +75,21 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     /**
-     * The arguments to native-image.cmd must be wrapped in double quotes when the
-     * argument contains the '=' character.
+     * The arguments to native-image.cmd must be wrapped in double quotes for the
+     * value of the classpath argument (-cp ...) or when the value of the argument is
+     * assigned by using the '=' character (i.e. -H:IncludeResourceBundles=abc).
      */
     @Override
     void postProcessCompilerArguments(List<String> arguments) {
+        int classPathArgumentIdx = Integer.MIN_VALUE;
         for (int i = 0; i < arguments.size(); i++) {
             String argument = arguments.get(i);
-            if (argument.contains("=")) {
+            if (argument.contains("=") || (i == classPathArgumentIdx + 1)) {
                 arguments.set(i, "\"" + argument + "\"");
+            } else if (Constants.NATIVE_IMAGE_ARG_CLASSPATH.equals(argument)) {
+                classPathArgumentIdx = i;
             }
         }
-    }
-
-    /**
-     * On windows, the classpath needs to be wrapped in double quotes.
-     */
-    @Override
-    String processClassPath(String cp) throws IOException {
-        return "\"" + super.processClassPath(cp) + "\"";
     }
 
     @Override
