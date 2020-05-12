@@ -70,7 +70,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json",
-            "license", "frag", "vert");
+            "license", "frag", "vert", "obj");
     private static final List<String> BUNDLES_LIST = new ArrayList<>(Arrays.asList(
             "com/sun/javafx/scene/control/skin/resources/controls",
             "com/sun/javafx/scene/control/skin/resources/controls-nt",
@@ -154,7 +154,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             compileRunner.addArg("-H:IncludeResourceBundles=" + bundles);
         }
         compileRunner.addArg(getJniPlatformArg());
-        compileRunner.addArg("-cp");
+        compileRunner.addArg(Constants.NATIVE_IMAGE_ARG_CLASSPATH);
         compileRunner.addArg(processedClasspath);
         compileRunner.addArgs(projectConfiguration.getCompilerArgs());
         compileRunner.addArg(projectConfiguration.getMainClassName());
@@ -636,8 +636,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     /**
-     * For every jar in the classpath, checks for native libraries (*.a)
-     * and if found, extracts them to a folder, for later link
+     * Loops over every jar on the classpath that isn't a JavaFX jar and checks
+     * if it contains native static libraries (*.a or *.lib files). If found, the
+     * libraries are extracted into a temporary folder for use in the link step.
      *
      * @param classPath The classpath of the project
      * @throws IOException
@@ -651,7 +652,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         List<String> jars = new ClassPath(classPath).filter(s -> s.endsWith(".jar") && !s.contains("javafx-"));
         for (String jar : jars) {
-            FileOps.extractFilesFromJar(".a", Path.of(jar), libPath, getTargetSpecificNativeLibsFilter());
+            FileOps.extractFilesFromJar("." + getStaticLibraryFileExtension(), Path.of(jar),
+                    libPath, getTargetSpecificNativeLibsFilter());
         }
     }
 
@@ -667,14 +669,17 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         List<String> linkFlags = new ArrayList<>();
         Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
         if (Files.exists(libPath)) {
-            linkFlags.add("-L" + libPath.toString());
             List<String> libs;
             try (Stream<Path> files = Files.list(libPath)) {
-                libs = files.map(p -> p.getFileName().toString())
-                        .filter(s -> s.startsWith("lib") && s.endsWith(".a"))
+                libs = files.map(file -> file.getFileName().toString())
+                        .filter(this::matchesStaticLibraryName)
                         .collect(Collectors.toList());
             }
-            linkFlags.addAll(getTargetSpecificNativeLibsFlags(libPath, libs));
+
+            if (!libs.isEmpty()) {
+                linkFlags.add(getLinkLibraryPathOption() + libPath.toString());
+                linkFlags.addAll(getTargetSpecificNativeLibsFlags(libPath, libs));
+            }
         }
         return linkFlags;
     }
@@ -700,21 +705,22 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     // Methods below with default implementation, can be overridden by subclasses
 
     /**
-     * If we are not using JavaFX, we immediately return the provided classpath, no further processing needed
-     * If we use JavaFX, we will first obtain the location of the JavaFX SDK for this configuration.
-     * This may throw an IOException.
-     * After the path to the JavaFX SDK is obtained, the JavaFX jars for the host platform are replaced by
-     * the JavaFX jars for the target platform.
-     * @param cp The provided classpath
+     * If we are not using JavaFX, we immediately return the provided classpath: no further processing
+     * is needed. If we do use JavaFX, we will first {@link FileDeps#getJavaFXSDKLibsPath obtain
+     * the location of the JavaFX SDK} for this configuration. After the path to the JavaFX SDK is
+     * obtained, the JavaFX jars of the host platform are replaced by the JavaFX jars for the target
+     * platform.
+     *
+     * @param classPath The provided classpath
      * @return A string with the modified classpath if JavaFX is used
-     * @throws IOException
+     * @throws IOException when something went wrong while resolving the location of the JavaFX SDK.
      */
-    String processClassPath(String cp) throws IOException {
+    private String processClassPath(String classPath) throws IOException {
         if (!projectConfiguration.isUseJavaFX()) {
-            return cp;
+            return classPath;
         }
 
-        return new ClassPath(cp).mapWithLibs(fileDeps.getJavaFXSDKLibsPath(),
+        return new ClassPath(classPath).mapWithLibs(fileDeps.getJavaFXSDKLibsPath(),
                 "javafx-base", "javafx-graphics", "javafx-controls", "javafx-fxml", "javafx-media");
     }
 
@@ -766,8 +772,24 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "o";
     }
 
+    String getStaticLibraryFileExtension() {
+        return "a";
+    }
+
     String getLinkLibraryPathOption() {
         return "-L";
+    }
+
+    /**
+     * Returns true if the provided <code>fileName</code> matches the naming pattern
+     * for static libraries.
+     *
+     * @param fileName the filename to test
+     * @return true if the filename matches, false otherwise
+     */
+    boolean matchesStaticLibraryName(String fileName) {
+        return fileName.startsWith("lib") &&
+                fileName.endsWith("." + getStaticLibraryFileExtension());
     }
 
     /**

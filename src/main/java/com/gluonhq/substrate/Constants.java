@@ -159,4 +159,10 @@ public class Constants {
     public static final String JNI_JAVA_FILE = "jniconfig-java.json";
     public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
     public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
+
+    /**
+     * Arguments for native-image
+     */
+    public static final String NATIVE_IMAGE_ARG_CLASSPATH = "-cp";
+
 }

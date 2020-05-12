@@ -129,7 +129,7 @@ public class InternalProjectConfiguration {
      * @return the path to the location where the static JDK libraries are expected.
      */
     public Path getJavaStaticLibsPath() {
-        return javaStaticLibs != null ? Paths.get(javaStaticLibs) : getDefaultJavaStaticLibsPath();
+        return useCustomJavaStaticLibs() ? Paths.get(javaStaticLibs) : getDefaultJavaStaticLibsPath();
     }
 
     /**
@@ -180,10 +180,19 @@ public class InternalProjectConfiguration {
      * @return the path to the JavaFX SDK
      */
     public Path getJavafxStaticPath() {
-        return javaFXStaticSDK != null? Paths.get(javaFXStaticSDK): getDefaultJavafxStaticPath();
+        return useCustomJavafxStaticLibs() ? Paths.get(javaFXStaticSDK) : getDefaultJavafxStaticPath();
     }
 
-    Path getDefaultJavafxStaticPath() {
+    /**
+     * Check whether a custom path to static JavaFX libs is provided.
+     *
+     * @return true if a custom path is provided, false otherwise.
+     */
+    public boolean useCustomJavafxStaticLibs() {
+        return this.javaFXStaticSDK != null;
+    }
+
+    public Path getDefaultJavafxStaticPath() {
         return Constants.USER_SUBSTRATE_PATH
                 .resolve("javafxStaticSdk")
                 .resolve(getJavafxStaticSdkVersion())

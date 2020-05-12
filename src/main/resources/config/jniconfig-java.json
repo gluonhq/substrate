@@ -74,9 +74,17 @@
     "name" : "java.lang.String",
     "methods" : [
       {"name":"<init>","parameterTypes":["byte[]","java.lang.String"] },
+      {"name":"concat","parameterTypes":["java.lang.String"] },
       {"name":"getBytes","parameterTypes":["java.lang.String"] },
       {"name":"toLowerCase","parameterTypes":["java.util.Locale"] },
       {"name":"toUpperCase","parameterTypes":["java.util.Locale"] }
+    ]
+  }
+,
+  {
+    "name" : "java.lang.Throwable",
+    "methods" : [
+      {"name":"getMessage","parameterTypes":[] }
     ]
   }
 ,
