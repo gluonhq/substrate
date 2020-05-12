@@ -636,8 +636,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     /**
-     * For every jar in the classpath, checks for native libraries (*.a)
-     * and if found, extracts them to a folder, for later link
+     * Loops over every jar on the classpath that isn't a JavaFX jar and checks
+     * if it contains native static libraries (*.a or *.lib files). If found, the
+     * libraries are extracted into a temporary folder for use in the link step.
      *
      * @param classPath The classpath of the project
      * @throws IOException
@@ -651,7 +652,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         List<String> jars = new ClassPath(classPath).filter(s -> s.endsWith(".jar") && !s.contains("javafx-"));
         for (String jar : jars) {
-            FileOps.extractFilesFromJar(".a", Path.of(jar), libPath, getTargetSpecificNativeLibsFilter());
+            FileOps.extractFilesFromJar("." + getStaticLibraryFileExtension(), Path.of(jar),
+                    libPath, getTargetSpecificNativeLibsFilter());
         }
     }
 
@@ -667,14 +669,17 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         List<String> linkFlags = new ArrayList<>();
         Path libPath = paths.getGvmPath().resolve(Constants.LIB_PATH);
         if (Files.exists(libPath)) {
-            linkFlags.add("-L" + libPath.toString());
             List<String> libs;
             try (Stream<Path> files = Files.list(libPath)) {
-                libs = files.map(p -> p.getFileName().toString())
-                        .filter(s -> s.startsWith("lib") && s.endsWith(".a"))
+                libs = files.map(file -> file.getFileName().toString())
+                        .filter(this::matchesStaticLibraryName)
                         .collect(Collectors.toList());
             }
-            linkFlags.addAll(getTargetSpecificNativeLibsFlags(libPath, libs));
+
+            if (!libs.isEmpty()) {
+                linkFlags.add(getLinkLibraryPathOption() + libPath.toString());
+                linkFlags.addAll(getTargetSpecificNativeLibsFlags(libPath, libs));
+            }
         }
         return linkFlags;
     }
@@ -767,8 +772,24 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "o";
     }
 
+    String getStaticLibraryFileExtension() {
+        return "a";
+    }
+
     String getLinkLibraryPathOption() {
         return "-L";
+    }
+
+    /**
+     * Returns true if the provided <code>fileName</code> matches the naming pattern
+     * for static libraries.
+     *
+     * @param fileName the filename to test
+     * @return true if the filename matches, false otherwise
+     */
+    boolean matchesStaticLibraryName(String fileName) {
+        return fileName.startsWith("lib") &&
+                fileName.endsWith("." + getStaticLibraryFileExtension());
     }
 
     /**

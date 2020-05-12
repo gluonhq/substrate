@@ -31,6 +31,7 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -113,6 +114,16 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    String getStaticLibraryFileExtension() {
+        return "lib";
+    }
+
+    @Override
+    boolean matchesStaticLibraryName(String fileName) {
+        return fileName.endsWith("." + getStaticLibraryFileExtension());
+    }
+
+    @Override
     List<String> getTargetSpecificLinkOutputFlags() {
         return Collections.singletonList("/OUT:" + getAppPath(getLinkOutputName()));
     }
@@ -132,6 +143,14 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
 
         return targetLibraries;
+    }
+
+    @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        List<String> linkFlags = new ArrayList<>();
+        linkFlags.addAll(libs);
+        linkFlags.addAll(asListOfWholeArchiveLinkFlags(libs));
+        return linkFlags;
     }
 
     @Override
@@ -160,13 +179,25 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
         return libraries.stream()
-                .map(library -> library + ".lib")
+                .map(library -> library + "." + getStaticLibraryFileExtension())
                 .collect(Collectors.toList());
     }
 
     private List<String> asListOfWholeArchiveLinkFlags(List<String> libraries) {
-        return libraries.stream()
-                .map(library -> "/WHOLEARCHIVE:" + library + ".lib")
-                .collect(Collectors.toList());
+        List<String> linkFlags = new ArrayList<>();
+
+        // add libraries whose name end with .lib unmodified
+        linkFlags.addAll(libraries.stream()
+                .filter(library -> library.endsWith("." + getStaticLibraryFileExtension()))
+                .map(library -> "/WHOLEARCHIVE:" + library)
+                .collect(Collectors.toList()));
+
+        // add libraries whose name don't end with .lib by appending .lib first
+        linkFlags.addAll(libraries.stream()
+                .filter(library -> !library.endsWith("." + getStaticLibraryFileExtension()))
+                .map(library -> "/WHOLEARCHIVE:" + library + "." + getStaticLibraryFileExtension())
+                .collect(Collectors.toList()));
+
+        return linkFlags;
     }
 }
