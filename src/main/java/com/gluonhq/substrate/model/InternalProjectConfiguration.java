@@ -461,13 +461,18 @@ public class InternalProjectConfiguration {
         if (graalvmHome == null || graalvmHome.isEmpty()) {
             return;
         }
-        Logger.logDebug("Checking execution permissions for " + graalvmHome);
+        String graalvmRoot = graalvmHome.endsWith("Contents/Home") ?
+                Path.of(graalvmHome).getParent().getParent().toString() :
+                graalvmHome;
+        Logger.logDebug("Checking execution permissions for " + graalvmRoot);
         try {
-            ProcessRunner xattrRunner = new ProcessRunner("xattr", graalvmHome);
+            ProcessRunner xattrRunner = new ProcessRunner("xattr", graalvmRoot);
             xattrRunner.runProcess("check xattr");
             if (xattrRunner.getResponses().stream().anyMatch("com.apple.quarantine"::equals)) {
-                Logger.logInfo("Removing quarantine attributes from GraalVM files.\nYou might be prompted for admin rights.");
-                ProcessRunner runner = new ProcessRunner("sudo", "xattr", "-r", "-d", "com.apple.quarantine", graalvmHome);
+                Logger.logInfo("Removing quarantine attributes from GraalVM files at " + graalvmRoot +
+                        ".\nYou might be prompted for admin rights.");
+                ProcessRunner runner = new ProcessRunner("sudo", "xattr", "-r", "-d",
+                        "com.apple.quarantine", graalvmRoot);
                 runner.setInteractive(true);
                 boolean result = runner.runTimedProcess("remove quarantine", 60L);
                 if (result) {
@@ -475,7 +480,7 @@ public class InternalProjectConfiguration {
                 }
             }
         } catch (IOException | InterruptedException e) {
-            Logger.logFatal(e,"Error checking execution permissions for " + graalvmHome);
+            Logger.logFatal(e,"Error checking execution permissions for " + graalvmRoot);
         }
     }
 
