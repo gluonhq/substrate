@@ -32,6 +32,7 @@ import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ReleaseConfiguration;
+import com.gluonhq.substrate.util.AttachResolver;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -48,6 +49,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -606,6 +608,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             String newVersionName = Optional.ofNullable(releaseConfiguration.getVersionName())
                     .orElse(DEFAULT_CODE_NAME);
             FileOps.replaceInFile(genManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
+            addRequiredPermissions(genManifest);
             Logger.logInfo("Default Android manifest generated in " + genManifest.toString() + ".\n" +
                     "Consider copying it to " + targetSourcePath.toString() + " before performing any modification");
             return androidPath;
@@ -680,6 +683,34 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private static class BuildToolNotFoundException extends IOException {
         public BuildToolNotFoundException() {
             super("Android build tools not found. Please install it and try again.");
+        }
+    }
+
+    /**
+     * Scans the classpath and adds permission to AndroidManifest.xml for
+     * each attach service found.
+     * @param genManifest Path to the AndroidManifest.xml file
+     */
+    private void addRequiredPermissions(Path genManifest) {
+        try {
+            final List<String> attachServices = AttachResolver.attachServices(projectConfiguration.getClasspath());
+            attachServices.forEach(service -> {
+                try {
+                    switch (service) {
+                        case "position":
+                            FileOps.addNode(genManifest, "uses-permission", Map.of("a:name", "android.permission.ACCESS_FINE_LOCATION"));
+                            break;
+                        case "ble":
+                            FileOps.addNode(genManifest, "uses-permission", Map.of("a:name", "android.permission.BLUETOOTH"));
+                            FileOps.addNode(genManifest, "uses-permission", Map.of("a:name", "android.permission.BLUETOOTH_ADMIN"));
+                            break;
+                    }
+                } catch (IOException iox) {
+                    iox.printStackTrace();
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

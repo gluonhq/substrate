@@ -29,6 +29,7 @@ package com.gluonhq.substrate.util;
 
 import com.gluonhq.substrate.SubstrateDispatcher;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -37,6 +38,12 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -323,6 +330,52 @@ public class FileOps {
             lines.set(i, lines.get(i).replaceAll(original, replacement));
         }
         writeFileLines(file, lines);
+    }
+
+    /**
+     * Removes all {@link String#isBlank() blank} lines from a file
+     * @param file Path to file
+     * @throws IOException Exception while reading from, or writing to the file
+     */
+    public static void removeEmptyLines(Path file) throws IOException {
+        InputStream inputStream = Files.newInputStream(file);
+        List<String> lines = readFileLines(inputStream);
+        lines.removeIf(String::isBlank);
+        writeFileLines(file, lines);
+    }
+
+    /**
+     * Adds a Node to a XML file
+     * @param file The XML file which needs to be updated
+     * @param tag Tag that needs to be added
+     * @param attributes Map of attribute name:value that needs to be added to the tag
+     */
+    public static void addNode(Path file, String tag, Map<String, String> attributes) throws IOException {
+        try {
+            Objects.requireNonNull(file);
+            if (!Files.exists(file) || !file.toString().endsWith(".xml")) {
+                throw new IOException("Not a valid file: " + file);
+            }
+
+            File xmlFile = file.toFile();
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document document = builder.parse(xmlFile);
+            final Element root = document.getDocumentElement();
+
+            Element element = document.createElement(tag);
+            attributes.forEach(element::setAttribute);
+            root.appendChild(element);
+
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            DOMSource source = new DOMSource(document);
+            StreamResult result = new StreamResult(file.toFile());
+            transformer.transform(source, result);
+            removeEmptyLines(file);
+        } catch (SAXException | ParserConfigurationException | TransformerException ex) {
+            Logger.logSevere("Error parsing: " + ex.getMessage());
+        }
     }
 
     /**
