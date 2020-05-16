@@ -461,7 +461,7 @@ public class InternalProjectConfiguration {
         if (graalvmHome == null || graalvmHome.isEmpty()) {
             return;
         }
-        String graalvmRoot = graalvmHome.endsWith("Contents/Home") ?
+        String graalvmRoot = graalvmHome.endsWith("/Contents/Home") ?
                 Path.of(graalvmHome).getParent().getParent().toString() :
                 graalvmHome;
         Logger.logDebug("Checking execution permissions for " + graalvmRoot);
