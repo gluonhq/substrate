@@ -409,6 +409,34 @@ public class InternalProjectConfiguration {
             }
         }
     }
+    /**
+     * for Android and iOS profiles, verifies that the LLVM toolchain is installed,
+     * or installs it otherwise.
+     *
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public void canRunLLVM(Triplet triplet) throws IOException, InterruptedException {
+        if (!new Triplet(Constants.Profile.IOS).equals(triplet) &&
+                !new Triplet(Constants.Profile.ANDROID).equals(triplet)) {
+            return;
+        }
+        Path graalPath = getGraalPath();
+        if (!Files.exists(graalPath)) {
+            throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
+        }
+        Path llvmPath = graalPath.resolve("lib").resolve("llvm");
+        if (!Files.exists(llvmPath) || !Files.exists(llvmPath.resolve("bin"))
+                || !Files.exists(llvmPath.resolve("bin").resolve("llvm-config"))) {
+            ProcessRunner runner = new ProcessRunner(graalPath.resolve("bin").resolve("gu").toString(), "install", "llvm-toolchain");
+            int result = runner.runProcess("install llvm-toolchain");
+            if (result != 0) {
+                throw new IOException("Error installing llvm-toolchain at: " + graalPath + "\n" +
+                        "Please, use gu to install llvm running the following command: \n" +
+                        "$GRAALVM_HOME/bin/gu install llvm-toolchain");
+            }
+        }
+    }
 
     /**
      * Run any necessary checks required on the host

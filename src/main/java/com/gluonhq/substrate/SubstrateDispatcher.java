@@ -339,6 +339,8 @@ public class SubstrateDispatcher {
             throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
         }
 
+        config.canRunLLVM(targetTriplet);
+
         Logger.logInfo("We will now compile your code for " + targetTriplet + ". This may take some time.");
         boolean compilingSucceeded = targetConfiguration.compile();
         if (!compilingSucceeded) {
