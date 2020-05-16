@@ -424,22 +424,35 @@ public class InternalProjectConfiguration {
 
     /**
      * Gets $GRAALVM/bin path or throws an IOException if the path is not found
-     * It also verifies that native-image is installed in that path.
+     * It also verifies that native-image is installed in that path, and
+     * installs it otherwise.
      *
      * @return the path to $GRAALVM/bin
      * @throws IOException If $GRAALVM, $GRAALVM/bin or $GRAALVM/bin/native-image paths
      *                    don't exist
      */
-    private Path getGraalVMBinPath() throws IOException {
-        Path graalPath = getGraalPath();//Path.of(graalPathString);
-        if (!Files.exists(graalPath)) throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
+    private Path getGraalVMBinPath() throws IOException, InterruptedException {
+        Path graalPath = getGraalPath();
+        if (!Files.exists(graalPath)) {
+            throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
+        }
         Path binPath = graalPath.resolve("bin");
-        if (!Files.exists(binPath)) throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPath);
-        Path niPath = Constants.OS_WINDOWS.equals(getHostTriplet().getOs()) ?
-                binPath.resolve("native-image.cmd") :
-                binPath.resolve("native-image");
-        if (!Files.exists(niPath)) throw new IOException("Path provided for GraalVM doesn't contain bin/native-image: " + graalPath + "\n" +
-                "You can use gu to install it running: \n${GRAALVM_HOME}/bin/gu install native-image");
+        if (!Files.exists(binPath)) {
+            throw new IOException("Path provided for GraalVM doesn't contain a bin directory: " + graalPath);
+        }
+        boolean isWindows = Constants.OS_WINDOWS.equals(getHostTriplet().getOs());
+        Path niPath = isWindows ? binPath.resolve("native-image.cmd") : binPath.resolve("native-image");
+        if (!Files.exists(niPath)) {
+            Path guPath = isWindows ? binPath.resolve("gu.cmd") : binPath.resolve("gu");
+            ProcessRunner runner = new ProcessRunner(guPath.toString(), "install", "native-image");
+            int result = runner.runProcess("install native-image");
+            if (result != 0) {
+                throw new IOException("Error installing native-image at: " + graalPath + "\n" +
+                        "Please, use gu to install native-image running the following command: \n" +
+                        (isWindows ? "%GRAALVM_HOME%\\bin\\gu.cmd install native-image" :
+                                "$GRAALVM_HOME/bin/gu install native-image"));
+            }
+        }
         return binPath;
     }
 
