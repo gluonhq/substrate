@@ -34,12 +34,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -220,51 +215,5 @@ class FileOpsTests {
         Path resourcePath = FileOps.copyResource("/test-resource.txt", getTempDir().resolve("test-resource.txt"));
         assertThrows(IOException.class, () -> FileOps.getNodeValue(resourcePath.toString(), "aa", "bb"));
         Files.deleteIfExists(resourcePath);
-    }
-    
-    @Test
-    void removeEmptyLinesFromFile() throws IOException {
-        Path tempFile = Files.createTempFile("test", String.valueOf(System.currentTimeMillis()));
-        Files.writeString(tempFile, "abc\n    \nxyz");
-        List<String> strings = Files.readAllLines(tempFile);
-        assertEquals(3, strings.size());
-        FileOps.removeEmptyLines(tempFile);
-        strings = Files.readAllLines(tempFile);
-        assertEquals(2, strings.size());
-        Files.deleteIfExists(tempFile);
-    }
-
-    @Test
-    void testNodeAddition() throws IOException {
-        Path xmlPath = FileOps.copyResource("/test-ops.xml", getTempDir().resolve("test-ops.xml"));
-        System.out.println(Files.readString(xmlPath));
-        assertTrue(Files.exists(xmlPath));
-        assertNull(FileOps.getNodeValue(xmlPath.toString(), "uses-permission", "a:name"));
-        FileOps.addNode(xmlPath, "uses-permission", Map.of("a:name", "android.permission.INTERNET"));
-        assertEquals("android.permission.INTERNET", FileOps.getNodeValue(xmlPath.toString(), "uses-permission", "a:name"));
-        System.out.println(Files.readString(xmlPath));
-        Files.deleteIfExists(xmlPath);
-    }
-    
-    @Test
-    void testPath() throws IOException {
-        List<String> list = new ArrayList<>();
-        List<Path> jars = List.of(
-                Paths.get("/home/itachi/.m2/repository/com/gluonhq/attach/display/4.0.7/display-4.0.7-android.jar"),
-                Paths.get("/home/itachi/.m2/repository/com/gluonhq/attach/position/4.0.7/position-4.0.7.jar"),
-                Paths.get("/home/itachi/.m2/repository/com/gluonhq/attach/position/4.0.7/position-4.0.7-android.jar")
-        );
-        for (Path jar : jars) {
-            ZipFile zf = new ZipFile(jar.toFile());
-            zf.stream()
-                    .map(ZipEntry::getName)
-                    .filter(ze -> ze.endsWith("Service.class"))
-                    .filter(ze -> ze.contains("impl") && !ze.contains("Dummy")
-                            && !ze.contains("Default"))
-                    .forEach(ze -> list.add(ze.split("/")[3]));
-        }
-        list.stream()
-                .distinct()
-                .forEach(System.out::println);
     }
 }
