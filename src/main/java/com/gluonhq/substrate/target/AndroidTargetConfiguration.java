@@ -687,17 +687,21 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     /**
-     * Scans the classpath and adds permission to AndroidManifest.xml for
-     * each attach service found.
+     * Scans the classpath for Attach Services
+     * and returns a list of permissions in XML tags
      */
-    private Set<String> requiredPermissions() {
+    private List<String> requiredPermissions() {
         final ConfigResolver configResolver;
         try {
             configResolver = new ConfigResolver(projectConfiguration.getClasspath());
-            return configResolver.getAndroidPermissions();
+            final Set<String> androidPermissions = configResolver.getAndroidPermissions();
+            return androidPermissions.stream()
+                    .map(permission -> "<uses-permission a:name=\"" + permission + "\"/>")
+                    .sorted()
+                    .collect(Collectors.toList());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        return Collections.emptySet();
+        return Collections.emptyList();
     }
 }
