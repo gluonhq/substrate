@@ -35,6 +35,7 @@ jclass jKeyboardServiceClass;
 jclass jLifecycleServiceClass;
 jclass jPicturesServiceClass;
 jclass jPositionServiceClass;
+jclass jStorageServiceClass;
 int handlesInitialized = 0;
 
 jclass registerClass(JNIEnv* androidEnv, const char* name) {
@@ -61,6 +62,7 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     jLifecycleServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikLifecycleService");
     jPicturesServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikPicturesService");
     jPositionServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
+    jStorageServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikStorageService");
     handlesInitialized = 1;
 }
 
@@ -88,12 +90,16 @@ jclass substrateGetLifecycleServiceClass() {
     return jLifecycleServiceClass;
 }
 
+jclass substrateGetPicturesServiceClass() {
+    return jPicturesServiceClass;
+}
+
 jclass substrateGetPositionServiceClass() {
     return jPositionServiceClass;
 }
 
-jclass substrateGetPicturesServiceClass() {
-    return jPicturesServiceClass;
+jclass substrateGetStorageServiceClass() {
+    return jStorageServiceClass;
 }
 
 // Lifecycle
