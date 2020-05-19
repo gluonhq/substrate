@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.config.ConfigResolver;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
@@ -50,6 +51,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -606,6 +608,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             String newVersionName = Optional.ofNullable(releaseConfiguration.getVersionName())
                     .orElse(DEFAULT_CODE_NAME);
             FileOps.replaceInFile(genManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
+            FileOps.replaceInFile(genManifest, "<!-- PERMISSIONS -->", String.join("\n    ", requiredPermissions()));
             Logger.logInfo("Default Android manifest generated in " + genManifest.toString() + ".\n" +
                     "Consider copying it to " + targetSourcePath.toString() + " before performing any modification");
             return androidPath;
@@ -681,5 +684,24 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         public BuildToolNotFoundException() {
             super("Android build tools not found. Please install it and try again.");
         }
+    }
+
+    /**
+     * Scans the classpath for Attach Services
+     * and returns a list of permissions in XML tags
+     */
+    private List<String> requiredPermissions() {
+        final ConfigResolver configResolver;
+        try {
+            configResolver = new ConfigResolver(projectConfiguration.getClasspath());
+            final Set<String> androidPermissions = configResolver.getAndroidPermissions();
+            return androidPermissions.stream()
+                    .map(permission -> "<uses-permission a:name=\"" + permission + "\"/>")
+                    .sorted()
+                    .collect(Collectors.toList());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
     }
 }
