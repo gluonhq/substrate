@@ -30,6 +30,7 @@
 jclass jUtilClass;
 jclass jBleServiceClass;
 jclass jBrowserServiceClass;
+jclass jDeviceServiceClass;
 jclass jDisplayServiceClass;
 jclass jKeyboardServiceClass;
 jclass jLifecycleServiceClass;
@@ -58,6 +59,7 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     jUtilClass = registerClass(androidEnv, "com/gluonhq/helloandroid/Util");
     jBleServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBleService");
     jBrowserServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBrowserService");
+    jDeviceServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikDeviceService");
     jDisplayServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikDisplayService");
     jKeyboardServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/KeyboardService");
     jLifecycleServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikLifecycleService");
@@ -78,6 +80,10 @@ jclass substrateGetBleServiceClass() {
 
 jclass substrateGetBrowserServiceClass() {
     return jBrowserServiceClass;
+}
+
+jclass substrateGetDeviceServiceClass() {
+    return jDeviceServiceClass;
 }
 
 jclass substrateGetDisplayServiceClass() {
