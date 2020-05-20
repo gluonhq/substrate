@@ -28,14 +28,14 @@ jobs:
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
           wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.1.0/graalvm-ce-java11-linux-amd64-20.1.0.tar.gz
-          unzip graalvm-svm-linux-20.2-latest && cd $GITHUB_WORKSPACE
+          tar -xzvf graalvm-ce-java11-linux-amd64-20.1.0.tar.gz -C $HOME/graalvm && cd $GITHUB_WORKSPACE
 
       - name: Install GraalVM (MacOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
-          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.1.0/graalvm-ce-java8-darwin-amd64-20.1.0.tar.gz
-          unzip graalvm-svm-darwin-20.2-latest && cd $GITHUB_WORKSPACE
+          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.1.0/graalvm-ce-java11-darwin-amd64-20.1.0.tar.gz
+          tar -xzvf graalvm-ce-java11-darwin-amd64-20.1.0.tar.gz -C $HOME/graalvm && cd $GITHUB_WORKSPACE
 
       - name: Install linux JavaFX static libs (Linux)
         if: runner.os == 'Linux'
@@ -72,7 +72,7 @@ jobs:
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
         run: |
-          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.2-latest
+          export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-20.1.0
           export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-linux/sdk
           export DISPLAY=:90
           mkdir /home/runner/.vnc
@@ -85,7 +85,7 @@ jobs:
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
         run: |
-          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.2-latest
+          export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-20.1.0
           export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-darwin/sdk
           export JAVAFX_STATIC_SDK_IOS=$HOME/javafx-static-libs-ios/sdk
           ./gradlew -i test
