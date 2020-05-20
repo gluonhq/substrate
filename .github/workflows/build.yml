@@ -85,7 +85,7 @@ jobs:
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
         run: |
-          export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-20.1.0
+          export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-20.1.0/Contents/Home
           export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-darwin/sdk
           export JAVAFX_STATIC_SDK_IOS=$HOME/javafx-static-libs-ios/sdk
           ./gradlew -i test
