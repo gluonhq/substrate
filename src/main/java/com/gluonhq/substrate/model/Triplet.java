@@ -115,7 +115,7 @@ public class Triplet {
         if (getOs().equals(target.getOs())) return true;
 
         // so far, iOS can be built from Mac, Android can be built from Linux
-        return (OS_DARWIN.equals(getOs()) && Constants.OS_IOS.equals(target.getOs())) ||
+        return (OS_DARWIN.equals(getOs()) && OS_IOS.equals(target.getOs())) ||
                 (OS_LINUX.equals(getOs()) && OS_ANDROID.equals(target.getOs()));
     }
 
