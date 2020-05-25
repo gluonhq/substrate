@@ -200,8 +200,10 @@ static void *thread_func()
         if (buf[rdsz - 1] == '\n')
             --rdsz;
         buf[rdsz] = 0; /* add null-terminator */
-        __android_log_write(ANDROID_LOG_DEBUG, tag, buf);
-        // __android_log_print(ANDROID_LOG_DEBUG, tag, buf);
+        if (rdsz > 0) {
+            __android_log_write(ANDROID_LOG_DEBUG, tag, buf);
+            // __android_log_print(ANDROID_LOG_DEBUG, tag, buf);
+        }
     }
     return 0;
 }
