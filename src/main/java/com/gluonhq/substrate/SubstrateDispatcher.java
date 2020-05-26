@@ -44,8 +44,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -255,12 +258,13 @@ public class SubstrateDispatcher {
         con.setConnectTimeout(3000);
         con.setReadTimeout(3000);
         con.setRequestProperty("User-Agent", 
-            System.getProperty("os.arch") + " " +
-            System.getProperty("os.name") + " " +
+            System.getProperty("os.name") + " - " +
+            System.getProperty("os.arch") + " - " +
             System.getProperty("os.version") + " / " +
             System.getProperty("java.version") + " / " +
             config.getTargetTriplet().getOs() + " / " +
-            task);
+            task + " / " +
+            getHash(config.getAppId()+config.getMainClassName()));
 
         StringBuilder text = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
@@ -270,6 +274,21 @@ public class SubstrateDispatcher {
             }
         }
         return text.toString();
+    }
+
+    private String getHash(String input) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuffer hexString = new StringBuffer();
+            for (int i = 0; i < hash.length; i++) {
+                String hex = Integer.toHexString(0xff & hash[i]);
+                if(hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
     }
 
     private static void executePackageStep(SubstrateDispatcher dispatcher) {
