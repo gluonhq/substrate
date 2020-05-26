@@ -100,7 +100,7 @@ public class InternalProjectConfiguration {
     }
 
     public Version getGraalVersion() throws IOException {
-        String pattern = "GraalVM .*(\\d\\d.\\d.\\d)";
+        String pattern = "GraalVM .*?(\\d\\d.\\d.\\d)";
         ProcessRunner graalJava;
         try {
             graalJava = new ProcessRunner(
