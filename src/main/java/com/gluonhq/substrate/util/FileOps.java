@@ -55,6 +55,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -158,7 +159,13 @@ public class FileOps {
         FileSystem fileSystem;
         try {
             URI resource = SubstrateDispatcher.class.getResource("").toURI();
-            fileSystem = FileSystems.newFileSystem(resource, Collections.<String, String>emptyMap());
+            try {
+                fileSystem = FileSystems.getFileSystem(resource);
+            } catch (FileSystemNotFoundException e) {
+                Logger.logInfo("FileSystem for resource " + resource + " not found. Trying to create a new FileSystem instead.");
+                fileSystem = FileSystems.newFileSystem(resource, Collections.<String, String>emptyMap());
+            }
+            Logger.logDebug("Created FileSystem for resource " + resource + ": " + fileSystem);
         } catch(URISyntaxException e) {
             throw new IOException(e.toString());
         }
