@@ -89,7 +89,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "-H:+AddAllCharsets",
             "-H:+ReportExceptionStackTraces",
             "-H:-DeadlockWatchdogExitOnTimeout",
-            "-H:DeadlockWatchdogInterval=0"
+            "-H:DeadlockWatchdogInterval=0",
+            "-H:+RemoveSaturatedTypeFlows"
     );
     private static final List<String> verboseNativeImageArguments = Arrays.asList(
             "-H:+PrintAnalysisCallTree",
