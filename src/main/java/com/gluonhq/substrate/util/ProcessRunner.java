@@ -307,7 +307,7 @@ public class ProcessRunner {
      * @param name the name of the process
      * @param args a varargs list of command line arguments
      * @return Integer result of the process
-     *                      
+     *
      */
     public static Integer executeWithFeedback(String name, String... args) throws IOException, InterruptedException {
         ProcessRunner process = new ProcessRunner(args);

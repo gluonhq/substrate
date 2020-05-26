@@ -1,0 +1,35 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 28
+    }
+
+    dependencies {
+        implementation 'com.android.support:support-v4:27.1.1'
+        api fileTree(dir: '../libs', include: '*.jar')
+    }
+
+    signingConfigs {
+        release {
+            if (file("keystore.properties").exists()) {
+                Properties keystoreSettings = new Properties()
+                keystoreSettings.load(new FileInputStream(file("keystore.properties")))
+
+                storeFile = file(keystoreSettings['storeFile'])
+                storePassword = keystoreSettings['storePassword']
+                keyAlias = keystoreSettings['keyAlias']
+                keyPassword = keystoreSettings['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+}

@@ -92,7 +92,6 @@ public class ProjectConfiguration {
         this.graalPath = path;
     }
 
-
     /**
      * Sets the Java static SDK version
      * @param javaStaticSdkVersion the Java static SDK version
@@ -240,7 +239,7 @@ public class ProjectConfiguration {
     /**
      * Sets the AppID. This acts as the application identifier in various platforms.
      * For Android, this is the equivalent of 'package' name of the application.
-     * 
+     *
      * @param appId The application ID of the application.
      */
     public void setAppId(String appId) {

@@ -73,7 +73,7 @@ void attach_setLifecycleEvent(const char *event);
 
 #define DETACH_GRAAL() \
     LOGD(stderr, "DETACH_GRAAL, tid = %d, graalVM = %p, existed = %d, env at %p\n", gettid(), graalVM, attach_graal_det, graalEnv); \
-    if (attach_graal_det == 0) (*graalVM)->DetachCurrentThread(graalVM); 
+    if (attach_graal_det == 0) (*graalVM)->DetachCurrentThread(graalVM);
 
 #define ATTACH_DALVIK() \
     JNIEnv *dalvikEnv; \
@@ -84,5 +84,5 @@ void attach_setLifecycleEvent(const char *event);
 
 #define DETACH_DALVIK() \
     LOGD(stderr, "DETACH_DALVIK, tid = %d, existed = %d, env at %p\n", gettid(), attach_dalvik_det, dalvikEnv); \
-    if (attach_dalvik_det == 0) (*dalvikVM)->DetachCurrentThread(dalvikVM); 
+    if (attach_dalvik_det == 0) (*dalvikVM)->DetachCurrentThread(dalvikVM);
 

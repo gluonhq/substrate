@@ -49,22 +49,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Objects;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static com.gluonhq.substrate.Constants.DALVIK_ACTIVITY_PACKAGE;
-import static com.gluonhq.substrate.Constants.DALVIK_JAVAFX_PACKAGE;
+import static com.gluonhq.substrate.Constants.ANDROID_NATIVE_FOLDER;
+import static com.gluonhq.substrate.Constants.ANDROID_PROJECT_NAME;
 import static com.gluonhq.substrate.Constants.DALVIK_PRECOMPILED_CLASSES;
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_DALVIK;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_NAME;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_VERSION;
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_DEBUG_KEY_ALIAS;
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_DEBUG_KEY_ALIAS_PASSWORD;
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_DEBUG_KEY_STORE_PASSWORD;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
@@ -74,7 +71,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final Path clang;
     private final String hostPlatformFolder;
 
-    private List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c", "touch_events.c", "glibc_shim.c", "attach_adapter.c");
+    private List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c",
+            "touch_events.c", "glibc_shim.c", "attach_adapter.c", "logger.c");
     private List<String> androidAdditionalHeaderFiles = Arrays.asList("grandroid.h", "grandroid_ext.h");
     private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
     private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-fuse-ld=gold",
@@ -83,18 +81,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", "-Wl,--no-whole-archive",
             "-lGLESv2", "-lEGL", "-lfreetype");
-    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
-            "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
-            "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
-            "LLVMDirectives.cap", "PosixDirectives.cap"};
-    private final String capLocation = "/native/android/cap/";
-    private final List<String> iconFolders = Arrays.asList("mipmap-hdpi",
-            "mipmap-ldpi", "mipmap-mdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi");
-    private final List<String> sourceGlueCode = Arrays.asList("MainActivity", "KeyCode", "PermissionRequestActivity");
-    private final List<String> compiledGlueCodeActivity = Arrays.asList("MainActivity",
-            "MainActivity$1", "MainActivity$2", "MainActivity$3", "MainActivity$InternalSurfaceView",
-            "PermissionRequestActivity", "PermissionRequestActivity$1");
-    private final List<String> compiledGlueCodeJavaFX = Arrays.asList("KeyCode", "KeyCode$KeyCodeClass");
+    private final String capLocation = ANDROID_NATIVE_FOLDER + "cap/";
 
     public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
         super(paths,configuration);
@@ -108,14 +95,17 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "clang");
         this.clang = Files.exists(clangguess) ? clangguess : null;
+        if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
+            projectConfiguration.setBackend(Constants.BACKEND_LIR);
+        }
     }
 
     @Override
     public boolean compile() throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no ld.lld in android_ndk, we should not start compiling
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (ldlld == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/ldlld");
-        if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
+        if (ldlld == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/ld.lld");
+        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
 
         return super.compile();
     }
@@ -124,7 +114,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean link() throws IOException, InterruptedException {
         // we override link as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (clang == null) throw new IOException ("You specified an android ndk, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
+        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
 
         return super.link();
@@ -132,73 +122,57 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     public boolean packageApp() throws IOException, InterruptedException {
-        Path androidPathForManifest = prepareAndroidManifest();
-        Path androidPathForRes = prepareAndroidResources();
+        prepareAndroidProject();
+        prepareAndroidManifest();
+        prepareAndroidResources();
+        copyOtherDalvikClasses();
+        copySubstrateLibraries();
+        String configuration = generateSigningConfiguration();
 
-        ensureApkOutputDirectoriesExist();
-
-        Path sdkPath = Paths.get(sdk);
-        Path buildToolsPath = sdkPath.resolve("build-tools").resolve(findLatestBuildTool(sdkPath));
-        String androidJar = sdkPath.resolve("platforms").resolve("android-27").resolve("android.jar").toString();
-
-        String unalignedApk = getApkBinPath().resolve(projectConfiguration.getAppName() + ".unaligned.apk").toString();
-        String alignedApk = getApkBinPath().resolve(projectConfiguration.getAppName() + ".apk").toString();
-
-        if (!processPrecompiledClasses(androidJar)) {
+        ProcessRunner assembleDebug = new ProcessRunner(
+                            getAndroidProjectPath().resolve("gradlew").toString(),
+                            "-p", getAndroidProjectPath().toString(),
+                            "assemble" + configuration);
+        assembleDebug.addToEnv("ANDROID_HOME", sdk);
+        assembleDebug.addToEnv("JAVA_HOME", projectConfiguration.getGraalPath().toString());
+        if (assembleDebug.runProcess("package-task") != 0) {
             return false;
         }
-
-        copyAndroidManifest(androidPathForManifest);
-        copyAssets(androidPathForRes);
-
-        int processResult = dx(buildToolsPath);
-        if (processResult != 0) {
-            return false;
+        Path generatedApk = getAndroidProjectPath().resolve("app").resolve("build")
+                            .resolve("outputs").resolve("apk").resolve(configuration.toLowerCase(Locale.ROOT))
+                            .resolve("app-"+configuration.toLowerCase(Locale.ROOT)+".apk");
+        Path targetApk = paths.getGvmPath().resolve(projectConfiguration.getAppName()+".apk");
+        if (Files.exists(generatedApk)) {
+            FileOps.copyFile(generatedApk, targetApk);
         }
-
-        processResult = aapt(buildToolsPath, unalignedApk, androidJar);
-        if (processResult != 0) {
-            return false;
-        }
-
-        processResult = zipAlign(buildToolsPath, unalignedApk, alignedApk);
-        if (processResult != 0) {
-            return false;
-        }
-
-        processResult = sign(buildToolsPath, alignedApk);
-        return processResult == 0;
+        return true;
     }
 
     @Override
     public boolean install() throws IOException, InterruptedException {
-        Path sdkPath = Paths.get(sdk);
-
-        Path alignedApkPath = getApkBinPath().resolve(projectConfiguration.getAppName() + ".apk");
-        if (!Files.exists(alignedApkPath)) {
-            throw new IOException("Application not found at path: " + alignedApkPath);
-        }
-
-        ProcessRunner install = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                "install", "-r", alignedApkPath.toString());
-        int processResult = install.runProcess("install");
-        if (processResult != 0) throw new IOException("Application installation failed!");
-
-        return processResult == 0;
+        String configuration = generateSigningConfiguration();
+        ProcessRunner installDebug = new ProcessRunner(
+                            getAndroidProjectPath().resolve("gradlew").toString(),
+                            "-p", getAndroidProjectPath().toString(),
+                            "install" + configuration);
+        installDebug.addToEnv("ANDROID_HOME", sdk);
+        installDebug.addToEnv("JAVA_HOME", projectConfiguration.getGraalPath().toString());
+        return installDebug.runProcess("install-task") == 0;
     }
 
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
         Path sdkPath = Paths.get(sdk);
+        String adb = sdkPath.resolve("platform-tools").resolve("adb").toString();
 
         Runnable logcat = () -> {
             try {
-                ProcessRunner clearLog = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
+                ProcessRunner clearLog = new ProcessRunner(adb,
                         "logcat", "-c");
                 clearLog.runProcess("clearLog");
 
-                ProcessRunner log = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
-                        "-d", "logcat", "-v", "brief", "-v", "color",
+                ProcessRunner log = new ProcessRunner(adb,
+                        "logcat", "-v", "brief", "-v", "color",
                         "GraalCompiled:V", "GraalActivity:V",
                         "GraalGluon:V", "GluonAttach:V",
                         "AndroidRuntime:E", "ActivityManager:W", "*:S");
@@ -212,7 +186,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Thread logger = new Thread(logcat);
         logger.start();
 
-        ProcessRunner run = new ProcessRunner(sdkPath.resolve("platform-tools").resolve("adb").toString(),
+        ProcessRunner run = new ProcessRunner(adb,
                 "shell", "monkey", "-p", getAndroidPackageName(), "1");
         int processResult = run.runProcess("run");
         if (processResult != 0) throw new IOException("Application starting failed!");
@@ -223,20 +197,32 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
-        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+        ArrayList<String> flags = new ArrayList<String>(Arrays.asList(
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
-                "-H:CustomLD=" + ldlld.toAbsolutePath().toString());
+                "-H:CompilerBackend=" + projectConfiguration.getBackend()));
+        if (projectConfiguration.isUseLLVM()) {
+            flags.add("-H:CustomLD=" + ldlld.toAbsolutePath().toString());
+        }
+        if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
+            flags.add("-H:+UseBionicC");
+        }
+        return flags;
     }
 
     @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
-        return FileOps.findFile( paths.getGvmPath(), "llvm.o").map( objectFile ->
-                Collections.singletonList(objectFile.toAbsolutePath().toString())
-        ).orElseThrow();
+        if (projectConfiguration.isUseLLVM()) {
+            return FileOps.findFile(paths.getGvmPath(), "llvm.o").map( objectFile ->
+                    Collections.singletonList(objectFile.toAbsolutePath().toString())
+            ).orElseThrow();
+        }
+        else {
+            return super.getTargetSpecificObjectFiles();
+        }
     }
 
     @Override
@@ -282,7 +268,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     public String getAdditionalSourceFileLocation() {
-        return "/native/android/c/";
+        return ANDROID_NATIVE_FOLDER + "c/";
     }
 
     @Override
@@ -300,94 +286,29 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return false;
     }
 
-    private Path getApkPath() {
-        return paths.getGvmPath().resolve(Constants.APK_PATH);
+    private Path getAndroidProjectPath() {
+        return paths.getGvmPath().resolve("android_project");
     }
 
-    private Path getApkBinPath() {
-        return getApkPath().resolve("bin");
-    }
-
-    private Path getApkClassesPath() {
-        return getApkPath().resolve("classes");
-    }
-
-    private Path getApkLibPath() {
-        return getApkPath().resolve("lib");
-    }
-
-    private Path getApkLibArm64Path() {
-        return getApkLibPath().resolve("arm64-v8a");
-    }
-
-    private Path getApkAndroidSourcePath() {
-        return getApkPath().resolve("android-source");
-    }
-
-    private void ensureApkOutputDirectoriesExist() throws IOException {
-        Files.createDirectories(getApkPath());
-        Files.createDirectories(getApkBinPath());
-        Files.createDirectories(getApkClassesPath());
-        Files.createDirectories(getApkLibPath());
-        Files.createDirectories(getApkLibArm64Path());
-    }
-
-    private boolean processPrecompiledClasses(String androidJar) throws IOException, InterruptedException {
-        String androidCodeLocation = "/native/android/dalvik";
-
-        copyOtherDalvikClasses();
-        if (projectConfiguration.isUsePrecompiledCode()) {
-            copyPrecompiledClasses(androidCodeLocation + DALVIK_PRECOMPILED_CLASSES);
-        } else {
-            return compileDalvikCode(androidCodeLocation + "/source/", androidJar) == 0;
-        }
-
-        return true;
-    }
-
-    private void copyPrecompiledClasses(String androidPrecompiled) throws IOException {
-        for (String classFile : compiledGlueCodeActivity) {
-            FileOps.copyResource(androidPrecompiled + DALVIK_ACTIVITY_PACKAGE + classFile + ".class",
-                    getApkClassesPath().resolve(DALVIK_ACTIVITY_PACKAGE + classFile + ".class"));
-        }
-        for (String classFile : compiledGlueCodeJavaFX) {
-            FileOps.copyResource(androidPrecompiled + DALVIK_JAVAFX_PACKAGE + classFile + ".class",
-                    getApkClassesPath().resolve(DALVIK_JAVAFX_PACKAGE + classFile + ".class"));
-        }
-    }
-
-    private int compileDalvikCode(String androidSrc, String androidJar) throws IOException, InterruptedException {
-        Files.createDirectories(getApkAndroidSourcePath());
-
-        for (String srcFile : sourceGlueCode) {
-            FileOps.copyResource(androidSrc + srcFile + ".java", getApkAndroidSourcePath().resolve(srcFile + ".java"));
-        }
-
-        List<String> sources = new ArrayList<>();
-
-        for (String srcFile : sourceGlueCode) {
-            sources.add(getApkAndroidSourcePath().resolve(srcFile + ".java").toString());
-        }
-
-        ProcessRunner processRunner = new ProcessRunner(projectConfiguration.getGraalPath().resolve("bin").resolve("javac").toString(),
-                "-d", getApkClassesPath().toString(),
-                "-source", "1.7", "-target", "1.7",
-                "-cp", getApkAndroidSourcePath().toString() + File.pathSeparator + getApkClassesPath().toString(),
-                "-bootclasspath", androidJar);
-        processRunner.addArgs(sources);
-        return processRunner.runProcess("dalvikCompilation");
+    private Path getAndroidProjectMainPath() {
+        return getAndroidProjectPath().resolve("app").resolve("src").resolve("main");
     }
 
     /**
      * Walks through the jars in the classpath, excluding the JavaFX ones,
      * and looks for META-INF/substrate/dalvik/*.class files.
      *
-     * The method will copy all the class files found into the target folder
+     * The method will copy all the class files found into jar in the target folder
      *
      * @throws IOException
      */
     private void copyOtherDalvikClasses() throws IOException, InterruptedException {
-        Path targetFolder = getApkClassesPath();
+        Path targetFolder = getAndroidProjectPath().resolve("libs").resolve("tmp");
+
+        if (!Files.exists(targetFolder)) {
+            Files.createDirectories(targetFolder);
+        }
+
         Logger.logDebug("Scanning for dalvik classes");
         final List<File> jars = new ClassPath(projectConfiguration.getClasspath()).getJars(true);
         String prefix = META_INF_SUBSTRATE_DALVIK + DALVIK_PRECOMPILED_CLASSES;
@@ -407,95 +328,43 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 throw new IOException("Error processing dalvik classes from jar: " + jar + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
             }
         }
+        ProcessRunner createJar = new ProcessRunner(
+                projectConfiguration.getGraalPath().resolve("bin").resolve("jar").toString(),
+                "-cvf", "../additional_classes.jar", ".");
+
+        createJar.runProcess("merge-dalvik-classes", targetFolder.toFile());
+        FileOps.deleteDirectory(targetFolder);
     }
 
-    private void copyAndroidManifest(Path androidPath) throws IOException {
-        Path androidManifest = androidPath.resolve(Constants.MANIFEST_FILE);
-        if (!Files.exists(androidManifest)) {
-            throw new IOException("File " + androidManifest.toString() + " not found");
+    /*
+     * Copies native libraries to android project
+     */
+    private void copySubstrateLibraries() throws IOException {
+        Path projectLibsLocation = getAndroidProjectMainPath().resolve("jniLibs").resolve("arm64-v8a");
+
+        if (!Files.exists(projectLibsLocation)) {
+            Files.createDirectories(projectLibsLocation);
         }
-        Path androidManifestPath = getApkPath().resolve("AndroidManifest.xml");
-        FileOps.copyFile(androidManifest, androidManifestPath);
-    }
-
-    private void copyAssets(Path androidPath) throws IOException {
-        for (String iconFolder : iconFolders) {
-            Path iconPath = androidPath.resolve("res").resolve(iconFolder).resolve("ic_launcher.png");
-            if (!Files.exists(iconPath)) {
-                throw new IOException("File " + iconPath.toString() + " not found");
-            }
-        }
-        FileOps.copyDirectory(androidPath.resolve(Constants.ANDROID_RES_FOLDER),  getApkPath().resolve(Constants.ANDROID_RES_FOLDER));
-    }
-
-    private int dx(Path buildToolsPath) throws IOException, InterruptedException {
-        String dxCmd = buildToolsPath.resolve("dx").toString();
-
-        ProcessRunner dx = new ProcessRunner(dxCmd, "--dex",
-                "--output=" + getApkBinPath().resolve("classes.dex"),
-                getApkClassesPath().toString());
-        return dx.runProcess("dx");
-    }
-
-    private int aapt(Path buildToolsPath, String unalignedApk, String androidJar) throws IOException, InterruptedException {
-        int processResult = aaptPackage(buildToolsPath, unalignedApk, androidJar);
-        if (processResult != 0) {
-            return processResult;
-        }
-
-        processResult = aaptAddDxClasses(buildToolsPath, unalignedApk);
-        if (processResult != 0) {
-            return processResult;
-        }
-
-        return aaptAddNativeLibs(buildToolsPath, unalignedApk);
-    }
-
-    private int aaptPackage(Path buildToolsPath, String unalignedApk, String androidJar) throws IOException, InterruptedException {
-        String aaptCmd = buildToolsPath.resolve("aapt").toString();
-        Path androidManifestPath = getApkPath().resolve("AndroidManifest.xml");
-        Path apkResPath = getApkPath().resolve(Constants.ANDROID_RES_FOLDER);
-        ProcessRunner aaptpackage = new ProcessRunner(aaptCmd, "package",
-                "-f", "-m", "-F", unalignedApk,
-                "-M", androidManifestPath.toString(),
-                "-S", apkResPath.toString(),
-                "-I", androidJar);
-        return aaptpackage.runProcess("aaptPackage");
-    }
-
-    private int aaptAddDxClasses(Path buildToolsPath, String unalignedApk) throws IOException, InterruptedException {
-        String aaptCmd = buildToolsPath.resolve("aapt").toString();
-        ProcessRunner aaptAddClass = new ProcessRunner(aaptCmd, "add", unalignedApk, "classes.dex");
-        return aaptAddClass.runProcess("aaptAddDxClasses", getApkBinPath().toFile());
-    }
-
-    private int aaptAddNativeLibs(Path buildToolsPath, String unalignedApk) throws IOException, InterruptedException {
-        String aaptCmd = buildToolsPath.resolve("aapt").toString();
-
-        Path libPath = paths.getAppPath().resolve(getLinkOutputName());
-        Path substrateLibPath = getApkLibArm64Path().resolve("libsubstrate.so");
-        Files.copy(libPath, substrateLibPath, StandardCopyOption.REPLACE_EXISTING);
-
-        List<String> aaptAddLibsArgs = new ArrayList<>(Arrays.asList(aaptCmd, "add", unalignedApk, "lib/arm64-v8a/libsubstrate.so"));
 
         if (projectConfiguration.isUseJavaFX()) {
             Path javafxFreetypeLibPath = fileDeps.getJavaFXSDKLibsPath().resolve("libfreetype.so");
-            Path freetypeLibPath = getApkLibArm64Path().resolve("libfreetype.so");
+            Path freetypeLibPath = projectLibsLocation.resolve("libfreetype.so");
             Files.copy(javafxFreetypeLibPath, freetypeLibPath, StandardCopyOption.REPLACE_EXISTING);
-            aaptAddLibsArgs.add("lib/arm64-v8a/libfreetype.so");
         }
 
-        ProcessRunner aaptAddLibs = new ProcessRunner(aaptAddLibsArgs.toArray(String[]::new));
-        return aaptAddLibs.runProcess("aaptAddNativeLibs", getApkPath().toFile());
+        Path libsubstrate = paths.getAppPath().resolve(getLinkOutputName());
+        Files.copy(libsubstrate, projectLibsLocation.resolve("libsubstrate.so"), StandardCopyOption.REPLACE_EXISTING);
     }
 
-    private int zipAlign(Path buildToolsPath, String unalignedApk, String alignedApk) throws IOException, InterruptedException {
-        String zipAlignCmd = buildToolsPath.resolve("zipalign").toString();
-        ProcessRunner zipAlign = new ProcessRunner(zipAlignCmd, "-f", "4", unalignedApk, alignedApk);
-        return zipAlign.runProcess("zipalign");
-    }
+    /*
+     * Generates release signing configuration if
+     * keystore is provided, else use debug configuration
+     *
+     * @return chosen configuration name
+     */
+    private String generateSigningConfiguration() throws IOException {
+        Path settingsFile = getAndroidProjectPath().resolve("app").resolve("keystore.properties");
 
-    private int sign(Path buildToolsPath, String alignedApk) throws IOException, InterruptedException {
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
         String keyStorePath = releaseConfiguration.getProvidedKeyStorePath();
         String keyStorePass = releaseConfiguration.getProvidedKeyStorePassword();
@@ -505,24 +374,15 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 !keyStorePath.endsWith(".keystore") || !Files.exists(Path.of(keyStorePath)) ||
                 keyAlias == null || keyStorePass == null || keyPass == null) {
             if (keyStorePath != null) {
-                Logger.logSevere("The key store path " + keyStorePass + " is not valid. Signing with debug keystore.");
+                Logger.logSevere("The key store path " + keyStorePath + " is not valid.");
             }
-            // default to debug keystore
-            keyStorePath = createDevelopKeystore().toString();
-            keyStorePass = DEFAULT_DEBUG_KEY_STORE_PASSWORD;
-            keyAlias = DEFAULT_DEBUG_KEY_ALIAS;
-            keyPass = DEFAULT_DEBUG_KEY_ALIAS_PASSWORD;
+            return "Debug";
         }
-
-        String apkSignerCmd = buildToolsPath.resolve("apksigner").toString();
-        ProcessRunner sign =  new ProcessRunner(apkSignerCmd, "sign", "--ks",
-                keyStorePath, "--ks-key-alias", keyAlias);
-        sign.addArg("--ks-pass");
-        sign.addSecretArg("pass:" + keyStorePass);
-        sign.addArg("--key-pass");
-        sign.addSecretArg("pass:" + keyPass);
-        sign.addArg(alignedApk);
-        return sign.runProcess("sign");
+        FileOps.replaceInFile(settingsFile, "KEYSTORE_FILE", keyStorePath);
+        FileOps.replaceInFile(settingsFile, "KEYSTORE_PASSWORD", keyStorePass);
+        FileOps.replaceInFile(settingsFile, "KEY_ALIAS", keyAlias);
+        FileOps.replaceInFile(settingsFile, "KEY_PASSWORD", keyPass);
+        return "Release";
     }
 
     /*
@@ -532,86 +392,61 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private Path getCapCacheDir() throws IOException {
         Path capPath = paths.getGvmPath().resolve("capcache");
         if (!Files.exists(capPath)) {
-            Files.createDirectory(capPath);
-        }
-        for (String cap : capFiles) {
-            FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
+            FileOps.copyDirectoryFromResources(capLocation, capPath);
         }
         return capPath;
     }
 
-    private Path createDevelopKeystore() throws IOException, InterruptedException {
-        Path keystore = Constants.USER_SUBSTRATE_PATH.resolve(Constants.ANDROID_KEYSTORE);
-
-        if (Files.exists(keystore)) {
-            Logger.logDebug("The " + Constants.ANDROID_KEYSTORE + " file already exists, skipping");
-            return keystore;
+    /*
+     * Copies the Android project from the jar resource and stores it in
+     * a directory. Return that directory
+     */
+    private Path prepareAndroidProject() throws IOException {
+        Path androidProject = getAndroidProjectPath();
+        if (Files.exists(androidProject)) {
+            FileOps.deleteDirectory(androidProject);
         }
-
-        int processResult;
-
-        ProcessRunner generateTestKey = new ProcessRunner("keytool", "-genkey", "-v", "-keystore", keystore.toString(), "-storepass",
-                DEFAULT_DEBUG_KEY_STORE_PASSWORD, "-alias", DEFAULT_DEBUG_KEY_ALIAS, "-keypass", DEFAULT_DEBUG_KEY_ALIAS_PASSWORD, "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US", "-noprompt");
-        processResult = generateTestKey.runProcess("generateTestKey");
-        if (processResult != 0) {
-            throw new IllegalArgumentException("fatal, can not create a keystore");
-        }
-
-        Logger.logDebug("Done creating " + Constants.ANDROID_KEYSTORE);
-        return keystore;
-    }
-
-    private String findLatestBuildTool(Path sdkPath) throws IOException {
-        Objects.requireNonNull(sdkPath);
-        Path buildToolsPath = sdkPath.resolve("build-tools");
-        if (Files.exists(buildToolsPath)) {
-            return Files.walk(buildToolsPath, 1)
-                    .filter(file -> Files.isDirectory(file) && !file.equals(buildToolsPath))
-                    .map(file -> new Version(file.getFileName().toString()))
-                    .max(Version::compareTo)
-                    .map(Version::toString)
-                    .orElseThrow(BuildToolNotFoundException::new);
-        }
-        throw new BuildToolNotFoundException();
+        FileOps.copyDirectoryFromResources(ANDROID_NATIVE_FOLDER + ANDROID_PROJECT_NAME, androidProject);
+        getAndroidProjectPath().resolve("gradlew").toFile().setExecutable(true);
+        return androidProject;
     }
 
     /**
-     * If android manifest is present in src/android, then, this
-     * path will be returned.
+     * If android manifest is present in src/android, it will be copied to
+     * android project.
      *
-     * Else, default android manifest is copied into gvm/genSrc/android and
-     * this path is returned
+     * Else, default android manifest is adjusted and used in project
+     * configuration.
      *
      * @return the path where android manifest is located
      * @throws IOException
      */
     private Path prepareAndroidManifest() throws IOException {
         String targetOS = projectConfiguration.getTargetTriplet().getOs();
-        Path targetSourcePath = paths.getSourcePath().resolve(targetOS);
+        Path sourcePath = paths.getSourcePath().resolve(targetOS);
 
-        Path userManifest = targetSourcePath.resolve(Constants.MANIFEST_FILE);
+        Path userManifest = sourcePath.resolve(Constants.MANIFEST_FILE);
+        Path targetManifest = getAndroidProjectMainPath().resolve(Constants.MANIFEST_FILE);
+        Path generatedManifest = paths.getGenPath().resolve(targetOS).resolve(Constants.MANIFEST_FILE);
+
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
 
         if (!Files.exists(userManifest)) {
-            // copy manifest to gensrc/android
-            Path androidPath = paths.getGenPath().resolve(targetOS);
-            Path genManifest = androidPath.resolve(Constants.MANIFEST_FILE);
-            Logger.logDebug("Copy " + Constants.MANIFEST_FILE + " to " + genManifest.toString());
-            FileOps.copyResource("/native/android/AndroidManifest.xml", genManifest);
-            FileOps.replaceInFile(genManifest, "package='com.gluonhq.helloandroid'", "package='" + getAndroidPackageName() + "'");
+            // use default manifest
+            FileOps.replaceInFile(targetManifest, "package='com.gluonhq.helloandroid'", "package='" + getAndroidPackageName() + "'");
             String newAppLabel = Optional.ofNullable(releaseConfiguration.getAppLabel())
                     .orElse(projectConfiguration.getAppName());
-            FileOps.replaceInFile(genManifest, "A HelloGraal", newAppLabel);
+            FileOps.replaceInFile(targetManifest, "A HelloGraal", newAppLabel);
             String newVersionCode = Optional.ofNullable(releaseConfiguration.getVersionCode())
                     .orElse(DEFAULT_CODE_VERSION);
-            FileOps.replaceInFile(genManifest, ":versionCode='1'", ":versionCode='" + newVersionCode + "'");
+            FileOps.replaceInFile(targetManifest, ":versionCode='1'", ":versionCode='" + newVersionCode + "'");
             String newVersionName = Optional.ofNullable(releaseConfiguration.getVersionName())
                     .orElse(DEFAULT_CODE_NAME);
-            FileOps.replaceInFile(genManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
-            FileOps.replaceInFile(genManifest, "<!-- PERMISSIONS -->", String.join("\n    ", requiredPermissions()));
-            Logger.logInfo("Default Android manifest generated in " + genManifest.toString() + ".\n" +
-                    "Consider copying it to " + targetSourcePath.toString() + " before performing any modification");
-            return androidPath;
+            FileOps.replaceInFile(targetManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
+            FileOps.replaceInFile(targetManifest, "<!-- PERMISSIONS -->", String.join("\n    ", requiredPermissions()));
+            FileOps.copyFile(targetManifest, generatedManifest);
+            Logger.logInfo("Default Android manifest generated in " + generatedManifest.toString() + ".\n" +
+                    "Consider copying it to " + userManifest.toString() + " before performing any modification");
         } else {
             // update manifest in src/android
             String versionCode = FileOps.getNodeValue(userManifest.toString(), "manifest", ":versionCode");
@@ -632,16 +467,16 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 FileOps.replaceInFile(userManifest, ":label='" + appLabel + "'", ":label='" +
                         newAppLabel + "'");
             }
+            Files.copy(userManifest, targetManifest, StandardCopyOption.REPLACE_EXISTING);
         }
-        return targetSourcePath;
+        return targetManifest;
     }
 
     /**
-     * If resources are present in src/android, then, this
-     * path will be returned.
+     * If resources are present in src/android, they would
+     * be copied to android project.
      *
-     * Else, default resources are copied into gvm/genSrc/android and
-     * this path is returned
+     * Else, default resources are used
      *
      * @return the path where resources are located
      * @throws IOException
@@ -651,21 +486,21 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path targetSourcePath = paths.getSourcePath().resolve(targetOS);
 
         Path userAssets = targetSourcePath.resolve(Constants.ANDROID_RES_FOLDER);
+        Path targetAssets = getAndroidProjectMainPath().resolve("res");
+        Path generatedAssets = paths.getGenPath().resolve(targetOS).resolve("res");
+
         if (!Files.exists(userAssets) || !(Files.isDirectory(userAssets) && Files.list(userAssets).count() > 0)) {
-            // copy assets to gensrc/android
-            Path androidPath = paths.getGenPath().resolve(targetOS);
-            Path androidResources = androidPath.resolve(Constants.ANDROID_RES_FOLDER);
-            Logger.logDebug("Copy assets to " + androidResources.toString());
-            for (String iconFolder : iconFolders) {
-                Path assetPath = androidResources.resolve(iconFolder);
-                Files.createDirectories(assetPath);
-                FileOps.copyResource("/native/android/assets/res/" + iconFolder + "/ic_launcher.png", assetPath.resolve("ic_launcher.png"));
-            }
-            Logger.logInfo("Default Android resources generated in " + androidPath.toString() + ".\n" +
-                    "Consider copying them to " + targetSourcePath.toString() + " before performing any modification");
-            return androidPath;
+            // Default assets are used
+            // Copy template sources to genSrc
+            FileOps.copyDirectory(targetAssets, generatedAssets);
+            Logger.logInfo("Default Android resources generated in " + generatedAssets.toString() + ".\n" +
+                    "Consider copying them to " + userAssets.toString() + " before performing any modification");
+            return generatedAssets;
+        } else {
+            // Copy user assets
+            FileOps.copyDirectory(userAssets, targetAssets);
         }
-        return targetSourcePath;
+        return targetAssets;
     }
 
     /**
@@ -680,12 +515,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return appId.replaceAll("[^a-zA-Z0-9\\._]", "");
     }
 
-    private static class BuildToolNotFoundException extends IOException {
-        public BuildToolNotFoundException() {
-            super("Android build tools not found. Please install it and try again.");
-        }
-    }
-
     /**
      * Scans the classpath for Attach Services
      * and returns a list of permissions in XML tags
@@ -696,7 +525,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             configResolver = new ConfigResolver(projectConfiguration.getClasspath());
             final Set<String> androidPermissions = configResolver.getAndroidPermissions();
             return androidPermissions.stream()
-                    .map(permission -> "<uses-permission a:name=\"" + permission + "\"/>")
+                    .map(permission -> "<uses-permission android:name=\"" + permission + "\"/>")
                     .sorted()
                     .collect(Collectors.toList());
         } catch (IOException | InterruptedException e) {
