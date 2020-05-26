@@ -32,6 +32,7 @@ import com.gluonhq.substrate.ProjectConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
+import com.gluonhq.substrate.util.Version;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,6 +42,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
@@ -94,6 +97,25 @@ public class InternalProjectConfiguration {
 
     public Path getGraalPath() {
         return Objects.requireNonNull( this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
+    }
+
+    public Version getGraalVersion() throws IOException {
+        String pattern = "GraalVM .*(\\d\\d.\\d.\\d)";
+        ProcessRunner graalJava;
+        try {
+            graalJava = new ProcessRunner(
+                            getGraalVMBinPath().resolve("java").toString(),
+                            "--version");
+            graalJava.runProcess("java-version");
+        } catch (InterruptedException e) {
+            throw new IOException("Couldn't determine GraalVM version, " + e.toString());
+        }
+        String output = graalJava.getResponse();
+        Pattern r = Pattern.compile(pattern);
+        Matcher m = r.matcher(output);
+        if (!m.find())
+            throw new IOException("Couldn't determine GraalVM version");
+        return new Version(m.group(1));
     }
 
     /**
@@ -214,7 +236,7 @@ public class InternalProjectConfiguration {
      */
     public Path getAndroidSdkPath() {
         String sdkEnv = System.getenv("ANDROID_SDK");
-        return (sdkEnv != null) ? Paths.get(sdkEnv) 
+        return (sdkEnv != null) ? Paths.get(sdkEnv)
                 : Constants.USER_SUBSTRATE_PATH.resolve("Android");
     }
 
@@ -223,7 +245,7 @@ public class InternalProjectConfiguration {
      */
     public Path getAndroidNdkPath() {
         String ndkEnv = System.getenv("ANDROID_NDK");
-        return (ndkEnv != null) ? Paths.get(ndkEnv) 
+        return (ndkEnv != null) ? Paths.get(ndkEnv)
                 : getAndroidSdkPath().resolve("ndk-bundle");
     }
 

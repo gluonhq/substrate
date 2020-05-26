@@ -136,8 +136,8 @@ public class Constants {
 
     public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik";
     public static final String DALVIK_PRECOMPILED_CLASSES = "/precompiled/classes/";
-    public static final String DALVIK_ACTIVITY_PACKAGE = "com/gluonhq/helloandroid/";
-    public static final String DALVIK_JAVAFX_PACKAGE = "javafx/scene/input/";
+    public static final String ANDROID_NATIVE_FOLDER = "/native/android/";
+    public static final String ANDROID_PROJECT_NAME = "android_project";
 
     public static final String META_INF_SUBSTRATE_CONFIG = "META-INF/substrate/config/";
     public static final String USER_INIT_BUILD_TIME_FILE = "initbuildtime";

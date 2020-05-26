@@ -75,7 +75,7 @@ public final class FileDeps {
 
     private static final String ANDROID_KEY = "24333f8a63b6825ea9c5514f83c2829b004d1fee";
     private static final String[] ANDROID_SDK_PACKAGES = {
-            "platforms;android-27", "build-tools;27.0.3", "platform-tools", 
+            "platforms;android-28", "build-tools;29.0.2", "platform-tools",
             "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle" };
 
     private final InternalProjectConfiguration configuration;
@@ -264,7 +264,7 @@ public final class FileDeps {
             if (!Files.exists(androidSdk)) {
                 Logger.logInfo("ANDROID_SDK not found and will be downloaded.");
                 downloadAndroidSdk = true;
-            } 
+            }
 
             if (!Files.exists(libsLocation)) {
                 downloadAndroidAdditionalLibs = true;
@@ -352,7 +352,7 @@ public final class FileDeps {
     }
 
     /**
-     * Crafts Android SDK url and then downloads it 
+     * Crafts Android SDK url and then downloads it
      * @throws IOException in case anything goes wrong.
      */
     private void downloadAndroidSdkZip() throws IOException {
@@ -364,7 +364,7 @@ public final class FileDeps {
         Logger.logInfo("Android SDK downloaded successfully");
     }
     /**
-     * Downloads libraries needed for Android SDK's sdkmanager 
+     * Downloads libraries needed for Android SDK's sdkmanager
      * @throws IOException in case anything goes wrong.
      */
     private void downloadAdditionalAndroidLibs() throws IOException {
@@ -427,4 +427,4 @@ public final class FileDeps {
         androidSdkManager(ANDROID_SDK_PACKAGES);
         Logger.logInfo("Android NDK and toolchain downloaded successfully");
     }
-} 
+}

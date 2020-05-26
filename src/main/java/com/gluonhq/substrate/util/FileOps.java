@@ -48,10 +48,14 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -65,6 +69,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -75,6 +80,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -139,6 +145,44 @@ public class FileOps {
             throw new IOException("Could not copy resource named " + resource + ", as it doesn't exist");
         }
         return copyStream(is, destination);
+    }
+
+    /**
+     * Copies directory from resources into destination path
+     * @param source
+     * @param target
+     * @throws IOException
+     */
+    public static void copyDirectoryFromResources(String source, final Path target) throws IOException {
+        // https://stackoverflow.com/a/24316335
+        FileSystem fileSystem;
+        try {
+            URI resource = SubstrateDispatcher.class.getResource("").toURI();
+            fileSystem = FileSystems.newFileSystem(resource, Collections.<String, String>emptyMap());
+        } catch(URISyntaxException e) {
+            throw new IOException(e.toString());
+        }
+
+        final Path jarPath = fileSystem.getPath(source);
+
+        Files.walkFileTree(jarPath, new SimpleFileVisitor<Path>() {
+
+            Path currentTarget;
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                currentTarget = target.resolve(jarPath.relativize(dir).toString());
+                Files.createDirectories(currentTarget);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.copy(file, target.resolve(jarPath.relativize(file).toString()), REPLACE_EXISTING);
+                return FileVisitResult.CONTINUE;
+            }
+
+        });
     }
 
     /**
@@ -265,6 +309,30 @@ public class FileOps {
     }
 
     /**
+     * Recursively list files with spectified extension from directory
+     * @param directory directory to be searched
+     * @param extension extension by which to filter files
+     * @throws IOException if an exception happens when listing the content
+     */
+    public static List<String> listFilesWithExtensionInDirectory(Path directory, String extension) throws IOException {
+        try (Stream<Path> walk = Files.walk(directory)) {
+            return walk.filter(Files::isRegularFile)
+                       .map(x -> x.toString())
+                       .filter(x -> x.endsWith(extension))
+                       .collect(Collectors.toList());
+        }
+    }
+
+     /**
+     * Recursively list files from specified directory
+     * @param directory directory to be searched
+     * @throws IOException if an exception happens when listing the content
+     */
+    public static List<String> listFilesInDirectory(Path directory) throws IOException {
+        return listFilesWithExtensionInDirectory(directory, "");
+    }
+
+    /**
      * Reads a file from an inputStream and returns a list with its lines
      * @param inputStream The input stream of bytes
      * @return a list of strings with the lines read from the input stream
@@ -370,7 +438,8 @@ public class FileOps {
      * @param nameFile
      * @return the Map contained in the file named nameFile, or null in all other cases.
      */
-    static Map<String, String> getHashMap(String nameFile) {
+    @SuppressWarnings("unchecked")
+    public static Map<String, String> getHashMap(String nameFile) {
         Map<String, String> hashes = null;
         if (!Files.exists(Paths.get(nameFile))) {
             return null;
@@ -589,7 +658,7 @@ public class FileOps {
                 Logger.logSevere("Downloading failed: " + e.getMessage());
             }
         }
-        
+
         public void rbcProgressCallback(RBCWrapper rbc, double progress) {
             if (((int)progress) >= printPercentage) {
                 printPercentage += 10;
