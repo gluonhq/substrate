@@ -441,6 +441,11 @@ public class InternalProjectConfiguration {
     public void canRunLLVM(Triplet triplet) throws IOException, InterruptedException {
         if (!new Triplet(Constants.Profile.IOS).equals(triplet) &&
                 !new Triplet(Constants.Profile.ANDROID).equals(triplet)) {
+            // host doesn't use LLVM
+            return;
+        }
+        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && getBackend().equals(Constants.BACKEND_LIR)) {
+            // Android with LIR doesn't use LLVM
             return;
         }
         Path graalPath = getGraalPath();
