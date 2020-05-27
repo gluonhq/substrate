@@ -444,8 +444,8 @@ public class InternalProjectConfiguration {
             // host doesn't use LLVM
             return;
         }
-        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && getBackend().equals(Constants.BACKEND_LIR)) {
-            // Android with LIR doesn't use LLVM
+        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && !Constants.BACKEND_LLVM.equals(getBackend())) {
+            // Android can use other backends
             return;
         }
         Path graalPath = getGraalPath();
