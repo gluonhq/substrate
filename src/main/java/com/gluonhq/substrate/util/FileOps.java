@@ -162,11 +162,11 @@ public class FileOps {
             try {
                 fileSystem = FileSystems.getFileSystem(resource);
             } catch (FileSystemNotFoundException e) {
-                Logger.logInfo("FileSystem for resource " + resource + " not found. Trying to create a new FileSystem instead.");
+                Logger.logDebug("FileSystem for resource " + resource + " not found. Trying to create a new FileSystem instead.");
                 fileSystem = FileSystems.newFileSystem(resource, Collections.<String, String>emptyMap());
             }
             Logger.logDebug("Created FileSystem for resource " + resource + ": " + fileSystem);
-        } catch(URISyntaxException e) {
+        } catch (URISyntaxException e) {
             throw new IOException(e.toString());
         }
 
