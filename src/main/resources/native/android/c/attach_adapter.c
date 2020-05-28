@@ -38,6 +38,7 @@ jclass jPicturesServiceClass;
 jclass jPositionServiceClass;
 jclass jOrientationServiceClass;
 jclass jSettingsServiceClass;
+jclass jStatusBarServiceClass;
 jclass jStorageServiceClass;
 int handlesInitialized = 0;
 
@@ -68,6 +69,7 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
     jPositionServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikPositionService");
     jOrientationServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikOrientationService");
     jSettingsServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikSettingsService");
+    jStatusBarServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikStatusBarService");
     jStorageServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikStorageService");
     handlesInitialized = 1;
 }
@@ -114,6 +116,10 @@ jclass substrateGetOrientationServiceClass() {
 
 jclass substrateGetSettingsServiceClass() {
     return jSettingsServiceClass;
+}
+
+jclass substrateGetStatusBarServiceClass() {
+    return jStatusBarServiceClass;
 }
 
 jclass substrateGetStorageServiceClass() {
