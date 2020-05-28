@@ -3,8 +3,8 @@
 git config --global user.email "githubbot@gluonhq.com"
 git config --global user.name "Gluon Bot"
 
-CLIENT_MAVEN_REPO_SLUG=abhinayagarwal/client-maven-plugin
-CLIENT_GRADLE_REPO_SLUG=abhinayagarwal/client-gradle-plugin
+CLIENT_MAVEN_REPO_SLUG=gluonhq/client-maven-plugin
+CLIENT_GRADLE_REPO_SLUG=gluonhq/client-gradle-plugin
 
 cd $HOME
 git clone --depth 5 https://github.com/$CLIENT_MAVEN_REPO_SLUG
@@ -25,7 +25,7 @@ CLIENT_PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -Dfor
 # Commit and push tag
 git commit pom.xml -m "Release $CLIENT_PROJECT_VERSION"
 git tag $CLIENT_PROJECT_VERSION
-git push https://abhinayagarwal:$2@github.com/$CLIENT_MAVEN_REPO_SLUG $CLIENT_PROJECT_VERSION
+git push https://gluon-bot:$2@github.com/$CLIENT_MAVEN_REPO_SLUG $CLIENT_PROJECT_VERSION
 
 ###############################
 # 
@@ -41,4 +41,4 @@ sed -i "0,/^version '.*'/s//version '$CLIENT_PROJECT_VERSION'/" build.gradle
 # Commit and push tag
 git commit build.gradle -m "Release $CLIENT_PROJECT_VERSION"
 git tag $CLIENT_PROJECT_VERSION
-git push https://abhinayagarwal:$2@github.com/$CLIENT_GRADLE_REPO_SLUG $CLIENT_PROJECT_VERSION
+git push https://gluon-bot:$2@github.com/$CLIENT_GRADLE_REPO_SLUG $CLIENT_PROJECT_VERSION
