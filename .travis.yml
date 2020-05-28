@@ -37,7 +37,8 @@ matrix:
             - libasound2-dev
       before_script:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
-        - export GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL=$(curl -s https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases | grep browser_download_url | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
+        - curl -v -u "gluon-bot:$GITHUB_PASSWORD" https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases > releases.json
+        - export GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
         - wget $GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL
         - tar -xzvf graalvm-ce-java11-linux-amd64-20.2.0-dev.tar.gz && cd $TRAVIS_BUILD_DIR
         - mkdir -p $HOME/javafx-static-libs-linux && cd $HOME/javafx-static-libs-linux
@@ -51,13 +52,13 @@ matrix:
       before_script:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
         - which curl
-        - curl -s https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases > releases.json
+        - curl -v -u "gluon-bot:$GITHUB_PASSWORD" https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases > releases.json
         - cat releases.json
         - cat releases.json | grep browser_download_url
         - cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64
         - cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1
         - cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g'
-        - export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL=$(curl -s https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
+        - export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
         - echo ${GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL}
         - wget ${GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL}
         - tar -xzvf graalvm-ce-java11-darwin-amd64-20.2.0-dev.tar.gz && cd $TRAVIS_BUILD_DIR
