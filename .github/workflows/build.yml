@@ -27,14 +27,16 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
-          wget https://github.com/graalvm/graalvm-ce-dev-builds/releases/download/20.2.0-dev-20200523_0158/graalvm-ce-java11-linux-amd64-20.2.0-dev.tar.gz
+          export GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL=$(curl -s https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases | grep browser_download_url | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
+          wget $GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL
           tar -xzvf graalvm-ce-java11-linux-amd64-20.2.0-dev.tar.gz -C $HOME/graalvm && cd $GITHUB_WORKSPACE
 
       - name: Install GraalVM (MacOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
-          wget https://github.com/graalvm/graalvm-ce-dev-builds/releases/download/20.2.0-dev-20200523_0158/graalvm-ce-java11-darwin-amd64-20.2.0-dev.tar.gz
+          export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL=$(curl -s https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
+          wget $GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL
           tar -xzvf graalvm-ce-java11-darwin-amd64-20.2.0-dev.tar.gz -C $HOME/graalvm && cd $GITHUB_WORKSPACE
 
       - name: Install linux JavaFX static libs (Linux)
