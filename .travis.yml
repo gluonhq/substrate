@@ -50,8 +50,14 @@ matrix:
       osx_image: xcode10.2
       before_script:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
+        - curl -s https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases > releases.json
+        - grep browser_download_url releases.json
+        - grep browser_download_url releases.json | grep graalvm-ce-java11-darwin-amd64
+        - grep browser_download_url releases.json | grep graalvm-ce-java11-darwin-amd64 | head -n 1
+        - grep browser_download_url releases.json | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g'
         - export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL=$(curl -s https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
-        - wget $GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL
+        - echo ${GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL}
+        - wget ${GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL}
         - tar -xzvf graalvm-ce-java11-darwin-amd64-20.2.0-dev.tar.gz && cd $TRAVIS_BUILD_DIR
         - mkdir -p $HOME/javafx-static-libs-darwin && cd $HOME/javafx-static-libs-darwin
         - wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-darwin-x86_64-static.zip
