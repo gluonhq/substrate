@@ -44,12 +44,12 @@ jobs:
           GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
 
       - name: Release Client plugins
-          if: steps.deploy.outputs.exit_code == 0
-          run: |
-            TAG=${GITHUB_REF/refs\/tags\//}
-            bash $GITHUB_WORKSPACE/.github/scripts/release-plugins.sh $TAG $PAT
-          env:
-            PAT: ${{ secrets.PAT }}
+        if: steps.deploy.outputs.exit_code == 0
+        run: |
+          TAG=${GITHUB_REF/refs\/tags\//}
+          bash $GITHUB_WORKSPACE/.github/scripts/release-plugins.sh $TAG $PAT
+        env:
+          PAT: ${{ secrets.PAT }}
 
       - name: Commit next development version
         if: steps.deploy.outputs.exit_code == 0
