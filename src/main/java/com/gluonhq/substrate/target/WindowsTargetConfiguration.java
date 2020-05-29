@@ -159,6 +159,9 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         flags.add("/NODEFAULTLIB:libcmt.lib");
 
         if (useJavaFX) {
+            flags.add("/SUBSYSTEM:WINDOWS");
+            flags.add("/ENTRY:mainCRTStartup");
+
             flags.addAll(asListOfLibraryLinkFlags(javaFxWindowsLibs));
             flags.addAll(asListOfLibraryLinkFlags(staticJavaFxLibs));
             flags.addAll(asListOfWholeArchiveLinkFlags(staticJavaFxLibs));
