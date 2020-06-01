@@ -62,8 +62,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "-Wl,--whole-archive",
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
-            "-ljfxmedia", "-lfxplugins", "-lavplugin",
-            "-Wl,--no-whole-archive"
+            "-ljfxmedia", "-lfxplugins", "-lavplugin", "-ljfxwebkit",
+            "-Wl,--no-whole-archive",
+            "-lWTF", "-lWebCore", "-lXMLJava", "-lJavaScriptCore", "-lWTF",
+            "-lbmalloc", "-licui18n", "-licuuc", "-lSqliteJava", "-lXSLTJava",
+            "-lPAL", "-licudata", "-lWebCoreTestSupport", "-lWTF"
     );
 
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
