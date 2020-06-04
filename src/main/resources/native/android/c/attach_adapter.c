@@ -28,6 +28,7 @@
 #include "grandroid.h"
 
 jclass jUtilClass;
+jclass jBatteryServiceClass;
 jclass jBleServiceClass;
 jclass jBrowserServiceClass;
 jclass jDeviceServiceClass;
@@ -60,6 +61,7 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
         return;
     }
     jUtilClass = registerClass(androidEnv, "com/gluonhq/helloandroid/Util");
+    jBatteryServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBatteryService");
     jBleServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBleService");
     jBrowserServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikBrowserService");
     jDeviceServiceClass = registerClass(androidEnv, "com/gluonhq/helloandroid/DalvikDeviceService");
@@ -78,6 +80,10 @@ void registerAttachMethodHandles(JNIEnv* androidEnv) {
 
 jclass substrateGetUtilClass() {
     return jUtilClass;
+}
+
+jclass substrateGetBatteryServiceClass() {
+    return jBatteryServiceClass;
 }
 
 jclass substrateGetBleServiceClass() {
