@@ -53,6 +53,7 @@ const char *origargs[] = {
     "-Dmonocle.platform=Android", // used in com.sun.glass.ui.monocle.NativePlatformFactory
     "-Dembedded=monocle",
     "-Dglass.platform=Monocle",
+    "-Dcom.sun.javafx.isEmbedded=true",
     "-Dcom.sun.javafx.touch=true",
     "-Dcom.sun.javafx.gestures.zoom=true",
     "-Dcom.sun.javafx.gestures.rotate=true",
