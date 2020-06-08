@@ -407,6 +407,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             FileOps.deleteDirectory(androidProject);
         }
         FileOps.copyDirectoryFromResources(ANDROID_NATIVE_FOLDER + ANDROID_PROJECT_NAME, androidProject);
+        Path build = androidProject.resolve("app").resolve("build.gradle");
+        FileOps.replaceInFile(build, "<!-- DEPENDENCIES -->", String.join("\n        ", requiredDependencies()));
         getAndroidProjectPath().resolve("gradlew").toFile().setExecutable(true);
         return androidProject;
     }
@@ -530,6 +532,25 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                     .collect(Collectors.toList());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Scans the classpath for Attach Services
+     * and returns a list of dependencies
+     */
+    private List<String> requiredDependencies() {
+        final ConfigResolver configResolver;
+        try {
+            configResolver = new ConfigResolver(projectConfiguration.getClasspath());
+            final Set<String> androidDependencies = configResolver.getAndroidDependencies();
+            return androidDependencies.stream()
+                    .map(dependency -> "implementation '" + dependency + "'")
+                    .sorted()
+                    .collect(Collectors.toList());
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Error reading android dependencies: " + e.getMessage());
         }
         return Collections.emptyList();
     }
