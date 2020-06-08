@@ -408,7 +408,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
         FileOps.copyDirectoryFromResources(ANDROID_NATIVE_FOLDER + ANDROID_PROJECT_NAME, androidProject);
         Path build = androidProject.resolve("app").resolve("build.gradle");
-        FileOps.replaceInFile(build, "<!-- DEPENDENCIES -->", String.join("\n        ", requiredDependencies()));
+        FileOps.replaceInFile(build, "// DEPENDENCIES", String.join("\n        ", requiredDependencies()));
         getAndroidProjectPath().resolve("gradlew").toFile().setExecutable(true);
         return androidProject;
     }
