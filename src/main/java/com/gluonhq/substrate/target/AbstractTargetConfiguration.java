@@ -69,7 +69,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private static final String URL_CLIBS_ZIP = "https://download2.gluonhq.com/substrate/clibs/${osarch}.zip";
     private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
-            "xml", "fxml", "css", "gls", "json",
+            "xml", "fxml", "css", "gls", "json", "dat",
             "license", "frag", "vert", "obj");
     private static final List<String> ENABLED_FEATURES = Arrays.asList(
             "org.graalvm.home.HomeFinderFeature"
