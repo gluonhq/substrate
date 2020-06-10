@@ -55,7 +55,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
 
     private static final List<String> staticJavaLibs = Arrays.asList(
-            "java", "nio", "zip", "net", "prefs", "jvm", "strictmath", "j2pkcs11", "sunec", "extnet", "libchelper"
+            "java", "nio", "zip", "net", "prefs", "jvm", "j2pkcs11", "sunec", "extnet", "fdlibm", "libchelper"
     );
 
     private static final List<String> linuxfxlibs = List.of(
@@ -80,6 +80,9 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     public LinuxTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
+        if (crossCompile) {
+            projectConfiguration.setBackend(Constants.BACKEND_LLVM);
+        }
     }
 
     @Override
@@ -141,13 +144,17 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             return super.getTargetSpecificAOTCompileFlags();
         }
 
-        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
+        ArrayList<String> flags = new ArrayList<>(Arrays.asList(
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
                 "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
-                "-H:CAPCacheDir="+ getCapCacheDir().toAbsolutePath().toString(),
-                "-H:CustomLD=aarch64-linux-gnu-ld");
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
+                "-H:CompilerBackend=" + projectConfiguration.getBackend()));
+        if (projectConfiguration.isUseLLVM()) {
+            flags.add("-H:CustomLD=aarch64-linux-gnu-ld");
+        }
+        return flags;
     }
 
     @Override
