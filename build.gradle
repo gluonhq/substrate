@@ -47,7 +47,7 @@ javadoc {
     options.addBooleanOption('html5', true)
     options.addBooleanOption('javafx', true)
     doFirst {
-        options.addStringOption('-module-path', classpath.asPath)
+        options.modulePath = classpath.flatten()
     }
 }
 
