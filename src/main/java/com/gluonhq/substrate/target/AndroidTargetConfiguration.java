@@ -125,6 +125,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         prepareAndroidProject();
         prepareAndroidManifest();
         prepareAndroidResources();
+        copyAarLibraries();
         copyOtherDalvikClasses();
         copySubstrateLibraries();
         String configuration = generateSigningConfiguration();
@@ -443,7 +444,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             String newVersionName = Optional.ofNullable(releaseConfiguration.getVersionName())
                     .orElse(DEFAULT_CODE_NAME);
             FileOps.replaceInFile(targetManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
-            FileOps.replaceInFile(targetManifest, "<!-- PERMISSIONS -->", String.join("\n    ", requiredPermissions()));
             FileOps.copyFile(targetManifest, generatedManifest);
             Logger.logInfo("Default Android manifest generated in " + generatedManifest.toString() + ".\n" +
                     "Consider copying it to " + userManifest.toString() + " before performing any modification");
@@ -517,20 +517,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     /**
      * Scans the classpath for Attach Services
-     * and returns a list of permissions in XML tags
+     * and extracts all aar libraries found
      */
-    private List<String> requiredPermissions() {
-        final ConfigResolver configResolver;
-        try {
-            configResolver = new ConfigResolver(projectConfiguration.getClasspath());
-            final Set<String> androidPermissions = configResolver.getAndroidPermissions();
-            return androidPermissions.stream()
-                    .map(permission -> "<uses-permission android:name=\"" + permission + "\"/>")
-                    .sorted()
-                    .collect(Collectors.toList());
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+    private void copyAarLibraries() throws IOException, InterruptedException {
+        Path libPath = getAndroidProjectPath().resolve("libs");
+        final List<File> jars = new ClassPath(projectConfiguration.getClasspath()).getJars(true);
+        for (File jar : jars) {
+            FileOps.extractFilesFromJar(".aar", jar.toPath(), libPath, null);
         }
-        return Collections.emptyList();
     }
 }

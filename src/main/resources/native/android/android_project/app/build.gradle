@@ -10,6 +10,7 @@ android {
 
     dependencies {
         implementation 'com.android.support:support-v4:27.1.1'
+        api fileTree(dir: '../libs', include: '*.aar')
         api fileTree(dir: '../libs', include: '*.jar')
     }
 
