@@ -71,11 +71,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json",
             "license", "frag", "vert", "obj");
-    private static final List<String> BUNDLES_LIST = new ArrayList<>(Arrays.asList(
-            "com/sun/javafx/scene/control/skin/resources/controls",
-            "com/sun/javafx/scene/control/skin/resources/controls-nt",
-            "com.sun.javafx.tk.quantum.QuantumMessagesBundle"
-    ));
     private static final List<String> ENABLED_FEATURES = Arrays.asList(
             "org.graalvm.home.HomeFinderFeature"
     );
@@ -150,8 +145,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileRunner.addArgs(getConfigurationFileArgs(processedClasspath));
 
         compileRunner.addArgs(getTargetSpecificAOTCompileFlags());
-        if (!getBundlesList().isEmpty()) {
-            String bundles = String.join(",", getBundlesList());
+        List<String> bundlesList = getBundlesList(processedClasspath);
+        if (!bundlesList.isEmpty()) {
+            String bundles = String.join(",", bundlesList);
             compileRunner.addArg("-H:IncludeResourceBundles=" + bundles);
         }
         compileRunner.addArg(getJniPlatformArg());
@@ -461,11 +457,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return answer;
     }
 
-    private List<String> getBundlesList() {
+    private List<String> getBundlesList(String processedClasspath) throws IOException, InterruptedException {
         List<String> list = new ArrayList<>(projectConfiguration.getBundlesList());
-        if (projectConfiguration.isUseJavaFX()) {
-            list.addAll(BUNDLES_LIST);
-        }
+        String suffix = projectConfiguration.getTargetTriplet().getArchOs();
+        ConfigResolver configResolver = new ConfigResolver(processedClasspath);
+        list.addAll(configResolver.getResourceBundlesList(suffix));
         return list;
     }
 
