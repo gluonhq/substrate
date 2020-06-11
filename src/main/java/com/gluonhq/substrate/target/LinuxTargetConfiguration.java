@@ -62,8 +62,18 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "-Wl,--whole-archive",
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
+            "-Wl,--no-whole-archive"
+    );
+    private static final List<String> linuxfxMedialibs = List.of(
             "-ljfxmedia", "-lfxplugins", "-lavplugin",
             "-Wl,--no-whole-archive"
+    );
+    private static final List<String> linuxfxWeblibs = List.of(
+            "-ljfxwebkit",
+            "-Wl,--no-whole-archive",
+            "-lWebCore", "-lXMLJava", "-lJavaScriptCore", "-lbmalloc",
+            "-licui18n", "-lSqliteJava", "-lXSLTJava", "-lPAL", "-lWebCoreTestSupport",
+            "-lWTF", "-licuuc", "-licudata"
     );
 
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
@@ -117,6 +127,15 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         if (!useJavaFX) return answer;
 
         answer.addAll(linuxfxlibs);
+        // TODO: Refactor
+        if (projectConfiguration.getClasspath().contains("javafx-media")) {
+            answer.remove(answer.size() - 1);
+            answer.addAll(linuxfxMedialibs);
+        }
+        if (projectConfiguration.getClasspath().contains("javafx-web")) {
+            answer.remove(answer.size() - 1);
+            answer.addAll(linuxfxWeblibs);
+        }
         answer.addAll(LinuxLinkerFlags.getLinkerFlags());
         if (usePrismSW) {
             answer.addAll(linuxfxSWlibs);
