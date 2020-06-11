@@ -722,7 +722,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
 
         return new ClassPath(classPath).mapWithLibs(fileDeps.getJavaFXSDKLibsPath(),
-                "javafx-base", "javafx-graphics", "javafx-controls", "javafx-fxml", "javafx-media");
+                "javafx-base", "javafx-graphics", "javafx-controls", "javafx-fxml", "javafx-media", "javafx-web");
     }
 
     /**
