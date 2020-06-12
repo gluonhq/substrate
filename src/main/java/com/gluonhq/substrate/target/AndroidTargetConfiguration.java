@@ -125,6 +125,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         prepareAndroidProject();
         prepareAndroidManifest();
         prepareAndroidResources();
+        copyAarLibraries();
         copyOtherDalvikClasses();
         copySubstrateLibraries();
         String configuration = generateSigningConfiguration();
@@ -553,5 +554,17 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Logger.logSevere("Error reading android dependencies: " + e.getMessage());
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * Scans the classpath for Attach Services
+     * and extracts all aar libraries found
+     */
+    private void copyAarLibraries() throws IOException, InterruptedException {
+        Path libPath = getAndroidProjectPath().resolve("libs");
+        final List<File> jars = new ClassPath(projectConfiguration.getClasspath()).getJars(true);
+        for (File jar : jars) {
+            FileOps.extractFilesFromJar(".aar", jar.toPath(), libPath, null);
+        }
     }
 }

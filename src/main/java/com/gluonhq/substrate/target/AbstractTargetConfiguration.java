@@ -69,13 +69,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private static final String URL_CLIBS_ZIP = "https://download2.gluonhq.com/substrate/clibs/${osarch}.zip";
     private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
-            "xml", "fxml", "css", "gls", "json",
+            "xml", "fxml", "css", "gls", "json", "dat",
             "license", "frag", "vert", "obj");
-    private static final List<String> BUNDLES_LIST = new ArrayList<>(Arrays.asList(
-            "com/sun/javafx/scene/control/skin/resources/controls",
-            "com/sun/javafx/scene/control/skin/resources/controls-nt",
-            "com.sun.javafx.tk.quantum.QuantumMessagesBundle"
-    ));
     private static final List<String> ENABLED_FEATURES = Arrays.asList(
             "org.graalvm.home.HomeFinderFeature"
     );
@@ -150,8 +145,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         compileRunner.addArgs(getConfigurationFileArgs(processedClasspath));
 
         compileRunner.addArgs(getTargetSpecificAOTCompileFlags());
-        if (!getBundlesList().isEmpty()) {
-            String bundles = String.join(",", getBundlesList());
+        List<String> bundlesList = getBundlesList(processedClasspath);
+        if (!bundlesList.isEmpty()) {
+            String bundles = String.join(",", bundlesList);
             compileRunner.addArg("-H:IncludeResourceBundles=" + bundles);
         }
         compileRunner.addArg(getJniPlatformArg());
@@ -461,11 +457,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return answer;
     }
 
-    private List<String> getBundlesList() {
+    private List<String> getBundlesList(String processedClasspath) throws IOException, InterruptedException {
         List<String> list = new ArrayList<>(projectConfiguration.getBundlesList());
-        if (projectConfiguration.isUseJavaFX()) {
-            list.addAll(BUNDLES_LIST);
-        }
+        String suffix = projectConfiguration.getTargetTriplet().getArchOs();
+        ConfigResolver configResolver = new ConfigResolver(processedClasspath);
+        list.addAll(configResolver.getResourceBundlesList(suffix));
         return list;
     }
 
@@ -722,7 +718,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
 
         return new ClassPath(classPath).mapWithLibs(fileDeps.getJavaFXSDKLibsPath(),
-                "javafx-base", "javafx-graphics", "javafx-controls", "javafx-fxml", "javafx-media");
+                "javafx-base", "javafx-graphics", "javafx-controls", "javafx-fxml", "javafx-media", "javafx-web");
     }
 
     /**

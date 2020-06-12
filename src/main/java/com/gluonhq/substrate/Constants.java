@@ -102,7 +102,7 @@ public class Constants {
     public static final String PROFILE_LINUX_AARCH64 = "linux-aarch64";
 
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+4";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "15-ea+gvm20";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "15-ea+gvm22";
 
     /**
      * Paths
@@ -142,6 +142,8 @@ public class Constants {
     public static final String META_INF_SUBSTRATE_CONFIG = "META-INF/substrate/config/";
     public static final String USER_INIT_BUILD_TIME_FILE = "initbuildtime";
     public static final String USER_INIT_BUILD_TIME_ARCHOS_FILE = "initbuildtime-${archOs}";
+    public static final String RESOURCE_BUNDLES_FILE = "resourcebundles";
+    public static final String RESOURCE_BUNDLES_ARCHOS_FILE = "resourcebundles-${archOs}";
     public static final String USER_REFLECTION_FILE = "reflectionconfig.json";
     public static final String USER_REFLECTION_ARCHOS_FILE = "reflectionconfig-${archOs}.json";
     public static final String USER_JNI_FILE = "jniconfig.json";
