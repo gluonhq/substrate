@@ -115,8 +115,6 @@ int JNI_OnLoad(JavaVM *vm, void *reserved)
     start_logger("GraalCompiled");
     registerMethodHandles(androidEnv);
     LOGE(stderr, "AndroidVM called JNI_OnLoad, vm = %p, androidEnv = %p", androidVM, androidEnv);
-    registerAttachMethodHandles(androidEnv);
-    LOGE(stderr, "Attach method handles registered.");
     return JNI_VERSION_1_6;
 }
 
