@@ -47,7 +47,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_CONFIG;
-import static com.gluonhq.substrate.Constants.USER_ANDROID_DEPENDENCIES_FILE;
 import static com.gluonhq.substrate.Constants.RESOURCE_BUNDLES_ARCHOS_FILE;
 import static com.gluonhq.substrate.Constants.RESOURCE_BUNDLES_FILE;
 import static com.gluonhq.substrate.Constants.USER_ANDROID_PERMISSIONS_FILE;
@@ -190,21 +189,6 @@ public class ConfigResolver {
     public Set<String> getAndroidPermissions() throws IOException {
         Logger.logDebug("Scanning for android permission files");
         return Set.copyOf(scanJars(USER_ANDROID_PERMISSIONS_FILE,
-                null,
-                null,
-                line -> true));
-    }
-
-    /**
-     * Walks through the jars in the classpath,
-     * and looks for META-INF/substrate/config/android-dependencies.txt file.
-     *
-     * @return a list of dependencies lines that should be added to the Android project
-     * @throws IOException Exception while reading the dependencies file.
-     */
-    public Set<String> getAndroidDependencies() throws IOException {
-        Logger.logDebug("Scanning for android dependencies files");
-        return Set.copyOf(scanJars(USER_ANDROID_DEPENDENCIES_FILE,
                 null,
                 null,
                 line -> true));

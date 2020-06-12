@@ -151,7 +151,6 @@ public class Constants {
     public static final String USER_RESOURCE_FILE = "resourceconfig.json";
     public static final String USER_RESOURCE_ARCHOS_FILE = "resourceconfig-${archOs}.json";
     public static final String USER_ANDROID_PERMISSIONS_FILE = "android-permissions.txt";
-    public static final String USER_ANDROID_DEPENDENCIES_FILE = "android-dependencies.txt";
 
     public static final String CONFIG_FILES = "/config/";
     public static final String REFLECTION_JAVA_FILE = "reflectionconfig-java.json";
