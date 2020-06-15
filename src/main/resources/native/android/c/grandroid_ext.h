@@ -54,7 +54,6 @@ jclass substrateGetPermissionActivityClass();
 jobject substrateGetActivity();
 
 // Attach
-void registerAttachMethodHandles(JNIEnv* env);
 
 #ifdef SUBSTRATE
 void __attribute__((weak)) attach_setActivityResult(jint requestCode, jint resultCode, jobject intent) {}
