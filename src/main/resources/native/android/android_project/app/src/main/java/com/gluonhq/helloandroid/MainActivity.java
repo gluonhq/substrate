@@ -36,6 +36,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -51,6 +52,9 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
+import android.view.inputmethod.BaseInputConnection;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
@@ -213,6 +217,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     class InternalSurfaceView extends SurfaceView {
         private static final int ACTION_POINTER_STILL = -1;
+        private final KeyEvent BACK_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
+        private final KeyEvent BACK_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL);
+        private CharSequence oldText = "";
 
         public InternalSurfaceView(Context context) {
             super(context);
@@ -261,8 +268,47 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         }
 
         @Override
+        public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+            Log.d(TAG, "onCreateInputConnection");
+            // Allows predictive text
+            outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
+
+            return new BaseInputConnection(this, false) {
+
+                @Override
+                public boolean setComposingText(CharSequence text, int newCursorPosition) {
+                    boolean result = super.setComposingText(text, newCursorPosition);
+                    // remove old text
+                    resetText();
+                    // send action_multiple with new text
+                    processAndroidKeyEvent(new KeyEvent(0, text.toString(), -1, 0));
+                    oldText = text;
+                    return result;
+                }
+
+                @Override
+                public boolean commitText(CharSequence text, int newCursorPosition) {
+                    // remove old text
+                    resetText();
+                    oldText = "";
+                    // the new text will be added via dispatchKeyEvent
+                    return super.commitText(text, newCursorPosition);
+                }
+
+                private void resetText() {
+                    // clear the old text
+                    for (int i = 0; i < oldText.length(); i++) {
+                        processAndroidKeyEvent(BACK_DOWN_EVENT);
+                        processAndroidKeyEvent(BACK_UP_EVENT);
+                    }
+                }
+            };
+        }
+
+        @Override
         public boolean dispatchKeyEvent(final KeyEvent event) {
-            Log.v(TAG, "Activity, process get key event, action = "+event.getAction());
+            oldText = "";
+            Log.v(TAG, "Activity, process get key event, action = "+event);
             processAndroidKeyEvent (event);
             // nativeGotKeyEvent(event.getAction(), event.getKeyCode());
             return true;
