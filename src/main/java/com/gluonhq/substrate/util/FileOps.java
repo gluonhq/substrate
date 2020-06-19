@@ -316,6 +316,18 @@ public class FileOps {
     }
 
     /**
+     * Checks and returns true if a Path is a directory and is empty
+     * @param path Path of the directory
+     */
+    public static boolean isDirectoryEmpty(Path path) {
+        try {
+            return Files.exists(path) && Files.isDirectory(path) && Files.list(path).findAny().isEmpty();
+        } catch (IOException e) {
+        }
+        return false;
+    }
+
+    /**
      * Recursively list files with spectified extension from directory
      * @param directory directory to be searched
      * @param extension extension by which to filter files
