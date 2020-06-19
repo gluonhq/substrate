@@ -321,7 +321,7 @@ public class FileOps {
      */
     public static boolean isDirectoryEmpty(Path path) {
         try {
-            return Files.exists(path) && Files.isDirectory(path) && Files.list(path).findAny().isEmpty();
+            return !(Files.exists(path) && Files.isDirectory(path) && Files.list(path).findAny().isPresent());
         } catch (IOException e) {
         }
         return false;
