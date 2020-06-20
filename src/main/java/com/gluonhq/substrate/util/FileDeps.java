@@ -33,10 +33,13 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -132,6 +135,24 @@ public final class FileDeps {
      */
     public Path getAndroidNDKPath() throws IOException {
         return resolvePath(configuration.getAndroidNdkPath(),"Fatal error, could not install Android NDK ");
+    }
+
+    /**
+     * Checks that the required Android packages are present, else proceeds to
+     * install them
+     *
+     * @param androidSdk The path to the Android SDK
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public void checkAndroidPackages(String androidSdk) throws IOException, InterruptedException {
+        if (Stream.of(ANDROID_SDK_PACKAGES)
+                .filter(s -> !s.contains("ndk"))
+                .map(s -> Path.of(androidSdk, s.split(";")))
+                .anyMatch(p -> !Files.exists(p))) {
+            Logger.logInfo("Some required Android packages were not found, they will be downloaded.");
+            fetchFromSdkManager();
+        }
     }
 
     /**
@@ -398,6 +419,9 @@ public final class FileDeps {
             Logger.logDebug("Adding Android key");
             Files.createDirectories(license.getParent());
             Files.write(license, ANDROID_KEY.getBytes());
+        } else if (Files.readAllLines(license).stream().noneMatch(ANDROID_KEY::equalsIgnoreCase)) {
+            Files.write(license, Collections.singletonList(ANDROID_KEY),
+                    StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         }
 
         String[] cliArgs = new String[] {
@@ -423,8 +447,8 @@ public final class FileDeps {
      * @throws InterruptedException in case anything goes wrong.
      */
     private void fetchFromSdkManager() throws IOException, InterruptedException {
-        Logger.logInfo("Downloading Android NDK and toolchain. It may take several minutes depending on your bandwidth.");
+        Logger.logInfo("Downloading Android toolchain. It may take several minutes depending on your bandwidth.");
         androidSdkManager(ANDROID_SDK_PACKAGES);
-        Logger.logInfo("Android NDK and toolchain downloaded successfully");
+        Logger.logInfo("Android toolchain downloaded successfully");
     }
 }
