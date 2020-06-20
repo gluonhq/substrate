@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class FileDeps {
@@ -146,11 +147,12 @@ public final class FileDeps {
      * @throws InterruptedException
      */
     public void checkAndroidPackages(String androidSdk) throws IOException, InterruptedException {
-        if (Stream.of(ANDROID_SDK_PACKAGES)
-                .filter(s -> !s.contains("ndk"))
-                .map(s -> Path.of(androidSdk, s.split(";")))
-                .anyMatch(p -> !Files.exists(p))) {
-            Logger.logInfo("Some required Android packages were not found, they will be downloaded.");
+        List<String> missingPackages = Stream.of(ANDROID_SDK_PACKAGES)
+                .limit(ANDROID_SDK_PACKAGES.length - 1)
+                .filter(s -> !Files.exists(Path.of(androidSdk, s.split(";"))))
+                .collect(Collectors.toList());
+        if (!missingPackages.isEmpty()) {
+            Logger.logInfo("Required Android packages not found: " + missingPackages);
             fetchFromSdkManager();
         }
     }
