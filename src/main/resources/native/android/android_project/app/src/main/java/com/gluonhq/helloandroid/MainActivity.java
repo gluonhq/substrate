@@ -222,6 +222,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         private static final int ACTION_POINTER_STILL = -1;
         private final KeyEvent BACK_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
         private final KeyEvent BACK_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL);
+        private final String ENTER_STRING = new String(new byte[] {10});
+        private final KeyEvent ENTER_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER);
+        private final KeyEvent ENTER_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER);
 
         public InternalSurfaceView(Context context) {
             super(context);
@@ -282,8 +285,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     // remove old text
                     replaceText();
                     boolean result = super.setComposingText(text, newCursorPosition);
-                    // send action_multiple with new text
-                    processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), text.toString(), -1, 0));
+                    processText(text.toString());
                     return result;
                 }
 
@@ -292,8 +294,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     // remove old text
                     replaceText();
                     boolean result = super.commitText(text, newCursorPosition);
-                    // send action_multiple with new text
-                    processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), text.toString(), -1, 0));
+                    processText(text.toString());
                     return result;
                 }
 
@@ -302,6 +303,17 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
                     resetText(beforeLength - afterLength);
                     return result;
+                }
+
+                private void processText(String text) {
+                    if (ENTER_STRING.equals(text)) {
+                        // send enter
+                        processAndroidKeyEvent(ENTER_DOWN_EVENT);
+                        processAndroidKeyEvent(ENTER_UP_EVENT);
+                    } else {
+                        // send action_multiple with new text
+                        processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), text, -1, 0));
+                    }
                 }
 
                 private void replaceText() {
