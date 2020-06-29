@@ -30,6 +30,7 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,8 +99,8 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
-        String staticJavaLibPath = projectConfiguration.getGraalPath().resolve("lib") + "/";
+    List<String> getTargetSpecificLinkLibraries() throws IOException {
+        String staticJavaLibPath = fileDeps.getJavaSDKLibsPath(useGraalVMJavaStaticLibraries()) + "/";
         String staticJvmLibPath = getCLibPath() + "/";
 
         List<String> targetLibraries = new ArrayList<>();

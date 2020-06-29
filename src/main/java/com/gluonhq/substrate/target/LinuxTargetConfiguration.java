@@ -108,7 +108,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
+    List<String> getTargetSpecificLinkLibraries() throws IOException {
         List<String> targetLibraries = new ArrayList<>();
 
         targetLibraries.add("-Wl,-Bstatic");

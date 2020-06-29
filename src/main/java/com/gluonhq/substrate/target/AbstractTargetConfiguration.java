@@ -809,7 +809,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return paths.getAppPath().resolve(appName).toString();
     }
 
-    List<String> getTargetSpecificLinkLibraries() {
+    List<String> getTargetSpecificLinkLibraries() throws IOException {
         return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-lprefs", "-ljvm", "-lfdlibm", "-lz", "-ldl",
                 "-lj2pkcs11", "-lsunec", "-ljaas", "-lextnet");
     }
