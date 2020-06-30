@@ -86,19 +86,14 @@ public final class FileDeps {
 
     /**
      * Returns the path to the Java SDK static libraries for this configuration. The path is cached on the provided
-     * configuration. If no custom directory has been set in the project configuration and <code>useGraalPath</code>
-     * is set to <code>true</code>, it will use the <code>lib</code> directory inside the configured Graal path. If
-     * <code>useGraalPath</code> is set to <code>false</code>, a custom Java SDK will be retrieved.
+     * configuration. If no custom directory has been set in the project configuration, a custom Java SDK will be
+     * downloaded.
      *
-     * @param useGraalPath specifies if the default Java SDK path should resolve to the Graal installation dir
      * @return the location of the static libraries of the Java SDK for the arch-os for this configuration
      * @throws IOException in case anything goes wrong.
      */
-    public Path getJavaSDKLibsPath(boolean useGraalPath) throws IOException {
-        if (!configuration.useCustomJavaStaticLibs() && useGraalPath) {
-            return configuration.getGraalPath().resolve("lib");
-        }
-        return resolvePath(configuration.getJavaStaticLibsPath(),"Fatal error, could not install Java SDK ");
+    public Path getJavaSDKLibsPath() throws IOException {
+        return resolvePath(configuration.getJavaStaticLibsPath(), "Fatal error, could not install Java SDK");
     }
 
     /**

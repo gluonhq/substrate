@@ -210,11 +210,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         linkRunner.addArgs(getTargetSpecificLinkOutputFlags());
 
-        linkRunner.addArg(getGraalStaticLibsPath());
-        linkRunner.addArg(getJavaStaticLibsPath());
-        if (projectConfiguration.isUseJavaFX()) {
-            linkRunner.addArg(getJavaFXStaticLibsPath());
-        }
+        linkRunner.addArgs(getLinkerLibraryPathFlags());
         linkRunner.addArgs(getNativeLibsLinkFlags());
         linkRunner.setInfo(true);
         linkRunner.setLogToFile(true);
@@ -396,27 +392,34 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         checkPlatformSpecificClibs(clibPath);
     }
 
-    protected Path getCLibPath() {
-        Triplet target = projectConfiguration.getTargetTriplet();
-        return projectConfiguration.getGraalPath()
-                .resolve("lib")
-                .resolve("svm")
-                .resolve("clibraries")
-                .resolve(target.getOsArch2());
+    /**
+     * Generates the library search path arguments to be added to the linker.
+     *
+     * @return a list of library search path arguments for the linker
+     * @throws IOException
+     */
+    private List<String> getLinkerLibraryPathFlags() throws IOException {
+        return getLinkerLibraryPaths().stream()
+                .map(path -> getLinkLibraryPathOption() + path)
+                .collect(Collectors.toList());
     }
 
-    private String getGraalStaticLibsPath() {
-        return getLinkLibraryPathOption() + getCLibPath();
-    }
+    /**
+     * Creates a list of Paths that will be added to the library search path for the linker.
+     *
+     * @return a list of Paths to add to the library search path
+     * @throws IOException
+     */
+    private List<Path> getLinkerLibraryPaths() throws IOException {
+        List<Path> linkerLibraryPaths = new ArrayList<>();
+        if (projectConfiguration.isUseJavaFX()) {
+            linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());
+        }
 
-    private String getJavaStaticLibsPath() throws IOException {
-        Path javaSDKPath = fileDeps.getJavaSDKLibsPath(useGraalVMJavaStaticLibraries());
-        return getLinkLibraryPathOption() + javaSDKPath;
-    }
+        linkerLibraryPaths.add(getCLibPath());
+        linkerLibraryPaths.addAll(getStaticJDKLibPaths());
 
-    private String getJavaFXStaticLibsPath() throws IOException {
-        Path javafxSDKPath = fileDeps.getJavaFXSDKLibsPath();
-        return getLinkLibraryPathOption() + javafxSDKPath;
+        return linkerLibraryPaths;
     }
 
     private String getNativeImagePath() {
@@ -697,10 +700,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return success;
     }
 
-    // --- package protected methods
-
-    // Methods below with default implementation, can be overridden by subclasses
-
     /**
      * If we are not using JavaFX, we immediately return the provided classpath: no further processing
      * is needed. If we do use JavaFX, we will first {@link FileDeps#getJavaFXSDKLibsPath obtain
@@ -721,15 +720,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 "javafx-base", "javafx-graphics", "javafx-controls", "javafx-fxml", "javafx-media", "javafx-web");
     }
 
+    // --- package protected methods
+
+    // Methods below with default implementation, can be overridden by subclasses
+
     /**
      * Returns whether or not this target allows for the HTTPS protocol
      * By default, this method returns true, but subclasses can decide against it.
      */
     boolean allowHttps() {
-        return true;
-    }
-
-    boolean useGraalVMJavaStaticLibraries() {
         return true;
     }
 
@@ -873,5 +872,32 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
         return Collections.emptyList();
+    }
+
+    protected Path getCLibPath() {
+        Triplet target = projectConfiguration.getTargetTriplet();
+        return projectConfiguration.getGraalPath()
+                .resolve("lib")
+                .resolve("svm")
+                .resolve("clibraries")
+                .resolve(target.getOsArch2());
+    }
+
+    protected List<Path> getStaticJDKLibPaths() throws IOException {
+        List<Path> staticJDKLibPaths = new ArrayList<>();
+        if (projectConfiguration.useCustomJavaStaticLibs()) {
+            staticJDKLibPaths.add(projectConfiguration.getJavaStaticLibsPath());
+        }
+
+        Triplet target = projectConfiguration.getTargetTriplet();
+        Path staticJDKLibPath = projectConfiguration.getGraalPath()
+                .resolve("lib")
+                .resolve("static")
+                .resolve(target.getOsArch2());
+        if (target.getOs().equals(Constants.OS_LINUX)) {
+            return Arrays.asList(staticJDKLibPath.resolve("glibc"));
+        } else {
+            return Arrays.asList(staticJDKLibPath);
+        }
     }
 }

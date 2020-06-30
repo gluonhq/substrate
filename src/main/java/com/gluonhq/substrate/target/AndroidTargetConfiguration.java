@@ -257,6 +257,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
+    protected List<Path> getStaticJDKLibPaths() throws IOException {
+        return Arrays.asList(fileDeps.getJavaSDKLibsPath());
+    }
+
+    @Override
     List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
         List<String> linkFlags = new ArrayList<>();
         linkFlags.add("-Wl,--whole-archive");
@@ -280,11 +285,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getAdditionalHeaderFiles() {
         return androidAdditionalHeaderFiles;
-    }
-
-    @Override
-    boolean useGraalVMJavaStaticLibraries() {
-        return false;
     }
 
     private Path getAndroidProjectPath() {

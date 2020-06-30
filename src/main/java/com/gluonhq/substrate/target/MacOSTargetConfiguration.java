@@ -99,12 +99,9 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        String staticJavaLibPath = projectConfiguration.getGraalPath().resolve("lib") + "/";
-        String staticJvmLibPath = getCLibPath() + "/";
-
         List<String> targetLibraries = new ArrayList<>();
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJavaLibPath, staticJavaLibs));
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJvmLibPath, staticJvmLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
         return targetLibraries;
     }
 
@@ -121,9 +118,9 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
                 .collect(Collectors.toList());
     }
 
-    private List<String> asListOfStaticLibraryLinkFlags(String staticLibPath, List<String> libraries) {
+    private List<String> asListOfStaticLibraryLinkFlags(String prefix, List<String> libraries) {
         return libraries.stream()
-                .map(library -> staticLibPath + "lib" + library + ".a")
+                .map(library -> prefix + "lib" + library + ".a")
                 .collect(Collectors.toList());
     }
 
