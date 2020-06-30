@@ -130,6 +130,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         copySubstrateLibraries();
         String configuration = generateSigningConfiguration();
 
+        fileDeps.checkAndroidPackages(sdk);
         ProcessRunner assembleDebug = new ProcessRunner(
                             getAndroidProjectPath().resolve("gradlew").toString(),
                             "-p", getAndroidProjectPath().toString(),
@@ -337,8 +338,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.deleteDirectory(targetFolder);
     }
 
-    /*
+    /**
      * Copies native libraries to android project
+     *
+     * @throws IOException
      */
     private void copySubstrateLibraries() throws IOException {
         Path projectLibsLocation = getAndroidProjectMainPath().resolve("jniLibs").resolve("arm64-v8a");
@@ -357,11 +360,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Files.copy(libsubstrate, projectLibsLocation.resolve("libsubstrate.so"), StandardCopyOption.REPLACE_EXISTING);
     }
 
-    /*
+    /**
      * Generates release signing configuration if
      * keystore is provided, else use debug configuration
      *
      * @return chosen configuration name
+     * @throws IOException
      */
     private String generateSigningConfiguration() throws IOException {
         Path settingsFile = getAndroidProjectPath().resolve("app").resolve("keystore.properties");
@@ -386,9 +390,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return "Release";
     }
 
-    /*
+    /**
      * Copies the .cap files from the jar resource and store them in
      * a directory. Return that directory
+     *
+     * @throws IOException
      */
     private Path getCapCacheDir() throws IOException {
         Path capPath = paths.getGvmPath().resolve("capcache");
@@ -398,9 +404,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return capPath;
     }
 
-    /*
+    /**
      * Copies the Android project from the jar resource and stores it in
      * a directory. Return that directory
+     *
+     * @return Path of the Android project
+     * @throws IOException
      */
     private Path prepareAndroidProject() throws IOException {
         Path androidProject = getAndroidProjectPath();
