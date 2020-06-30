@@ -78,7 +78,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() throws IOException {
+    List<String> getTargetSpecificLinkLibraries() {
         List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
         defaultLinkFlags.add("-lstdc++");
         return defaultLinkFlags;
@@ -167,6 +167,11 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
+    protected List<Path> getStaticJDKLibPaths() throws IOException {
+        return Arrays.asList(fileDeps.getJavaSDKLibsPath());
+    }
+
+    @Override
     List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
         return libs.stream()
                 .map(s -> "-Wl,-force_load," + libPath.resolve(s))
@@ -235,11 +240,6 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             }
         }
         return appPath.toString() + "/" + appName;
-    }
-
-    @Override
-    boolean useGraalVMJavaStaticLibraries() {
-        return false;
     }
 
     private String getTargetArch() {

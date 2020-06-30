@@ -86,25 +86,14 @@ public final class FileDeps {
 
     /**
      * Returns the path to the Java SDK static libraries for this configuration. The path is cached on the provided
-     * configuration. If no custom directory has been set in the project configuration and <code>useGraalPath</code>
-     * is set to <code>true</code>, it will use the <code>lib/static/$target-$arch/</code> directory inside the
-     * configured Graal path. If <code>useGraalPath</code> is set to <code>false</code>, a custom Java SDK will
-     * be downloaded.
+     * configuration. If no custom directory has been set in the project configuration, a custom Java SDK will be
+     * downloaded.
      *
-     * @param useGraalPath specifies if the default Java SDK path should resolve to the Graal installation dir
      * @return the location of the static libraries of the Java SDK for the arch-os for this configuration
      * @throws IOException in case anything goes wrong.
      */
-    public Path getJavaSDKLibsPath(boolean useGraalPath) throws IOException {
-        if (!configuration.useCustomJavaStaticLibs() && useGraalPath) {
-            Path graalSDKLibsPath = configuration.getGraalPath().resolve("lib").resolve("static").resolve(configuration.getTargetTriplet().getOsArch2());
-            if (Constants.OS_LINUX.equals(configuration.getTargetTriplet().getOs())) {
-                return graalSDKLibsPath.resolve("glibc");
-            } else {
-                return graalSDKLibsPath;
-            }
-        }
-        return resolvePath(configuration.getJavaStaticLibsPath(),"Fatal error, could not install Java SDK ");
+    public Path getJavaSDKLibsPath() throws IOException {
+        return resolvePath(configuration.getJavaStaticLibsPath(), "Fatal error, could not install Java SDK");
     }
 
     /**

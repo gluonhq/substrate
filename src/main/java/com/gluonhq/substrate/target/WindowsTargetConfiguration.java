@@ -31,7 +31,6 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -136,7 +135,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() throws IOException {
+    List<String> getTargetSpecificLinkLibraries() {
         List<String> targetLibraries = new ArrayList<>();
 
         targetLibraries.addAll(asListOfLibraryLinkFlags(javaWindowsLibs));

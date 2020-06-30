@@ -30,7 +30,6 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -99,13 +98,10 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() throws IOException {
-        String staticJavaLibPath = fileDeps.getJavaSDKLibsPath(useGraalVMJavaStaticLibraries()) + "/";
-        String staticJvmLibPath = getCLibPath() + "/";
-
+    List<String> getTargetSpecificLinkLibraries() {
         List<String> targetLibraries = new ArrayList<>();
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJavaLibPath, staticJavaLibs));
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJvmLibPath, staticJvmLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
         return targetLibraries;
     }
 
@@ -122,9 +118,9 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
                 .collect(Collectors.toList());
     }
 
-    private List<String> asListOfStaticLibraryLinkFlags(String staticLibPath, List<String> libraries) {
+    private List<String> asListOfStaticLibraryLinkFlags(String prefix, List<String> libraries) {
         return libraries.stream()
-                .map(library -> staticLibPath + "lib" + library + ".a")
+                .map(library -> prefix + "lib" + library + ".a")
                 .collect(Collectors.toList());
     }
 
