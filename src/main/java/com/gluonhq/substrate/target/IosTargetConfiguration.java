@@ -58,6 +58,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
+    private static final String javafxWebLib = "javafx_ios_webnode";
 
     private static final List<String> iosFrameworks = Arrays.asList(
             "Foundation", "UIKit", "CoreGraphics", "MobileCoreServices",
@@ -92,7 +93,11 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
                 "-isysroot", getSysroot()));
         if (useJavaFX) {
             String javafxSDK = projectConfiguration.getJavafxStaticLibsPath().toString();
-            javafxLibs.forEach(name ->
+            List<String> libs = new ArrayList<>(javafxLibs);
+            if (projectConfiguration.getClasspath().contains("javafx-web")) {
+                libs.add(javafxWebLib);
+            }
+            libs.forEach(name ->
                     linkFlags.add("-Wl,-force_load," + javafxSDK + "/lib" + name + ".a"));
         }
         linkFlags.addAll(ioslibs);
