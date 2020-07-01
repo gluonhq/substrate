@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-
 public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
@@ -279,10 +278,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             ProcessRunner pr = new ProcessRunner("objdump", "-f", path.toFile().getAbsolutePath());
             int op = pr.runProcess("objdump");
             if (op == 0) return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Unrecoverable error checking file "+path+": "+e);
         }
         Logger.logDebug("Ignore file " + path + " since objdump failed on it");
         return false;
