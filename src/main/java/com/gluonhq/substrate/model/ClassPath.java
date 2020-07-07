@@ -140,7 +140,7 @@ public class ClassPath {
                 }
                 Path jarPath = Path.of(javaPath, "bin", "jar");
                 if (!Files.exists(jarPath)) {
-                    throw new IOException("Error: " + javaPath + " doesn't exist");
+                    throw new IOException("Error: " + jarPath + " doesn't exist");
                 }
 
                 Path classesJar = classesPath.resolve("classes.jar");
