@@ -78,18 +78,13 @@ public class Deploy {
         // Check if dependencies of libimobiledevice are installed and retrieve linked versions
         Map<String, List<String>> map = new HashMap<>();
         for (String nameLib : LIBIMOBILEDEVICE_DEPENDENCIES) {
-            List<String> pathLibs = checkDependencyPaths(nameLib);
+            List<String> pathLibs = getDependencyPaths(nameLib);
             List<String> linkLibs = checkDependencyLinks(nameLib, pathLibs);
             map.put(nameLib, linkLibs);
         }
 
         // Check for libimobiledevice installed
-        List<String> libiPath = checkDependencyPaths(LIBIMOBILEDEVICE);
-        if (libiPath == null || libiPath.isEmpty() || !Files.exists(Path.of(libiPath.get(0)))) {
-            Logger.logSevere("Error finding libimobiledevice.dylib");
-            return;
-        }
-
+        List<String> libiPath = getDependencyPaths(LIBIMOBILEDEVICE);
         ProcessRunner runner = new ProcessRunner("otool", "-L", libiPath.get(0));
         if (runner.runProcess("otool") == 0) {
             for (String key : map.keySet()) {
@@ -221,11 +216,20 @@ public class Deploy {
         FileOps.copyDirectory(debugSymbolsPath, productDebugSymbolsPath);
     }
 
-    private List<String> checkDependencyPaths(String nameLib) throws IOException, InterruptedException {
+    /**
+     * Returns a list with one or more valid paths with the existing native libraries for the given
+     * name. If no paths are found, a RuntimeException is thrown, asking the user to install it
+     * manually from command line
+     *
+     * @param nameLib the name of the library
+     * @return a non-empty list with paths to native libraries
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private List<String> getDependencyPaths(String nameLib) throws IOException, InterruptedException {
         ProcessRunner runner = new ProcessRunner("/bin/sh", "-c", "find $(brew --cellar) -name " + nameLib + ".dylib");
         if (runner.runProcess(nameLib) != 0) {
-            Logger.logDebug("Error finding " + nameLib);
-            return new ArrayList<>();
+            throw new IOException("Error finding " + nameLib);
         }
 
         List<String> list = runner.getResponses().stream()
@@ -236,10 +240,10 @@ public class Deploy {
         if (list.isEmpty()) {
             if (nameLib.contains("-")) {
                 Logger.logDebug("Trying old version of " + nameLib + ".dylib");
-                return checkDependencyPaths(nameLib.split("-")[0]);
+                return getDependencyPaths(nameLib.split("-")[0]);
             } else {
-                Logger.logSevere("Error finding " + nameLib + ".dylib");
-                throw new RuntimeException("Open a terminal and run the following command to install " + nameLib + ".dylib: \n\n" +
+                Logger.logSevere("Error: " + nameLib + ".dylib was not found");
+                throw new RuntimeException("Open a terminal and run the following command to install " + nameLib + ": \n\n" +
                             "brew install --HEAD " + nameLib);
             }
         }
