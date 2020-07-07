@@ -218,7 +218,7 @@ public class Deploy {
 
     /**
      * Returns a list with one or more valid paths with the existing native libraries for the given
-     * name. If no paths are found, a RuntimeException is thrown, asking the user to install it
+     * name. If no paths are found, an IOException is thrown, asking the user to install it
      * manually from command line
      *
      * @param nameLib the name of the library
@@ -243,7 +243,7 @@ public class Deploy {
                 return getDependencyPaths(nameLib.split("-")[0]);
             } else {
                 Logger.logSevere("Error: " + nameLib + ".dylib was not found");
-                throw new RuntimeException("Open a terminal and run the following command to install " + nameLib + ": \n\n" +
+                throw new IOException("Open a terminal and run the following command to install " + nameLib + ": \n\n" +
                             "brew install --HEAD " + nameLib);
             }
         }
