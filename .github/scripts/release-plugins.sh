@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+echo "Wait for a minute for Maven Central to sync and make the artifact available to client plugins"
+counter=1
+while [ $counter -le 60 ]
+do
+  printf "."
+  sleep 1s
+((counter++))
+done
+
 git config --global user.email "githubbot@gluonhq.com"
 git config --global user.name "Gluon Bot"
 

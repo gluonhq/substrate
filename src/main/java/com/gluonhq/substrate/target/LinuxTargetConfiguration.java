@@ -31,6 +31,8 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
 import com.gluonhq.substrate.util.linux.LinuxLinkerFlags;
@@ -45,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class LinuxTargetConfiguration extends PosixTargetConfiguration {
@@ -263,5 +266,22 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             return super.getLinker();
         }
         return "aarch64-linux-gnu-gcc";
+    }
+
+    @Override
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return this::checkFileArchitecture;
+    }
+
+    private boolean checkFileArchitecture(Path path) {
+        try {
+            ProcessRunner pr = new ProcessRunner("objdump", "-f", path.toFile().getAbsolutePath());
+            int op = pr.runProcess("objdump");
+            if (op == 0) return true;
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Unrecoverable error checking file "+path+": "+e);
+        }
+        Logger.logDebug("Ignore file " + path + " since objdump failed on it");
+        return false;
     }
 }
