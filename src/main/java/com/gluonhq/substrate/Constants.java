@@ -101,7 +101,8 @@ public class Constants {
     public static final String PROFILE_ANDROID = "android";
     public static final String PROFILE_LINUX_AARCH64 = "linux-aarch64";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+4";
+    // public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+4";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+0";
     public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "15-ea+gvm22";
 
     /**
