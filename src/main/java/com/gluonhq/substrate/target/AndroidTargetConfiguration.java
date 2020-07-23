@@ -212,7 +212,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (projectConfiguration.getGraalVersion().compareTo(new Version("20.2.0")) >= 0) {
             flags.add("--libc=bionic");
         } else if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
-            flags.add("--H:+UseBionicC");
+            flags.add("-H:+UseBionicC");
         }
         return flags;
     }
