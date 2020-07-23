@@ -209,7 +209,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (projectConfiguration.isUseLLVM()) {
             flags.add("-H:CustomLD=" + ldlld.toAbsolutePath().toString());
         }
-        if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
+        if (projectConfiguration.getGraalVersion().compareTo(new Version("20.2.0")) >= 0) {
+            flags.add("--libc=bionic");
+        } else if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
             flags.add("-H:+UseBionicC");
         }
         return flags;
