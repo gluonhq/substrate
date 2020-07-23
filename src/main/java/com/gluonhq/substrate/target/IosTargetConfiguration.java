@@ -121,6 +121,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
+                "-H:PageSize=16384",
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getTargetArch(),
                 "-H:+UseCAPCache",
