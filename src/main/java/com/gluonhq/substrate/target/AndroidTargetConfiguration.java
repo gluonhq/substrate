@@ -202,17 +202,21 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ArrayList<String> flags = new ArrayList<String>(Arrays.asList(
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
-                "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CompilerBackend=" + projectConfiguration.getBackend()));
         if (projectConfiguration.isUseLLVM()) {
             flags.add("-H:CustomLD=" + ldlld.toAbsolutePath().toString());
         }
-        if (projectConfiguration.getGraalVersion().compareTo(new Version("20.2.0")) >= 0) {
+        Version graalVersion = projectConfiguration.getGraalVersion();
+        if (graalVersion.compareTo(new Version("20.2.0")) >= 0) {
+            flags.add("-H:+ForceNoROSectionRelocations");
             flags.add("--libc=bionic");
-        } else if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
-            flags.add("-H:+UseBionicC");
+        } else {
+            flags.add("-H:+UseOnlyWritableBootImageHeap");
+            if (graalVersion.compareTo(new Version("20.1.0")) > 0) {
+                flags.add("-H:+UseBionicC");
+            }
         }
         return flags;
     }
