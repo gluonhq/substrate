@@ -274,7 +274,9 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     private boolean lipoMatch(Path path) {
         try {
-            return lipoInfo(path).indexOf(getTargetArch()) > 0;
+            String lp = lipoInfo(path);
+            if (lp == null) return false;
+            return lp.indexOf(getTargetArch()) > 0;
         } catch (IOException | InterruptedException e) {
             Logger.logSevere("Error processing lipo for " + path);
         }
