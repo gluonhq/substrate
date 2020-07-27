@@ -106,6 +106,11 @@ public class Constants {
     public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "15-ea+gvm22";
 
     /**
+     * Supported GraalVM versions
+     */
+    public static final String GRAALVM_MIN_VERSION = "20.2";
+
+    /**
      * Paths
      */
     public static final String CLIENT_PATH = "client";
