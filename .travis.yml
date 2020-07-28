@@ -38,7 +38,7 @@ matrix:
       before_script:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
         - curl -i -u "gluonteam:$GLUONTEAM_PAT" https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases > releases.json
-        - export GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
+        - export GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-linux-amd64-20.3 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
         - wget $GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL
         - tar -xzvf graalvm-ce-java11-linux-amd64-20.3.0-dev.tar.gz && cd $TRAVIS_BUILD_DIR
         - mkdir -p $HOME/javafx-static-libs-linux && cd $HOME/javafx-static-libs-linux
@@ -53,7 +53,7 @@ matrix:
         - mkdir -p $HOME/graalvm && cd $HOME/graalvm
         - which curl
         - curl -i -u "gluonteam:$GLUONTEAM_PAT" https://api.github.com/repos/graalvm/graalvm-ce-dev-builds/releases > releases.json
-        - export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
+        - export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64-20.3 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
         - wget ${GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL}
         - tar -xzvf graalvm-ce-java11-darwin-amd64-20.3.0-dev.tar.gz && cd $TRAVIS_BUILD_DIR
         - mkdir -p $HOME/javafx-static-libs-darwin && cd $HOME/javafx-static-libs-darwin
