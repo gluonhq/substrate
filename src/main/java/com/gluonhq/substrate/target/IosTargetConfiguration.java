@@ -121,6 +121,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
+                "-H:PageSize=16384",
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getTargetArch(),
                 "-H:+UseCAPCache",
@@ -273,7 +274,9 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     private boolean lipoMatch(Path path) {
         try {
-            return lipoInfo(path).indexOf(getTargetArch()) > 0;
+            String lp = lipoInfo(path);
+            if (lp == null) return false;
+            return lp.indexOf(getTargetArch()) > 0;
         } catch (IOException | InterruptedException e) {
             Logger.logSevere("Error processing lipo for " + path);
         }

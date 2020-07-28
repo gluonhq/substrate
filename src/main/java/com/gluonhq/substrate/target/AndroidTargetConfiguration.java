@@ -36,7 +36,6 @@ import com.gluonhq.substrate.model.ReleaseConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
-import com.gluonhq.substrate.util.Version;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,9 +94,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "clang");
         this.clang = Files.exists(clangguess) ? clangguess : null;
-        if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
-            projectConfiguration.setBackend(Constants.BACKEND_LIR);
-        }
+        projectConfiguration.setBackend(Constants.BACKEND_LIR);
     }
 
     @Override
@@ -202,15 +199,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ArrayList<String> flags = new ArrayList<String>(Arrays.asList(
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
-                "-H:+UseOnlyWritableBootImageHeap",
+                "-H:+ForceNoROSectionRelocations",
+                "--libc=bionic",
                 "-H:+UseCAPCache",
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CompilerBackend=" + projectConfiguration.getBackend()));
         if (projectConfiguration.isUseLLVM()) {
             flags.add("-H:CustomLD=" + ldlld.toAbsolutePath().toString());
-        }
-        if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
-            flags.add("-H:+UseBionicC");
         }
         return flags;
     }

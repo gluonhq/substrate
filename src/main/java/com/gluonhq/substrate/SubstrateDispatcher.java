@@ -368,6 +368,8 @@ public class SubstrateDispatcher {
             System.out.println("Configuration: " + this.config);
         }
 
+        this.config.checkGraalVMVersion();
+
         Triplet targetTriplet = config.getTargetTriplet();
 
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), targetTriplet.getArchOs());
