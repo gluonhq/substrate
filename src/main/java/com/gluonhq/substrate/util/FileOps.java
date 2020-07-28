@@ -507,6 +507,21 @@ public class FileOps {
      * @throws IOException
      */
     public static void extractFilesFromJar(String extension, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
+        extractFilesFromJar(List.of(extension), sourceJar, target, filter);
+    }
+
+    /**
+     * Extracts the files that match any of the possible extensions from a given list
+     * that are found in a jar to a target patch, providing that the file passes a given filter,
+     * and it doesn't exist yet in the target path
+     *
+     * @param extensions a list with possible extensions of the files in the jar that will be extracted
+     * @param sourceJar the path to the jar that will be inspected
+     * @param target the path of the folder where the files will be extracted
+     * @param filter a predicate that the files in the jar should match.
+     * @throws IOException
+     */
+    public static void extractFilesFromJar(List<String> extensions, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
         if (!Files.exists(sourceJar)) {
             return;
         }
@@ -515,7 +530,7 @@ public class FileOps {
         }
         ZipFile zf = new ZipFile(sourceJar.toFile());
         List<? extends ZipEntry> entries = zf.stream()
-                .filter(ze -> ze.getName().endsWith(extension))
+                .filter(ze -> extensions.stream().anyMatch(ext -> ze.getName().endsWith(ext)))
                 .collect(Collectors.toList());
         if (entries.isEmpty()) {
             return;
