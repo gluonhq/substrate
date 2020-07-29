@@ -489,7 +489,7 @@ public class InternalProjectConfiguration {
         if (publicConfig.getGraalPath() == null) {
             return;
         }
-        if (new Triplet(Constants.Profile.MACOS).equals(Triplet.fromCurrentOS())) {
+        if (Triplet.isMacOSHost()) {
             checkGraalVMPermissions(getGraalPath().toString());
         }
     }

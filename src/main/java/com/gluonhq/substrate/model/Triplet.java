@@ -58,6 +58,27 @@ public class Triplet {
         }
     }
 
+    /**
+     * @return true if host is Windows
+     */
+    public static boolean isWindowsHost() {
+        return new Triplet(Constants.Profile.WINDOWS).equals(fromCurrentOS());
+    }
+
+    /**
+     * @return true if host is MacOS
+     */
+    public static boolean isMacOSHost() {
+        return new Triplet(Profile.MACOS).equals(fromCurrentOS());
+    }
+
+    /**
+     * @return true if host is Linux
+     */
+    public static boolean isLinuxHost() {
+        return new Triplet(Profile.LINUX).equals(fromCurrentOS());
+    }
+
     public Triplet(String arch, String vendor, String os) {
         this.arch = arch;
         this.vendor = vendor;

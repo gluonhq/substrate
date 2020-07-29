@@ -117,13 +117,14 @@ public class ClassPath {
 
         if (includeClasses) {
             // Add project's classes as a jar to the list so it can be scanned as well
-            String classes = filter(s -> s.endsWith("classes") || s.endsWith("classes/java/main")).stream()
+            String classes = filter(s -> s.endsWith("classes") ||
+                            s.endsWith("classes" + File.separator + "java" + File.separator + "main")).stream()
                     .findFirst()
                     .orElse(null);
             if (classes != null) {
                 Path classesPath = Files.createTempDirectory("classes");
                 FileOps.copyDirectory(Path.of(classes), classesPath);
-                Path resourcesPath = filter(s -> s.endsWith("resources/main")).stream()
+                Path resourcesPath = filter(s -> s.endsWith("resources" + File.separator + "main")).stream()
                         .findFirst()
                         .map(Path::of)
                         .orElse(null);
@@ -138,7 +139,7 @@ public class ClassPath {
                         throw new IOException("Error: $JAVA_HOME and $GRAALVM_HOME are undefined");
                     }
                 }
-                Path jarPath = Path.of(javaPath, "bin", "jar");
+                Path jarPath = Path.of(javaPath, "bin", Triplet.isWindowsHost() ? "jar.exe" : "jar");
                 if (!Files.exists(jarPath)) {
                     throw new IOException("Error: " + jarPath + " doesn't exist");
                 }
