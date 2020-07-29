@@ -35,6 +35,8 @@ import static com.gluonhq.substrate.Constants.*;
 
 public class Triplet {
 
+    private static final String OS_NAME  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+
     private String arch;
     private String vendor;
     private String os;
@@ -45,16 +47,14 @@ public class Triplet {
      * @throws IllegalArgumentException in case the current operating system is not supported
      */
     public static Triplet fromCurrentOS() throws IllegalArgumentException {
-        String osName  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-
-        if (osName.contains("mac")) {
+        if (isMacOSHost()) {
            return new Triplet(Constants.Profile.MACOS);
-        } else if (osName.contains("nux")) {
+        } else if (isLinuxHost()) {
             return new Triplet(Constants.Profile.LINUX);
-        } else if (osName.contains("windows")) {
+        } else if (isWindowsHost()) {
             return new Triplet(Constants.Profile.WINDOWS);
         } else {
-           throw new IllegalArgumentException("OS " + osName + " not supported");
+           throw new IllegalArgumentException("OS " + OS_NAME + " not supported");
         }
     }
 
@@ -62,21 +62,21 @@ public class Triplet {
      * @return true if host is Windows
      */
     public static boolean isWindowsHost() {
-        return new Triplet(Constants.Profile.WINDOWS).equals(fromCurrentOS());
+        return OS_NAME.contains("windows");
     }
 
     /**
      * @return true if host is MacOS
      */
     public static boolean isMacOSHost() {
-        return new Triplet(Profile.MACOS).equals(fromCurrentOS());
+        return OS_NAME.contains("mac");
     }
 
     /**
      * @return true if host is Linux
      */
     public static boolean isLinuxHost() {
-        return new Triplet(Profile.LINUX).equals(fromCurrentOS());
+        return OS_NAME.contains("nux");
     }
 
     public Triplet(String arch, String vendor, String os) {

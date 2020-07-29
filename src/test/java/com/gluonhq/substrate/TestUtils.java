@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate;
 
-import java.util.Locale;
+import com.gluonhq.substrate.model.Triplet;
 
 class TestUtils {
 
@@ -60,7 +60,7 @@ class TestUtils {
      * @return true if runs on a local Mac OS
      */
     static boolean isLocalMacOS() {
-        return !isCI() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
+        return !isCI() && Triplet.isMacOSHost();
     }
 
     /**
@@ -68,7 +68,7 @@ class TestUtils {
      * @return true if runs on a local Linux
      */
     boolean isLocalLinux() {
-        return !isCI() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("nux");
+        return !isCI() && Triplet.isLinuxHost();
     }
 
     /**
@@ -76,7 +76,7 @@ class TestUtils {
      * @return true if runs on Mac OS over CI server
      */
     static boolean isCIMacOS() {
-        return isCI() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
+        return isCI() && Triplet.isMacOSHost();
     }
 
     /**
@@ -84,6 +84,6 @@ class TestUtils {
      * @return true if runs on Linux over CI server
      */
     static boolean isCILinux() {
-        return isCI() && System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("nux");
+        return isCI() && Triplet.isLinuxHost();
     }
 }
