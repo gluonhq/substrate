@@ -35,6 +35,9 @@ import static com.gluonhq.substrate.Constants.*;
 
 public class Triplet {
 
+    /**
+     * The operating system of the host is evaluated at build-time
+     */
     private static final String OS_NAME  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
 
     private String arch;
