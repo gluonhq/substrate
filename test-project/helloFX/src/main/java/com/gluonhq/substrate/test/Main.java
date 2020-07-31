@@ -19,9 +19,11 @@ public class Main extends Application {
         stage.setScene(scene);
         stage.show();
 
-        PauseTransition pause = new PauseTransition(Duration.seconds(2));
-        pause.setOnFinished(f -> System.exit(0));
-        pause.play();
+        if (System.getProperty("javafx.platform") == null) {
+            PauseTransition pause = new PauseTransition(Duration.seconds(2));
+            pause.setOnFinished(f -> System.exit(0));
+            pause.play();
+        }
     }
 
     public static void main(String[] args) {

@@ -61,9 +61,11 @@ public class Main extends MobileApplication {
             scene.getWindow().setHeight(dimension2D.getHeight());
         }
 
-        PauseTransition pause = new PauseTransition(Duration.seconds(5));
-        pause.setOnFinished(f -> System.exit(0));
-        pause.play();
+        if (System.getProperty("javafx.platform") == null) {
+            PauseTransition pause = new PauseTransition(Duration.seconds(5));
+            pause.setOnFinished(f -> System.exit(0));
+            pause.play();
+        }
     }
 
     public static void main(String[] args) {
