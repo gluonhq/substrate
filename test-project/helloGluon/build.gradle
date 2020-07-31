@@ -55,7 +55,7 @@ task runScript(type: Exec) {
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
     } else {
-        argsList += ["-Dprism.sw=true"]
+        argsList += ["-Dprism.sw=true", "-Dprism.order=sw"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList

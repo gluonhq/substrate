@@ -17,7 +17,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
-import java.util.Locale;
 
 public class Main extends MobileApplication {
 
@@ -68,12 +67,6 @@ public class Main extends MobileApplication {
     }
 
     public static void main(String[] args) {
-        String osName  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-
-        System.setProperty("prism.verbose", "true");
-        if (osName.contains("mac") || osName.contains("nux")) {
-            System.setProperty("prism.order", "sw");
-        }
         launch(args);
     }
 
