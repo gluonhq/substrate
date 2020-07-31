@@ -44,7 +44,7 @@ task runScript(type: Exec) {
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
     } else {
-        argsList += ["-Dprism.sw=true", "-Dprism.order=sw"]
+        argsList += ["-Dprism.sw=true"]
     }
     if (expected != null) {
         argsList += ["-Dexpected=$expected"]
