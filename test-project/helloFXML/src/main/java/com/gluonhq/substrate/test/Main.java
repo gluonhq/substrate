@@ -32,9 +32,11 @@ public class Main extends Application {
         stage.setScene(scene);
         stage.show();
 
-        PauseTransition pause = new PauseTransition(Duration.seconds(5));
-        pause.setOnFinished(f -> System.exit(0));
-        pause.play();
+        if (System.getProperty("targetProfile") == null) {
+            PauseTransition pause = new PauseTransition(Duration.seconds(5));
+            pause.setOnFinished(f -> System.exit(0));
+            pause.play();
+        }
     }
 
     public static void main(String[] args) {
