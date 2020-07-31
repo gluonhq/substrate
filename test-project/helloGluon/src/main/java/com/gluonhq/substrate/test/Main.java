@@ -67,6 +67,7 @@ public class Main extends MobileApplication {
     }
 
     public static void main(String[] args) {
+        System.setProperty("prism.verbose", "true");
         launch(args);
     }
 
