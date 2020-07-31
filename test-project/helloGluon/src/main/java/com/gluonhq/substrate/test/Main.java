@@ -68,9 +68,6 @@ public class Main extends MobileApplication {
 
     public static void main(String[] args) {
         System.setProperty("prism.verbose", "true");
-        if (System.getProperty("javafx.platform") == null) {
-            System.setProperty("prism.order", "sw");
-        }
         launch(args);
     }
 
