@@ -7,7 +7,6 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
-import java.util.Locale;
 
 public class Main extends Application {
 
@@ -26,12 +25,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        String osName  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-
         System.setProperty("prism.verbose", "true");
-        if (osName.contains("mac") || osName.contains("nux")) {
-            System.setProperty("prism.order", "sw");
-        }
         launch(args);
     }
 
