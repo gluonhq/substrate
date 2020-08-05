@@ -217,6 +217,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         public InternalSurfaceView(Context context) {
             super(context);
             setFocusableInTouchMode(true);
+            setFocusable(true);
         }
 
         @Override
@@ -255,6 +256,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 ids[0] = event.getPointerId(0);
                 touchXs[0] = (int) (event.getX()/density);
                 touchYs[0] = (int) (event.getY()/density);
+            }
+            if (!isFocused()) {
+                Log.v(TAG, "View wasn't focused, requesting focus");
+                requestFocus();
             }
             nativeGotTouchEvent(pcount, actions, ids, touchXs, touchYs);
             return true;
