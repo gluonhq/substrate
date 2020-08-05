@@ -46,6 +46,8 @@ char *appDataDir;
 char *timeZone;
 
 int start_logger(const char *app_name);
+
+// TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
 int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
 
 const char *origargs[] = {

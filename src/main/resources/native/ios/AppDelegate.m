@@ -53,6 +53,8 @@ static __inline__ void gvmlog(NSString* format, ...)
 @end
 
 int startGVM(const char* userHome, const char* userTimeZone);
+
+// TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
 int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
 
 extern int *run_main(int argc, const char* argv[]);
