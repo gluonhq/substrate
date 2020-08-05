@@ -47,6 +47,9 @@ char *timeZone;
 
 int start_logger(const char *app_name);
 
+// TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
+int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
+
 const char *origargs[] = {
     "myapp",
     "-Djavafx.platform=android",
@@ -155,6 +158,9 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp(
     (*run_main)(argsize, graalArgs);
 
     LOGE(stderr, "called JavaMainWrapper_run\n");
+
+    // Invoke sunec
+    JNI_OnLoad_sunec(NULL, NULL);
 }
 
 // == expose window functionality to JavaFX native code == //

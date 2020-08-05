@@ -54,6 +54,9 @@ static __inline__ void gvmlog(NSString* format, ...)
 
 int startGVM(const char* userHome, const char* userTimeZone);
 
+// TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
+int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
+
 extern int *run_main(int argc, const char* argv[]);
 
 @interface AppDelegate ()
@@ -92,6 +95,9 @@ int main(int argc, char * argv[]) {
     NSString *tzName = [@"-Duser.timezone=" stringByAppendingString: [timeZone name]];
     const char *userTimeZone = [tzName UTF8String];
     startGVM(userHome, userTimeZone);
+
+    // Invoke sunec
+    JNI_OnLoad_sunec(nil, nil);
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
