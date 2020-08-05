@@ -46,6 +46,7 @@ char *appDataDir;
 char *timeZone;
 
 int start_logger(const char *app_name);
+int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
 
 const char *origargs[] = {
     "myapp",
@@ -155,6 +156,9 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp(
     (*run_main)(argsize, graalArgs);
 
     LOGE(stderr, "called JavaMainWrapper_run\n");
+
+    // Invoke sunec
+    JNI_OnLoad_sunec(NULL, NULL);
 }
 
 // == expose window functionality to JavaFX native code == //

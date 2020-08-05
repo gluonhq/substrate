@@ -53,6 +53,7 @@ static __inline__ void gvmlog(NSString* format, ...)
 @end
 
 int startGVM(const char* userHome, const char* userTimeZone);
+int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
 
 extern int *run_main(int argc, const char* argv[]);
 
@@ -92,6 +93,9 @@ int main(int argc, char * argv[]) {
     NSString *tzName = [@"-Duser.timezone=" stringByAppendingString: [timeZone name]];
     const char *userTimeZone = [tzName UTF8String];
     startGVM(userHome, userTimeZone);
+
+    // Invoke sunec
+    JNI_OnLoad_sunec(nil, nil);
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
