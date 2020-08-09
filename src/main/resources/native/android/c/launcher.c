@@ -50,6 +50,8 @@ int start_logger(const char *app_name);
 // TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
 int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
 
+extern int __svm_vm_is_static_binary __attribute__((weak)) = 1;
+
 const char *origargs[] = {
     "myapp",
     "-Djavafx.platform=android",
