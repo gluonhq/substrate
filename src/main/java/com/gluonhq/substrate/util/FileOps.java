@@ -80,6 +80,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -669,6 +672,29 @@ public class FileOps {
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(hashes);
         }
+    }
+
+    /**
+     * Shorten the Java classpath with a pathing jar
+     * @param classpath A string with the classpath of files that will be added to the
+     *                 pathing jar Class-Path attribute
+     * @return a String with the path to the created pathing jar
+     * @throws IOException
+     */
+    public static String createPathingJar(String classpath) throws IOException {
+        Objects.requireNonNull(classpath);
+        Manifest manifest = new Manifest();
+        Attributes attributes = manifest.getMainAttributes();
+        attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attributes.put(Attributes.Name.CLASS_PATH, Stream.of(classpath.split(File.pathSeparator))
+                .map(s -> new File(s).toURI().toString())
+                .collect(Collectors.joining(" ")));
+        File jarFile = File.createTempFile("classpathJar", ".jar");
+        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFile), manifest)) {
+            jos.putNextEntry(new ZipEntry("META-INF/"));
+        }
+        Logger.logDebug("Pathing jar created at " + jarFile);
+        return jarFile.getAbsolutePath();
     }
 
     /**
