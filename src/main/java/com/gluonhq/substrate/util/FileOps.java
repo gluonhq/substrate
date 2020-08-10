@@ -687,7 +687,7 @@ public class FileOps {
         Attributes attributes = manifest.getMainAttributes();
         attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
         attributes.put(Attributes.Name.CLASS_PATH,
-                String.join(" ", classpath.split(File.pathSeparator)));
+                classpath.replaceAll(File.pathSeparator, " "));
         File jarFile = File.createTempFile("classpathJar", ".jar");
         try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFile), manifest)) {
             jos.putNextEntry(new ZipEntry("META-INF/"));
