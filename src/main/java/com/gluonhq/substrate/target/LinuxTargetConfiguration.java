@@ -276,6 +276,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private boolean checkFileArchitecture(Path path) {
         try {
             ProcessRunner pr = new ProcessRunner("objdump", "-f", path.toFile().getAbsolutePath());
+            pr.showSevereMessage(false);
             int op = pr.runProcess("objdump");
             if (op == 0) return true;
         } catch (IOException | InterruptedException e) {
