@@ -1,8 +1,7 @@
 # Gluon Substrate
 
-[![Travis CI](https://travis-ci.com/gluonhq/substrate.svg?branch=master)](https://travis-ci.com/gluonhq/substrate)
-
-[![Coverage Status](https://coveralls.io/repos/github/gluonhq/substrate/badge.svg?branch=master)](https://coveralls.io/github/gluonhq/substrate?branch=master)
+[![Maven Central](https://img.shields.io/maven-central/v/com.gluonhq/substrate.svg?color=%234DC71F)](https://search.maven.org/#search|ga|1|com.gluonhq.substrate)
+[![Github Actions](https://github.com/gluonhq/substrate/workflows/Substrate%20Build/badge.svg)](https://github.com/gluonhq/substrate/actions?query=workflow%3A%22Substrate+Build%22)
 
 Gluon Substrate is a tool that converts Java(FX) Client applications into
 native executables for desktop, mobile and embedded devices.
