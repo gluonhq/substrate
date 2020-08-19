@@ -33,6 +33,7 @@ import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ReleaseConfiguration;
+import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -65,7 +66,7 @@ import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_VERS
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
-    private static final String ANDROID_TRIPLET = "aarch64-linux-android";
+    private static final String ANDROID_TRIPLET = new Triplet(Constants.Profile.ANDROID).toString();
     private static final String ANDROID_MIN_SDK_VERSION = "21";
 
     private final String ndk;
@@ -93,7 +94,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         this.sdk = fileDeps.getAndroidSDKPath().toString();
         this.ndk = fileDeps.getAndroidNDKPath().toString();
-        this.hostPlatformFolder = configuration.getHostTriplet().getOs() + "-" + Constants.ARCH_AMD64;
+        this.hostPlatformFolder = configuration.getHostTriplet().getOsArch();
 
         Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "ld.lld");
         this.ldlld = Files.exists(ldguess) ? ldguess : null;
@@ -289,7 +290,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             pr.showSevereMessage(false);
             int op = pr.runProcess("objdump");
             if (op == 0) {
-                return pr.getResponses().stream().anyMatch(line -> line.contains("architecture: " + Constants.ARCH_AARCH64));
+                return pr.getResponses().stream().anyMatch(line -> line.contains("architecture: " + projectConfiguration.getTargetTriplet().getArch()));
             }
         } catch (IOException | InterruptedException e) {
             Logger.logSevere("Unrecoverable error checking file " + path + ": " + e);
