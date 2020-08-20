@@ -98,14 +98,28 @@ int main(int argc, char * argv[]) {
     const char *userTimeZone = [tzName UTF8String];
 
     const char *userLaunchKey;
-    NSURL* url = [launchOptions objectForKey:UIApplicationLaunchOptionsURLKey];
-    if (url) {
+    // 1. Check Launch.URL
+    id urlId = [launchOptions objectForKey:UIApplicationLaunchOptionsURLKey];
+    if ([urlId isKindOfClass:[NSURL class]]) {
+        NSURL *url = (NSURL *)urlId;
         NSString *urlName = [@"-DLaunch.URL=" stringByAppendingString: url.absoluteString];
+        NSLog(@"LaunchOptions :: URL :: urlName: %@", urlName);
         userLaunchKey = [urlName UTF8String];
+        // TODO: UIApplicationLaunchOptionsSourceApplicationKey gives bundleID of source app that launched this app
     } else {
-        // TODO: Process UIApplicationLaunchOptionsRemoteNotificationKey and other launch options
-        NSString *empty = @"";
-        userLaunchKey = [empty UTF8String];
+        // 2. Check Launch.LocalNotification
+        id notifId = [launchOptions objectForKey:@"UIApplicationLaunchOptionsLocalNotificationKey"];
+        if ([notifId isKindOfClass:[UILocalNotification class]]) {
+            UILocalNotification* notif = (UILocalNotification *)notifId;
+            NSDictionary* userInfo = [notif userInfo];
+            NSString *userIdName = [@"-DLaunch.LocalNotification=" stringByAppendingString: [userInfo objectForKey:@"userId"]];
+            NSLog(@"LaunchOptions :: LocalNotification :: userId: %@", userIdName);
+            userLaunchKey = [userIdName UTF8String];
+        } else {
+            // TODO: Process UIApplicationLaunchOptionsRemoteNotificationKey and other launch options
+            NSString *empty = @"";
+            userLaunchKey = [empty UTF8String];
+        }
     }
 
     startGVM(userHome, userTimeZone, userLaunchKey);
