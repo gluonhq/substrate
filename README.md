@@ -46,5 +46,4 @@ To compile Gluon Substrate on Linux you need to install these development packag
  Issues can be reported to the [Issue tracker](https://github.com/gluonhq/substrate/issues)
 
  Contributions can be submitted via [Pull requests](https://github.com/gluonhq/substrate/pulls), 
- providing you have signed the [Gluon Individual Contributor License Agreement (CLA)](https://docs.google.com/forms/d/16aoFTmzs8lZTfiyrEm8YgMqMYaGQl0J8wA0VJE2LCCY) 
- (See [What is a CLA and why do I care](https://www.clahub.com/pages/why_cla) in case of doubt).
+ providing you have signed the [Gluon Individual Contributor License Agreement (CLA)](https://docs.google.com/forms/d/16aoFTmzs8lZTfiyrEm8YgMqMYaGQl0J8wA0VJE2LCCY).
