@@ -103,8 +103,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         Log.v(TAG, "loading substrate library");
         System.loadLibrary("substrate");
         Log.v(TAG, "loaded substrate library");
-        nativeSetDataDir(getApplicationInfo().dataDir);
-        nativeSetTimezone(TimeZone.getDefault().getID());
         nativeSetSurface(holder.getSurface());
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -119,9 +117,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             Log.v(TAG, "GraalApp is already started.");
         } else {
             Log.v(TAG, "We will now launch Graal in a separate thread");
+            final String[] launchArgs = {
+                    "-Duser.home=" + getApplicationInfo().dataDir,
+                    "-Djava.io.tmpdir=" + getApplicationInfo().dataDir,
+                    "-Duser.timezone=" + TimeZone.getDefault().getID(),
+                    "-DLaunch.URL=" + System.getProperty("Launch.URL", "")
+            };
             Thread t = new Thread() {
                 @Override public void run() {
-                    startGraalApp();
+                    startGraalApp(launchArgs);
                 }
             };
             t.start();
@@ -199,11 +203,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     }
 
 
-    private native void startGraalApp();
+    private native void startGraalApp(String[] launchArgs);
     private native long surfaceReady(Surface surface, float density);
     private native void nativeSetSurface(Surface surface);
-    private native void nativeSetDataDir(String datadir);
-    private native void nativeSetTimezone(String timeZone);
     private native void nativeSurfaceRedrawNeeded();
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
     private native void nativeGotKeyEvent(int action, int keycode);

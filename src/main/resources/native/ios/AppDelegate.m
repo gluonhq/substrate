@@ -52,7 +52,7 @@ static __inline__ void gvmlog(NSString* format, ...)
 
 @end
 
-int startGVM(const char* userHome, const char* userTimeZone);
+int startGVM(const char* userHome, const char* userTimeZone, const char* userLaunchKey);
 
 // TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
 int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
@@ -75,7 +75,7 @@ int main(int argc, char * argv[]) {
 
 @implementation AppDelegate
 
--(void)startVM:(id)selector {
+-(void)startVM:(NSDictionary *)launchOptions {
     gvmlog(@"Starting vm...");
     NSArray *documentPaths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
     NSString *documentsDir = [documentPaths objectAtIndex:0];
@@ -96,7 +96,33 @@ int main(int argc, char * argv[]) {
     NSTimeZone *timeZone = [NSTimeZone localTimeZone];
     NSString *tzName = [@"-Duser.timezone=" stringByAppendingString: [timeZone name]];
     const char *userTimeZone = [tzName UTF8String];
-    startGVM(userHome, userTimeZone);
+
+    const char *userLaunchKey;
+    // 1. Check Launch.URL
+    id urlId = [launchOptions objectForKey:UIApplicationLaunchOptionsURLKey];
+    if ([urlId isKindOfClass:[NSURL class]]) {
+        NSURL *url = (NSURL *)urlId;
+        NSString *urlName = [@"-DLaunch.URL=" stringByAppendingString: url.absoluteString];
+        NSLog(@"LaunchOptions :: URL :: urlName: %@", urlName);
+        userLaunchKey = [urlName UTF8String];
+        // TODO: UIApplicationLaunchOptionsSourceApplicationKey gives bundleID of source app that launched this app
+    } else {
+        // 2. Check Launch.LocalNotification
+        id notifId = [launchOptions objectForKey:@"UIApplicationLaunchOptionsLocalNotificationKey"];
+        if ([notifId isKindOfClass:[UILocalNotification class]]) {
+            UILocalNotification* notif = (UILocalNotification *)notifId;
+            NSDictionary* userInfo = [notif userInfo];
+            NSString *userIdName = [@"-DLaunch.LocalNotification=" stringByAppendingString: [userInfo objectForKey:@"userId"]];
+            NSLog(@"LaunchOptions :: LocalNotification :: userId: %@", userIdName);
+            userLaunchKey = [userIdName UTF8String];
+        } else {
+            // TODO: Process UIApplicationLaunchOptionsRemoteNotificationKey and other launch options
+            NSString *empty = @"";
+            userLaunchKey = [empty UTF8String];
+        }
+    }
+
+    startGVM(userHome, userTimeZone, userLaunchKey);
 
     // Invoke sunec
     JNI_OnLoad_sunec(nil, nil);
@@ -104,7 +130,7 @@ int main(int argc, char * argv[]) {
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     gvmlog(@"UIApplication launched!");
-    [self performSelectorInBackground:@selector(startVM:) withObject:NULL];
+    [self performSelectorInBackground:@selector(startVM:) withObject:launchOptions];
     gvmlog(@"UIApplication started GVM in a separate thread");
     return YES;
 }
@@ -138,14 +164,14 @@ int main(int argc, char * argv[]) {
 @end
 
 
-int startGVM(const char* userHome, const char* userTimeZone) {
+int startGVM(const char* userHome, const char* userTimeZone, const char* userLaunchKey) {
     gvmlog(@"Starting GVM for ios");
 
 
     const char* args[] = {"myapp",
           "-Dcom.sun.javafx.isEmbedded=true",
           "-Djavafx.platform=ios",
-          userHome, userTimeZone};
+          userHome, userTimeZone, userLaunchKey};
     int argc = sizeof(args) / sizeof(char *);
     (*run_main)(argc, args);
 
