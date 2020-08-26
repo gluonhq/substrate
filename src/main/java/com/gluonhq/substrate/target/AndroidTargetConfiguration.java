@@ -68,6 +68,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private static final String ANDROID_TRIPLET = new Triplet(Constants.Profile.ANDROID).toString();
     private static final String ANDROID_MIN_SDK_VERSION = "21";
+    private static final List<String> ANDROID_KEYSTORE_EXTENSIONS = List.of(".keystore", ".jks");
 
     private final String ndk;
     private final String sdk;
@@ -402,11 +403,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         String keyAlias = releaseConfiguration.getProvidedKeyAlias();
         String keyPass = releaseConfiguration.getProvidedKeyAliasPassword();
         if (keyStorePath == null ||
-                !keyStorePath.endsWith(".keystore") || !Files.exists(Path.of(keyStorePath)) ||
+                ANDROID_KEYSTORE_EXTENSIONS.stream().noneMatch(keyStorePath::endsWith) ||
+                !Files.exists(Path.of(keyStorePath)) ||
                 keyAlias == null || keyStorePass == null || keyPass == null) {
-            if (keyStorePath != null) {
-                Logger.logSevere("The key store path " + keyStorePath + " is not valid.");
-            }
+            Logger.logSevere("The key store path " +
+                        (keyStorePath != null ? keyStorePath + " is not valid" : "is null") +
+                        ". Using Debug signing configuration");
             return "Debug";
         }
         FileOps.replaceInFile(settingsFile, "KEYSTORE_FILE", keyStorePath);
