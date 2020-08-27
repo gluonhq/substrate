@@ -406,9 +406,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                 ANDROID_KEYSTORE_EXTENSIONS.stream().noneMatch(keyStorePath::endsWith) ||
                 !Files.exists(Path.of(keyStorePath)) ||
                 keyAlias == null || keyStorePass == null || keyPass == null) {
-            Logger.logSevere("The key store path " +
-                        (keyStorePath != null ? keyStorePath + " is not valid" : "is null") +
-                        ". Using Debug signing configuration");
+            if (keyStorePath != null) {
+                Logger.logSevere("The key store path " + keyStorePath +
+                        " is not valid. Using Debug signing configuration");
+            }
             return "Debug";
         }
         FileOps.replaceInFile(settingsFile, "KEYSTORE_FILE", keyStorePath);
