@@ -174,7 +174,7 @@ public class ConfigResolver {
                 line -> line.trim().startsWith("{\"pattern\""));
         AtomicInteger index = new AtomicInteger();
         return resources.stream()
-                .map(r -> (index.getAndIncrement() < resources.size() - 1 && !r.endsWith(",")) ?
+                .map(r -> (index.getAndIncrement() < resources.size() - 1 && !r.trim().endsWith(",")) ?
                                 r.concat(",") : r)
                 .collect(Collectors.toList());
     }
