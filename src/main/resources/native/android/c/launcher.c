@@ -176,6 +176,10 @@ void determineCPUFeatures()
     LOGE(stderr,  "\n\n\ndetermineCpuFeaures\n");
 }
 
+int getdtablesize() {
+    return sysconf(_SC_OPEN_MAX);
+}
+
 void JVM_NativePath() {
     fprintf(stderr, "We should never reach here (JVM_nativePath)\n");
 }
