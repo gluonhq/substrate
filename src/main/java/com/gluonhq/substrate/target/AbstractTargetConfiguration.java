@@ -76,7 +76,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     );
 
     private static final List<String> baseNativeImageArguments = Arrays.asList(
-            "--report-unsupported-elements-at-runtime",
             "-Djdk.internal.lambda.eagerlyInitialize=false",
             "--no-server",
             "-H:+ExitAfterRelocatableImageWrite",
