@@ -152,6 +152,13 @@ public class Deploy {
         }
         String deviceId = devices[0];
 
+        ProcessRunner trustRunner = new ProcessRunner("ios-deploy", "-C");
+        trustRunner.showSevereMessage(false);
+        if (trustRunner.runProcess("trusted computer") != 0) {
+            Logger.logInfo("\n\nComputer not trusted!\nPlease, unplug and plug again your phone, and trust your computer when the dialog shows up on your device.\nThen try again");
+            return false;
+        }
+
         ProcessRunner runner = new ProcessRunner(iosDeployPath.toString(),
                 "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
         runner.addToEnv("PATH", "/usr/bin/:$PATH");
@@ -166,10 +173,6 @@ public class Deploy {
                     Logger.logInfo("\n\nDevice locked!\nPlease, unlock and press ENTER to try again");
                     System.in.read();
                     keepTrying = true;
-                }
-                if (runner.getResponses().stream().anyMatch(l -> l.contains("Assertion failed: (AMDeviceIsPaired(device))"))) {
-                    Logger.logInfo("\n\nComputer not trusted!\nPlease, unplug and plug again your phone, and trust your computer when the dialog shows up on your phone.\nThen try again");
-                    return false;
                 }
             } else {
                 return false;
