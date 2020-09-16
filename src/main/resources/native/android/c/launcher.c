@@ -65,6 +65,9 @@ const char *origArgs[] = {
     "-Dmonocle.input.touchRadius=1",
     "-Dmonocle.input.traceEvents.verbose=true",
     "-Dprism.verbose=true",
+    "-Dorg.bytedeco.javacpp.platform=arm64-v8a",
+    "-Dorg.bytedeco.javacpp.platform.library.path=/lib",
+    "-Dorg.bytedeco.javacpp.pathsFirst=true",
     "-Xmx4g"};
 
 void registerMethodHandles(JNIEnv *aenv)
