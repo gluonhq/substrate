@@ -105,7 +105,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         this.clang = Files.exists(clangguess) ? clangguess : null;
         projectConfiguration.setBackend(Constants.BACKEND_LIR);
 
-        Path objdumpguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, ANDROID_TRIPLET, "bin", "objdump");
+        Path objdumpguess = Paths.get(hostPlatformFolder, ANDROID_TRIPLET, "bin", "objdump");
         this.objdump = Files.exists(objdumpguess) ? objdumpguess : null;
     }
 
@@ -386,7 +386,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         Path srcd = Paths.get(hostPlatformFolder, "sysroot", "usr", "lib", ANDROID_TRIPLET, "libc++_shared.so");
         Path destp = projectLibsLocation.resolve("libc++_shared.so");
-        if (Files.exists(destp)) {
+        if (Files.exists(srcd)) {
             Files.copy(srcd, destp, StandardCopyOption.REPLACE_EXISTING);
         }
         else {
