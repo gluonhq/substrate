@@ -88,7 +88,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             "-landroid", "-llog", "-lffi", "-llibchelper");
     private final List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", "-Wl,--no-whole-archive",
-            "-lGLESv2", "-lEGL", "-lfreetype");
+            "-lGLESv2", "-lEGL", "-lfreetype", "-lstdc++");
     private final String capLocation = ANDROID_NATIVE_FOLDER + "cap/";
 
     public AndroidTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
@@ -383,6 +383,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Path freetypeLibPath = projectLibsLocation.resolve("libfreetype.so");
             Files.copy(javafxFreetypeLibPath, freetypeLibPath, StandardCopyOption.REPLACE_EXISTING);
         }
+        String srcd = this.ndk+"/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so";
+        Path srcp = Path.of(srcd);
+        Path destp = projectLibsLocation.resolve("libc++_shared.so");
+        Files.copy(srcp, destp, StandardCopyOption.REPLACE_EXISTING);
 
         Path libsubstrate = paths.getAppPath().resolve(getLinkOutputName());
         Files.copy(libsubstrate, projectLibsLocation.resolve("libsubstrate.so"), StandardCopyOption.REPLACE_EXISTING);
