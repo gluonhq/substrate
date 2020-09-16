@@ -96,12 +96,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         this.sdk = fileDeps.getAndroidSDKPath().toString();
         this.ndk = fileDeps.getAndroidNDKPath().toString();
-        this.hostPlatformFolder = configuration.getHostTriplet().getOsArch();
+        this.hostPlatformFolder = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", configuration.getHostTriplet().getOsArch()).toString();
 
-        Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "ld.lld");
+        Path ldguess = Paths.get(hostPlatformFolder, "bin", "ld.lld");
         this.ldlld = Files.exists(ldguess) ? ldguess : null;
 
-        Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "clang");
+        Path clangguess = Paths.get(hostPlatformFolder, "bin", "clang");
         this.clang = Files.exists(clangguess) ? clangguess : null;
         projectConfiguration.setBackend(Constants.BACKEND_LIR);
 
@@ -383,10 +383,15 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Path freetypeLibPath = projectLibsLocation.resolve("libfreetype.so");
             Files.copy(javafxFreetypeLibPath, freetypeLibPath, StandardCopyOption.REPLACE_EXISTING);
         }
-        String srcd = this.ndk+"/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so";
-        Path srcp = Path.of(srcd);
+
+        Path srcd = Paths.get(hostPlatformFolder, "sysroot", "usr", "lib", ANDROID_TRIPLET, "libc++_shared.so");
         Path destp = projectLibsLocation.resolve("libc++_shared.so");
-        Files.copy(srcp, destp, StandardCopyOption.REPLACE_EXISTING);
+        if (Files.exists(destp)) {
+            Files.copy(srcd, destp, StandardCopyOption.REPLACE_EXISTING);
+        }
+        else {
+            Logger.logSevere("libstdc++_shared.so was not found");
+        }
 
         Path libsubstrate = paths.getAppPath().resolve(getLinkOutputName());
         Files.copy(libsubstrate, projectLibsLocation.resolve("libsubstrate.so"), StandardCopyOption.REPLACE_EXISTING);
