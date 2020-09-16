@@ -113,9 +113,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean compile() throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no ld.lld in android_ndk, we should not start compiling
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (ldlld == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/ld.lld");
-        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
-        if (objdump == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/"+ ANDROID_TRIPLET +"/bin/objdump");
+        if (ldlld == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/ld.lld");
+        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang");
+        if (objdump == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/"+ ANDROID_TRIPLET +"/bin/objdump");
 
         return super.compile();
     }
@@ -124,7 +124,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean link() throws IOException, InterruptedException {
         // we override link as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
+        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
 
         return super.link();
