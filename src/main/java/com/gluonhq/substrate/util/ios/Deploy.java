@@ -281,7 +281,9 @@ public class Deploy {
 
     private boolean installIOSDeploy() throws IOException, InterruptedException {
         Logger.logInfo("ios-deploy not found. It will be installed now");
+        Path tmpPatch = FileOps.copyResourceToTmp("/thirdparty/ios-deploy/lldbpatch.diff");
         Path tmpDeploy = FileOps.copyResourceToTmp("/thirdparty/ios-deploy/ios-deploy.rb");
+        FileOps.replaceInFile(tmpDeploy, "PATCH_PATH", "file://" + tmpPatch.toString());
 
         ProcessRunner runner = new ProcessRunner("brew", "install", "--HEAD", tmpDeploy.toString());
         if (runner.runProcess("ios-deploy") == 0) {
