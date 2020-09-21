@@ -104,9 +104,10 @@ public class Deploy {
                 checkPrerequisites();
             }
         } else {
-            // Check for ios-deploy version installed (it should be 1.10+)
+            // Check for ios-deploy version installed (it should be 1.11+)
             String version = ProcessRunner.runProcessForSingleOutput("ios-deploy version","ios-deploy", "-V");
-            if (version != null && !version.isEmpty() && (version.startsWith("1.8") || version.startsWith("1.9"))) {
+            if (version != null && !version.isEmpty() &&
+                    (version.startsWith("1.8") || version.startsWith("1.9") || version.startsWith("1.10"))) {
                 Logger.logDebug("ios-deploy version (" + version + ") is outdated");
                 uninstallIOSDeploy();
                 if (installIOSDeploy()) {
