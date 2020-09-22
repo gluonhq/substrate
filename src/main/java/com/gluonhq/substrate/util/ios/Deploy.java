@@ -108,7 +108,7 @@ public class Deploy {
             String version = ProcessRunner.runProcessForSingleOutput("ios-deploy version","ios-deploy", "-V");
             if (version != null && !version.isEmpty() &&
                     (version.startsWith("1.8") || version.startsWith("1.9") || version.startsWith("1.10"))) {
-                Logger.logDebug("ios-deploy version (" + version + ") is outdated");
+                Logger.logDebug("ios-deploy was outdated (version " + version + "), replacing with the latest version...");
                 uninstallIOSDeploy();
                 if (installIOSDeploy()) {
                     checkPrerequisites();
