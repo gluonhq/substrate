@@ -152,6 +152,13 @@ public class Deploy {
         }
         String deviceId = devices[0];
 
+        ProcessRunner trustRunner = new ProcessRunner("ios-deploy", "-C");
+        trustRunner.showSevereMessage(false);
+        if (trustRunner.runProcess("trusted computer") != 0) {
+            Logger.logInfo("\n\nComputer not trusted!\nPlease, unplug and plug again your phone, and trust your computer when the dialog shows up on your device.\nThen try again");
+            return false;
+        }
+
         ProcessRunner runner = new ProcessRunner(iosDeployPath.toString(),
                 "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
         runner.addToEnv("PATH", "/usr/bin/:$PATH");
@@ -162,8 +169,8 @@ public class Deploy {
             boolean result = runner.runTimedProcess("run", 60);
             Logger.logInfo("result = " + result);
             if (result) {
-                if (runner.getResponses().stream().anyMatch(l -> "Error: The device is locked.".equals(l))) {
-                    Logger.logInfo("Device locked! Please, unlock and press ENTER to try again");
+                if (runner.getResponses().stream().anyMatch("Error: The device is locked."::equals)) {
+                    Logger.logInfo("\n\nDevice locked!\nPlease, unlock and press ENTER to try again");
                     System.in.read();
                     keepTrying = true;
                 }
