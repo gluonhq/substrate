@@ -104,10 +104,11 @@ public class Deploy {
                 checkPrerequisites();
             }
         } else {
-            // Check for ios-deploy version installed (it should be 1.10+)
+            // Check for ios-deploy version installed (it should be 1.11+)
             String version = ProcessRunner.runProcessForSingleOutput("ios-deploy version","ios-deploy", "-V");
-            if (version != null && !version.isEmpty() && (version.startsWith("1.8") || version.startsWith("1.9"))) {
-                Logger.logDebug("ios-deploy version (" + version + ") is outdated");
+            if (version != null && !version.isEmpty() &&
+                    (version.startsWith("1.8") || version.startsWith("1.9") || version.startsWith("1.10"))) {
+                Logger.logDebug("ios-deploy was outdated (version " + version + "), replacing with the latest version...");
                 uninstallIOSDeploy();
                 if (installIOSDeploy()) {
                     checkPrerequisites();
@@ -287,7 +288,9 @@ public class Deploy {
 
     private boolean installIOSDeploy() throws IOException, InterruptedException {
         Logger.logInfo("ios-deploy not found. It will be installed now");
+        Path tmpPatch = FileOps.copyResourceToTmp("/thirdparty/ios-deploy/lldbpatch.diff");
         Path tmpDeploy = FileOps.copyResourceToTmp("/thirdparty/ios-deploy/ios-deploy.rb");
+        FileOps.replaceInFile(tmpDeploy, "PATCH_PATH", "file://" + tmpPatch.toString());
 
         ProcessRunner runner = new ProcessRunner("brew", "install", "--HEAD", tmpDeploy.toString());
         if (runner.runProcess("ios-deploy") == 0) {
