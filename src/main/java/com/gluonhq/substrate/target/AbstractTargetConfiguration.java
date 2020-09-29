@@ -279,6 +279,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             throw new IOException("Application not found at path " + app.toString());
         }
         ProcessRunner runProcess = new ProcessRunner(appPath.resolve(appName).toString());
+        runProcess.setInfo(true);
         int result = runProcess.runProcess("run until end");
         return result == 0;
     }
