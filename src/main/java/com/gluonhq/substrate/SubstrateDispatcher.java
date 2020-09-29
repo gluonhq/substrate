@@ -37,6 +37,7 @@ import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedReader;
@@ -363,6 +364,10 @@ public class SubstrateDispatcher {
      * @param config the ProjectConfiguration, including the target triplet
      */
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
+        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot),
+                Objects.requireNonNull(config).getTargetTriplet().getArchOs());
+        ProcessRunner.setProcessLogPath(paths.getClientPath().resolve(Constants.LOG_PATH));
+
         this.config = new InternalProjectConfiguration(config);
         if (this.config.isVerbose()) {
             System.out.println("Configuration: " + this.config);
@@ -372,7 +377,6 @@ public class SubstrateDispatcher {
 
         Triplet targetTriplet = config.getTargetTriplet();
 
-        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), targetTriplet.getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was not found for " + targetTriplet);
 
