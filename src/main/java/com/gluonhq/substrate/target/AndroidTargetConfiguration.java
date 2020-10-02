@@ -447,6 +447,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
         FileOps.copyDirectoryFromResources(ANDROID_NATIVE_FOLDER + ANDROID_PROJECT_NAME, androidProject);
         getAndroidProjectPath().resolve("gradlew").toFile().setExecutable(true);
+        FileOps.replaceInFile(androidProject.resolve("app").resolve("build.gradle"),
+                "// OTHER_ANDROID_DEPENDENCIES", String.join("\n        ", requiredDependencies()));
         return androidProject;
     }
 
@@ -565,6 +567,24 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             final Set<String> androidPermissions = configResolver.getAndroidPermissions();
             return androidPermissions.stream()
                     .map(permission -> "<uses-permission android:name=\"" + permission + "\"/>")
+                    .sorted()
+                    .collect(Collectors.toList());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Scans the classpath for Attach Services
+     * and returns a list of dependencies
+     */
+    private List<String> requiredDependencies() {
+        final ConfigResolver configResolver;
+        try {
+            configResolver = new ConfigResolver(projectConfiguration.getClasspath());
+            final Set<String> androidDependencies = configResolver.getAndroidDependencies();
+            return androidDependencies.stream()
                     .sorted()
                     .collect(Collectors.toList());
         } catch (IOException | InterruptedException e) {
