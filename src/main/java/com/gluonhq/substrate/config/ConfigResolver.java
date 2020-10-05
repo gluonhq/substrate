@@ -39,7 +39,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -49,8 +48,6 @@ import java.util.zip.ZipFile;
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_CONFIG;
 import static com.gluonhq.substrate.Constants.RESOURCE_BUNDLES_ARCHOS_FILE;
 import static com.gluonhq.substrate.Constants.RESOURCE_BUNDLES_FILE;
-import static com.gluonhq.substrate.Constants.USER_ANDROID_DEPENDENCIES_FILE;
-import static com.gluonhq.substrate.Constants.USER_ANDROID_PERMISSIONS_FILE;
 import static com.gluonhq.substrate.Constants.USER_INIT_BUILD_TIME_ARCHOS_FILE;
 import static com.gluonhq.substrate.Constants.USER_INIT_BUILD_TIME_FILE;
 import static com.gluonhq.substrate.Constants.USER_JNI_ARCHOS_FILE;
@@ -178,36 +175,6 @@ public class ConfigResolver {
                 .map(r -> (index.getAndIncrement() < resources.size() - 1 && !r.trim().endsWith(",")) ?
                                 r.concat(",") : r)
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Walks through the jars in the classpath,
-     * and looks for META-INF/substrate/config/android-permissions.txt file.
-     *
-     * @return a list of permission lines that should be added to the AndroidManifest file
-     * @throws IOException Exception while reading the permissions file.
-     */
-    public Set<String> getAndroidPermissions() throws IOException {
-        Logger.logDebug("Scanning for android permission files");
-        return Set.copyOf(scanJars(USER_ANDROID_PERMISSIONS_FILE,
-                null,
-                null,
-                line -> true));
-    }
-
-    /**
-     * Walks through the jars in the classpath,
-     * and looks for META-INF/substrate/config/android-dependencies.txt file.
-     *
-     * @return a list of dependencies lines that should be added to the build.gradle file
-     * @throws IOException Exception while reading the file.
-     */
-    public Set<String> getAndroidDependencies() throws IOException {
-        Logger.logDebug("Scanning for android dependencies files");
-        return Set.copyOf(scanJars(USER_ANDROID_DEPENDENCIES_FILE,
-                null,
-                null,
-                line -> true));
     }
 
     private List<String> scanJars(String configName, String configArchosName, String initLine, Predicate<String> filter) throws IOException {

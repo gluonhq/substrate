@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.config.AndroidResolver;
 import com.gluonhq.substrate.config.ConfigResolver;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
@@ -561,10 +562,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
      * and returns a list of permissions in XML tags
      */
     private List<String> requiredPermissions() {
-        final ConfigResolver configResolver;
+        final AndroidResolver androidResolver;
         try {
-            configResolver = new ConfigResolver(projectConfiguration.getClasspath());
-            final Set<String> androidPermissions = configResolver.getAndroidPermissions();
+            androidResolver = new AndroidResolver(projectConfiguration.getClasspath());
+            final Set<String> androidPermissions = androidResolver.getAndroidPermissions();
             return androidPermissions.stream()
                     .map(permission -> "<uses-permission android:name=\"" + permission + "\"/>")
                     .sorted()
@@ -580,10 +581,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
      * and returns a list of dependencies
      */
     private List<String> requiredDependencies() {
-        final ConfigResolver configResolver;
+        final AndroidResolver androidResolver;
         try {
-            configResolver = new ConfigResolver(projectConfiguration.getClasspath());
-            final Set<String> androidDependencies = configResolver.getAndroidDependencies();
+            androidResolver = new AndroidResolver(projectConfiguration.getClasspath());
+            final Set<String> androidDependencies = androidResolver.getAndroidDependencies();
             return androidDependencies.stream()
                     .sorted()
                     .collect(Collectors.toList());
