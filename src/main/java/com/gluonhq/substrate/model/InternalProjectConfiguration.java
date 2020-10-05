@@ -489,7 +489,7 @@ public class InternalProjectConfiguration {
                     !Files.readAllLines(gluonversion).contains("graalvm-ce-java11-20.2.0.hotfix-xcode12")) {
                 XcodeUtils xcodeUtils = new XcodeUtils(XcodeUtils.SDKS.IPHONEOS);
                 if (xcodeUtils.getDTXcode().startsWith("12")) {
-                    throw new IOException("\n\n\nYour current GraalVM build can't build for iOS with Xcode 12+.\n\n" +
+                    throw new IOException("\n\n\nYour current GraalVM build can't build for iOS with Xcode 12.\n\n" +
                             "You can try Xcode 11+, or alternatively you can download GraalVM hotfix build from here:\n\n" +
                             "https://download2.gluonhq.com/substrate/graalvm/graalvm-ce-java11-20.2.0.hotfix-xcode12.zip\n\n" +
                             "Then extract it, set GRAALVM_HOME accordingly and try again.\n");
