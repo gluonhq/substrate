@@ -1,9 +1,9 @@
-NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:size=4
-NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:signedness=$UNSIGNED$
-NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:value=0
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_FOREIGN_EXCEPTION_CAUGHT:PropertyInfo:size=4
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_FOREIGN_EXCEPTION_CAUGHT:PropertyInfo:signedness=$UNSIGNED$
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_FOREIGN_EXCEPTION_CAUGHT:PropertyInfo:value=1
+NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:size=4
+NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:signedness=$UNSIGNED$
+NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:value=0
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_FATAL_PHASE2_ERROR:PropertyInfo:size=4
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_FATAL_PHASE2_ERROR:PropertyInfo:signedness=$UNSIGNED$
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_FATAL_PHASE2_ERROR:PropertyInfo:value=2
