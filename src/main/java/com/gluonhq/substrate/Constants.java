@@ -140,8 +140,10 @@ public class Constants {
     public static final String ANDROID_RES_FOLDER = "res";
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
-    public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik";
-    public static final String DALVIK_PRECOMPILED_CLASSES = "/precompiled/classes/";
+    public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik/";
+    public static final String USER_ANDROID_PERMISSIONS_FILE = "android-permissions.txt";
+    public static final String USER_ANDROID_DEPENDENCIES_FILE = "android-dependencies.txt";
+    public static final String DALVIK_PRECOMPILED_CLASSES = "precompiled/classes/";
     public static final String ANDROID_NATIVE_FOLDER = "/native/android/";
     public static final String ANDROID_PROJECT_NAME = "android_project";
 
@@ -156,7 +158,6 @@ public class Constants {
     public static final String USER_JNI_ARCHOS_FILE = "jniconfig-${archOs}.json";
     public static final String USER_RESOURCE_FILE = "resourceconfig.json";
     public static final String USER_RESOURCE_ARCHOS_FILE = "resourceconfig-${archOs}.json";
-    public static final String USER_ANDROID_PERMISSIONS_FILE = "android-permissions.txt";
 
     public static final String CONFIG_FILES = "/config/";
     public static final String REFLECTION_JAVA_FILE = "reflectionconfig-java.json";

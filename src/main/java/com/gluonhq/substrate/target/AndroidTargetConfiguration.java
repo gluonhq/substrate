@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
+import com.gluonhq.substrate.config.AndroidResolver;
 import com.gluonhq.substrate.config.ConfigResolver;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
@@ -447,6 +448,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
         FileOps.copyDirectoryFromResources(ANDROID_NATIVE_FOLDER + ANDROID_PROJECT_NAME, androidProject);
         getAndroidProjectPath().resolve("gradlew").toFile().setExecutable(true);
+        FileOps.replaceInFile(androidProject.resolve("app").resolve("build.gradle"),
+                "// OTHER_ANDROID_DEPENDENCIES", String.join("\n        ", requiredDependencies()));
         return androidProject;
     }
 
@@ -559,12 +562,30 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
      * and returns a list of permissions in XML tags
      */
     private List<String> requiredPermissions() {
-        final ConfigResolver configResolver;
+        final AndroidResolver androidResolver;
         try {
-            configResolver = new ConfigResolver(projectConfiguration.getClasspath());
-            final Set<String> androidPermissions = configResolver.getAndroidPermissions();
+            androidResolver = new AndroidResolver(projectConfiguration.getClasspath());
+            final Set<String> androidPermissions = androidResolver.getAndroidPermissions();
             return androidPermissions.stream()
                     .map(permission -> "<uses-permission android:name=\"" + permission + "\"/>")
+                    .sorted()
+                    .collect(Collectors.toList());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Scans the classpath for Attach Services
+     * and returns a list of dependencies
+     */
+    private List<String> requiredDependencies() {
+        final AndroidResolver androidResolver;
+        try {
+            androidResolver = new AndroidResolver(projectConfiguration.getClasspath());
+            final Set<String> androidDependencies = androidResolver.getAndroidDependencies();
+            return androidDependencies.stream()
                     .sorted()
                     .collect(Collectors.toList());
         } catch (IOException | InterruptedException e) {
