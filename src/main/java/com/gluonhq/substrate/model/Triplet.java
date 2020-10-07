@@ -138,9 +138,9 @@ public class Triplet {
         // if the host os and target os are the same, always return true
         if (getOs().equals(target.getOs())) return true;
 
-        // if host is linux and target is ios, fail
-        return (!Constants.OS_LINUX.equals(getOs()) && !Constants.OS_WINDOWS.equals(getOs())) ||
-                !Constants.OS_IOS.equals(target.getOs());
+        // so far, iOS can be built from Mac, Android can be built from Linux
+        return (OS_DARWIN.equals(getOs()) && OS_IOS.equals(target.getOs())) ||
+                (OS_LINUX.equals(getOs()) && OS_ANDROID.equals(target.getOs()));
     }
 
     public String getArch() {
