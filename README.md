@@ -1,8 +1,7 @@
 # Gluon Substrate
 
-[![Travis CI](https://travis-ci.com/gluonhq/substrate.svg?branch=master)](https://travis-ci.com/gluonhq/substrate)
-
-[![Coverage Status](https://coveralls.io/repos/github/gluonhq/substrate/badge.svg?branch=master)](https://coveralls.io/github/gluonhq/substrate?branch=master)
+[![Maven Central](https://img.shields.io/maven-central/v/com.gluonhq/substrate.svg?color=%234DC71F)](https://search.maven.org/#search|ga|1|com.gluonhq.substrate)
+[![Github Actions](https://github.com/gluonhq/substrate/workflows/Substrate%20Build/badge.svg)](https://github.com/gluonhq/substrate/actions?query=workflow%3A%22Substrate+Build%22)
 
 Gluon Substrate is a tool that converts Java(FX) Client applications into
 native executables for desktop, mobile and embedded devices.
@@ -47,5 +46,4 @@ To compile Gluon Substrate on Linux you need to install these development packag
  Issues can be reported to the [Issue tracker](https://github.com/gluonhq/substrate/issues)
 
  Contributions can be submitted via [Pull requests](https://github.com/gluonhq/substrate/pulls), 
- providing you have signed the [Gluon Individual Contributor License Agreement (CLA)](https://docs.google.com/forms/d/16aoFTmzs8lZTfiyrEm8YgMqMYaGQl0J8wA0VJE2LCCY) 
- (See [What is a CLA and why do I care](https://www.clahub.com/pages/why_cla) in case of doubt).
+ providing you have signed the [Gluon Individual Contributor License Agreement (CLA)](https://docs.google.com/forms/d/16aoFTmzs8lZTfiyrEm8YgMqMYaGQl0J8wA0VJE2LCCY).

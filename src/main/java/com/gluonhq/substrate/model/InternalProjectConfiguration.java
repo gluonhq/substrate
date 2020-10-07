@@ -32,6 +32,8 @@ import com.gluonhq.substrate.ProjectConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
+import com.gluonhq.substrate.util.Version;
+import com.gluonhq.substrate.util.XcodeUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,6 +43,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
@@ -93,7 +97,26 @@ public class InternalProjectConfiguration {
     }
 
     public Path getGraalPath() {
-        return Objects.requireNonNull( this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
+        return Objects.requireNonNull(this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
+    }
+
+    private Version getGraalVersion() throws IOException {
+        String pattern = "GraalVM .*?(\\d\\d.\\d.\\d)";
+        ProcessRunner graalJava;
+        try {
+            graalJava = new ProcessRunner(
+                            getGraalVMBinPath().resolve("java").toString(),
+                            "--version");
+            graalJava.runProcess("java-version");
+        } catch (InterruptedException e) {
+            throw new IOException("Couldn't determine GraalVM version, " + e.toString());
+        }
+        String output = graalJava.getResponse();
+        Pattern r = Pattern.compile(pattern);
+        Matcher m = r.matcher(output);
+        if (!m.find())
+            throw new IOException("Couldn't determine GraalVM version");
+        return new Version(m.group(1));
     }
 
     /**
@@ -214,7 +237,7 @@ public class InternalProjectConfiguration {
      */
     public Path getAndroidSdkPath() {
         String sdkEnv = System.getenv("ANDROID_SDK");
-        return (sdkEnv != null) ? Paths.get(sdkEnv) 
+        return (sdkEnv != null) ? Paths.get(sdkEnv)
                 : Constants.USER_SUBSTRATE_PATH.resolve("Android");
     }
 
@@ -223,7 +246,7 @@ public class InternalProjectConfiguration {
      */
     public Path getAndroidNdkPath() {
         String ndkEnv = System.getenv("ANDROID_NDK");
-        return (ndkEnv != null) ? Paths.get(ndkEnv) 
+        return (ndkEnv != null) ? Paths.get(ndkEnv)
                 : getAndroidSdkPath().resolve("ndk-bundle");
     }
 
@@ -388,6 +411,18 @@ public class InternalProjectConfiguration {
     }
 
     /**
+     * Check if the GraalVM provided by the configuration is supported
+     * @throws IOException if the GraalVM version is older than the minimum supported version
+     */
+    public void checkGraalVMVersion() throws IOException {
+        Version graalVersion = getGraalVersion();
+        if (graalVersion.compareTo(new Version(Constants.GRAALVM_MIN_VERSION)) < 0) {
+            throw new IOException("Current GraalVM version (" + graalVersion + ") not supported.\n" +
+                    "Please upgrade to " + Constants.GRAALVM_MIN_VERSION + " or higher");
+        }
+    }
+
+    /**
      * check if the GraalVM provided by the configuration is capable of running native-image
      * @throws NullPointerException when the configuration is null
      * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
@@ -418,7 +453,17 @@ public class InternalProjectConfiguration {
      */
     public void canRunLLVM(Triplet triplet) throws IOException, InterruptedException {
         if (!new Triplet(Constants.Profile.IOS).equals(triplet) &&
-                !new Triplet(Constants.Profile.ANDROID).equals(triplet)) {
+                !new Triplet(Constants.Profile.ANDROID).equals(triplet) &&
+                !new Triplet(Constants.Profile.LINUX_AARCH64).equals(triplet)) {
+            // host doesn't use LLVM
+            return;
+        }
+        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && !Constants.BACKEND_LLVM.equals(getBackend())) {
+            // Android can use other backends
+            return;
+        }
+        if (new Triplet(Constants.Profile.LINUX_AARCH64).equals(triplet) && !Constants.BACKEND_LLVM.equals(getBackend())) {
+            // LINUX_AARCH64 can use other backends
             return;
         }
         Path graalPath = getGraalPath();
@@ -436,6 +481,21 @@ public class InternalProjectConfiguration {
                         "$GRAALVM_HOME/bin/gu install llvm-toolchain");
             }
         }
+
+        // TODO: Remove when GraalVM has support for Xcode 12
+        if (new Triplet(Constants.Profile.IOS).equals(triplet)) {
+            Path gluonversion = graalPath.resolve("gluonversion.txt");
+            if (!Files.exists(gluonversion) ||
+                    !Files.readAllLines(gluonversion).contains("graalvm-ce-java11-20.2.0.hotfix-xcode12")) {
+                XcodeUtils xcodeUtils = new XcodeUtils(XcodeUtils.SDKS.IPHONEOS);
+                if (xcodeUtils.getDTXcode().startsWith("12")) {
+                    throw new IOException("\n\n\nYour current GraalVM build can't build for iOS with Xcode 12.\n\n" +
+                            "You can try Xcode 11, or alternatively you can download GraalVM hotfix build from here:\n\n" +
+                            "https://download2.gluonhq.com/substrate/graalvm/graalvm-ce-java11-20.2.0.hotfix-xcode12.zip\n\n" +
+                            "Then extract it, set GRAALVM_HOME accordingly and try again.\n");
+                }
+            }
+        }
     }
 
     /**
@@ -445,7 +505,7 @@ public class InternalProjectConfiguration {
         if (publicConfig.getGraalPath() == null) {
             return;
         }
-        if (new Triplet(Constants.Profile.MACOS).equals(Triplet.fromCurrentOS())) {
+        if (Triplet.isMacOSHost()) {
             checkGraalVMPermissions(getGraalPath().toString());
         }
     }

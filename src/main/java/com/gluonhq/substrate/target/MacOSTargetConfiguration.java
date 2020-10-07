@@ -47,10 +47,10 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     );
 
     private static final List<String> staticJavaLibs = Arrays.asList(
-            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet"
+            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "fdlibm", "sunec", "extnet"
     );
     private static final List<String> staticJvmLibs = Arrays.asList(
-            "ffi", "jvm", "strictmath", "libchelper", "darwin"
+            "ffi", "jvm", "libchelper", "darwin"
     );
     private static final List<String> staticJavaFxLibs = Arrays.asList(
             "glass", "javafx_font", "javafx_iio", "prism_es2"
@@ -99,12 +99,9 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkLibraries() {
-        String staticJavaLibPath = projectConfiguration.getGraalPath().resolve("lib") + "/";
-        String staticJvmLibPath = getCLibPath() + "/";
-
         List<String> targetLibraries = new ArrayList<>();
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJavaLibPath, staticJavaLibs));
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJvmLibPath, staticJvmLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
+        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
         return targetLibraries;
     }
 
@@ -121,9 +118,9 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
                 .collect(Collectors.toList());
     }
 
-    private List<String> asListOfStaticLibraryLinkFlags(String staticLibPath, List<String> libraries) {
+    private List<String> asListOfStaticLibraryLinkFlags(String prefix, List<String> libraries) {
         return libraries.stream()
-                .map(library -> staticLibPath + "lib" + library + ".a")
+                .map(library -> prefix + "lib" + library + ".a")
                 .collect(Collectors.toList());
     }
 

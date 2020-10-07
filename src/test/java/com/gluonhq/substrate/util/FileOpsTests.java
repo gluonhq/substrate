@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -215,5 +216,27 @@ class FileOpsTests {
         Path resourcePath = FileOps.copyResource("/test-resource.txt", getTempDir().resolve("test-resource.txt"));
         assertThrows(IOException.class, () -> FileOps.getNodeValue(resourcePath.toString(), "aa", "bb"));
         Files.deleteIfExists(resourcePath);
+    }
+
+    //--- extract ----------------
+
+    @Test
+    void extractFile() throws IOException {
+        Path jarPath = getTempDir().resolve("substrate-test.jar");
+        Path targetPath = Files.createDirectory(getTempDir().resolve("test-txt"));
+        Path resourcePath = FileOps.copyResource("/substrate-test.jar", jarPath);
+
+        FileOps.extractFilesFromJar("txt", resourcePath, targetPath, null);
+        assertEquals(1, Files.list(targetPath).count());
+    }
+
+    @Test
+    void extractFiles() throws IOException {
+        Path jarPath = getTempDir().resolve("substrate-test.jar");
+        Path targetPath = Files.createDirectory(getTempDir().resolve("test-ext"));
+        Path resourcePath = FileOps.copyResource("/substrate-test.jar", jarPath);
+
+        FileOps.extractFilesFromJar(List.of("txt", "MF"), resourcePath, targetPath, null);
+        assertEquals(2, Files.list(targetPath).count());
     }
 }

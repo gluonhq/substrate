@@ -101,8 +101,14 @@ public class Constants {
     public static final String PROFILE_ANDROID = "android";
     public static final String PROFILE_LINUX_AARCH64 = "linux-aarch64";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+4";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "15-ea+gvm20";
+    // public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+4";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+1";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "15-ea+gvm22";
+
+    /**
+     * Supported GraalVM versions
+     */
+    public static final String GRAALVM_MIN_VERSION = "20.2";
 
     /**
      * Paths
@@ -134,21 +140,24 @@ public class Constants {
     public static final String ANDROID_RES_FOLDER = "res";
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
-    public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik";
-    public static final String DALVIK_PRECOMPILED_CLASSES = "/precompiled/classes/";
-    public static final String DALVIK_ACTIVITY_PACKAGE = "com/gluonhq/helloandroid/";
-    public static final String DALVIK_JAVAFX_PACKAGE = "javafx/scene/input/";
+    public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik/";
+    public static final String USER_ANDROID_PERMISSIONS_FILE = "android-permissions.txt";
+    public static final String USER_ANDROID_DEPENDENCIES_FILE = "android-dependencies.txt";
+    public static final String DALVIK_PRECOMPILED_CLASSES = "precompiled/classes/";
+    public static final String ANDROID_NATIVE_FOLDER = "/native/android/";
+    public static final String ANDROID_PROJECT_NAME = "android_project";
 
     public static final String META_INF_SUBSTRATE_CONFIG = "META-INF/substrate/config/";
     public static final String USER_INIT_BUILD_TIME_FILE = "initbuildtime";
     public static final String USER_INIT_BUILD_TIME_ARCHOS_FILE = "initbuildtime-${archOs}";
+    public static final String RESOURCE_BUNDLES_FILE = "resourcebundles";
+    public static final String RESOURCE_BUNDLES_ARCHOS_FILE = "resourcebundles-${archOs}";
     public static final String USER_REFLECTION_FILE = "reflectionconfig.json";
     public static final String USER_REFLECTION_ARCHOS_FILE = "reflectionconfig-${archOs}.json";
     public static final String USER_JNI_FILE = "jniconfig.json";
     public static final String USER_JNI_ARCHOS_FILE = "jniconfig-${archOs}.json";
     public static final String USER_RESOURCE_FILE = "resourceconfig.json";
     public static final String USER_RESOURCE_ARCHOS_FILE = "resourceconfig-${archOs}.json";
-    public static final String USER_ANDROID_PERMISSIONS_FILE = "android-permissions.txt";
 
     public static final String CONFIG_FILES = "/config/";
     public static final String REFLECTION_JAVA_FILE = "reflectionconfig-java.json";

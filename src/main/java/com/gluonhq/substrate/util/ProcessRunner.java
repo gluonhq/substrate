@@ -60,6 +60,7 @@ public class ProcessRunner {
     private final List<String> passwords;
     private StringBuffer answer;
     private boolean info;
+    private boolean showSevere = true;
     private boolean logToFile;
     private Path processLogPath;
     private boolean interactive;
@@ -82,6 +83,16 @@ public class ProcessRunner {
      */
     public void setInfo(boolean info) {
         this.info = info;
+    }
+
+    /**
+     * When set to true, a message with Level.SEVERE will be logged in case
+     * the process fails.
+     * By default is true.
+     * @param showSevere a boolean that allows showing or not a severe message
+     */
+    public void showSevereMessage(boolean showSevere) {
+        this.showSevere = showSevere;
     }
 
     /**
@@ -197,7 +208,7 @@ public class ProcessRunner {
         int result = p.waitFor();
         logThread.join();
         Logger.logDebug("Result for " + processName + ": " + result);
-        if (result != 0) {
+        if (result != 0 && showSevere) {
             Logger.logSevere("Process " + processName + " failed with result: " + result);
         }
         if (logToFile || result != 0) {
@@ -236,7 +247,7 @@ public class ProcessRunner {
         boolean result = p.waitFor(timeout, TimeUnit.SECONDS);
         logThread.join();
         Logger.logDebug("Result for " + processName + ": " + result);
-        if (!result) {
+        if (!result && showSevere) {
             Logger.logSevere("Process " + processName + " failed with result: " + result);
         }
         if (logToFile || !result) {
@@ -307,7 +318,7 @@ public class ProcessRunner {
      * @param name the name of the process
      * @param args a varargs list of command line arguments
      * @return Integer result of the process
-     *                      
+     *
      */
     public static Integer executeWithFeedback(String name, String... args) throws IOException, InterruptedException {
         ProcessRunner process = new ProcessRunner(args);

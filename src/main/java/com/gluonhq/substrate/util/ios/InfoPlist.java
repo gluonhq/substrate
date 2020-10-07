@@ -199,7 +199,7 @@ public class InfoPlist {
             dict.put("DTPlatformName", xcodeUtil.getPlatformName());
             dict.put("DTSDKName", xcodeUtil.getSDKName());
             dict.put("MinimumOSVersion", "11.0");
-            dict.put("CFBundleSupportedPlatforms", new NSArray(new NSString("iPhoneOS")));
+            dict.put("CFBundleSupportedPlatforms", new NSArray(new NSString(sdk.getSdkName())));
             dict.put("DTPlatformVersion", xcodeUtil.getPlatformVersion());
             dict.put("DTPlatformBuild", xcodeUtil.getPlatformBuild());
             dict.put("DTSDKBuild", xcodeUtil.getPlatformBuild());

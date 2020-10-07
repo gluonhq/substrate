@@ -48,10 +48,15 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -65,6 +70,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -74,7 +80,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -139,6 +149,50 @@ public class FileOps {
             throw new IOException("Could not copy resource named " + resource + ", as it doesn't exist");
         }
         return copyStream(is, destination);
+    }
+
+    /**
+     * Copies directory from resources into destination path
+     * @param source
+     * @param target
+     * @throws IOException
+     */
+    public static void copyDirectoryFromResources(String source, final Path target) throws IOException {
+        // https://stackoverflow.com/a/24316335
+        FileSystem fileSystem;
+        try {
+            URI resource = SubstrateDispatcher.class.getResource("").toURI();
+            try {
+                fileSystem = FileSystems.getFileSystem(resource);
+            } catch (FileSystemNotFoundException e) {
+                Logger.logDebug("FileSystem for resource " + resource + " not found. Trying to create a new FileSystem instead.");
+                fileSystem = FileSystems.newFileSystem(resource, Collections.<String, String>emptyMap());
+            }
+            Logger.logDebug("Created FileSystem for resource " + resource + ": " + fileSystem);
+        } catch (URISyntaxException e) {
+            throw new IOException(e.toString());
+        }
+
+        final Path jarPath = fileSystem.getPath(source);
+
+        Files.walkFileTree(jarPath, new SimpleFileVisitor<Path>() {
+
+            Path currentTarget;
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                currentTarget = target.resolve(jarPath.relativize(dir).toString());
+                Files.createDirectories(currentTarget);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.copy(file, target.resolve(jarPath.relativize(file).toString()), REPLACE_EXISTING);
+                return FileVisitResult.CONTINUE;
+            }
+
+        });
     }
 
     /**
@@ -265,6 +319,42 @@ public class FileOps {
     }
 
     /**
+     * Checks and returns true if a Path is a directory and is empty
+     * @param path Path of the directory
+     */
+    public static boolean isDirectoryEmpty(Path path) {
+        try {
+            return !(Files.exists(path) && Files.isDirectory(path) && Files.list(path).findAny().isPresent());
+        } catch (IOException e) {
+        }
+        return false;
+    }
+
+    /**
+     * Recursively list files with spectified extension from directory
+     * @param directory directory to be searched
+     * @param extension extension by which to filter files
+     * @throws IOException if an exception happens when listing the content
+     */
+    public static List<String> listFilesWithExtensionInDirectory(Path directory, String extension) throws IOException {
+        try (Stream<Path> walk = Files.walk(directory)) {
+            return walk.filter(Files::isRegularFile)
+                       .map(x -> x.toString())
+                       .filter(x -> x.endsWith(extension))
+                       .collect(Collectors.toList());
+        }
+    }
+
+     /**
+     * Recursively list files from specified directory
+     * @param directory directory to be searched
+     * @throws IOException if an exception happens when listing the content
+     */
+    public static List<String> listFilesInDirectory(Path directory) throws IOException {
+        return listFilesWithExtensionInDirectory(directory, "");
+    }
+
+    /**
      * Reads a file from an inputStream and returns a list with its lines
      * @param inputStream The input stream of bytes
      * @return a list of strings with the lines read from the input stream
@@ -370,7 +460,8 @@ public class FileOps {
      * @param nameFile
      * @return the Map contained in the file named nameFile, or null in all other cases.
      */
-    static Map<String, String> getHashMap(String nameFile) {
+    @SuppressWarnings("unchecked")
+    public static Map<String, String> getHashMap(String nameFile) {
         Map<String, String> hashes = null;
         if (!Files.exists(Paths.get(nameFile))) {
             return null;
@@ -419,6 +510,21 @@ public class FileOps {
      * @throws IOException
      */
     public static void extractFilesFromJar(String extension, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
+        extractFilesFromJar(List.of(extension), sourceJar, target, filter);
+    }
+
+    /**
+     * Extracts the files that match any of the possible extensions from a given list
+     * that are found in a jar to a target patch, providing that the file passes a given filter,
+     * and it doesn't exist yet in the target path
+     *
+     * @param extensions a list with possible extensions of the files in the jar that will be extracted
+     * @param sourceJar the path to the jar that will be inspected
+     * @param target the path of the folder where the files will be extracted
+     * @param filter a predicate that the files in the jar should match.
+     * @throws IOException
+     */
+    public static void extractFilesFromJar(List<String> extensions, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
         if (!Files.exists(sourceJar)) {
             return;
         }
@@ -427,7 +533,7 @@ public class FileOps {
         }
         ZipFile zf = new ZipFile(sourceJar.toFile());
         List<? extends ZipEntry> entries = zf.stream()
-                .filter(ze -> ze.getName().endsWith(extension))
+                .filter(ze -> extensions.stream().anyMatch(ext -> ze.getName().endsWith(ext)))
                 .collect(Collectors.toList());
         if (entries.isEmpty()) {
             return;
@@ -569,6 +675,28 @@ public class FileOps {
     }
 
     /**
+     * Shorten the Java classpath with a pathing jar
+     * @param classpath A string with the classpath of files that will be added to the
+     *                 pathing jar Class-Path attribute
+     * @return a String with the path to the created pathing jar
+     * @throws IOException
+     */
+    public static String createPathingJar(String classpath) throws IOException {
+        Objects.requireNonNull(classpath);
+        Manifest manifest = new Manifest();
+        Attributes attributes = manifest.getMainAttributes();
+        attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attributes.put(Attributes.Name.CLASS_PATH,
+                classpath.replaceAll(File.pathSeparator, " "));
+        File jarFile = File.createTempFile("classpathJar", ".jar");
+        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFile), manifest)) {
+            jos.putNextEntry(new ZipEntry("META-INF/"));
+        }
+        Logger.logDebug("Pathing jar created at " + jarFile);
+        return jarFile.getAbsolutePath();
+    }
+
+    /**
      * Prints the progress of a file download
      */
     private static final class ProgressDownloader {
@@ -589,7 +717,7 @@ public class FileOps {
                 Logger.logSevere("Downloading failed: " + e.getMessage());
             }
         }
-        
+
         public void rbcProgressCallback(RBCWrapper rbc, double progress) {
             if (((int)progress) >= printPercentage) {
                 printPercentage += 10;

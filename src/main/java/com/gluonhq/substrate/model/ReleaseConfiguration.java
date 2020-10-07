@@ -34,9 +34,6 @@ public class ReleaseConfiguration {
 
     public static final String DEFAULT_CODE_VERSION = "1";
     public static final String DEFAULT_CODE_NAME = "1.0";
-    public static final String DEFAULT_DEBUG_KEY_STORE_PASSWORD = "android";
-    public static final String DEFAULT_DEBUG_KEY_ALIAS = "androiddebugkey";
-    public static final String DEFAULT_DEBUG_KEY_ALIAS_PASSWORD = "android";
 
     // iOS
 

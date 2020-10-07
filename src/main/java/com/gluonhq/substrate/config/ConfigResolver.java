@@ -39,7 +39,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -47,7 +46,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_CONFIG;
-import static com.gluonhq.substrate.Constants.USER_ANDROID_PERMISSIONS_FILE;
+import static com.gluonhq.substrate.Constants.RESOURCE_BUNDLES_ARCHOS_FILE;
+import static com.gluonhq.substrate.Constants.RESOURCE_BUNDLES_FILE;
 import static com.gluonhq.substrate.Constants.USER_INIT_BUILD_TIME_ARCHOS_FILE;
 import static com.gluonhq.substrate.Constants.USER_INIT_BUILD_TIME_FILE;
 import static com.gluonhq.substrate.Constants.USER_JNI_ARCHOS_FILE;
@@ -78,7 +78,7 @@ public class ConfigResolver {
     }
 
     /**
-     * Walks through the jars in the classpath, excluding the JavaFX ones,
+     * Walks through the jars in the classpath,
      * and looks for META-INF/substrate/config/initbuildtime or
      * META-INF/substrate/config/initbuildtime-${archos} files.
      *
@@ -92,6 +92,25 @@ public class ConfigResolver {
         Logger.logDebug("Scanning for init build time files");
         return scanJars(USER_INIT_BUILD_TIME_FILE,
                 getFileNameForArchOs(USER_INIT_BUILD_TIME_ARCHOS_FILE, archOs),
+                null,
+                null);
+    }
+
+    /**
+     * Walks through the jars in the classpath,
+     * and looks for META-INF/substrate/config/resourcebundles or
+     * META-INF/substrate/config/resourcebundles-${archos} files.
+     *
+     * The method will return a list of resource bundles names from all the files found
+     *
+     * @param archOs a string with the arch and os, it can be null
+     * @return a list of resource bundles
+     * @throws IOException
+     */
+    public List<String> getResourceBundlesList(String archOs) throws IOException {
+        Logger.logDebug("Scanning for resource bundles");
+        return scanJars(RESOURCE_BUNDLES_FILE,
+                getFileNameForArchOs(RESOURCE_BUNDLES_ARCHOS_FILE, archOs),
                 null,
                 null);
     }
@@ -153,24 +172,9 @@ public class ConfigResolver {
                 line -> line.trim().startsWith("{\"pattern\""));
         AtomicInteger index = new AtomicInteger();
         return resources.stream()
-                .map(r -> (index.getAndIncrement() < resources.size() - 1 && !r.endsWith(",")) ?
+                .map(r -> (index.getAndIncrement() < resources.size() - 1 && !r.trim().endsWith(",")) ?
                                 r.concat(",") : r)
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Walks through the jars in the classpath,
-     * and looks for META-INF/substrate/config/android-permissions.txt file.
-     *
-     * @return a list of permission lines that should be added to the AndroidManifest file
-     * @throws IOException Exception while reading the permissions file.
-     */
-    public Set<String> getAndroidPermissions() throws IOException {
-        Logger.logDebug("Scanning for android permission files");
-        return Set.copyOf(scanJars(USER_ANDROID_PERMISSIONS_FILE,
-                null,
-                null,
-                line -> true));
     }
 
     private List<String> scanJars(String configName, String configArchosName, String initLine, Predicate<String> filter) throws IOException {

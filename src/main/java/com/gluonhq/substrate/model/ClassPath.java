@@ -99,6 +99,16 @@ public class ClassPath {
                 .orElse(s));
     }
 
+    /**
+     * Returns a list with all the jar files that are found in the classpath.
+     *
+     * @param includeClasses if true, a jar will be created and added to the list,
+     *                       containing the compiled classes and resources of the
+     *                       current project
+     * @return a list of jar files
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public List<File> getJars(boolean includeClasses) throws IOException, InterruptedException {
         List<File> jars = filter(s -> s.endsWith(".jar")).stream()
                 .map(File::new)
@@ -107,23 +117,40 @@ public class ClassPath {
 
         if (includeClasses) {
             // Add project's classes as a jar to the list so it can be scanned as well
-            String classes = filter(s -> s.endsWith("classes") || s.endsWith("classes/java/main")).stream()
+            String classes = filter(s -> s.endsWith("classes") ||
+                            s.endsWith("classes" + File.separator + "java" + File.separator + "main")).stream()
                     .findFirst()
                     .orElse(null);
             if (classes != null) {
                 Path classesPath = Files.createTempDirectory("classes");
                 FileOps.copyDirectory(Path.of(classes), classesPath);
-                Path resourcesPath = filter(s -> s.endsWith("resources/main")).stream()
+                Path resourcesPath = filter(s -> s.endsWith("resources" + File.separator + "main")).stream()
                         .findFirst()
                         .map(Path::of)
                         .orElse(null);
                 if (resourcesPath != null && Files.exists(resourcesPath)) {
                     FileOps.copyDirectory(resourcesPath, classesPath);
                 }
-                Path jar = classesPath.resolve("classes.jar");
-                ProcessRunner runner = new ProcessRunner("jar", "cf", jar.toString(), "-C", classesPath.toString(), ".");
-                if (runner.runProcess("jar") == 0 && Files.exists(jar)) {
-                    jars.add(jar.toFile());
+
+                String javaPath = System.getenv("JAVA_HOME");
+                if (javaPath == null || javaPath.isEmpty()) {
+                    javaPath = System.getenv("GRAALVM_HOME");
+                    if (javaPath == null || javaPath.isEmpty()) {
+                        throw new IOException("Error: $JAVA_HOME and $GRAALVM_HOME are undefined");
+                    }
+                }
+                Path jarPath = Path.of(javaPath, "bin", Triplet.isWindowsHost() ? "jar.exe" : "jar");
+                if (!Files.exists(jarPath)) {
+                    throw new IOException("Error: " + jarPath + " doesn't exist");
+                }
+
+                Path classesJar = classesPath.resolve("classes.jar");
+
+                ProcessRunner runner = new ProcessRunner(jarPath.toString(),
+                        "cf", classesJar.toString(), "-C", classesPath.toString(), ".");
+
+                if (runner.runProcess("jar") == 0 && Files.exists(classesJar)) {
+                    jars.add(classesJar.toFile());
                 } else {
                     throw new IOException("Error creating classes.jar");
                 }

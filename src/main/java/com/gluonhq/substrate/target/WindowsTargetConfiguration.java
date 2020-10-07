@@ -43,9 +43,9 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     private static final List<String> javaWindowsLibs = Arrays.asList(
             "advapi32", "iphlpapi", "secur32", "userenv", "ws2_32");
     private static final List<String> staticJavaLibs = Arrays.asList(
-            "j2pkcs11", "java", "net", "nio", "prefs", "sunec", "zip");
+            "j2pkcs11", "java", "net", "nio", "prefs", "fdlibm", "sunec", "zip");
     private static final List<String> staticJvmLibs = Arrays.asList(
-            "ffi", "jvm", "libchelper", "strictmath");
+            "ffi", "jvm", "libchelper");
 
     private static final List<String> javaFxWindowsLibs = List.of(
             "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",
@@ -159,6 +159,9 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         flags.add("/NODEFAULTLIB:libcmt.lib");
 
         if (useJavaFX) {
+            flags.add("/SUBSYSTEM:WINDOWS");
+            flags.add("/ENTRY:mainCRTStartup");
+
             flags.addAll(asListOfLibraryLinkFlags(javaFxWindowsLibs));
             flags.addAll(asListOfLibraryLinkFlags(staticJavaFxLibs));
             flags.addAll(asListOfWholeArchiveLinkFlags(staticJavaFxLibs));
