@@ -409,10 +409,6 @@ public class SubstrateDispatcher {
         config.canRunNativeImage();
 
         Triplet targetTriplet  = config.getTargetTriplet();
-        if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
-            throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
-        }
-
         config.canRunLLVM(targetTriplet);
 
         Logger.logInfo("We will now compile your code for " + targetTriplet + ". This may take some time.");
