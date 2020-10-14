@@ -70,7 +70,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json", "dat",
-            "license", "frag", "vert", "obj");
+            "license", "frag", "vert", "obj", "mtl");
     private static final List<String> ENABLED_FEATURES = Arrays.asList(
             "org.graalvm.home.HomeFinderFeature"
     );
