@@ -122,7 +122,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     "-Djava.io.tmpdir=" + getApplicationInfo().dataDir,
                     "-Duser.timezone=" + TimeZone.getDefault().getID(),
                     "-DLaunch.URL=" + System.getProperty("Launch.URL", ""),
-                    "-DLaunch.LocalNotification=" + System.getProperty("Launch.LocalNotification", "")
+                    "-DLaunch.LocalNotification=" + System.getProperty("Launch.LocalNotification", ""),
+                    "-DLaunch.PushNotification=" + System.getProperty("Launch.PushNotification", "")
             };
             Thread t = new Thread() {
                 @Override public void run() {
