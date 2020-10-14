@@ -37,24 +37,6 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurfa
     LOGE(stderr, "native setSurface Ready, native window at %p\n", window);
 }
 
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetDataDir(JNIEnv *env, jobject that, jstring jdir)
-{
-    const char *cdir = (*env)->GetStringUTFChars(env, jdir, 0);
-    int len = strnlen(cdir, 512);
-    appDataDir = (char *)malloc(len + 1);
-    strcpy(appDataDir, cdir);
-    LOGE(stderr, "appDataDir: %s", appDataDir);
-}
-
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetTimezone(JNIEnv *env, jobject that, jstring jtz)
-{
-    const char *ctz = (*env)->GetStringUTFChars(env, jtz, 0);
-    int len = strnlen(ctz, 512);
-    timeZone = (char *)malloc(len + 1);
-    strcpy(timeZone, ctz);
-    LOGE(stderr, "timeZone: %s", timeZone);
-}
-
 JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady(JNIEnv *env, jobject activity, jobject surface, jfloat mydensity)
 {
     LOGE(stderr, "SurfaceReady, surface at %p\n", surface);

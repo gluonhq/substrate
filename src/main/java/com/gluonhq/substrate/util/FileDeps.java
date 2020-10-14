@@ -79,7 +79,7 @@ public final class FileDeps {
 
     private static final String ANDROID_KEY = "24333f8a63b6825ea9c5514f83c2829b004d1fee";
     private static final String[] ANDROID_SDK_PACKAGES = {
-            "platforms;android-28", "build-tools;29.0.2", "platform-tools",
+            "platforms;android-29", "build-tools;29.0.3", "platform-tools",
             "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle" };
 
     private final InternalProjectConfiguration configuration;

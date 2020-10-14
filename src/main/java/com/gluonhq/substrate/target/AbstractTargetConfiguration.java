@@ -76,7 +76,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     );
 
     private static final List<String> baseNativeImageArguments = Arrays.asList(
-            "--report-unsupported-elements-at-runtime",
             "-Djdk.internal.lambda.eagerlyInitialize=false",
             "--no-server",
             "-H:+ExitAfterRelocatableImageWrite",
@@ -152,7 +151,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileRunner.addArg(getJniPlatformArg());
         compileRunner.addArg(Constants.NATIVE_IMAGE_ARG_CLASSPATH);
-        compileRunner.addArg(processedClasspath);
+        compileRunner.addArg(FileOps.createPathingJar(processedClasspath));
         compileRunner.addArgs(projectConfiguration.getCompilerArgs());
         compileRunner.addArg(projectConfiguration.getMainClassName());
 
@@ -280,6 +279,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             throw new IOException("Application not found at path " + app.toString());
         }
         ProcessRunner runProcess = new ProcessRunner(appPath.resolve(appName).toString());
+        runProcess.setInfo(true);
         int result = runProcess.runProcess("run until end");
         return result == 0;
     }

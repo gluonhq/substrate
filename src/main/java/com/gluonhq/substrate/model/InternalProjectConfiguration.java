@@ -33,6 +33,7 @@ import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 import com.gluonhq.substrate.util.Version;
+import com.gluonhq.substrate.util.XcodeUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -480,6 +481,21 @@ public class InternalProjectConfiguration {
                         "$GRAALVM_HOME/bin/gu install llvm-toolchain");
             }
         }
+
+        // TODO: Remove when GraalVM has support for Xcode 12
+        if (new Triplet(Constants.Profile.IOS).equals(triplet)) {
+            Path gluonversion = graalPath.resolve("gluonversion.txt");
+            if (!Files.exists(gluonversion) ||
+                    !Files.readAllLines(gluonversion).contains("graalvm-ce-java11-20.2.0.hotfix-xcode12")) {
+                XcodeUtils xcodeUtils = new XcodeUtils(XcodeUtils.SDKS.IPHONEOS);
+                if (xcodeUtils.getDTXcode().startsWith("12")) {
+                    throw new IOException("\n\n\nYour current GraalVM build can't build for iOS with Xcode 12.\n\n" +
+                            "You can try Xcode 11, or alternatively you can download GraalVM hotfix build from here:\n\n" +
+                            "https://download2.gluonhq.com/substrate/graalvm/graalvm-ce-java11-20.2.0.hotfix-xcode12.zip\n\n" +
+                            "Then extract it, set GRAALVM_HOME accordingly and try again.\n");
+                }
+            }
+        }
     }
 
     /**
@@ -489,7 +505,7 @@ public class InternalProjectConfiguration {
         if (publicConfig.getGraalPath() == null) {
             return;
         }
-        if (new Triplet(Constants.Profile.MACOS).equals(Triplet.fromCurrentOS())) {
+        if (Triplet.isMacOSHost()) {
             checkGraalVMPermissions(getGraalPath().toString());
         }
     }

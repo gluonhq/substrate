@@ -80,6 +80,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -507,6 +510,21 @@ public class FileOps {
      * @throws IOException
      */
     public static void extractFilesFromJar(String extension, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
+        extractFilesFromJar(List.of(extension), sourceJar, target, filter);
+    }
+
+    /**
+     * Extracts the files that match any of the possible extensions from a given list
+     * that are found in a jar to a target patch, providing that the file passes a given filter,
+     * and it doesn't exist yet in the target path
+     *
+     * @param extensions a list with possible extensions of the files in the jar that will be extracted
+     * @param sourceJar the path to the jar that will be inspected
+     * @param target the path of the folder where the files will be extracted
+     * @param filter a predicate that the files in the jar should match.
+     * @throws IOException
+     */
+    public static void extractFilesFromJar(List<String> extensions, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
         if (!Files.exists(sourceJar)) {
             return;
         }
@@ -515,7 +533,7 @@ public class FileOps {
         }
         ZipFile zf = new ZipFile(sourceJar.toFile());
         List<? extends ZipEntry> entries = zf.stream()
-                .filter(ze -> ze.getName().endsWith(extension))
+                .filter(ze -> extensions.stream().anyMatch(ext -> ze.getName().endsWith(ext)))
                 .collect(Collectors.toList());
         if (entries.isEmpty()) {
             return;
@@ -654,6 +672,28 @@ public class FileOps {
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(hashes);
         }
+    }
+
+    /**
+     * Shorten the Java classpath with a pathing jar
+     * @param classpath A string with the classpath of files that will be added to the
+     *                 pathing jar Class-Path attribute
+     * @return a String with the path to the created pathing jar
+     * @throws IOException
+     */
+    public static String createPathingJar(String classpath) throws IOException {
+        Objects.requireNonNull(classpath);
+        Manifest manifest = new Manifest();
+        Attributes attributes = manifest.getMainAttributes();
+        attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attributes.put(Attributes.Name.CLASS_PATH,
+                classpath.replaceAll(File.pathSeparator, " "));
+        File jarFile = File.createTempFile("classpathJar", ".jar");
+        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFile), manifest)) {
+            jos.putNextEntry(new ZipEntry("META-INF/"));
+        }
+        Logger.logDebug("Pathing jar created at " + jarFile);
+        return jarFile.getAbsolutePath();
     }
 
     /**

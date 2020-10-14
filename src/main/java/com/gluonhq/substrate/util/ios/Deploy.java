@@ -104,10 +104,11 @@ public class Deploy {
                 checkPrerequisites();
             }
         } else {
-            // Check for ios-deploy version installed (it should be 1.10+)
+            // Check for ios-deploy version installed (it should be 1.11+)
             String version = ProcessRunner.runProcessForSingleOutput("ios-deploy version","ios-deploy", "-V");
-            if (version != null && !version.isEmpty() && (version.startsWith("1.8") || version.startsWith("1.9"))) {
-                Logger.logDebug("ios-deploy version (" + version + ") is outdated");
+            if (version != null && !version.isEmpty() &&
+                    (version.startsWith("1.8") || version.startsWith("1.9") || version.startsWith("1.10"))) {
+                Logger.logDebug("ios-deploy was outdated (version " + version + "), replacing with the latest version...");
                 uninstallIOSDeploy();
                 if (installIOSDeploy()) {
                     checkPrerequisites();
@@ -152,6 +153,13 @@ public class Deploy {
         }
         String deviceId = devices[0];
 
+        ProcessRunner trustRunner = new ProcessRunner("ios-deploy", "-C");
+        trustRunner.showSevereMessage(false);
+        if (trustRunner.runProcess("trusted computer") != 0) {
+            Logger.logInfo("\n\nComputer not trusted!\nPlease, unplug and plug again your phone, and trust your computer when the dialog shows up on your device.\nThen try again");
+            return false;
+        }
+
         ProcessRunner runner = new ProcessRunner(iosDeployPath.toString(),
                 "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
         runner.addToEnv("PATH", "/usr/bin/:$PATH");
@@ -162,8 +170,8 @@ public class Deploy {
             boolean result = runner.runTimedProcess("run", 60);
             Logger.logInfo("result = " + result);
             if (result) {
-                if (runner.getResponses().stream().anyMatch(l -> "Error: The device is locked.".equals(l))) {
-                    Logger.logInfo("Device locked! Please, unlock and press ENTER to try again");
+                if (runner.getResponses().stream().anyMatch("Error: The device is locked."::equals)) {
+                    Logger.logInfo("\n\nDevice locked!\nPlease, unlock and press ENTER to try again");
                     System.in.read();
                     keepTrying = true;
                 }
@@ -280,7 +288,9 @@ public class Deploy {
 
     private boolean installIOSDeploy() throws IOException, InterruptedException {
         Logger.logInfo("ios-deploy not found. It will be installed now");
+        Path tmpPatch = FileOps.copyResourceToTmp("/thirdparty/ios-deploy/lldbpatch.diff");
         Path tmpDeploy = FileOps.copyResourceToTmp("/thirdparty/ios-deploy/ios-deploy.rb");
+        FileOps.replaceInFile(tmpDeploy, "PATCH_PATH", "file://" + tmpPatch.toString());
 
         ProcessRunner runner = new ProcessRunner("brew", "install", "--HEAD", tmpDeploy.toString());
         if (runner.runProcess("ios-deploy") == 0) {

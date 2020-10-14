@@ -42,12 +42,15 @@ JavaVM *androidVM;
 JNIEnv *androidEnv;
 ANativeWindow *window;
 jfloat density;
-char *appDataDir;
-char *timeZone;
 
 int start_logger(const char *app_name);
 
-const char *origargs[] = {
+// TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
+int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
+
+extern int __svm_vm_is_static_binary __attribute__((weak)) = 1;
+
+const char *origArgs[] = {
     "myapp",
     "-Djavafx.platform=android",
     "-Dmonocle.platform=Android", // used in com.sun.glass.ui.monocle.NativePlatformFactory
@@ -59,46 +62,10 @@ const char *origargs[] = {
     "-Dcom.sun.javafx.gestures.rotate=true",
     "-Dcom.sun.javafx.gestures.scroll=true",
     "-Djavafx.verbose=true",
+    "-Dmonocle.input.touchRadius=1",
     "-Dmonocle.input.traceEvents.verbose=true",
     "-Dprism.verbose=true",
     "-Xmx4g"};
-
-int argsize;
-
-char **createArgs()
-{
-    LOGE(stderr, "createArgs for run_main");
-    argsize = sizeof(origargs) / sizeof(char *);
-    char **result = (char **)malloc((argsize + 2) * sizeof(char *));
-    for (int i = 0; i < argsize; i++)
-    {
-        result[i] = (char *)origargs[i];
-    }
-
-    // user time zone
-    int timeArgSize = 17 + strnlen(timeZone, 512);
-    char *timeArgs = (char *)calloc(sizeof(char), timeArgSize);
-    strcpy(timeArgs, "-Duser.timezone=");
-    strcat(timeArgs, timeZone);
-    result[argsize++] = timeArgs;
-
-    // tmp dir
-    int tmpArgSize = 18 + strnlen(appDataDir, 512);
-    char *tmpArgs = (char *)calloc(sizeof(char), tmpArgSize);
-    strcpy(tmpArgs, "-Djava.io.tmpdir=");
-    strcat(tmpArgs, appDataDir);
-    result[argsize++] = tmpArgs;
-
-    // user home
-    int userArgSize = 13 + strnlen(appDataDir, 512);
-    char *userArgs = (char *)calloc(sizeof(char), userArgSize);
-    strcpy(userArgs, "-Duser.home=");
-    strcat(userArgs, appDataDir);
-    result[argsize++] = userArgs;
-
-    LOGE(stderr, "CREATE ARGS done");
-    return result;
-}
 
 void registerMethodHandles(JNIEnv *aenv)
 {
@@ -141,20 +108,37 @@ jobject substrateGetActivity() {
 
 // === called from DALVIK. Minimize work/dependencies here === //
 
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp(JNIEnv *env, jobject activityObj)
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
+        (JNIEnv *env, jobject activityObj, jobjectArray launchArgsArray)
 {
     activity = (*env)->NewGlobalRef(env, activityObj);
     LOGE(stderr, "Start GraalApp, DALVIK env at %p\n", env);
     LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
     LOGE(stderr, "EnvVersion = %d\n", (*env)->GetVersion(env));
 
-    char **graalArgs = createArgs();
-    
-    LOGE(stderr, "calling JavaMainWrapper_run with %d argsize\n", argsize);
-    
-    (*run_main)(argsize, graalArgs);
+    int origArgsSize = sizeof(origArgs) / sizeof(char *);
+    int launchArgsSize = (*env)->GetArrayLength(env, launchArgsArray);
+    int argsSize = origArgsSize + launchArgsSize;
+    char **graalArgs = (char **)malloc(argsSize * sizeof(char *));
+    for (int i = 0; i < origArgsSize; i++)
+    {
+         graalArgs[i] = (char *)origArgs[i];
+    }
+    for (int i = 0; i < launchArgsSize; i++)
+    {
+        jstring jlaunchItem = (jstring) ((*env)->GetObjectArrayElement(env, launchArgsArray, i));
+        const char *launchString = (*env)->GetStringUTFChars(env, jlaunchItem, NULL);
+        graalArgs[origArgsSize + i] = (char *)launchString;
+    }
+
+    LOGE(stderr, "calling JavaMainWrapper_run with argsize: %d\n", argsSize);
+
+    (*run_main)(argsSize, graalArgs);
 
     LOGE(stderr, "called JavaMainWrapper_run\n");
+
+    // Invoke sunec
+    JNI_OnLoad_sunec(NULL, NULL);
 }
 
 // == expose window functionality to JavaFX native code == //
@@ -190,6 +174,10 @@ void getEnviron()
 void determineCPUFeatures()
 {
     LOGE(stderr,  "\n\n\ndetermineCpuFeaures\n");
+}
+
+int getdtablesize() {
+    return sysconf(_SC_OPEN_MAX);
 }
 
 void JVM_NativePath() {
