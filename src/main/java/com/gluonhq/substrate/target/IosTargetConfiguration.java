@@ -65,7 +65,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             "OpenGLES", "CoreText", "QuartzCore", "ImageIO",
             "CoreBluetooth", "CoreImage", "CoreLocation", "CoreMedia", "CoreMotion", "CoreVideo",
             "Accelerate", "AVFoundation", "AudioToolbox", "MediaPlayer", "UserNotifications",
-            "ARKit", "AVKit", "SceneKit", "StoreKit", "WebKit"
+            "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit"
     );
 
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",

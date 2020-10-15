@@ -116,9 +116,16 @@ int main(int argc, char * argv[]) {
             NSLog(@"LaunchOptions :: LocalNotification :: userId: %@", userIdName);
             userLaunchKey = [userIdName UTF8String];
         } else {
-            // TODO: Process UIApplicationLaunchOptionsRemoteNotificationKey and other launch options
-            NSString *empty = @"";
-            userLaunchKey = [empty UTF8String];
+            NSDictionary* userInfo = [launchOptions objectForKey:UIApplicationLaunchOptionsRemoteNotificationKey];
+            if (userInfo != nil) {
+                NSString *urlName = [@"-DLaunch.PushNotification=" stringByAppendingString: [userInfo description]];
+                NSLog(@"LaunchOptions :: PushNotification :: urlName: %@", urlName);
+                userLaunchKey = [urlName UTF8String];
+            } else {
+                // TODO: Process other launch options
+                NSString *empty = @"";
+                userLaunchKey = [empty UTF8String];
+            }
         }
     }
 
