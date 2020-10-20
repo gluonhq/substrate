@@ -1,7 +1,8 @@
 language: java
 sudo: false
 
-jdk: openjdk11
+jdk:
+  - openjdk11
 
 addons:
   apt:
