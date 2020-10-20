@@ -30,7 +30,6 @@ package com.gluonhq.helloandroid;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.os.Build;
-import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.Gravity;
