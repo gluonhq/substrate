@@ -180,6 +180,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         nativeDispatchActivityResult(requestCode, resultCode, intent);
     }
 
+    static MainActivity getInstance() {
+        return instance;
+    }
+
+    static ViewGroup getViewGroup() {
+        return mViewGroup;
+    }
+
     private static void showIME() {
         Log.v(TAG, "Called notify_showIME for imm = "+imm+", mv = "+mView);
         instance.runOnUiThread(new Runnable() {

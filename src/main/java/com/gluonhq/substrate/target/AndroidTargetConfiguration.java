@@ -70,6 +70,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private static final String ANDROID_TRIPLET = new Triplet(Constants.Profile.ANDROID).toString();
     private static final String ANDROID_MIN_SDK_VERSION = "21";
     private static final List<String> ANDROID_KEYSTORE_EXTENSIONS = List.of(".keystore", ".jks");
+    public static final String WL_WHOLE_ARCHIVE = "-Wl,--whole-archive";
+    public static final String WL_NO_WHOLE_ARCHIVE = "-Wl,--no-whole-archive";
 
     private final String ndk;
     private final String sdk;
@@ -86,9 +88,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             ANDROID_TRIPLET + ANDROID_MIN_SDK_VERSION, "-fPIC", "-fuse-ld=gold",
             "-Wl,--rosegment,--gc-sections,-z,noexecstack", "-shared",
             "-landroid", "-llog", "-lffi", "-llibchelper");
-    private final List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
-            "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", "-Wl,--no-whole-archive",
-            "-lGLESv2", "-lEGL", "-lfreetype");
+    private final List<String> javafxLinkFlags = new ArrayList<>(Arrays.asList(WL_WHOLE_ARCHIVE,
+            "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", WL_NO_WHOLE_ARCHIVE,
+            "-lGLESv2", "-lEGL", "-lfreetype"));
+    private static final String javafxWebLib = "-lwebview";
     private final String capLocation = ANDROID_NATIVE_FOLDER + "cap/";
 
     public AndroidTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
@@ -255,7 +258,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (!useJavaFX) return linkFlags;
         List<String> answer = new ArrayList<>();
         answer.addAll(linkFlags);
-        answer.addAll(javafxLinkFlags);
+        if (projectConfiguration.getClasspath().contains("javafx-web")) {
+            javafxLinkFlags.add(javafxLinkFlags.indexOf(WL_NO_WHOLE_ARCHIVE) - 1, javafxWebLib);
+        }
         return answer;
     }
 
