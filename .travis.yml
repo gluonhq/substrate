@@ -1,9 +1,6 @@
 language: java
 sudo: false
 
-jdk:
-  - openjdk14
-
 addons:
   apt:
     package: &global_deps

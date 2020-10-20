@@ -32,6 +32,7 @@ task runScript(type: Exec) {
     def javafxStaticSdk = validateJavafxStaticSdk()
 
     def expected = System.getProperty("expected")
+    def ciEnvironment = System.getProperty("ciEnvironment")
 
     def argsList = ["${javaHome}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                     "-Dimagecp=${javafxStaticSdk}/lib/javafx.base.jar:${javafxStaticSdk}/lib/javafx.graphics.jar:${javafxStaticSdk}/lib/javafx.controls.jar:" +
@@ -45,6 +46,9 @@ task runScript(type: Exec) {
     }
     if (expected != null) {
         argsList += ["-Dexpected=$expected"]
+    }
+    if (ciEnvironment != null) {
+        argsList += ["-DciEnvironment=$ciEnvironment"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList
