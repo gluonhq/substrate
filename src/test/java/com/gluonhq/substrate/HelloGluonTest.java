@@ -53,7 +53,7 @@ class HelloGluonTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloGluon:clean", ":helloGluon:build",
-                        "-Dexpected=" + expected, "-DciEnvironment=" + (isCI() ? "true" : "false"),
+                        "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
                         ":helloGluon:run", ":helloGluon:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();

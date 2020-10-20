@@ -367,7 +367,7 @@ public class SubstrateDispatcher {
         this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot),
                 Objects.requireNonNull(config).getTargetTriplet().getArchOs());
         ProcessRunner.setProcessLogPath(paths.getClientPath().resolve(Constants.LOG_PATH));
-        ProcessRunner.setCiEnvironment(Boolean.getBoolean("ciEnvironment"));
+        ProcessRunner.setConsoleProcessLog(Boolean.getBoolean("consoleProcessLog"));
 
         this.config = new InternalProjectConfiguration(config);
         if (this.config.isVerbose()) {

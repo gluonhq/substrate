@@ -45,7 +45,7 @@ class HelloWorldTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloWorld:clean", ":helloWorld:build", ":helloWorld:run",
-                        "-Dexpected=" + expected, "-DciEnvironment=" + (isCI() ? "true" : "false"),
+                        "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
                         ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();

@@ -64,7 +64,7 @@ public class ProcessRunner {
     private boolean interactive;
 
     private static Path processLogPath;
-    private static boolean ciEnvironment;
+    private static boolean consoleProcessLog;
 
     /**
      * Constructor, allowing some command line arguments
@@ -94,14 +94,17 @@ public class ProcessRunner {
     }
 
     /**
-     * Sets true if the processes are run on a CI environment.
+     * Sets true if the processes are logged, not only to a
+     * file, but also to console. Useful, for instance, in CI
+     * environments without access to log files.
      *
      * This should be called once.
      *
-     * @param value true if process runs on CI, false by default
+     * @param value true if process is logged to console, false
+     *              by default
      */
-    public static void setCiEnvironment(boolean value) {
-        ciEnvironment = value;
+    public static void setConsoleProcessLog(boolean value) {
+        consoleProcessLog = value;
     }
 
     /**
@@ -418,7 +421,7 @@ public class ProcessRunner {
         }
         String message = toString(processName, result);
         Files.write(log, message.getBytes());
-        if (ciEnvironment) {
+        if (consoleProcessLog) {
             Logger.logInfo(message);
         }
     }

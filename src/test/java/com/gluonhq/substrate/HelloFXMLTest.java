@@ -45,7 +45,7 @@ class HelloFXMLTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFXML:clean", ":helloFXML:build",
-                        "-Dexpected=" + expected, "-DciEnvironment=" + (isCI() ? "true" : "false"),
+                        "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
                         ":helloFXML:run", ":helloFXML:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
