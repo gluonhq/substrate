@@ -45,7 +45,7 @@ class HelloFXTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFX:clean", ":helloFX:build",
-                        "-Dexpected=" + expected, "-DciEnvironment=" + isCI(),
+                        "-Dexpected=" + expected, "-DciEnvironment=" + (isCI() ? "true" : "false"),
                         ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
