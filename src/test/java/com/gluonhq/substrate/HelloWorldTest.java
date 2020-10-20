@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
+import static com.gluonhq.substrate.TestUtils.isCI;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HelloWorldTest {
@@ -44,7 +45,8 @@ class HelloWorldTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloWorld:clean", ":helloWorld:build", ":helloWorld:run",
-                        "-Dexpected=" + expected, ":helloWorld:runScript", "--stacktrace")
+                        "-Dexpected=" + expected, "-DciEnvironment=" + isCI(),
+                        ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
 

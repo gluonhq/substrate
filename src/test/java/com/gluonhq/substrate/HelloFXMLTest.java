@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
+import static com.gluonhq.substrate.TestUtils.isCI;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HelloFXMLTest {
@@ -44,7 +45,7 @@ class HelloFXMLTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFXML:clean", ":helloFXML:build",
-                        "-Dexpected=" + expected,
+                        "-Dexpected=" + expected, "-DciEnvironment=" + isCI(),
                         ":helloFXML:run", ":helloFXML:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();

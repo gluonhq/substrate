@@ -106,7 +106,7 @@ class IOSTest {
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloWorld:clean", ":helloWorld:build",
                         "-Djavafx.static.sdk=" + System.getenv("JAVAFX_STATIC_SDK_IOS"),
-                        "-Dsubstrate.target=ios", "-Dskipsigning=" + skipSigning,
+                        "-Dsubstrate.target=ios", "-Dskipsigning=" + skipSigning, "-DciEnvironment=" + isCI(),
                         ":helloWorld:run", ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
@@ -123,7 +123,8 @@ class IOSTest {
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFX:clean", ":helloFX:build",
                         "-Djavafx.static.sdk=" + System.getenv("JAVAFX_STATIC_SDK_IOS"),
-                        "-Dsubstrate.target=ios", ":helloFX:run", ":helloFX:runScript", "--stacktrace")
+                        "-Dsubstrate.target=ios", "-DciEnvironment=" + isCI(),
+                        ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
 

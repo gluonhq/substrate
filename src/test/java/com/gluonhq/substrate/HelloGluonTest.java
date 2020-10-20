@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
+import static com.gluonhq.substrate.TestUtils.isCI;
 import static com.gluonhq.substrate.TestUtils.isTravis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -52,7 +53,7 @@ class HelloGluonTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloGluon:clean", ":helloGluon:build",
-                        "-Dexpected=" + expected,
+                        "-Dexpected=" + expected, "-DciEnvironment=" + isCI(),
                         ":helloGluon:run", ":helloGluon:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();

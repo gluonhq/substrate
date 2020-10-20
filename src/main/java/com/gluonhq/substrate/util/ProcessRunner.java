@@ -64,6 +64,7 @@ public class ProcessRunner {
     private boolean interactive;
 
     private static Path processLogPath;
+    private static boolean ciEnvironment;
 
     /**
      * Constructor, allowing some command line arguments
@@ -90,6 +91,17 @@ public class ProcessRunner {
         if (!Files.exists(processLogPath)) {
             Files.createDirectories(processLogPath);
         }
+    }
+
+    /**
+     * Sets true if the processes are run on a CI environment.
+     *
+     * This should be called once.
+     *
+     * @param value true if process runs on CI, false by default
+     */
+    public static void setCiEnvironment(boolean value) {
+        ciEnvironment = value;
     }
 
     /**
@@ -404,7 +416,11 @@ public class ProcessRunner {
         } else {
             Logger.logDebug("Logging process [" + processName + "] to file: " + log);
         }
-        Files.write(log, toString(processName, result).getBytes());
+        String message = toString(processName, result);
+        Files.write(log, message.getBytes());
+        if (ciEnvironment) {
+            Logger.logInfo(message);
+        }
     }
 
     private String toString(String processName, String result) {

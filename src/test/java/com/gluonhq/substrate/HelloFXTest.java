@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
+import static com.gluonhq.substrate.TestUtils.isCI;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HelloFXTest {
@@ -44,7 +45,7 @@ class HelloFXTest {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFX:clean", ":helloFX:build",
-                        "-Dexpected=" + expected,
+                        "-Dexpected=" + expected, "-DciEnvironment=" + isCI(),
                         ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
