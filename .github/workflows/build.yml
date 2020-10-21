@@ -68,8 +68,7 @@ jobs:
     
       - name: Prepare Xcode (MacOS)
         if: runner.os == 'macOS'
-        run: |
-          sudo killall -9 com.apple.CoreSimulator.CoreSimulatorService
+        run: sudo xcrun simctl shutdown all && sudo xcrun simctl erase all
 
       - name: Checkout
         uses: actions/checkout@v2
