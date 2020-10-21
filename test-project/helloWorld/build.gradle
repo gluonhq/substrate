@@ -21,6 +21,7 @@ task runScript(type: Exec) {
 
     def skipsigning = System.getProperty("skipsigning")
     def expected = System.getProperty("expected")
+    def consoleProcessLog = System.getProperty("consoleProcessLog")
 
     def argsList = ["${javaHome}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                    "-Dimagecp=${project.sourceSets.main.runtimeClasspath.asPath}",
@@ -33,6 +34,9 @@ task runScript(type: Exec) {
     }
     if (expected != null) {
         argsList += ["-Dexpected=$expected"]
+    }
+    if (consoleProcessLog != null) {
+        argsList += ["-DconsoleProcessLog=$consoleProcessLog"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList

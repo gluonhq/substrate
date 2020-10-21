@@ -46,6 +46,7 @@ task runScript(type: Exec) {
     def javaHome = validateJavaHome()
     def graalvmHome = validateGraalvmHome()
     def javafxStaticSdk = validateJavafxStaticSdk()
+    def consoleProcessLog = System.getProperty("consoleProcessLog")
 
     def argsList = ["${javaHome}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                     "-Dimagecp=${javafxStaticSdk}/lib/javafx.base.jar:${javafxStaticSdk}/lib/javafx.graphics.jar:${javafxStaticSdk}/lib/javafx.controls.jar:" +
@@ -56,6 +57,9 @@ task runScript(type: Exec) {
         argsList += ["-DtargetProfile=$target"]
     } else {
         argsList += ["-Dprism.sw=true"]
+    }
+    if (consoleProcessLog != null) {
+        argsList += ["-DconsoleProcessLog=$consoleProcessLog"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList

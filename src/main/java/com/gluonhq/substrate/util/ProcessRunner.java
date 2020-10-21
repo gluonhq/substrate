@@ -64,6 +64,7 @@ public class ProcessRunner {
     private boolean interactive;
 
     private static Path processLogPath;
+    private static boolean consoleProcessLog;
 
     /**
      * Constructor, allowing some command line arguments
@@ -90,6 +91,20 @@ public class ProcessRunner {
         if (!Files.exists(processLogPath)) {
             Files.createDirectories(processLogPath);
         }
+    }
+
+    /**
+     * Sets true if the processes are logged, not only to a
+     * file, but also to console. Useful, for instance, in CI
+     * environments without access to log files.
+     *
+     * This should be called once.
+     *
+     * @param value true if process is logged to console, false
+     *              by default
+     */
+    public static void setConsoleProcessLog(boolean value) {
+        consoleProcessLog = value;
     }
 
     /**
@@ -404,7 +419,11 @@ public class ProcessRunner {
         } else {
             Logger.logDebug("Logging process [" + processName + "] to file: " + log);
         }
-        Files.write(log, toString(processName, result).getBytes());
+        String message = toString(processName, result);
+        Files.write(log, message.getBytes());
+        if (consoleProcessLog) {
+            Logger.logInfo(message);
+        }
     }
 
     private String toString(String processName, String result) {
