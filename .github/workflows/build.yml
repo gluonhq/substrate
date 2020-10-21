@@ -93,6 +93,7 @@ jobs:
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
         run: |
+          sudo killall -9 com.apple.CoreSimulator.CoreSimulatorService
           export GRAALVM_HOME=$HOME/graalvm/graalvm-ce-java11-20.3.0-dev/Contents/Home
           export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-darwin/sdk
           export JAVAFX_STATIC_SDK_IOS=$HOME/javafx-static-libs-ios/sdk
