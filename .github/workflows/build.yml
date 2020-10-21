@@ -49,22 +49,22 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           mkdir -p $HOME/javafx-static-libs-linux && cd $HOME/javafx-static-libs-linux
-          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-linux-x86_64-static.zip
-          unzip openjfx-15-latest-linux-x86_64-static.zip && cd $GITHUB_WORKSPACE
+          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-linux-x86_64-static.zip
+          unzip openjfx-16-latest-linux-x86_64-static.zip && cd $GITHUB_WORKSPACE
 
       - name: Install darwin JavaFX static libs (MacOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/javafx-static-libs-darwin && cd $HOME/javafx-static-libs-darwin
-          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-darwin-x86_64-static.zip
-          unzip openjfx-15-latest-darwin-x86_64-static.zip && cd $GITHUB_WORKSPACE
+          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-darwin-x86_64-static.zip
+          unzip openjfx-16-latest-darwin-x86_64-static.zip && cd $GITHUB_WORKSPACE
 
       - name: Install iOS JavaFX static libs (MacOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/javafx-static-libs-ios && cd $HOME/javafx-static-libs-ios
-          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-ios-arm64-static.zip
-          unzip openjfx-15-latest-ios-arm64-static.zip && cd $GITHUB_WORKSPACE
+          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-ios-arm64-static.zip
+          unzip openjfx-16-latest-ios-arm64-static.zip && cd $GITHUB_WORKSPACE
     
       - name: Shutdown and Reset all Simulators (MacOS)
         if: runner.os == 'macOS'
