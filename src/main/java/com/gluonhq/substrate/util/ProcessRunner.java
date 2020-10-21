@@ -27,8 +27,6 @@
  */
 package com.gluonhq.substrate.util;
 
-import com.gluonhq.substrate.Constants;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +40,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
@@ -58,12 +57,14 @@ public class ProcessRunner {
     private final List<String> args = new ArrayList<>();
     private final Map<String, String> map;
     private final List<String> passwords;
-    private StringBuffer answer;
+    private final StringBuffer answer;
     private boolean info;
     private boolean showSevere = true;
     private boolean logToFile;
-    private Path processLogPath;
     private boolean interactive;
+
+    private static Path processLogPath;
+    private static boolean consoleProcessLog;
 
     /**
      * Constructor, allowing some command line arguments
@@ -74,6 +75,36 @@ public class ProcessRunner {
         this.answer = new StringBuffer();
         this.map = new HashMap<>();
         this.passwords = new ArrayList<>();
+    }
+
+    /**
+     * Sets the path where the process logs will be created. If the
+     * path doesn't exist, it will be created.
+     *
+     * This should be called once. If not set, the process won't be
+     * logged.
+     *
+     * @param path the path where the process logs will be created
+     */
+    public static void setProcessLogPath(Path path) throws IOException {
+        processLogPath = Objects.requireNonNull(path);
+        if (!Files.exists(processLogPath)) {
+            Files.createDirectories(processLogPath);
+        }
+    }
+
+    /**
+     * Sets true if the processes are logged, not only to a
+     * file, but also to console. Useful, for instance, in CI
+     * environments without access to log files.
+     *
+     * This should be called once.
+     *
+     * @param value true if process is logged to console, false
+     *              by default
+     */
+    public static void setConsoleProcessLog(boolean value) {
+        consoleProcessLog = value;
     }
 
     /**
@@ -378,25 +409,21 @@ public class ProcessRunner {
      */
     private void logProcess(String processName, String result, boolean failure) throws IOException {
         if (processLogPath == null) {
-            Path buildPath = Path.of(System.getProperty("user.dir"),"target");
-            if (!Files.exists(buildPath)) {
-                buildPath = Path.of(System.getProperty("user.dir"), "build");
-                if (!Files.exists(buildPath)) {
-                    throw new IOException("Build folder not found");
-                }
-            }
-            processLogPath = buildPath.resolve(Constants.CLIENT_PATH).resolve(Constants.LOG_PATH);
+            Logger.logSevere("Can't log " + processName + " process, processLogPath was null");
+            return;
         }
-        if (!Files.exists(processLogPath)) {
-            Files.createDirectories(processLogPath);
-        }
+
         Path log = processLogPath.resolve("process-" + processName + "-" + System.currentTimeMillis() + ".log");
         if (failure) {
             Logger.logInfo("Logging process [" + processName + "] to file: " + log);
         } else {
             Logger.logDebug("Logging process [" + processName + "] to file: " + log);
         }
-        Files.write(log, toString(processName, result).getBytes());
+        String message = toString(processName, result);
+        Files.write(log, message.getBytes());
+        if (consoleProcessLog) {
+            Logger.logInfo(message);
+        }
     }
 
     private String toString(String processName, String result) {

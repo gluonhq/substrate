@@ -36,37 +36,43 @@ import java.nio.file.Paths;
 
 public class ProcessPaths {
 
-    private Path buildRoot;
-    private Path clientPath;
-    private Path appPath;
-    private Path gvmPath;
-    private Path genPath;
-    private Path tmpPath;
-    private Path logPath;
-    private Path sourcePath;
-    private Path nativeCodePath;
+    private final Path clientPath;
+    private final Path appPath;
+    private final Path gvmPath;
+    private final Path genPath;
+    private final Path tmpPath;
+    private final Path logPath;
+    private final Path sourcePath;
+    private final Path nativeCodePath;
 
     /**
-     * |-- build or target
+     * |-- target/build
      *     |-- client                   <!-- buildRoot  -->
-     *         |-- $app                 <!-- $OS-$ARCH  -->
+     *         |-- log
+     *         |-- $arch-$os            <!-- $ARCH-$OS  -->
      *             |-- gvm
      *                 |-- $appName
      *                 |-- lib
      *                 |-- log
      *                 |-- tmp
-     *             |-- $appName.app
+     *                 |-- android_project
+     *                     |-- app
+     *                 |-- $appName.apk
+     *             |-- $appName (.exe,.app)
      *             |-- $appName.app.dSYM
      *             |-- $appName.ipa
      *             |-- gensrc
-     *                 |-- mac or ios
+     *                 |-- android
+     *                 |-- ios
      * |-- src
-     *     |-- mac or ios
+     *     |-- android                  <!-- optional  -->
+     *     |-- ios                      <!-- optional  -->
      *     |-- main
+     *         |-- java
+     *         |-- resources
      */
 
     public ProcessPaths(Path buildRoot, String app) throws IOException {
-        this.buildRoot = buildRoot;
         clientPath = buildRoot != null ? buildRoot : Paths.get(System.getProperty("user.dir"));
         appPath = Files.createDirectories(clientPath.resolve(app));
         gvmPath = Files.createDirectories(appPath.resolve(Constants.GVM_PATH));
@@ -75,10 +81,6 @@ public class ProcessPaths {
         logPath = Files.createDirectories(gvmPath.resolve(Constants.LOG_PATH));
         sourcePath = clientPath.getParent().getParent().resolve(Constants.SOURCE_PATH);
         nativeCodePath = sourcePath.getParent().resolve(Constants.NATIVE_CODE_PATH);
-    }
-
-    public Path getBuildRoot() {
-        return buildRoot;
     }
 
     public Path getClientPath() {

@@ -322,7 +322,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     private Path getAndroidProjectPath() {
-        return paths.getGvmPath().resolve("android_project");
+        return paths.getGvmPath().resolve(ANDROID_PROJECT_NAME);
     }
 
     private Path getAndroidProjectMainPath() {

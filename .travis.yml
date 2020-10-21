@@ -1,8 +1,6 @@
 language: java
 sudo: false
 
-jdk: openjdk11
-
 addons:
   apt:
     package: &global_deps

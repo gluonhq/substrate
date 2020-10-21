@@ -66,6 +66,10 @@ jobs:
           wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-ios-arm64-static.zip
           unzip openjfx-15-latest-ios-arm64-static.zip && cd $GITHUB_WORKSPACE
     
+      - name: Shutdown and Reset all Simulators (MacOS)
+        if: runner.os == 'macOS'
+        run: sudo xcrun simctl shutdown all && sudo xcrun simctl erase all
+
       - name: Checkout
         uses: actions/checkout@v2
 
