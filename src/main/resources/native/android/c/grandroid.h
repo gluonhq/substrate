@@ -50,3 +50,7 @@ void __attribute__((weak)) androidJfx_setDensity(float nativeDensity) {}
 void __attribute__((weak)) androidJfx_gotTouchEvent(int count, int *actions, int *ids, int *xs, int *ys, int primary) {}
 void __attribute__((weak)) androidJfx_gotKeyEvent(int action, int key, jchar *chars, int count, int mods) {}
 int  __attribute__((weak)) to_jfx_touch_action(int state) { return 0; }
+
+void __attribute__((weak)) androidJfx_startURL(const char *url) {}
+void __attribute__((weak)) androidJfx_finishURL(const char *url, const char *html) {}
+void __attribute__((weak)) androidJfx_failedURL(const char *url) {}

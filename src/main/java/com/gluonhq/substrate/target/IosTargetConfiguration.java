@@ -58,14 +58,14 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
-    private static final String javafxWebLib = "javafx_ios_webnode";
+    private static final String javafxWebLib = "webview";
 
     private static final List<String> iosFrameworks = Arrays.asList(
             "Foundation", "UIKit", "CoreGraphics", "MobileCoreServices",
             "OpenGLES", "CoreText", "QuartzCore", "ImageIO",
             "CoreBluetooth", "CoreImage", "CoreLocation", "CoreMedia", "CoreMotion", "CoreVideo",
             "Accelerate", "AVFoundation", "AudioToolbox", "MediaPlayer", "UserNotifications",
-            "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO"
+            "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit"
     );
 
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",

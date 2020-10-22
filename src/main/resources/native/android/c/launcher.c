@@ -31,6 +31,7 @@
 #include "grandroid.h"
 
 extern int *run_main(int argc, char *argv[]);
+extern void registerJavaFXMethodHandles(JNIEnv* aenv);
 
 jclass activityClass;
 jclass permissionActivityClass;
@@ -73,6 +74,7 @@ void registerMethodHandles(JNIEnv *aenv)
     permissionActivityClass = (*aenv)->NewGlobalRef(aenv, (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/PermissionRequestActivity"));
     activity_showIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "showIME", "()V");
     activity_hideIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "hideIME", "()V");
+    registerJavaFXMethodHandles(aenv);
 }
 
 int JNI_OnLoad(JavaVM *vm, void *reserved)
