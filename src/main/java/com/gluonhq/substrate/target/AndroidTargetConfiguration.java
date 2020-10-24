@@ -261,6 +261,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (projectConfiguration.getClasspath().contains("javafx-web")) {
             javafxLinkFlags.addAll(Arrays.asList(WL_WHOLE_ARCHIVE, javafxWebLib, WL_NO_WHOLE_ARCHIVE));
         }
+        answer.addAll(javafxLinkFlags);
         return answer;
     }
 
