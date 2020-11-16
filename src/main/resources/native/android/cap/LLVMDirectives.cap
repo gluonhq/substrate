@@ -1,3 +1,6 @@
+NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:size=4
+NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:signedness=$UNSIGNED$
+NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:value=0
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_FOREIGN_EXCEPTION_CAUGHT:PropertyInfo:size=4
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_FOREIGN_EXCEPTION_CAUGHT:PropertyInfo:signedness=$UNSIGNED$
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_FOREIGN_EXCEPTION_CAUGHT:PropertyInfo:value=1
@@ -37,9 +40,6 @@ NativeCodeInfo:LLVMDirectives:ConstantInfo:_UA_FORCE_UNWIND:PropertyInfo:value=8
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_UA_END_OF_STACK:PropertyInfo:size=4
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_UA_END_OF_STACK:PropertyInfo:signedness=$UNSIGNED$
 NativeCodeInfo:LLVMDirectives:ConstantInfo:_UA_END_OF_STACK:PropertyInfo:value=10
-NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:size=4
-NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:signedness=$UNSIGNED$
-NativeCodeInfo:LLVMDirectives:ConstantInfo:_URC_NO_REASON:PropertyInfo:value=0
 NativeCodeInfo:LLVMDirectives:StructInfo:struct__Unwind_Exception:PropertyInfo:size=32
 NativeCodeInfo:LLVMDirectives:StructInfo:struct__Unwind_Exception:StructFieldInfo:exception_class:PropertyInfo:size=8
 NativeCodeInfo:LLVMDirectives:StructInfo:struct__Unwind_Exception:StructFieldInfo:exception_class:PropertyInfo:offset=0
