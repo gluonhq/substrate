@@ -24,6 +24,7 @@ android {
 
     dependencies {
         implementation 'com.android.support:support-v4:28.0.0'
+        annotationProcessor 'com.android.support:support-annotations:28.0.0'
         // OTHER_ANDROID_DEPENDENCIES
         api fileTree(dir: '../libs', include: '*.aar')
         api fileTree(dir: '../libs', include: '*.jar')
