@@ -28,7 +28,6 @@
 package com.gluonhq.helloandroid;
 
 import android.graphics.Bitmap;
-import android.net.http.SslError;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -36,7 +35,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -112,11 +110,6 @@ public class NativeWebView {
                         nativeFailedURL(request.getUrl().toString());
                     }
 
-                    @Override
-                    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                        Log.v(TAG, "onReceivedSslError, skipping error: " + error);
-                        handler.proceed();
-                    }
                 });
 
                 WebSettings webSettings = NativeWebView.this.webView.getSettings();
