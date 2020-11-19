@@ -83,7 +83,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c",
             "touch_events.c", "glibc_shim.c", "attach_adapter.c", "logger.c");
     private final List<String> androidAdditionalHeaderFiles = Arrays.asList("grandroid.h", "grandroid_ext.h");
-    private final List<String> cFlags = Arrays.asList("-target", ANDROID_TRIPLET, "-I.");
+    private final List<String> cFlags = new ArrayList<>(Arrays.asList("-target", ANDROID_TRIPLET, "-I."));
     private final List<String> linkFlags = Arrays.asList("-target",
             ANDROID_TRIPLET + ANDROID_MIN_SDK_VERSION, "-fPIC", "-fuse-ld=gold",
             "-Wl,--rosegment,--gc-sections,-z,noexecstack", "-shared",
@@ -250,6 +250,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
+        if (projectConfiguration.getClasspath().contains("javafx-web")) {
+            cFlags.add("-DJAVAFX_WEB");
+        }
         return cFlags;
     }
 
@@ -453,7 +456,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             FileOps.deleteDirectory(androidProject);
         }
         FileOps.copyDirectoryFromResources(ANDROID_NATIVE_FOLDER + ANDROID_PROJECT_NAME, androidProject);
-        getAndroidProjectPath().resolve("gradlew").toFile().setExecutable(true);
+        if (!projectConfiguration.getClasspath().contains("javafx-web")) {
+            Files.deleteIfExists(Path.of(androidProject.toString(), "app", "src", "main", "java", "com", "gluonhq", "helloandroid", "NativeWebView.java"));
+        }
+        androidProject.resolve("gradlew").toFile().setExecutable(true);
         FileOps.replaceInFile(androidProject.resolve("app").resolve("build.gradle"),
                 "// OTHER_ANDROID_DEPENDENCIES", String.join("\n        ", requiredDependencies()));
         return androidProject;

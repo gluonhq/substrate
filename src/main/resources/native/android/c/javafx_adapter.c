@@ -29,6 +29,7 @@
 #include <string.h>
 #include "grandroid.h"
 
+#ifdef JAVAFX_WEB
 jclass nativeWebViewClass;
 jobject nativeWebViewObj;
 jmethodID nativeWebView_init;
@@ -56,6 +57,9 @@ void registerJavaFXMethodHandles(JNIEnv *aenv)
         reg = 1;
     }
 }
+#else
+void registerJavaFXMethodHandles(JNIEnv *aenv) {}
+#endif
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurface(JNIEnv *env, jobject activity, jobject surface)
 {
@@ -141,6 +145,7 @@ Java_javafx_scene_control_skin_TextAreaSkinAndroid_hideSoftwareKeyboard(JNIEnv *
     hideSoftwareKeyboard();
 }
 
+#ifdef JAVAFX_WEB
 void substrate_showWebView() {
     LOGE(stderr, "Substrate needs to show Webview\n");
     ATTACH_DALVIK();
@@ -214,7 +219,6 @@ char* substrate_executeScript(char* script) {
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_NativeWebView_nativeStartURL(JNIEnv *env, jobject activity, jstring url)
 {
-    LOGE(stderr, "nativeStartURL called. Invoke method on webView\n");
     const char *curl = (*env)->GetStringUTFChars(env, url, NULL);
     LOGE(stderr, "nativeStartURL called. URL: %s\n", curl);
     androidJfx_startURL(curl);
@@ -238,3 +242,4 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_NativeWebView_nativeFailedU
     androidJfx_failedURL(curl);
     (*env)->ReleaseStringUTFChars(env, url, curl);
 }
+#endif
