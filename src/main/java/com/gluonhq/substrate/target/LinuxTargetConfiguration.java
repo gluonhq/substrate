@@ -54,7 +54,6 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
-    private static final String sysroot = System.getenv("SYSROOT");
 
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
 
@@ -92,8 +91,12 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private static final List<String> linuxfxSWlibs = Arrays.asList(
             "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
 
-    public LinuxTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
+    private final String sysroot;
+
+    public LinuxTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
         super(paths, configuration);
+
+        sysroot = fileDeps.getSysrootPath().toString();
     }
 
     @Override
@@ -214,6 +217,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         }
         return capPath;
     }
+
     private void checkCompiler() throws IOException, InterruptedException {
         validateVersion(new String[] { "gcc", "--version" }, "compiler", COMPILER_MINIMAL_VERSION);
     }
