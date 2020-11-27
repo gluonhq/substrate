@@ -49,16 +49,28 @@ void Java_java_io_ObjectOutputStream_doublesToBytes() {
 }
 
 #ifdef AARCH64
-void Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0() {
-    fprintf(stderr, "Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0 asked, not supported\n");
-}
-
-void Java_jdk_net_LinuxSocketOptions_quickAckSupported0() {
-    fprintf(stderr, "Java_jdk_net_LinuxSocketOptions_quickAckSupported0 asked, not supported\n");
-}
-
 void determineCPUFeatures() {
     fprintf(stderr, "determineCPUFeatures asked, not supported\n");
 }
+void JVM_NativePath() {
+    fprintf(stderr, "We should never reach here (JVM_nativePath)\n");
+}
+
+void JVM_RawMonitorCreate() {
+    fprintf(stderr, "We should never reach here (JVM_RawMonitorCreate)\n");
+}
+
+void JVM_RawMonitorDestroy() {
+    fprintf(stderr, "We should never reach here (JVM_RawMonitorDestroy)\n");
+}
+
+void JVM_RawMonitorEnter() {
+    fprintf(stderr, "We should never reach here (JVM_RawMonitorEnter)\n");
+}
+
+void JVM_RawMonitorExit() {
+    fprintf(stderr, "We should never reach here (JVM_RawMonitorExit)\n");
+}
+
 #endif
 

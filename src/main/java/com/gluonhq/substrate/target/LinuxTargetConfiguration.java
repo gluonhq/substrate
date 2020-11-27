@@ -54,6 +54,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
+    private static final String sysroot = System.getenv("SYSROOT");
 
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
 
@@ -82,7 +83,10 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
             "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
-            "LLVMDirectives.cap", "PosixDirectives.cap"};
+            "PosixDirectives.cap"};
+
+    private String llvmCapFile = "LLVMDirectives.cap";
+
     private final String capLocation= "/native/linux-aarch64/cap/";
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
@@ -90,9 +94,6 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     public LinuxTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
-        if (crossCompile) {
-            projectConfiguration.setBackend(Constants.BACKEND_LLVM);
-        }
     }
 
     @Override
@@ -108,6 +109,14 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         checkCompiler();
         checkLinker();
         return super.link();
+    }
+
+    @Override
+    protected List<Path> getStaticJDKLibPaths() throws IOException {
+        if (crossCompile) {
+            return Arrays.asList(fileDeps.getJavaSDKLibsPath());
+        }
+        return super.getStaticJDKLibPaths();
     }
 
     @Override
@@ -127,6 +136,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) throws IOException, InterruptedException {
         List<String> answer = new LinkedList<>();
         answer.add("-rdynamic");
+        if (crossCompile) {
+            answer.add("-fuse-ld=gold");
+            answer.add("--sysroot");
+            answer.add(sysroot);
+        }
         if (!useJavaFX) return answer;
 
         answer.addAll(linuxfxlibs);
@@ -140,7 +154,10 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             answer.addAll(linuxfxWeblibs);
         }
         answer.addAll(LinuxLinkerFlags.getLinkerFlags());
-        if (usePrismSW) {
+        if (!crossCompile) {
+            answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
+        }
+        if (usePrismSW || crossCompile) {
             answer.addAll(linuxfxSWlibs);
         }
         return answer;
@@ -162,17 +179,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         if (!crossCompile) {
             return super.getTargetSpecificAOTCompileFlags();
         }
-
         ArrayList<String> flags = new ArrayList<>(Arrays.asList(
-                "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
-                "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CompilerBackend=" + projectConfiguration.getBackend()));
-        if (projectConfiguration.isUseLLVM()) {
-            flags.add("-H:CustomLD=aarch64-linux-gnu-ld");
-        }
         return flags;
     }
 
