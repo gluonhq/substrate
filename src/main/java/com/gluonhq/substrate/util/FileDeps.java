@@ -208,7 +208,6 @@ public final class FileDeps {
 
         if ((configuration.isUseJNI()) && (!configuration.getHostTriplet().equals(configuration.getTargetTriplet()))) {
             if (!Files.isDirectory(javaStaticLibs)) {
-                System.err.println("Not a dir");
                 if (customJavaLocation) {
                     throw new IOException ("A location for the static sdk libs was supplied, but it doesn't exist: "+javaStaticLibs);
                 }
@@ -248,7 +247,6 @@ public final class FileDeps {
             Logger.logDebug("Processing JavaFXStatic dependencies at " + javafxStatic.toString());
 
             if (!Files.isDirectory(javafxStatic)) {
-         //       Logger.logDebug("javafxStaticSdk/" + configuration.getJavafxStaticSdkVersion() + "/" + target + "-sdk/lib folder not found");
                 downloadJavaFXStatic = true;
             } else {
                 String path = javafxStatic.toString();
