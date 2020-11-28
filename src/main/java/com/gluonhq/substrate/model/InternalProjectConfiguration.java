@@ -251,12 +251,12 @@ public class InternalProjectConfiguration {
     }
 
     /**
-     * Gets sysroot path
+     * Gets sysroot path for the current arch
      */
     public Path getSysrootPath() {
         String sysrootEnv = System.getenv("SYSROOT");
         return (sysrootEnv != null) ? Paths.get(sysrootEnv)
-                : Constants.USER_SUBSTRATE_PATH.resolve("sysroot");
+                : Constants.USER_SUBSTRATE_PATH.resolve("sysroot").resolve(getTargetTriplet().getArch());
     }
 
     public boolean isUseJNI() {

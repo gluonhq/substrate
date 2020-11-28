@@ -139,7 +139,7 @@ public final class FileDeps {
      * Return the path to the sysroot for this configuration.
      * The path is cached on the environment variable.
      * If it is not there yet, all dependencies are retrieved.
-     * @return the location of the sysroot for the arch-os for this configuration
+     * @return the location of the sysroot for the arch of this configuration
      * @throws IOException in case anything goes wrong.
      */
     public Path getSysrootPath() throws IOException {
@@ -309,8 +309,7 @@ public final class FileDeps {
 
         // sysroot
         if (Constants.ARCH_AARCH64.equals(configuration.getTargetTriplet().getArch())) {
-            Path archSysrootPath = configuration.getSysrootPath().resolve(configuration.getTargetTriplet().getArch());
-            if (!Files.exists(archSysrootPath)) {
+            if (!Files.exists(configuration.getSysrootPath())) {
                 Logger.logInfo("sysroot path not found and will be downloaded.");
                 downloadSysroot = true;
             }
