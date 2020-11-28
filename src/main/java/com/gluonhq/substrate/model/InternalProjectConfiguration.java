@@ -250,6 +250,15 @@ public class InternalProjectConfiguration {
                 : getAndroidSdkPath().resolve("ndk-bundle");
     }
 
+    /**
+     * Gets sysroot path for the current arch
+     */
+    public Path getSysrootPath() {
+        String sysrootEnv = System.getenv("SYSROOT");
+        return (sysrootEnv != null) ? Paths.get(sysrootEnv)
+                : Constants.USER_SUBSTRATE_PATH.resolve("sysroot").resolve(getTargetTriplet().getArch());
+    }
+
     public boolean isUseJNI() {
         return useJNI;
     }

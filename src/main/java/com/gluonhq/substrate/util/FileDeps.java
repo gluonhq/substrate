@@ -82,6 +82,8 @@ public final class FileDeps {
             "platforms;android-29", "build-tools;29.0.3", "platform-tools",
             "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle" };
 
+    private static final String ARCH_SYSROOT_URL = "https://download2.gluonhq.com/substrate/${arch}sysroot.zip";
+
     private final InternalProjectConfiguration configuration;
 
     public FileDeps(InternalProjectConfiguration config) {
@@ -131,6 +133,17 @@ public final class FileDeps {
      */
     public Path getAndroidNDKPath() throws IOException {
         return resolvePath(configuration.getAndroidNdkPath(),"Fatal error, could not install Android NDK ");
+    }
+
+    /**
+     * Return the path to the sysroot for this configuration.
+     * The path is cached on the environment variable.
+     * If it is not there yet, all dependencies are retrieved.
+     * @return the location of the sysroot for the arch of this configuration
+     * @throws IOException in case anything goes wrong.
+     */
+    public Path getSysrootPath() throws IOException {
+        return resolvePath(configuration.getSysrootPath(),"Fatal error, could not install sysroot zip");
     }
 
     /**
@@ -202,6 +215,7 @@ public final class FileDeps {
         boolean downloadAndroidSdk = false;
         boolean downloadAndroidNdk = false;
         boolean downloadAndroidAdditionalLibs = false;
+        boolean downloadSysroot = false;
 
         // Java Static
         Logger.logDebug("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
@@ -270,6 +284,7 @@ public final class FileDeps {
                 }
             }
         }
+
         // Android
         if (Constants.OS_ANDROID.equals(configuration.getTargetTriplet().getOs())) {
             Path androidSdk = configuration.getAndroidSdkPath();
@@ -291,6 +306,15 @@ public final class FileDeps {
                 downloadAndroidNdk = true;
             }
         }
+
+        // sysroot
+        if (Constants.ARCH_AARCH64.equals(configuration.getTargetTriplet().getArch())) {
+            if (!Files.exists(configuration.getSysrootPath())) {
+                Logger.logInfo("sysroot path not found and will be downloaded.");
+                downloadSysroot = true;
+            }
+        }
+
         try {
             if (downloadJavaStatic) {
                 downloadJavaZip(target);
@@ -310,6 +334,10 @@ public final class FileDeps {
 
             if (downloadAndroidNdk) { // And then NDK
                 fetchFromSdkManager();
+            }
+
+            if (downloadSysroot) {
+                downloadSysrootZip(configuration.getTargetTriplet().getArch());
             }
 
         } catch (IOException | InterruptedException e) {
@@ -445,5 +473,15 @@ public final class FileDeps {
         Logger.logInfo("Downloading Android toolchain. It may take several minutes depending on your bandwidth.");
         androidSdkManager(ANDROID_SDK_PACKAGES);
         Logger.logInfo("Android toolchain downloaded successfully");
+    }
+
+    private void downloadSysrootZip(String arch) throws IOException {
+        Logger.logInfo("Downloading sysroot zip...");
+        String sysrootZip = Strings.substitute(ARCH_SYSROOT_URL, Map.of("arch", arch));
+        FileOps.downloadAndUnzip(sysrootZip,
+                Constants.USER_SUBSTRATE_PATH,
+                arch+"sysroot.zip",
+                "sysroot", "");
+        Logger.logInfo("Sysroot zip downloaded successfully");
     }
 }
