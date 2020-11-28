@@ -111,7 +111,12 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     public boolean link() throws IOException, InterruptedException {
         checkCompiler();
         checkLinker();
-        return super.link();
+        boolean result = super.link();
+        if (result && crossCompile) {
+            Path appPath = paths.getAppPath().resolve(getLinkOutputName());
+            FileOps.setExecutionPermissions(appPath);
+        }
+        return result;
     }
 
     @Override

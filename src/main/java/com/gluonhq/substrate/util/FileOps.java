@@ -65,6 +65,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -79,6 +80,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
@@ -694,6 +696,21 @@ public class FileOps {
         }
         Logger.logDebug("Pathing jar created at " + jarFile);
         return jarFile.getAbsolutePath();
+    }
+
+    /**
+     * Set execution permissions to an executable file at the given path
+     *
+     * @param path to an executable file
+     * @throws IOException
+     */
+    public static void setExecutionPermissions(Path path) throws IOException {
+        Set<PosixFilePermission> perms = new HashSet<>();
+        perms.add(PosixFilePermission.OWNER_READ);
+        perms.add(PosixFilePermission.OWNER_WRITE);
+        perms.add(PosixFilePermission.OWNER_EXECUTE);
+
+        Files.setPosixFilePermissions(path, perms);
     }
 
     /**
