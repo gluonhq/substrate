@@ -690,6 +690,8 @@ public class FileOps {
     public static String createPathingJar(Path tmpPath, String classpath) throws IOException {
         Objects.requireNonNull(classpath);
 
+        Files.createDirectories(tmpPath);
+
         String manifestClasspath = generateClasspathFromTemporaryFolder(tmpPath, classpath);
         Logger.logDebug("Class-Path manifest entry for pathing jar: " + manifestClasspath);
 
