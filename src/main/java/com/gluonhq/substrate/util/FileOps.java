@@ -675,25 +675,60 @@ public class FileOps {
     }
 
     /**
-     * Shorten the Java classpath with a pathing jar
+     * Shorten the Java classpath with a pathing jar. This works by creating a temporary
+     * empty jar file where the full classpath is defined in its Class-Path entry in
+     * the manifest. All files on the classpath will be copied to the same temporary
+     * folder, while all directories will be resolved relatively against that temporary
+     * folder. The Class-Path entry will ultimately contain all classpath elements as a
+     * reference that is relative to the pathing jar.
+     *
      * @param classpath A string with the classpath of files that will be added to the
      *                 pathing jar Class-Path attribute
      * @return a String with the path to the created pathing jar
      * @throws IOException
      */
-    public static String createPathingJar(String classpath) throws IOException {
+    public static String createPathingJar(Path tmpPath, String classpath) throws IOException {
         Objects.requireNonNull(classpath);
+
+        String manifestClasspath = generateClasspathFromTemporaryFolder(tmpPath, classpath);
+        Logger.logDebug("Class-Path manifest entry for pathing jar: " + manifestClasspath);
+
         Manifest manifest = new Manifest();
         Attributes attributes = manifest.getMainAttributes();
         attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
-        attributes.put(Attributes.Name.CLASS_PATH,
-                classpath.replaceAll(File.pathSeparator, " "));
-        File jarFile = File.createTempFile("classpathJar", ".jar");
+        attributes.put(Attributes.Name.CLASS_PATH, manifestClasspath);
+
+        File jarFile = tmpPath.resolve("classpathJar.jar").toFile();
         try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFile), manifest)) {
             jos.putNextEntry(new ZipEntry("META-INF/"));
         }
         Logger.logDebug("Pathing jar created at " + jarFile);
         return jarFile.getAbsolutePath();
+    }
+
+    /**
+     * Copies all files in the classpath to the subfolder called <code>deps</code> under the provided
+     * temporary path. It then returns a space separated string containing each classpath entry as
+     * relative to the provided temporary path.
+     */
+    private static String generateClasspathFromTemporaryFolder(Path tmpPath, String classpath) {
+        Path depsPath = tmpPath.resolve("deps");
+
+        String[] classpathEntries = classpath.split(File.pathSeparator);
+
+        Stream<String> convertedDirectories = Arrays.stream(classpathEntries)
+                .map(Path::of)
+                .filter(Files::isDirectory)
+                .map(sourceDir -> tmpPath.toAbsolutePath().relativize(sourceDir).toString());
+
+        Stream<String> convertedFiles = Arrays.stream(classpathEntries)
+                .map(Path::of)
+                .filter(Files::isRegularFile)
+                .map(sourceFile -> copyFile(sourceFile, depsPath.resolve(sourceFile.getFileName())))
+                .map(destFile -> "deps/" + destFile.getFileName());
+
+        return Stream.concat(convertedDirectories, convertedFiles)
+                .collect(Collectors.joining(" "));
     }
 
     /**
