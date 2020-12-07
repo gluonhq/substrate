@@ -151,7 +151,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileRunner.addArg(getJniPlatformArg());
         compileRunner.addArg(Constants.NATIVE_IMAGE_ARG_CLASSPATH);
-        compileRunner.addArg(FileOps.createPathingJar(processedClasspath));
+        compileRunner.addArg(FileOps.createPathingJar(paths.getTmpPath(), processedClasspath));
         compileRunner.addArgs(projectConfiguration.getCompilerArgs());
         compileRunner.addArg(projectConfiguration.getMainClassName());
 

@@ -80,7 +80,7 @@ public class ClassPath {
      */
     public String mapToString(Function<String, String> mapper) {
         Objects.requireNonNull(mapper);
-        return asStream().map(mapper).collect(Collectors.joining(File.pathSeparator));
+        return asStream().map(mapper).distinct().collect(Collectors.joining(File.pathSeparator));
     }
 
     /**
