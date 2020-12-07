@@ -122,6 +122,7 @@ public class Constants {
     public static final String LOG_PATH = "log";
     public static final String APK_PATH = "apk";
     public static final String NATIVE_CODE_PATH = "native";
+    public static final String PATHING_JAR_DEPS_PATH = "deps";
 
 
 

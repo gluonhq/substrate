@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate.util;
 
+import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.SubstrateDispatcher;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -709,12 +710,13 @@ public class FileOps {
     }
 
     /**
-     * Copies all files in the classpath to the subfolder called <code>deps</code> under the provided
-     * temporary path. It then returns a space separated string containing each classpath entry as
-     * relative to the provided temporary path.
+     * Copies all files in the classpath to a subfolder under the provided temporary path. The
+     * name of the subfolder is defined by {@link Constants#PATHING_JAR_DEPS_PATH}. It then
+     * returns a space separated string containing each classpath entry as relative to the
+     * provided temporary path.
      */
     private static String generateClasspathFromTemporaryFolder(Path tmpPath, String classpath) {
-        Path depsPath = tmpPath.resolve("deps");
+        Path depsPath = tmpPath.resolve(Constants.PATHING_JAR_DEPS_PATH);
 
         String[] classpathEntries = classpath.split(File.pathSeparator);
 
@@ -727,7 +729,7 @@ public class FileOps {
                 .map(Path::of)
                 .filter(Files::isRegularFile)
                 .map(sourceFile -> copyFile(sourceFile, depsPath.resolve(sourceFile.getFileName())))
-                .map(destFile -> "deps/" + destFile.getFileName());
+                .map(destFile -> Constants.PATHING_JAR_DEPS_PATH + File.separator + destFile.getFileName());
 
         return Stream.concat(convertedDirectories, convertedFiles)
                 .collect(Collectors.joining(" "));
