@@ -64,13 +64,6 @@
   }
 ,
   {
-    "name" : "java.lang.Object",
-    "methods" : [
-      {"name":"<init>","parameterTypes":[] }
-    ]
-  }
-,
-  {
     "name" : "java.lang.Runnable",
     "methods" : [
       {"name":"run","parameterTypes":[] }

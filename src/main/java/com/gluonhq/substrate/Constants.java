@@ -108,7 +108,7 @@ public class Constants {
     /**
      * Supported GraalVM versions
      */
-    public static final String GRAALVM_MIN_VERSION = "20.2";
+    public static final String GRAALVM_MIN_VERSION = "21.0";
 
     /**
      * Paths
