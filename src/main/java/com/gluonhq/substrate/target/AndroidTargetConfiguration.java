@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.config.AndroidResolver;
-import com.gluonhq.substrate.config.ConfigResolver;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
@@ -109,7 +108,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         this.clang = Files.exists(clangguess) ? clangguess : null;
         Path clangplusguess = Paths.get(hostPlatformFolder, "bin", "clang++");
         this.clangplus = Files.exists(clangplusguess) ? clangplusguess : null;
-        
+
         projectConfiguration.setBackend(Constants.BACKEND_LIR);
 
         Path objdumpguess = Paths.get(hostPlatformFolder, ANDROID_TRIPLET, "bin", "objdump");
