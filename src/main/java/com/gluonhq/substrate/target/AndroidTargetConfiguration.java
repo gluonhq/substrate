@@ -77,6 +77,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final String sdk;
     private final Path ldlld;
     private final Path clang;
+    private final Path clangplus;
     private final Path objdump;
     private final String hostPlatformFolder;
 
@@ -87,7 +88,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final List<String> linkFlags = Arrays.asList("-target",
             ANDROID_TRIPLET + ANDROID_MIN_SDK_VERSION, "-fPIC", "-fuse-ld=gold",
             "-Wl,--rosegment,--gc-sections,-z,noexecstack", "-shared",
-            "-landroid", "-llog", "-lffi", "-llibchelper");
+            "-landroid", "-llog", "-lffi", "-llibchelper", "-static-libstdc++");
     private final List<String> javafxLinkFlags = new ArrayList<>(Arrays.asList(WL_WHOLE_ARCHIVE,
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", WL_NO_WHOLE_ARCHIVE,
             "-lGLESv2", "-lEGL", "-lfreetype"));
@@ -99,16 +100,19 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         this.sdk = fileDeps.getAndroidSDKPath().toString();
         this.ndk = fileDeps.getAndroidNDKPath().toString();
-        this.hostPlatformFolder = configuration.getHostTriplet().getOsArch();
+        this.hostPlatformFolder = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", configuration.getHostTriplet().getOsArch()).toString();
 
-        Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "ld.lld");
+        Path ldguess = Paths.get(hostPlatformFolder, "bin", "ld.lld");
         this.ldlld = Files.exists(ldguess) ? ldguess : null;
 
-        Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "clang");
+        Path clangguess = Paths.get(hostPlatformFolder, "bin", "clang");
         this.clang = Files.exists(clangguess) ? clangguess : null;
+        Path clangplusguess = Paths.get(hostPlatformFolder, "bin", "clang++");
+        this.clangplus = Files.exists(clangplusguess) ? clangplusguess : null;
+        
         projectConfiguration.setBackend(Constants.BACKEND_LIR);
 
-        Path objdumpguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, ANDROID_TRIPLET, "bin", "objdump");
+        Path objdumpguess = Paths.get(hostPlatformFolder, ANDROID_TRIPLET, "bin", "objdump");
         this.objdump = Files.exists(objdumpguess) ? objdumpguess : null;
     }
 
@@ -116,9 +120,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean compile() throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no ld.lld in android_ndk, we should not start compiling
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (ldlld == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/ld.lld");
-        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
-        if (objdump == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/"+ ANDROID_TRIPLET +"/bin/objdump");
+        if (ldlld == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/ld.lld");
+        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang");
+        if (objdump == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/"+ ANDROID_TRIPLET +"/bin/objdump");
 
         return super.compile();
     }
@@ -127,7 +131,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean link() throws IOException, InterruptedException {
         // we override link as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
+        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang");
+        if (clangplus == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang++");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
 
         return super.link();
@@ -245,7 +250,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     String getLinker() {
-        return clang.toAbsolutePath().toString();
+        return clangplus.toAbsolutePath().toString();
     }
 
     @Override
