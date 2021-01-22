@@ -76,7 +76,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final String sdk;
     private final Path ldlld;
     private final Path clang;
-    private final Path clangplus;
+    private final Path clangpp;
     private final Path objdump;
     private final String hostPlatformFolder;
 
@@ -106,8 +106,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         Path clangguess = Paths.get(hostPlatformFolder, "bin", "clang");
         this.clang = Files.exists(clangguess) ? clangguess : null;
-        Path clangplusguess = Paths.get(hostPlatformFolder, "bin", "clang++");
-        this.clangplus = Files.exists(clangplusguess) ? clangplusguess : null;
+        Path clangppguess = Paths.get(hostPlatformFolder, "bin", "clang++");
+        this.clangpp = Files.exists(clangppguess) ? clangppguess : null;
 
         projectConfiguration.setBackend(Constants.BACKEND_LIR);
 
@@ -131,7 +131,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         // we override link as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
         if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang");
-        if (clangplus == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang++");
+        if (clangpp == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang++");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
 
         return super.link();
@@ -249,7 +249,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     String getLinker() {
-        return clangplus.toAbsolutePath().toString();
+        return clangpp.toAbsolutePath().toString();
     }
 
     @Override
