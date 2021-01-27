@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.extensions.TargetConfiguration;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.config.ConfigResolver;
 import com.gluonhq.substrate.model.ClassPath;
@@ -40,6 +41,7 @@ import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,7 +80,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private static final List<String> baseNativeImageArguments = Arrays.asList(
             "-Djdk.internal.lambda.eagerlyInitialize=false",
             "--no-server",
-            "-H:+ExitAfterRelocatableImageWrite",
             "-H:+SharedLibrary",
             "-H:+AddAllCharsets",
             "-H:+ReportExceptionStackTraces",
@@ -128,6 +129,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         ProcessRunner compileRunner = new ProcessRunner(getNativeImagePath());
 
         baseNativeImageArguments.forEach(compileRunner::addArg);
+        if (!projectConfiguration.isSharedLibrary() ||
+                !projectConfiguration.getTargetTriplet().equals(Triplet.fromCurrentOS())) {
+            compileRunner.addArg("-H:+ExitAfterRelocatableImageWrite");
+        }
 
         compileRunner.addArgs(getEnabledFeatures());
 
@@ -284,6 +289,23 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return result == 0;
     }
 
+    /**
+     * Creates a shared library
+     */
+    @Override
+    public void sharedLib() {
+    }
+
+    @Override
+    public Path getSharedLibPath() {
+        return null;
+    }
+
+    @Override
+    public List<File> getJars() throws IOException, InterruptedException {
+        return new ClassPath(projectConfiguration.getClasspath()).getJars(true);
+    }
+
     // --- private methods
 
     protected boolean compileAdditionalSources()
@@ -292,6 +314,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         String appName = projectConfiguration.getAppName();
         Path workDir = paths.getGvmPath().resolve(appName);
         Files.createDirectories(workDir);
+
+        if (getAdditionalSourceFiles().isEmpty()) {
+            return true;
+        }
 
         ProcessRunner processRunner = new ProcessRunner(getCompiler());
         processRunner.addArg("-c");

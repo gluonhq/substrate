@@ -91,6 +91,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
                 "-arch", getTargetArch(),
                 "-mios-version-min=11.0",
                 "-isysroot", getSysroot()));
+        if (projectConfiguration.isSharedLibrary()) {
+            linkFlags.addAll(Arrays.asList(
+                "-shared",
+                "-undefined",
+                "dynamic_lookup"));
+        }
         if (useJavaFX) {
             String javafxSDK = projectConfiguration.getJavafxStaticLibsPath().toString();
             List<String> libs = new ArrayList<>(javafxLibs);
@@ -140,6 +146,9 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
+        if (projectConfiguration.isSharedLibrary()) {
+            return Collections.emptyList();
+        }
         return iosAdditionalSourceFiles;
     }
 
@@ -148,6 +157,13 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         return FileOps.findFile( paths.getGvmPath(), "llvm.o").map( objectFile ->
            Collections.singletonList(objectFile.toAbsolutePath().toString())
         ).orElseThrow();
+    }
+
+    List<String> getTargetSpecificLinkOutputFlags() {
+        if (projectConfiguration.isSharedLibrary()) {
+            return Arrays.asList("-o", paths.getAppPath().resolve(getLinkOutputName() + ".dylib").toString());
+        }
+        return Arrays.asList("-o", getAppPath(getLinkOutputName()));
     }
 
     @Override
@@ -159,7 +175,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     public boolean link() throws IOException, InterruptedException {
         boolean result = super.link();
 
-        if (result) {
+        if (result && !projectConfiguration.isSharedLibrary()) {
             createInfoPlist(paths);
 
             if (!isSimulator() && !projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
@@ -228,6 +244,19 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
         runner = new ProcessRunner("zip", "--symlinks", "--recurse-paths", target, ".");
         return runner.runProcess("zip", tmpAppWrapper.toFile()) == 0;
+    }
+
+    /**
+     * Creates a shared library
+     */
+    @Override
+    public void sharedLib() {
+        projectConfiguration.setSharedLibrary(true);
+    }
+
+    @Override
+    public Path getSharedLibPath() {
+        return paths.getAppPath().resolve(getLinkOutputName() + ".dylib");
     }
 
     @Override

@@ -65,6 +65,7 @@ public class InternalProjectConfiguration {
     private boolean useJavaFX = false;
     private boolean usePrismSW = false;
     private boolean enableCheckHash = true;
+    private boolean sharedLibrary = false;
 
     private String backend;
     private List<String> initBuildTimeList;
@@ -295,6 +296,14 @@ public class InternalProjectConfiguration {
         return publicConfig.isUsePrecompiledCode();
     }
 
+    public boolean isSharedLibrary() {
+        return sharedLibrary;
+    }
+
+    public void setSharedLibrary(boolean sharedLibrary) {
+        this.sharedLibrary = sharedLibrary;
+    }
+
     /**
      * Enables hash checking to verify integrity of Graal and Java/JavaFX files
      * @param enableCheckHash boolean to enable hash checking
@@ -417,6 +426,10 @@ public class InternalProjectConfiguration {
 
     public ReleaseConfiguration getReleaseConfiguration() {
         return Optional.ofNullable(publicConfig.getReleaseConfiguration()).orElse(new ReleaseConfiguration());
+    }
+
+    public ProjectConfiguration getPublicConfig() {
+        return publicConfig;
     }
 
     /**

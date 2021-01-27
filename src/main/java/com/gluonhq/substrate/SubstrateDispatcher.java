@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate;
 
+import com.gluonhq.extensions.ExtensionsService;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
@@ -34,7 +35,7 @@ import com.gluonhq.substrate.target.AndroidTargetConfiguration;
 import com.gluonhq.substrate.target.MacOSTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
-import com.gluonhq.substrate.target.TargetConfiguration;
+import com.gluonhq.extensions.TargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -54,6 +55,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 
 public class SubstrateDispatcher {
 
@@ -489,5 +491,26 @@ public class SubstrateDispatcher {
         Logger.logInfo(logTitle("RUN TASK"));
         targetConfiguration.runUntilEnd();
         printMessage("run");
+    }
+
+    /**
+     * This method creates a shared library.
+     * @throws IOException
+     * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
+     */
+    public boolean nativeSharedLibrary() throws Exception {
+        Optional<ExtensionsService> service = ServiceLoader.load(ExtensionsService.class).findFirst();
+        if (service.isEmpty()) {
+            Logger.logInfo("No ExtensionService found");
+            return false;
+        }
+
+        Logger.logInfo(logTitle("SHARED LIBRARY TASK"));
+        boolean result = service.get().createSharedLibrary(targetConfiguration);
+        if (!result) {
+            Logger.logSevere("Shared Library process failed.");
+        }
+        printMessage("shared library");
+        return result;
     }
 }
