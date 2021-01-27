@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,16 +42,21 @@ import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -499,7 +504,17 @@ public class SubstrateDispatcher {
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public boolean nativeSharedLibrary() throws Exception {
-        Optional<ExtensionsService> service = ServiceLoader.load(ExtensionsService.class).findFirst();
+        ClassLoader loader = null;
+        try {
+            List<URL> urls = new ArrayList<>();
+            for (File jar : targetConfiguration.getJars()) {
+                urls.add(jar.toURI().toURL());
+            }
+            loader = URLClassLoader.newInstance(urls.toArray(new URL[] {}), Thread.currentThread().getContextClassLoader());
+        } catch (MalformedURLException ex) {
+            ex.printStackTrace();
+        }
+        Optional<ExtensionsService> service = ServiceLoader.load(ExtensionsService.class, loader).findFirst();
         if (service.isEmpty()) {
             Logger.logInfo("No ExtensionService found");
             return false;
