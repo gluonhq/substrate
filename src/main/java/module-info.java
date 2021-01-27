@@ -3,8 +3,9 @@ module com.gluonhq.substrate {
     requires dd.plist;
     requires java.xml;
     requires bcpkix.jdk15on;
-    requires com.gluonhq.extensions;
 
-    uses com.gluonhq.extensions.ExtensionsService;
+    uses com.gluonhq.substrate.extensions.ExtensionsService;
+
+    exports com.gluonhq.substrate.extensions;
     exports com.gluonhq.substrate.util;
 }

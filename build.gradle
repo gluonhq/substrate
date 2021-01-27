@@ -29,7 +29,6 @@ test {
 dependencies {
     implementation 'com.googlecode.plist:dd-plist:1.22'
     implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
-    implementation 'com.gluonhq.extensions:extensions-api:1.0.0-SNAPSHOT'
 
     testImplementation gradleTestKit()
     testImplementation "org.junit.jupiter:junit-jupiter-api:$jUnitVersion"

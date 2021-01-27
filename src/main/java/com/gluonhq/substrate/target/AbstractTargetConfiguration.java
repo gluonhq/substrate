@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate.target;
 
-import com.gluonhq.extensions.TargetConfiguration;
+import com.gluonhq.substrate.extensions.TargetConfiguration;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.config.ConfigResolver;
 import com.gluonhq.substrate.model.ClassPath;

@@ -27,7 +27,8 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.extensions.ExtensionsService;
+import com.gluonhq.substrate.extensions.ExtensionsService;
+import com.gluonhq.substrate.extensions.TargetConfiguration;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
@@ -35,7 +36,6 @@ import com.gluonhq.substrate.target.AndroidTargetConfiguration;
 import com.gluonhq.substrate.target.MacOSTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
-import com.gluonhq.extensions.TargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
