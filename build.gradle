@@ -4,7 +4,8 @@ plugins {
     id 'java'
     id 'signing'
     id 'io.codearte.nexus-staging' version '0.21.1'
-    id 'de.marcphilipp.nexus-publish' version '0.4.0'
+//    id 'de.marcphilipp.nexus-publish' version '0.4.0'
+    id 'maven-publish'
 }
 
 group = "com.gluonhq"
@@ -65,9 +66,19 @@ task javadocJar(type: Jar) {
 }
 
 publishing {
+    repositories {
+        maven {
+            name 'gluonPrivateReleases'
+            url = "https://nexus.gluonhq.com/nexus/content/repositories/gluon-private-releases/"
+            credentials {
+                username = project.hasProperty('gluonNexusUsername') ? project.property('gluonNexusUsername') : ''
+                password = project.hasProperty('gluonNexusPassword') ? project.property('gluonNexusPassword') : ''
+            }
+        }
+    }
     publications {
         maven(MavenPublication) {
-            artifactId = 'substrate'
+            artifactId = 'substrate-sharedlib'
             from components.java
             artifact sourcesJar
             artifact javadocJar
@@ -97,23 +108,23 @@ publishing {
     }
 }
 
-signing {
-    required = { gradle.taskGraph.hasTask(publish) && !version.endsWith("SNAPSHOT") }
-    sign publishing.publications.maven
-}
+//signing {
+//    required = { gradle.taskGraph.hasTask(publish) && !version.endsWith("SNAPSHOT") }
+//    sign publishing.publications.maven
+//}
 
-nexusPublishing {
-    repositories {
-        sonatype()
-    }
-    // credentials are shared from staging plugin
-    clientTimeout = Duration.ofMinutes(5)
-    connectTimeout = Duration.ofMinutes(5)
-}
+//nexusPublishing {
+//    repositories {
+//        sonatype()
+//    }
+//    // credentials are shared from staging plugin
+//    clientTimeout = Duration.ofMinutes(5)
+//    connectTimeout = Duration.ofMinutes(5)
+//}
 
-nexusStaging {
-    username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
-    password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
-    numberOfRetries = 30
-    delayBetweenRetriesInMillis = 5000
-}
+//nexusStaging {
+//    username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
+//    password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
+//    numberOfRetries = 30
+//    delayBetweenRetriesInMillis = 5000
+//}
