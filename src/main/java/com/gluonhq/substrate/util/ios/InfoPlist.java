@@ -86,6 +86,7 @@ public class InfoPlist {
     private final Path tmpPath;
 
     private Path partialPListDir;
+    private Path tmpStoryboardsDir;
     private String bundleId;
     private String minOSVersion = "11.0";
 
@@ -141,12 +142,19 @@ public class InfoPlist {
                     Logger.logFatal(e, "Error copying resource " + a + ": " + e.getMessage());
                 }
             });
+            FileOps.copyResource("/native/ios/assets/Base.lproj/LaunchScreen.storyboard",
+                    iosAssets.resolve("Base.lproj").resolve("LaunchScreen.storyboard"));
+            FileOps.copyResource("/native/ios/assets/Base.lproj/MainScreen.storyboard",
+                    iosAssets.resolve("Base.lproj").resolve("MainScreen.storyboard"));
+            copyVerifyBase(iosAssets.resolve("Base.lproj"));
+
             FileOps.copyResource("/native/ios/assets/Assets.xcassets/Contents.json",
                     iosAssets.resolve("Assets.xcassets").resolve("Contents.json"));
             copyVerifyAssets(iosAssets);
             Logger.logInfo("Default iOS resources generated in " + iosPath.toString() + ".\n" +
                     "Consider copying them to " + rootPath.toString() + " before performing any modification");
         } else {
+            copyVerifyBase(userAssets.resolve("Base.lproj"));
             copyVerifyAssets(userAssets);
             copyOtherAssets(userAssets);
         }
@@ -401,8 +409,9 @@ public class InfoPlist {
 
     /**
      * Scans the src/ios/assets folder for possible folders other than
-     * Assets.cassets (which is compressed with actool),
-     * and copy them directly to the app folder
+     * Assets.cassets (which is compressed with actool) or Base.lproj
+     * (which is compiled with ibtool) and copy them directly to the
+     * app folder
      * @param resourcePath the path for ios assets
      * @throws IOException
      */
@@ -412,7 +421,8 @@ public class InfoPlist {
         }
         List<Path> otherAssets = Files.list(resourcePath)
                 .filter(r -> Files.isDirectory(r))
-                .filter(r -> !r.toString().endsWith("Assets.xcassets"))
+                .filter(r -> !r.toString().endsWith("Assets.xcassets") &&
+                        !r.toString().endsWith("Base.lproj"))
                 .collect(Collectors.toList());
         for (Path assetPath : otherAssets) {
             Path targetPath = appPath.resolve(resourcePath.relativize(assetPath));
@@ -424,4 +434,109 @@ public class InfoPlist {
         }
     }
 
+    private void copyVerifyBase(Path resourcePath) throws IOException {
+        if (resourcePath == null || !Files.exists(resourcePath)) {
+            throw new RuntimeException("Error: invalid path " + resourcePath);
+        }
+        if (minOSVersion == null) {
+            minOSVersion = "11.0";
+        }
+        tmpStoryboardsDir = tmpPath.resolve("storyboards");
+        if (Files.exists(tmpStoryboardsDir)) {
+            try {
+                Files.walk(tmpStoryboardsDir).forEach(f -> f.toFile().delete());
+            } catch (IOException ex) {
+                Logger.logSevere("Error removing files from " + tmpStoryboardsDir.toString() + ": " + ex);
+            }
+        }
+        try {
+            Files.createDirectories(tmpStoryboardsDir);
+        } catch (IOException ex) {
+            Logger.logSevere("Error creating " + tmpStoryboardsDir.toString() + ": " + ex);
+        }
+
+        Files.walk(resourcePath, 1).forEach(p -> {
+            if (!Files.isDirectory(p) && p.toString().endsWith(".storyboard")) {
+                try {
+                    Logger.logDebug("Calling verifyStoryBoard for " + p.toString());
+                    verifyStoryBoard(p, sdk.name().toLowerCase(Locale.ROOT),
+                            minOSVersion,
+                            Arrays.asList("iphone", "ipad"), "Base.lproj");
+                } catch (Exception ex) {
+                    Logger.logFatal(ex, "Failed creating directory " + p);
+                }
+            }
+        });
+        try {
+            linkStoryBoards(resourcePath, sdk.name().toLowerCase(Locale.ROOT),
+                    minOSVersion,
+                    Arrays.asList("iphone", "ipad"), "");
+        } catch (Exception ex) {
+            Logger.logFatal(ex, "Failed linking storyboards " + ex.getMessage());
+        }
+    }
+
+    private void verifyStoryBoard(Path resourcePath, String platform, String minOSVersion, List<String> devices, String output) throws Exception {
+        List<String> commandsList = new ArrayList<>();
+        commandsList.add("--output-format");
+        commandsList.add("human-readable-text");
+
+        File inputDir = resourcePath.toFile();
+        File outputDir = new File(tmpStoryboardsDir.toFile(), output);
+        Files.createDirectories(outputDir.toPath());
+
+        File partialInfoPlist = File.createTempFile(resourcePath.getFileName().toString() + "_", ".plist", tmpStoryboardsDir.toFile());
+
+        commandsList.add("--output-partial-info-plist");
+        commandsList.add(partialInfoPlist.toString());
+
+        String ibtoolForSdk = XcodeUtils.getCommandForSdk("ibtool", platform);
+        commandsList.add("--minimum-deployment-target");
+        commandsList.add(minOSVersion);
+        devices.forEach(device -> {
+            commandsList.add("--target-device");
+            commandsList.add(device);
+        });
+
+        ProcessRunner args = new ProcessRunner(ibtoolForSdk);
+        args.addArgs(commandsList);
+        args.addArgs("--compilation-directory", outputDir.toString(), inputDir.toString());
+        int result = args.runProcess("ibtool");
+        if (result != 0) {
+            throw new RuntimeException("Error verifyStoryBoard");
+        }
+    }
+
+    private void linkStoryBoards(Path resourcePath, String platform, String minOSVersion, List<String> devices, String output) throws Exception {
+        List<String> commandsList = new ArrayList<>();
+        commandsList.add("--output-format");
+        commandsList.add("human-readable-text");
+
+        File outputDir = new File(appPath.toFile(), output);
+
+        String ibtoolForSdk = XcodeUtils.getCommandForSdk("ibtool", platform);
+        commandsList.add("--minimum-deployment-target");
+        commandsList.add(minOSVersion);
+        devices.forEach(device -> {
+            commandsList.add("--target-device");
+            commandsList.add(device);
+        });
+
+        ProcessRunner args = new ProcessRunner(ibtoolForSdk);
+        args.addArgs(commandsList);
+        args.addArgs("--link", outputDir.toString());
+        try {
+            Files.walk(tmpStoryboardsDir.resolve("Base.lproj"), 1).forEach(p -> {
+                if (Files.isDirectory(p) && p.toString().endsWith(".storyboardc")) {
+                    args.addArg(p.toString());
+                }
+            });
+        } catch (IOException ex) {
+            Logger.logSevere("Error linking files from " + appPath.resolve("Base.lproj").toString() + ": " + ex);
+        }
+        int result = args.runProcess("ibtool");
+        if (result != 0) {
+            throw new RuntimeException("Error linkStoryBoards");
+        }
+    }
 }
