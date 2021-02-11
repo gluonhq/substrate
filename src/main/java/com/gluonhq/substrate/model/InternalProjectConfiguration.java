@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -482,12 +482,12 @@ public class InternalProjectConfiguration {
         Path llvmPath = graalPath.resolve("lib").resolve("llvm");
         if (!Files.exists(llvmPath) || !Files.exists(llvmPath.resolve("bin"))
                 || !Files.exists(llvmPath.resolve("bin").resolve("llvm-config"))) {
-            ProcessRunner runner = new ProcessRunner(graalPath.resolve("bin").resolve("gu").toString(), "install", "llvm-toolchain");
+            ProcessRunner runner = new ProcessRunner(graalPath.resolve("bin").resolve("gu").toString(), "--jvm", "install", "llvm-toolchain");
             int result = runner.runProcess("install llvm-toolchain");
             if (result != 0) {
                 throw new IOException("Error installing llvm-toolchain at: " + graalPath + "\n" +
                         "Please, use gu to install llvm running the following command: \n" +
-                        "$GRAALVM_HOME/bin/gu install llvm-toolchain");
+                        "$GRAALVM_HOME/bin/gu --jvm install llvm-toolchain");
             }
         }
     }
@@ -526,13 +526,13 @@ public class InternalProjectConfiguration {
         Path niPath = isWindows ? binPath.resolve("native-image.cmd") : binPath.resolve("native-image");
         if (!Files.exists(niPath)) {
             Path guPath = isWindows ? binPath.resolve("gu.cmd") : binPath.resolve("gu");
-            ProcessRunner runner = new ProcessRunner(guPath.toString(), "install", "native-image");
+            ProcessRunner runner = new ProcessRunner(guPath.toString(), "--jvm", "install", "native-image");
             int result = runner.runProcess("install native-image");
             if (result != 0) {
                 throw new IOException("Error installing native-image at: " + graalPath + "\n" +
                         "Please, use gu to install native-image running the following command: \n" +
                         (isWindows ? "%GRAALVM_HOME%\\bin\\gu.cmd install native-image" :
-                                "$GRAALVM_HOME/bin/gu install native-image"));
+                                "$GRAALVM_HOME/bin/gu --jvm install native-image"));
             }
         }
         return binPath;
