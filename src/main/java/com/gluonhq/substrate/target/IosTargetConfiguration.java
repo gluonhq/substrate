@@ -51,7 +51,8 @@ import java.util.stream.Collectors;
 
 public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
-    private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
+    private static final List<String> iosAdditionalSourceFiles = Arrays.asList(
+            "AppDelegate.m", "JvmFuncsFallbacks.c");
 
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-llibchelper", "-lffi", "-ldarwin");
