@@ -114,5 +114,5 @@ nexusStaging {
     username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
     password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
     numberOfRetries = 30
-    delayBetweenRetriesInMillis = 5000
+    delayBetweenRetriesInMillis = 10000
 }
