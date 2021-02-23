@@ -134,7 +134,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         Path graalClibsPath = getCLibPath();
         try {
             javaStaticLibPath = getStaticJDKLibPaths().get(0);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new RuntimeException("Fatal error, we have no static Java libraries, so we can't link with them.");
         }
         for (String lib : staticJavaLibs) {
