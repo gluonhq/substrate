@@ -58,7 +58,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
 
     private static final List<String> staticJavaLibs = Arrays.asList(
-            "java", "nio", "zip", "net", "prefs", "jvm", "j2pkcs11", "sunec", "extnet", "fdlibm", "libchelper"
+            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet", "fdlibm"
+    );
+
+    private static final List<String> staticJvmLibs = Arrays.asList(
+           "jvm", "libchelper"
     );
 
     private static final List<String> linuxfxlibs = List.of(
@@ -123,16 +127,35 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
+    List<String> getTargetSpecificJavaLinkLibraries(){
         List<String> targetLibraries = new ArrayList<>();
 
-        targetLibraries.add("-Wl,-Bstatic");
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
+        Path javaStaticLibPath = null;
+        Path graalClibsPath = getCLibPath();
+        try {
+            javaStaticLibPath = getStaticJDKLibPaths().get(0);
+        } catch (IOException ex) {
+            throw new RuntimeException("Fatal error, we have no static Java libraries, so we can't link with them.");
+        }
+        for (String lib : staticJavaLibs) {
+            targetLibraries.add(javaStaticLibPath.resolve("lib"+lib+".a").toString());
+        }
+        for (String lib : staticJvmLibs) {
+            targetLibraries.add(graalClibsPath.resolve("lib"+lib+".a").toString());
+        }
 
-        targetLibraries.add("-Wl,-Bdynamic");
         targetLibraries.addAll(asListOfLibraryLinkFlags(linuxLibs));
 
         return targetLibraries;
+    }
+
+    @Override
+    protected List<Path> getLinkerLibraryPaths() throws IOException {
+        List<Path> linkerLibraryPaths = new ArrayList<>();
+        if (projectConfiguration.isUseJavaFX()) {
+            linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());
+        }
+        return linkerLibraryPaths;
     }
 
     @Override

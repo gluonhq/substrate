@@ -80,8 +80,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
-        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
+    List<String> getTargetSpecificJavaLinkLibraries() {
+        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificJavaLinkLibraries());
         defaultLinkFlags.add("-lstdc++");
         return defaultLinkFlags;
     }
