@@ -203,7 +203,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             .map(sourceFile -> gvmAppPath.resolve(sourceFile).toString())
             .collect(Collectors.toList()));
 
-        linkRunner.addArgs(getTargetSpecificLinkLibraries());
+        linkRunner.addArgs(getTargetSpecificJavaLinkLibraries());
         linkRunner.addArgs(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(),
                 projectConfiguration.isUsePrismSW()));
 
@@ -406,11 +406,16 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     /**
      * Creates a list of Paths that will be added to the library search path for the linker.
+     * Targets are allowed to override this, e.g. in case they don't want the static JDK
+     * directory on the library path (see https://github.com/gluonhq/substrate/issues/879)
+     *
+     * Note: we should probably invert this logic: the static library path should not be
+     * used as linkLibraryPath unless explicitly asked by the target.
      *
      * @return a list of Paths to add to the library search path
      * @throws IOException
      */
-    private List<Path> getLinkerLibraryPaths() throws IOException {
+    protected List<Path> getLinkerLibraryPaths() throws IOException {
         List<Path> linkerLibraryPaths = new ArrayList<>();
         if (projectConfiguration.isUseJavaFX()) {
             linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());
@@ -808,7 +813,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return paths.getAppPath().resolve(appName).toString();
     }
 
-    List<String> getTargetSpecificLinkLibraries() {
+    /**
+     * Return the arguments that need to be passed to the linker for including
+     * the Java libraries in the final image.
+     * Implementations can override this for providing the required syntax.
+     *
+     * TODO: the list of java libraries should be final (e.g. java, nio, net...) 
+     * and separated from the linker options (e.g. -l, -Bstatic,...)
+     *
+     * @return a List of arguments that will be understood by the host-specific
+     * linker when creating images for the specific target.
+     */
+    List<String> getTargetSpecificJavaLinkLibraries() {
         return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-lprefs", "-ljvm", "-lfdlibm", "-lz", "-ldl",
                 "-lj2pkcs11", "-lsunec", "-ljaas", "-lextnet");
     }

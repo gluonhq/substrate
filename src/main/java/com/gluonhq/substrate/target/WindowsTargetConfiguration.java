@@ -135,7 +135,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
+    List<String> getTargetSpecificJavaLinkLibraries() {
         List<String> targetLibraries = new ArrayList<>();
 
         targetLibraries.addAll(asListOfLibraryLinkFlags(javaWindowsLibs));
