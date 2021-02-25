@@ -29,7 +29,7 @@ jobs:
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
           curl -i -u "gluonteam:$PAT" https://api.github.com/repos/graalvm/graalvm-ce-builds/releases > releases.json
           export GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
-          export GRAALVM_GITHUB_LINUX_AMD64_NAME="$(cat releases.json | grep name | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(graalvm.*\)".*/\1/g')"
+          export GRAALVM_GITHUB_LINUX_AMD64_NAME=$(cat releases.json | grep name | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(graalvm.*\)".*/\1/g')
           wget ${GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL}
           tar -xzvf ${GRAALVM_GITHUB_LINUX_AMD64_NAME} -C $HOME/graalvm && cd $GITHUB_WORKSPACE
           export GRAALVM_LINUX_DIR_NAME=$(tar -tzf ${GRAALVM_GITHUB_LINUX_AMD64_NAME} | head -1 | cut -f1 -d"/")
@@ -41,8 +41,8 @@ jobs:
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
           curl -i -u "gluonteam:$PAT" https://api.github.com/repos/graalvm/graalvm-ce-builds/releases > releases.json
-          export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL="$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')"
-          export GRAALVM_GITHUB_DARWIN_AMD64_NAME="$(cat releases.json | grep name | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(graalvm.*\)".*/\1/g')"
+          export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
+          export GRAALVM_GITHUB_DARWIN_AMD64_NAME=$(cat releases.json | grep name | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(graalvm.*\)".*/\1/g')
           wget ${GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL}
           tar -xzvf ${GRAALVM_GITHUB_DARWIN_AMD64_NAME} -C $HOME/graalvm && cd $GITHUB_WORKSPACE
           export GRAALVM_DARWIN_DIR_NAME=$(tar -tzf ${GRAALVM_GITHUB_DARWIN_AMD64_NAME} | head -1 | cut -f1 -d"/")
