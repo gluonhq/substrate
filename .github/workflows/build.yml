@@ -31,7 +31,7 @@ jobs:
           export GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
           export GRAALVM_GITHUB_LINUX_AMD64_NAME=$(cat releases.json | grep name | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(graalvm.*\)".*/\1/g')
           wget ${GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL}
-          export GRAALVM_LINUX_DIR_NAME=$(tar -tzf ${GRAALVM_GITHUB_LINUX_AMD64_NAME} | head -1 | cut -f1 -d"/")
+          echo GRAALVM_LINUX_DIR_NAME=$(tar -tzf ${GRAALVM_GITHUB_LINUX_AMD64_NAME} | head -1 | cut -f1 -d"/") >> $GITHUB_ENV
           tar -xzvf ${GRAALVM_GITHUB_LINUX_AMD64_NAME} -C $HOME/graalvm && cd $GITHUB_WORKSPACE
         env:
           PAT: ${{ secrets.GLUONTEAM_PAT }}
@@ -44,7 +44,7 @@ jobs:
           export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
           export GRAALVM_GITHUB_DARWIN_AMD64_NAME=$(cat releases.json | grep name | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(graalvm.*\)".*/\1/g')
           wget ${GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL}
-          export GRAALVM_DARWIN_DIR_NAME=$(tar -tzf ${GRAALVM_GITHUB_DARWIN_AMD64_NAME} | head -1 | cut -f1 -d"/")
+          echo GRAALVM_DARWIN_DIR_NAME=$(tar -tzf ${GRAALVM_GITHUB_DARWIN_AMD64_NAME} | head -1 | cut -f1 -d"/") >> $GITHUB_ENV
           tar -xzvf ${GRAALVM_GITHUB_DARWIN_AMD64_NAME} -C $HOME/graalvm && cd $GITHUB_WORKSPACE
         env:
           PAT: ${{ secrets.GLUONTEAM_PAT }}
@@ -88,7 +88,7 @@ jobs:
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
         run: |
-          export GRAALVM_HOME=$HOME/graalvm/${GRAALVM_LINUX_DIR_NAME}
+          export GRAALVM_HOME=$HOME/graalvm/${{env.GRAALVM_LINUX_DIR_NAME}}
           export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-linux/sdk
           export DISPLAY=:90
           mkdir /home/runner/.vnc
@@ -101,7 +101,7 @@ jobs:
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
         run: |
-          export GRAALVM_HOME=$HOME/graalvm/${GRAALVM_DARWIN_DIR_NAME}/Contents/Home
+          export GRAALVM_HOME=$HOME/graalvm/${{env.GRAALVM_DARWIN_DIR_NAME}}/Contents/Home
           export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-darwin/sdk
           export JAVAFX_STATIC_SDK_IOS=$HOME/javafx-static-libs-ios/sdk
           ./gradlew -i test
