@@ -101,8 +101,14 @@ public class Constants {
     public static final String PROFILE_ANDROID = "android";
     public static final String PROFILE_LINUX_AARCH64 = "linux-aarch64";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+3";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "15-ea+gvm17";
+    // public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+4";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+1";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "16-ea+gvm31";
+
+    /**
+     * Supported GraalVM versions
+     */
+    public static final String GRAALVM_MIN_VERSION = "21.0";
 
     /**
      * Paths
@@ -116,6 +122,7 @@ public class Constants {
     public static final String LOG_PATH = "log";
     public static final String APK_PATH = "apk";
     public static final String NATIVE_CODE_PATH = "native";
+    public static final String PATHING_JAR_DEPS_PATH = "deps";
 
 
 
@@ -129,17 +136,23 @@ public class Constants {
      * Supported files
      */
     public static final String PLIST_FILE = "Default-Info.plist";
+    public static final String IOS_ASSETS_FOLDER = "assets";
     public static final String MANIFEST_FILE = "AndroidManifest.xml";
+    public static final String ANDROID_RES_FOLDER = "res";
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
-    public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik";
-    public static final String DALVIK_PRECOMPILED_CLASSES = "/precompiled/classes/";
-    public static final String DALVIK_ACTIVITY_PACKAGE = "com/gluonhq/helloandroid/";
-    public static final String DALVIK_JAVAFX_PACKAGE = "javafx/scene/input/";
+    public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik/";
+    public static final String USER_ANDROID_PERMISSIONS_FILE = "android-permissions.txt";
+    public static final String USER_ANDROID_DEPENDENCIES_FILE = "android-dependencies.txt";
+    public static final String DALVIK_PRECOMPILED_CLASSES = "precompiled/classes/";
+    public static final String ANDROID_NATIVE_FOLDER = "/native/android/";
+    public static final String ANDROID_PROJECT_NAME = "android_project";
 
     public static final String META_INF_SUBSTRATE_CONFIG = "META-INF/substrate/config/";
     public static final String USER_INIT_BUILD_TIME_FILE = "initbuildtime";
     public static final String USER_INIT_BUILD_TIME_ARCHOS_FILE = "initbuildtime-${archOs}";
+    public static final String RESOURCE_BUNDLES_FILE = "resourcebundles";
+    public static final String RESOURCE_BUNDLES_ARCHOS_FILE = "resourcebundles-${archOs}";
     public static final String USER_REFLECTION_FILE = "reflectionconfig.json";
     public static final String USER_REFLECTION_ARCHOS_FILE = "reflectionconfig-${archOs}.json";
     public static final String USER_JNI_FILE = "jniconfig.json";
@@ -157,4 +170,10 @@ public class Constants {
     public static final String JNI_JAVA_FILE = "jniconfig-java.json";
     public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
     public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
+
+    /**
+     * Arguments for native-image
+     */
+    public static final String NATIVE_IMAGE_ARG_CLASSPATH = "-cp";
+
 }

@@ -31,6 +31,8 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.VersionParser;
 import com.gluonhq.substrate.util.linux.LinuxLinkerFlags;
@@ -45,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class LinuxTargetConfiguration extends PosixTargetConfiguration {
@@ -55,28 +58,49 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
 
     private static final List<String> staticJavaLibs = Arrays.asList(
-            "java", "nio", "zip", "net", "prefs", "jvm", "strictmath", "j2pkcs11", "sunec", "extnet", "libchelper"
+            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet", "fdlibm"
+    );
+
+    private static final List<String> staticJvmLibs = Arrays.asList(
+           "jvm", "libchelper"
     );
 
     private static final List<String> linuxfxlibs = List.of(
             "-Wl,--whole-archive",
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
+            "-Wl,--no-whole-archive"
+    );
+    private static final List<String> linuxfxMedialibs = List.of(
             "-ljfxmedia", "-lfxplugins", "-lavplugin",
             "-Wl,--no-whole-archive"
+    );
+    private static final List<String> linuxfxWeblibs = List.of(
+            "-ljfxwebkit",
+            "-Wl,--no-whole-archive",
+            "-lWebCore", "-lXMLJava", "-lJavaScriptCore", "-lbmalloc",
+            "-licui18n", "-lSqliteJava", "-lXSLTJava", "-lPAL", "-lWebCoreTestSupport",
+            "-lWTF", "-licuuc", "-licudata"
     );
 
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
             "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
-            "LLVMDirectives.cap", "PosixDirectives.cap"};
+            "PosixDirectives.cap"};
+
+    private String llvmCapFile = "LLVMDirectives.cap";
+
     private final String capLocation= "/native/linux-aarch64/cap/";
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
             "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
 
-    public LinuxTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) {
+    private final String sysroot;
+
+    public LinuxTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
         super(paths, configuration);
+
+        sysroot = fileDeps.getSysrootPath().toString();
     }
 
     @Override
@@ -95,27 +119,71 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
+    protected List<Path> getStaticJDKLibPaths() throws IOException {
+        if (crossCompile) {
+            return Arrays.asList(fileDeps.getJavaSDKLibsPath());
+        }
+        return super.getStaticJDKLibPaths();
+    }
+
+    @Override
+    List<String> getTargetSpecificJavaLinkLibraries(){
         List<String> targetLibraries = new ArrayList<>();
 
-        targetLibraries.add("-Wl,-Bstatic");
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
+        Path javaStaticLibPath = null;
+        Path graalClibsPath = getCLibPath();
+        try {
+            javaStaticLibPath = getStaticJDKLibPaths().get(0);
+        } catch (Exception ex) {
+            throw new RuntimeException("Fatal error, we have no static Java libraries, so we can't link with them.");
+        }
+        for (String lib : staticJavaLibs) {
+            targetLibraries.add(javaStaticLibPath.resolve("lib"+lib+".a").toString());
+        }
+        for (String lib : staticJvmLibs) {
+            targetLibraries.add(graalClibsPath.resolve("lib"+lib+".a").toString());
+        }
 
-        targetLibraries.add("-Wl,-Bdynamic");
         targetLibraries.addAll(asListOfLibraryLinkFlags(linuxLibs));
 
         return targetLibraries;
     }
 
     @Override
+    protected List<Path> getLinkerLibraryPaths() throws IOException {
+        List<Path> linkerLibraryPaths = new ArrayList<>();
+        if (projectConfiguration.isUseJavaFX()) {
+            linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());
+        }
+        return linkerLibraryPaths;
+    }
+
+    @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) throws IOException, InterruptedException {
         List<String> answer = new LinkedList<>();
         answer.add("-rdynamic");
+        if (crossCompile) {
+            answer.add("-fuse-ld=gold");
+            answer.add("--sysroot");
+            answer.add(sysroot);
+        }
         if (!useJavaFX) return answer;
 
         answer.addAll(linuxfxlibs);
+        // TODO: Refactor
+        if (projectConfiguration.getClasspath().contains("javafx-media")) {
+            answer.remove(answer.size() - 1);
+            answer.addAll(linuxfxMedialibs);
+        }
+        if (projectConfiguration.getClasspath().contains("javafx-web")) {
+            answer.remove(answer.size() - 1);
+            answer.addAll(linuxfxWeblibs);
+        }
         answer.addAll(LinuxLinkerFlags.getLinkerFlags());
-        if (usePrismSW) {
+        if (!crossCompile) {
+            answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
+        }
+        if (usePrismSW || crossCompile) {
             answer.addAll(linuxfxSWlibs);
         }
         return answer;
@@ -137,14 +205,12 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         if (!crossCompile) {
             return super.getTargetSpecificAOTCompileFlags();
         }
-
-        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
-                "-H:-SpawnIsolates",
+        ArrayList<String> flags = new ArrayList<>(Arrays.asList(
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
-                "-H:+UseOnlyWritableBootImageHeap",
                 "-H:+UseCAPCache",
-                "-H:CAPCacheDir="+ getCapCacheDir().toAbsolutePath().toString(),
-                "-H:CustomLD=aarch64-linux-gnu-ld");
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
+                "-H:CompilerBackend=" + projectConfiguration.getBackend()));
+        return flags;
     }
 
     @Override
@@ -174,6 +240,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         }
         return capPath;
     }
+
     private void checkCompiler() throws IOException, InterruptedException {
         validateVersion(new String[] { "gcc", "--version" }, "compiler", COMPILER_MINIMAL_VERSION);
     }
@@ -237,5 +304,23 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             return super.getLinker();
         }
         return "aarch64-linux-gnu-gcc";
+    }
+
+    @Override
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return this::checkFileArchitecture;
+    }
+
+    private boolean checkFileArchitecture(Path path) {
+        try {
+            ProcessRunner pr = new ProcessRunner("objdump", "-f", path.toFile().getAbsolutePath());
+            pr.showSevereMessage(false);
+            int op = pr.runProcess("objdump");
+            if (op == 0) return true;
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Unrecoverable error checking file "+path+": "+e);
+        }
+        Logger.logDebug("Ignore file " + path + " since objdump failed on it");
+        return false;
     }
 }

@@ -5,15 +5,19 @@
         <key>CFBundleIdentifier</key>
         <string>$packageName.$mainClassName</string>
         <key>CFBundleVersion</key>
-        <string>1.0</string>
+        <string>$bundleVersion</string>
         <key>CFBundleShortVersionString</key>
-        <string>1.0</string>
+        <string>$bundleShortVersion</string>
         <key>CFBundleExecutable</key>
         <string>$mainClassNameApp</string>
         <key>CFBundleIconName</key>
         <string>AppIcon</string>
         <key>CFBundleName</key>
-        <string>$appName</string>
+        <string>$bundleName</string>
+        <key>UILaunchStoryboardName</key>
+        <string>LaunchScreen</string>
+        <key>UIMainStoryboardFile</key>
+        <string>MainScreen</string>
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>LSRequiresIPhoneOS</key>

@@ -51,20 +51,22 @@ import java.util.stream.Collectors;
 
 public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
-    private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
+    private static final List<String> iosAdditionalSourceFiles = Arrays.asList(
+            "AppDelegate.m", "JvmFuncsFallbacks.c");
 
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-llibchelper", "-lffi", "-ldarwin");
 
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
+    private static final String javafxWebLib = "webview";
 
     private static final List<String> iosFrameworks = Arrays.asList(
             "Foundation", "UIKit", "CoreGraphics", "MobileCoreServices",
             "OpenGLES", "CoreText", "QuartzCore", "ImageIO",
             "CoreBluetooth", "CoreImage", "CoreLocation", "CoreMedia", "CoreMotion", "CoreVideo",
             "Accelerate", "AVFoundation", "AudioToolbox", "MediaPlayer", "UserNotifications",
-            "ARKit", "AVKit", "SceneKit", "StoreKit"
+            "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit"
     );
 
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
@@ -78,8 +80,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
-        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
+    List<String> getTargetSpecificJavaLinkLibraries() {
+        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificJavaLinkLibraries());
         defaultLinkFlags.add("-lstdc++");
         return defaultLinkFlags;
     }
@@ -92,7 +94,11 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
                 "-isysroot", getSysroot()));
         if (useJavaFX) {
             String javafxSDK = projectConfiguration.getJavafxStaticLibsPath().toString();
-            javafxLibs.forEach(name ->
+            List<String> libs = new ArrayList<>(javafxLibs);
+            if (projectConfiguration.getClasspath().contains("javafx-web")) {
+                libs.add(javafxWebLib);
+            }
+            libs.forEach(name ->
                     linkFlags.add("-Wl,-force_load," + javafxSDK + "/lib" + name + ".a"));
         }
         linkFlags.addAll(ioslibs);
@@ -107,6 +113,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         return Arrays.asList("-xobjective-c",
                 "-arch", getTargetArch(),
                 "-mios-version-min=11.0",
+                "-I"+projectConfiguration.getGraalPath().resolve("include").toString(),
+                "-I"+projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
                 "-isysroot", getSysroot());
     }
 
@@ -114,6 +122,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
         return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
                 "-H:-SpawnIsolates",
+                "-H:PageSize=16384",
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getTargetArch(),
                 "-H:+UseCAPCache",
@@ -154,7 +163,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         if (result) {
             createInfoPlist(paths);
 
-            if (!isSimulator() && !projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
+            if (!isSimulator() && !projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
                 CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
                 if (!codeSigning.signApp()) {
                     throw new RuntimeException("Error signing the app");
@@ -162,6 +171,11 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             }
         }
         return result;
+    }
+
+    @Override
+    protected List<Path> getStaticJDKLibPaths() throws IOException {
+        return Arrays.asList(fileDeps.getJavaSDKLibsPath());
     }
 
     @Override
@@ -173,7 +187,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
-        if (!isSimulator() && projectConfiguration.getIosSigningConfiguration().isSkipSigning()) {
+        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
             // without signing, app can't be deployed
             return true;
         }
@@ -235,11 +249,6 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         return appPath.toString() + "/" + appName;
     }
 
-    @Override
-    boolean useGraalVMJavaStaticLibraries() {
-        return false;
-    }
-
     private String getTargetArch() {
         return projectConfiguration.getTargetTriplet().getArch();
     }
@@ -266,7 +275,9 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     private boolean lipoMatch(Path path) {
         try {
-            return lipoInfo(path).indexOf(getTargetArch()) > 0;
+            String lp = lipoInfo(path);
+            if (lp == null) return false;
+            return lp.indexOf(getTargetArch()) > 0;
         } catch (IOException | InterruptedException e) {
             Logger.logSevere("Error processing lipo for " + path);
         }

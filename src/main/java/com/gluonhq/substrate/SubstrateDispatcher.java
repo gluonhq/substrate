@@ -37,11 +37,19 @@ import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -109,6 +117,7 @@ public class SubstrateDispatcher {
     }
 
     private static volatile boolean compiling = true;
+    private static volatile boolean messagePrinted = false;
 
     public static void main(String[] args) throws IOException {
         Step step = getStepToExecute();
@@ -223,6 +232,66 @@ public class SubstrateDispatcher {
         }
     }
 
+    private void printMessage(String task) {
+       if (messagePrinted) {
+          return;
+       }    
+       try {
+            System.out.println(retrieveSubstrateMessage(task));
+       }catch(IOException e) {
+            System.out.println(" _______  ___      __   __  _______  __    _ ");
+            System.out.println("|       ||   |    |  | |  ||       ||  |  | |");
+            System.out.println("|    ___||   |    |  | |  ||   _   ||   |_| |");
+            System.out.println("|   | __ |   |    |  |_|  ||  | |  ||       |");
+            System.out.println("|   ||  ||   |___ |       ||  |_|  ||  _    |");
+            System.out.println("|   |_| ||       ||       ||       || | |   |");
+            System.out.println("|_______||_______||_______||_______||_|  |__|");
+            System.out.println("");
+            System.out.println("https://gluonhq.com/activate");
+            System.out.println("");
+       }
+       messagePrinted = true;
+    }
+
+    public String retrieveSubstrateMessage(String task) throws IOException {
+        URL url = new URL("https://info.gluonhq.com/substrate.txt");
+        URLConnection con = url.openConnection();
+        con.setConnectTimeout(3000);
+        con.setReadTimeout(3000);
+        con.setRequestProperty("User-Agent", 
+            System.getProperty("os.name") + " - " +
+            System.getProperty("os.arch") + " - " +
+            System.getProperty("os.version") + " / " +
+            System.getProperty("java.version") + " / " +
+            config.getTargetTriplet().getOs() + " / " +
+            task + " / " +
+            getHash(config.getAppId()+config.getMainClassName()));
+
+        StringBuilder text = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+            String l;
+            while ((l = reader.readLine()) != null) {
+                text.append(l).append("\n");
+            }
+        }
+        return text.toString();
+    }
+
+    private String getHash(String input) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuffer hexString = new StringBuffer();
+            for (int i = 0; i < hash.length; i++) {
+                String hex = Integer.toHexString(0xff & hash[i]);
+                if(hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
+    }
+
     private static void executePackageStep(SubstrateDispatcher dispatcher) {
         try {
             if (!dispatcher.nativePackage()) {
@@ -295,14 +364,20 @@ public class SubstrateDispatcher {
      * @param config the ProjectConfiguration, including the target triplet
      */
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
+        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot),
+                Objects.requireNonNull(config).getTargetTriplet().getArchOs());
+        ProcessRunner.setProcessLogPath(paths.getClientPath().resolve(Constants.LOG_PATH));
+        ProcessRunner.setConsoleProcessLog(Boolean.getBoolean("consoleProcessLog"));
+
         this.config = new InternalProjectConfiguration(config);
         if (this.config.isVerbose()) {
             System.out.println("Configuration: " + this.config);
         }
 
+        this.config.checkGraalVMVersion();
+
         Triplet targetTriplet = config.getTargetTriplet();
 
-        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), targetTriplet.getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was not found for " + targetTriplet);
 
@@ -310,6 +385,9 @@ public class SubstrateDispatcher {
     }
 
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) throws IOException {
+        if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
+            throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
+        }
         switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
             case Constants.OS_DARWIN : return new MacOSTargetConfiguration(paths, config);
@@ -331,13 +409,12 @@ public class SubstrateDispatcher {
      */
     public boolean nativeCompile() throws Exception {
         Logger.logInfo(logTitle("COMPILE TASK"));
+        printMessage("compile");
 
         config.canRunNativeImage();
 
         Triplet targetTriplet  = config.getTargetTriplet();
-        if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
-            throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
-        }
+        config.canRunLLVM(targetTriplet);
 
         Logger.logInfo("We will now compile your code for " + targetTriplet + ". This may take some time.");
         boolean compilingSucceeded = targetConfiguration.compile();
@@ -362,6 +439,7 @@ public class SubstrateDispatcher {
         if (!linkingSucceeded) {
             Logger.logSevere("Linking failed.");
         }
+        printMessage("link");
         return linkingSucceeded;
     }
 
@@ -379,6 +457,7 @@ public class SubstrateDispatcher {
         if (!packagingSucceeded) {
             Logger.logSevere("Packaging failed.");
         }
+        printMessage("package");
         return packagingSucceeded;
     }
 
@@ -396,6 +475,7 @@ public class SubstrateDispatcher {
         if (!installingSucceeded) {
             Logger.logSevere("Installing failed.");
         }
+        printMessage("install");
         return installingSucceeded;
     }
 
@@ -408,5 +488,6 @@ public class SubstrateDispatcher {
     public void nativeRun() throws IOException, InterruptedException {
         Logger.logInfo(logTitle("RUN TASK"));
         targetConfiguration.runUntilEnd();
+        printMessage("run");
     }
 }

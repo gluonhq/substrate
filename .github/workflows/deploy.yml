@@ -13,6 +13,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 5
+          persist-credentials: false
 
       - name: Setup Java 11
         uses: actions/setup-java@v1
@@ -43,6 +44,14 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
 
+      - name: Release Client plugins
+        if: steps.deploy.outputs.exit_code == 0
+        run: |
+          TAG=${GITHUB_REF/refs\/tags\//}
+          bash $GITHUB_WORKSPACE/.github/scripts/release-plugins.sh $TAG $PAT
+        env:
+          PAT: ${{ secrets.PAT }}
+
       - name: Commit next development version
         if: steps.deploy.outputs.exit_code == 0
         run: |
@@ -52,4 +61,6 @@ jobs:
           newVersion=${TAG%.*}.$((${TAG##*.} + 1)) # Update version by 1
           sed -i -z "0,/version = $TAG/s//version = $newVersion-SNAPSHOT/" gradle.properties
           git commit gradle.properties -m "Prepare development of $newVersion"
-          git push https://gluon-bot:$GITHUB_PASSWORD@github.com/$GITHUB_REPOSITORY HEAD:master
+          git push https://gluon-bot:$PAT@github.com/$GITHUB_REPOSITORY HEAD:master
+        env:
+          PAT: ${{ secrets.PAT }}

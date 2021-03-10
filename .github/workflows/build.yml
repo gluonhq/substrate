@@ -23,46 +23,57 @@ jobs:
           sudo apt-get install at-spi2-core build-essential libgtk-3-dev libxtst-dev libavcodec-dev libavformat-dev libasound2-dev libgl-dev
           sudo apt-get install xvfb tigervnc-standalone-server tigervnc-common
 
-      - name: Install packages (MacOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install --HEAD libusbmuxd libimobiledevice
-
       - name: Install GraalVM (Linux)
         if: runner.os == 'Linux'
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
-          wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-linux-20.2-latest.zip
-          unzip graalvm-svm-linux-20.2-latest && cd $GITHUB_WORKSPACE
+          curl -i -u "gluonteam:$PAT" https://api.github.com/repos/graalvm/graalvm-ce-builds/releases > releases.json
+          export GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
+          export GRAALVM_GITHUB_LINUX_AMD64_NAME=$(cat releases.json | grep name | grep graalvm-ce-java11-linux-amd64 | head -n 1 | sed -e 's/.*\(graalvm.*\)".*/\1/g')
+          wget ${GRAALVM_GITHUB_LINUX_AMD64_DOWNLOAD_URL}
+          echo GRAALVM_LINUX_DIR_NAME=$(tar -tzf ${GRAALVM_GITHUB_LINUX_AMD64_NAME} | head -1 | cut -f1 -d"/") >> $GITHUB_ENV
+          tar -xzvf ${GRAALVM_GITHUB_LINUX_AMD64_NAME} -C $HOME/graalvm && cd $GITHUB_WORKSPACE
+        env:
+          PAT: ${{ secrets.GLUONTEAM_PAT }}
 
       - name: Install GraalVM (MacOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/graalvm && cd $HOME/graalvm
-          wget https://download2.gluonhq.com/substrate/graalvm/graalvm-svm-darwin-20.2-latest.zip
-          unzip graalvm-svm-darwin-20.2-latest && cd $GITHUB_WORKSPACE
+          curl -i -u "gluonteam:$PAT" https://api.github.com/repos/graalvm/graalvm-ce-builds/releases > releases.json
+          export GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL=$(cat releases.json | grep browser_download_url | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(https.*\)".*/\1/g')
+          export GRAALVM_GITHUB_DARWIN_AMD64_NAME=$(cat releases.json | grep name | grep graalvm-ce-java11-darwin-amd64 | head -n 1 | sed -e 's/.*\(graalvm.*\)".*/\1/g')
+          wget ${GRAALVM_GITHUB_DARWIN_AMD64_DOWNLOAD_URL}
+          echo GRAALVM_DARWIN_DIR_NAME=$(tar -tzf ${GRAALVM_GITHUB_DARWIN_AMD64_NAME} | head -1 | cut -f1 -d"/") >> $GITHUB_ENV
+          tar -xzvf ${GRAALVM_GITHUB_DARWIN_AMD64_NAME} -C $HOME/graalvm && cd $GITHUB_WORKSPACE
+        env:
+          PAT: ${{ secrets.GLUONTEAM_PAT }}
 
       - name: Install linux JavaFX static libs (Linux)
         if: runner.os == 'Linux'
         run: |
           mkdir -p $HOME/javafx-static-libs-linux && cd $HOME/javafx-static-libs-linux
-          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-linux-x86_64-static.zip
-          unzip openjfx-15-latest-linux-x86_64-static.zip && cd $GITHUB_WORKSPACE
+          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-linux-x86_64-static.zip
+          unzip openjfx-16-latest-linux-x86_64-static.zip && cd $GITHUB_WORKSPACE
 
       - name: Install darwin JavaFX static libs (MacOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/javafx-static-libs-darwin && cd $HOME/javafx-static-libs-darwin
-          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-darwin-x86_64-static.zip
-          unzip openjfx-15-latest-darwin-x86_64-static.zip && cd $GITHUB_WORKSPACE
+          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-darwin-x86_64-static.zip
+          unzip openjfx-16-latest-darwin-x86_64-static.zip && cd $GITHUB_WORKSPACE
 
       - name: Install iOS JavaFX static libs (MacOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p $HOME/javafx-static-libs-ios && cd $HOME/javafx-static-libs-ios
-          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-15-latest-ios-arm64-static.zip
-          unzip openjfx-15-latest-ios-arm64-static.zip && cd $GITHUB_WORKSPACE
+          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-ios-arm64-static.zip
+          unzip openjfx-16-latest-ios-arm64-static.zip && cd $GITHUB_WORKSPACE
     
+      - name: Shutdown and Reset all Simulators (MacOS)
+        if: runner.os == 'macOS'
+        run: sudo xcrun simctl shutdown all && sudo xcrun simctl erase all
+
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -77,7 +88,7 @@ jobs:
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
         run: |
-          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-linux-20.2-latest
+          export GRAALVM_HOME=$HOME/graalvm/${{env.GRAALVM_LINUX_DIR_NAME}}
           export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-linux/sdk
           export DISPLAY=:90
           mkdir /home/runner/.vnc
@@ -90,7 +101,7 @@ jobs:
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
         run: |
-          export GRAALVM_HOME=$HOME/graalvm/graalvm-svm-darwin-20.2-latest
+          export GRAALVM_HOME=$HOME/graalvm/${{env.GRAALVM_DARWIN_DIR_NAME}}/Contents/Home
           export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-darwin/sdk
           export JAVAFX_STATIC_SDK_IOS=$HOME/javafx-static-libs-ios/sdk
           ./gradlew -i test

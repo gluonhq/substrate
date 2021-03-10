@@ -35,6 +35,11 @@ import static com.gluonhq.substrate.Constants.*;
 
 public class Triplet {
 
+    /**
+     * The operating system of the host is evaluated at build-time
+     */
+    private static final String OS_NAME  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+
     private String arch;
     private String vendor;
     private String os;
@@ -45,17 +50,36 @@ public class Triplet {
      * @throws IllegalArgumentException in case the current operating system is not supported
      */
     public static Triplet fromCurrentOS() throws IllegalArgumentException {
-        String osName  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-
-        if (osName.contains("mac")) {
+        if (isMacOSHost()) {
            return new Triplet(Constants.Profile.MACOS);
-        } else if (osName.contains("nux")) {
+        } else if (isLinuxHost()) {
             return new Triplet(Constants.Profile.LINUX);
-        } else if (osName.contains("windows")) {
+        } else if (isWindowsHost()) {
             return new Triplet(Constants.Profile.WINDOWS);
         } else {
-           throw new IllegalArgumentException("OS " + osName + " not supported");
+           throw new IllegalArgumentException("OS " + OS_NAME + " not supported");
         }
+    }
+
+    /**
+     * @return true if host is Windows
+     */
+    public static boolean isWindowsHost() {
+        return OS_NAME.contains("windows");
+    }
+
+    /**
+     * @return true if host is MacOS
+     */
+    public static boolean isMacOSHost() {
+        return OS_NAME.contains("mac");
+    }
+
+    /**
+     * @return true if host is Linux
+     */
+    public static boolean isLinuxHost() {
+        return OS_NAME.contains("nux");
     }
 
     public Triplet(String arch, String vendor, String os) {
@@ -114,9 +138,9 @@ public class Triplet {
         // if the host os and target os are the same, always return true
         if (getOs().equals(target.getOs())) return true;
 
-        // if host is linux and target is ios, fail
-        return (!Constants.OS_LINUX.equals(getOs()) && !Constants.OS_WINDOWS.equals(getOs())) ||
-                !Constants.OS_IOS.equals(target.getOs());
+        // so far, iOS can be built from Mac, Android can be built from Linux
+        return (OS_DARWIN.equals(getOs()) && OS_IOS.equals(target.getOs())) ||
+                (OS_LINUX.equals(getOs()) && OS_ANDROID.equals(target.getOs()));
     }
 
     public String getArch() {

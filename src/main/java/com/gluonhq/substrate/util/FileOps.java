@@ -27,8 +27,17 @@
  */
 package com.gluonhq.substrate.util;
 
+import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.SubstrateDispatcher;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,10 +49,15 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -57,6 +71,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -66,7 +81,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -131,6 +150,50 @@ public class FileOps {
             throw new IOException("Could not copy resource named " + resource + ", as it doesn't exist");
         }
         return copyStream(is, destination);
+    }
+
+    /**
+     * Copies directory from resources into destination path
+     * @param source
+     * @param target
+     * @throws IOException
+     */
+    public static void copyDirectoryFromResources(String source, final Path target) throws IOException {
+        // https://stackoverflow.com/a/24316335
+        FileSystem fileSystem;
+        try {
+            URI resource = SubstrateDispatcher.class.getResource("").toURI();
+            try {
+                fileSystem = FileSystems.getFileSystem(resource);
+            } catch (FileSystemNotFoundException e) {
+                Logger.logDebug("FileSystem for resource " + resource + " not found. Trying to create a new FileSystem instead.");
+                fileSystem = FileSystems.newFileSystem(resource, Collections.<String, String>emptyMap());
+            }
+            Logger.logDebug("Created FileSystem for resource " + resource + ": " + fileSystem);
+        } catch (URISyntaxException e) {
+            throw new IOException(e.toString());
+        }
+
+        final Path jarPath = fileSystem.getPath(source);
+
+        Files.walkFileTree(jarPath, new SimpleFileVisitor<Path>() {
+
+            Path currentTarget;
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                currentTarget = target.resolve(jarPath.relativize(dir).toString());
+                Files.createDirectories(currentTarget);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.copy(file, target.resolve(jarPath.relativize(file).toString()), REPLACE_EXISTING);
+                return FileVisitResult.CONTINUE;
+            }
+
+        });
     }
 
     /**
@@ -257,6 +320,42 @@ public class FileOps {
     }
 
     /**
+     * Checks and returns true if a Path is a directory and is empty
+     * @param path Path of the directory
+     */
+    public static boolean isDirectoryEmpty(Path path) {
+        try {
+            return !(Files.exists(path) && Files.isDirectory(path) && Files.list(path).findAny().isPresent());
+        } catch (IOException e) {
+        }
+        return false;
+    }
+
+    /**
+     * Recursively list files with spectified extension from directory
+     * @param directory directory to be searched
+     * @param extension extension by which to filter files
+     * @throws IOException if an exception happens when listing the content
+     */
+    public static List<String> listFilesWithExtensionInDirectory(Path directory, String extension) throws IOException {
+        try (Stream<Path> walk = Files.walk(directory)) {
+            return walk.filter(Files::isRegularFile)
+                       .map(x -> x.toString())
+                       .filter(x -> x.endsWith(extension))
+                       .collect(Collectors.toList());
+        }
+    }
+
+     /**
+     * Recursively list files from specified directory
+     * @param directory directory to be searched
+     * @throws IOException if an exception happens when listing the content
+     */
+    public static List<String> listFilesInDirectory(Path directory) throws IOException {
+        return listFilesWithExtensionInDirectory(directory, "");
+    }
+
+    /**
      * Reads a file from an inputStream and returns a list with its lines
      * @param inputStream The input stream of bytes
      * @return a list of strings with the lines read from the input stream
@@ -302,7 +401,7 @@ public class FileOps {
     }
 
     /**
-     * Replaces all occurences of one parameter in file with another
+     * Replaces all occurrences of one parameter in file with another
      * @param file Path to file
      * @param original String which should be replaced
      * @param replacement Replacement string
@@ -311,9 +410,47 @@ public class FileOps {
     public static void replaceInFile(Path file, String original, String replacement) throws IOException {
         InputStream inputStream = Files.newInputStream(file);
         List<String> lines = readFileLines(inputStream);
-        for (int i=0; i<lines.size(); i++)
+        for (int i = 0; i < lines.size(); i++) {
             lines.set(i, lines.get(i).replaceAll(original, replacement));
+        }
         writeFileLines(file, lines);
+    }
+
+    /**
+     * Parses an xml file, looking for a given attribute name within a given tag, and retrieves
+     * its value, when an attribute of that tag contains that given name.
+     *
+     * @param fileName the full path of an xml file
+     * @param tag the tag name
+     * @param attributeName the item name
+     * @return the value if found, null otherwise
+     * @throws IOException
+     */
+    public static String getNodeValue(String fileName, String tag, String attributeName) throws IOException {
+        try {
+            File xmlFile = new File(Objects.requireNonNull(fileName));
+            if (!xmlFile.exists() || !fileName.endsWith(".xml")) {
+                throw new IOException("Not a valid file: " + fileName);
+            }
+
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document document = builder.parse(xmlFile);
+
+            NodeList nodeList = document.getElementsByTagName(tag);
+            for (int n = 0; n < nodeList.getLength(); n++) {
+                NamedNodeMap attributes = nodeList.item(n).getAttributes();
+                for (int i = 0; i < attributes.getLength(); i++) {
+                    Node item = attributes.item(i);
+                    String name = item.getNodeName();
+                    if (name != null && name.contains(attributeName)) {
+                        return item.getNodeValue();
+                    }
+                }
+            }
+        } catch (SAXException | ParserConfigurationException ex) {
+            Logger.logSevere("Error parsing: " + ex.getMessage());
+        }
+        return null;
     }
 
     /**
@@ -324,7 +461,8 @@ public class FileOps {
      * @param nameFile
      * @return the Map contained in the file named nameFile, or null in all other cases.
      */
-    static Map<String, String> getHashMap(String nameFile) {
+    @SuppressWarnings("unchecked")
+    public static Map<String, String> getHashMap(String nameFile) {
         Map<String, String> hashes = null;
         if (!Files.exists(Paths.get(nameFile))) {
             return null;
@@ -373,6 +511,21 @@ public class FileOps {
      * @throws IOException
      */
     public static void extractFilesFromJar(String extension, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
+        extractFilesFromJar(List.of(extension), sourceJar, target, filter);
+    }
+
+    /**
+     * Extracts the files that match any of the possible extensions from a given list
+     * that are found in a jar to a target patch, providing that the file passes a given filter,
+     * and it doesn't exist yet in the target path
+     *
+     * @param extensions a list with possible extensions of the files in the jar that will be extracted
+     * @param sourceJar the path to the jar that will be inspected
+     * @param target the path of the folder where the files will be extracted
+     * @param filter a predicate that the files in the jar should match.
+     * @throws IOException
+     */
+    public static void extractFilesFromJar(List<String> extensions, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
         if (!Files.exists(sourceJar)) {
             return;
         }
@@ -381,7 +534,7 @@ public class FileOps {
         }
         ZipFile zf = new ZipFile(sourceJar.toFile());
         List<? extends ZipEntry> entries = zf.stream()
-                .filter(ze -> ze.getName().endsWith(extension))
+                .filter(ze -> extensions.stream().anyMatch(ext -> ze.getName().endsWith(ext)))
                 .collect(Collectors.toList());
         if (entries.isEmpty()) {
             return;
@@ -523,6 +676,66 @@ public class FileOps {
     }
 
     /**
+     * Shorten the Java classpath with a pathing jar. This works by creating a temporary
+     * empty jar file where the full classpath is defined in its Class-Path entry in
+     * the manifest. All files on the classpath will be copied to the same temporary
+     * folder, while all directories will be resolved relatively against that temporary
+     * folder. The Class-Path entry will ultimately contain all classpath elements as a
+     * reference that is relative to the pathing jar.
+     *
+     * @param classpath A string with the classpath of files that will be added to the
+     *                 pathing jar Class-Path attribute
+     * @return a String with the path to the created pathing jar
+     * @throws IOException
+     */
+    public static String createPathingJar(Path tmpPath, String classpath) throws IOException {
+        Objects.requireNonNull(classpath);
+
+        Files.createDirectories(tmpPath);
+
+        String manifestClasspath = generateClasspathFromTemporaryFolder(tmpPath, classpath);
+        Logger.logDebug("Class-Path manifest entry for pathing jar: " + manifestClasspath);
+
+        Manifest manifest = new Manifest();
+        Attributes attributes = manifest.getMainAttributes();
+        attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attributes.put(Attributes.Name.CLASS_PATH, manifestClasspath);
+
+        File jarFile = tmpPath.resolve("classpathJar.jar").toFile();
+        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFile), manifest)) {
+            jos.putNextEntry(new ZipEntry("META-INF/"));
+        }
+        Logger.logDebug("Pathing jar created at " + jarFile);
+        return jarFile.getAbsolutePath();
+    }
+
+    /**
+     * Copies all files in the classpath to a subfolder under the provided temporary path. The
+     * name of the subfolder is defined by {@link Constants#PATHING_JAR_DEPS_PATH}. It then
+     * returns a space separated string containing each classpath entry as relative to the
+     * provided temporary path.
+     */
+    private static String generateClasspathFromTemporaryFolder(Path tmpPath, String classpath) {
+        Path depsPath = tmpPath.resolve(Constants.PATHING_JAR_DEPS_PATH);
+
+        String[] classpathEntries = classpath.split(File.pathSeparator);
+
+        Stream<String> convertedDirectories = Arrays.stream(classpathEntries)
+                .map(Path::of)
+                .filter(Files::isDirectory)
+                .map(sourceDir -> tmpPath.toAbsolutePath().relativize(sourceDir).toString());
+
+        Stream<String> convertedFiles = Arrays.stream(classpathEntries)
+                .map(Path::of)
+                .filter(Files::isRegularFile)
+                .map(sourceFile -> copyFile(sourceFile, depsPath.resolve(sourceFile.getFileName())))
+                .map(destFile -> Constants.PATHING_JAR_DEPS_PATH + File.separator + destFile.getFileName());
+
+        return Stream.concat(convertedDirectories, convertedFiles)
+                .collect(Collectors.joining(" "));
+    }
+
+    /**
      * Prints the progress of a file download
      */
     private static final class ProgressDownloader {
@@ -543,7 +756,7 @@ public class FileOps {
                 Logger.logSevere("Downloading failed: " + e.getMessage());
             }
         }
-        
+
         public void rbcProgressCallback(RBCWrapper rbc, double progress) {
             if (((int)progress) >= printPercentage) {
                 printPercentage += 10;

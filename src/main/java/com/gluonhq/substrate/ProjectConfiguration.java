@@ -27,7 +27,7 @@
  */
 package com.gluonhq.substrate;
 
-import com.gluonhq.substrate.model.IosSigningConfiguration;
+import com.gluonhq.substrate.model.ReleaseConfiguration;
 import com.gluonhq.substrate.model.Triplet;
 
 import java.nio.file.Path;
@@ -64,7 +64,7 @@ public class ProjectConfiguration {
     private final String mainClassName;
     private final String classpath;
 
-    private IosSigningConfiguration iosSigningConfiguration = new IosSigningConfiguration();
+    private ReleaseConfiguration releaseConfiguration = new ReleaseConfiguration();
 
     /**
      * Create a new project configuration.
@@ -91,7 +91,6 @@ public class ProjectConfiguration {
     public void setGraalPath(Path path) {
         this.graalPath = path;
     }
-
 
     /**
      * Sets the Java static SDK version
@@ -240,7 +239,7 @@ public class ProjectConfiguration {
     /**
      * Sets the AppID. This acts as the application identifier in various platforms.
      * For Android, this is the equivalent of 'package' name of the application.
-     * 
+     *
      * @param appId The application ID of the application.
      */
     public void setAppId(String appId) {
@@ -269,16 +268,17 @@ public class ProjectConfiguration {
         return classpath;
     }
 
-    public IosSigningConfiguration getIosSigningConfiguration() {
-        return iosSigningConfiguration;
+    public ReleaseConfiguration getReleaseConfiguration() {
+        return releaseConfiguration;
     }
 
     /**
-     * Sets some iOS specific parameters
-     * @param iosSigningConfiguration iOS configuration
+     * Sets some iOS and Android specific parameters that are required for
+     * the release of mobile apps
+     * @param releaseConfiguration release configuration
      */
-    public void setIosSigningConfiguration(IosSigningConfiguration iosSigningConfiguration) {
-        this.iosSigningConfiguration = iosSigningConfiguration;
+    public void setReleaseConfiguration(ReleaseConfiguration releaseConfiguration) {
+        this.releaseConfiguration = releaseConfiguration;
     }
 
     @Override
@@ -298,7 +298,7 @@ public class ProjectConfiguration {
                 ", compilerArgs=" + compilerArgs +
                 ", appId='" + appId + '\'' +
                 ", appName='" + appName + '\'' +
-                ", iosConfiguration='" + iosSigningConfiguration + '\'' +
+                ", releaseConfiguration='" + releaseConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
                 ", classpath='" + classpath + '\'' +
                 '}';

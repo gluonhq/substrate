@@ -27,11 +27,13 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 
-import java.util.Arrays;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,11 +41,20 @@ import java.util.stream.Collectors;
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> javaWindowsLibs = Arrays.asList(
-            "advapi32", "iphlpapi", "userenv", "ws2_32");
+            "advapi32", "iphlpapi", "secur32", "userenv", "version", "ws2_32");
     private static final List<String> staticJavaLibs = Arrays.asList(
-            "j2pkcs11", "java", "net", "nio", "prefs", "sunec", "zip");
+            "j2pkcs11", "java", "net", "nio", "prefs", "fdlibm", "sunec", "zip");
     private static final List<String> staticJvmLibs = Arrays.asList(
-            "ffi", "jvm", "libchelper", "strictmath");
+            "ffi", "jvm", "libchelper");
+
+    private static final List<String> javaFxWindowsLibs = List.of(
+            "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",
+            "uiautomationcore", "urlmon", "winmm");
+    private static final List<String> staticJavaFxLibs = List.of(
+            "glass", "javafx_font", "javafx_iio",
+            "prism_common", "prism_d3d");
+    private static final List<String> staticJavaFxSwLibs = List.of(
+            "prism_sw");
 
     public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
@@ -64,28 +75,22 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         return Arrays.asList("/MD", "/D_UNICODE", "/DUNICODE", "/DWIN32", "/D_WINDOWS");
     }
 
-    @Override
-    boolean allowHttps() {
-        return false;
-    }
-
     /**
-     * The arguments to native-image.cmd must be wrapped in double quotes when the
-     * argument contains the '=' character.
+     * The arguments to native-image.cmd must be wrapped in double quotes for the
+     * value of the classpath argument (-cp ...) or when the value of the argument is
+     * assigned by using the '=' character (i.e. -H:IncludeResourceBundles=abc).
      */
     @Override
     void postProcessCompilerArguments(List<String> arguments) {
+        int classPathArgumentIdx = Integer.MIN_VALUE;
         for (int i = 0; i < arguments.size(); i++) {
             String argument = arguments.get(i);
-            if (argument.contains("=")) {
+            if (argument.contains("=") || (i == classPathArgumentIdx + 1)) {
                 arguments.set(i, "\"" + argument + "\"");
+            } else if (Constants.NATIVE_IMAGE_ARG_CLASSPATH.equals(argument)) {
+                classPathArgumentIdx = i;
             }
         }
-    }
-
-    @Override
-    String processClassPath(String cp) {
-        return "\"" + cp + "\"";
     }
 
     @Override
@@ -109,6 +114,16 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    String getStaticLibraryFileExtension() {
+        return "lib";
+    }
+
+    @Override
+    boolean matchesStaticLibraryName(String fileName) {
+        return fileName.endsWith("." + getStaticLibraryFileExtension());
+    }
+
+    @Override
     List<String> getTargetSpecificLinkOutputFlags() {
         return Collections.singletonList("/OUT:" + getAppPath(getLinkOutputName()));
     }
@@ -120,7 +135,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
+    List<String> getTargetSpecificJavaLinkLibraries() {
         List<String> targetLibraries = new ArrayList<>();
 
         targetLibraries.addAll(asListOfLibraryLinkFlags(javaWindowsLibs));
@@ -131,10 +146,33 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
+        List<String> linkFlags = new ArrayList<>();
+        linkFlags.addAll(libs);
+        linkFlags.addAll(asListOfWholeArchiveLinkFlags(libs));
+        return linkFlags;
+    }
+
+    @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        return Arrays.asList(
-                "/NODEFAULTLIB:libcmt.lib"
-        );
+        List<String> flags = new ArrayList<>();
+        flags.add("/NODEFAULTLIB:libcmt.lib");
+
+        if (useJavaFX) {
+            flags.add("/SUBSYSTEM:WINDOWS");
+            flags.add("/ENTRY:mainCRTStartup");
+
+            flags.addAll(asListOfLibraryLinkFlags(javaFxWindowsLibs));
+            flags.addAll(asListOfLibraryLinkFlags(staticJavaFxLibs));
+            flags.addAll(asListOfWholeArchiveLinkFlags(staticJavaFxLibs));
+
+            if (usePrismSW) {
+                flags.addAll(asListOfLibraryLinkFlags(staticJavaFxSwLibs));
+                flags.addAll(asListOfWholeArchiveLinkFlags(staticJavaFxSwLibs));
+            }
+        }
+
+        return flags;
     }
 
     @Override
@@ -144,7 +182,25 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
         return libraries.stream()
-                .map(library -> library + ".lib")
+                .map(library -> library + "." + getStaticLibraryFileExtension())
                 .collect(Collectors.toList());
+    }
+
+    private List<String> asListOfWholeArchiveLinkFlags(List<String> libraries) {
+        List<String> linkFlags = new ArrayList<>();
+
+        // add libraries whose name end with .lib unmodified
+        linkFlags.addAll(libraries.stream()
+                .filter(library -> library.endsWith("." + getStaticLibraryFileExtension()))
+                .map(library -> "/WHOLEARCHIVE:" + library)
+                .collect(Collectors.toList()));
+
+        // add libraries whose name don't end with .lib by appending .lib first
+        linkFlags.addAll(libraries.stream()
+                .filter(library -> !library.endsWith("." + getStaticLibraryFileExtension()))
+                .map(library -> "/WHOLEARCHIVE:" + library + "." + getStaticLibraryFileExtension())
+                .collect(Collectors.toList()));
+
+        return linkFlags;
     }
 }

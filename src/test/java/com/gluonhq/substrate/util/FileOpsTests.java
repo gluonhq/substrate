@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2020, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -196,5 +197,46 @@ class FileOpsTests {
             assertNotNull(hashMap);
             assertEquals(hashMap.get(testFile.getFileName().toString()), FileOps.calculateCheckSum(testFile.toFile()));
         });
+    }
+
+    @Test
+    void parseXMLFile() throws IOException {
+        Path xmlPath = FileOps.copyResource("/test-ops.xml", getTempDir().resolve("test-ops.xml"));
+        assertTrue(Files.exists(xmlPath));
+        assertNull(FileOps.getNodeValue(xmlPath.toString(), "aa", "bb"));
+        assertNull(FileOps.getNodeValue(xmlPath.toString(), "manifest", "aa"));
+        assertEquals("1", FileOps.getNodeValue(xmlPath.toString(), "manifest", ":versionCode"));
+        assertEquals("HelloTest", FileOps.getNodeValue(xmlPath.toString(), "application", ":label"));
+        Files.deleteIfExists(xmlPath);
+    }
+
+    @Test
+    void parseNonXMLFile() throws IOException {
+        assertThrows(IOException.class, () -> FileOps.getNodeValue("non.existent.path", "aa", "bb"));
+        Path resourcePath = FileOps.copyResource("/test-resource.txt", getTempDir().resolve("test-resource.txt"));
+        assertThrows(IOException.class, () -> FileOps.getNodeValue(resourcePath.toString(), "aa", "bb"));
+        Files.deleteIfExists(resourcePath);
+    }
+
+    //--- extract ----------------
+
+    @Test
+    void extractFile() throws IOException {
+        Path jarPath = getTempDir().resolve("substrate-test.jar");
+        Path targetPath = Files.createDirectory(getTempDir().resolve("test-txt"));
+        Path resourcePath = FileOps.copyResource("/substrate-test.jar", jarPath);
+
+        FileOps.extractFilesFromJar("txt", resourcePath, targetPath, null);
+        assertEquals(1, Files.list(targetPath).count());
+    }
+
+    @Test
+    void extractFiles() throws IOException {
+        Path jarPath = getTempDir().resolve("substrate-test.jar");
+        Path targetPath = Files.createDirectory(getTempDir().resolve("test-ext"));
+        Path resourcePath = FileOps.copyResource("/substrate-test.jar", jarPath);
+
+        FileOps.extractFilesFromJar(List.of("txt", "MF"), resourcePath, targetPath, null);
+        assertEquals(2, Files.list(targetPath).count());
     }
 }

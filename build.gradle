@@ -47,7 +47,7 @@ javadoc {
     options.addBooleanOption('html5', true)
     options.addBooleanOption('javafx', true)
     doFirst {
-        options.addStringOption('-module-path', classpath.asPath)
+        options.modulePath = classpath.flatten()
     }
 }
 
@@ -114,5 +114,5 @@ nexusStaging {
     username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
     password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
     numberOfRetries = 30
-    delayBetweenRetriesInMillis = 3000
+    delayBetweenRetriesInMillis = 10000
 }

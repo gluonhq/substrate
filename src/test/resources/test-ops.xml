@@ -1,0 +1,7 @@
+<?xml version='1.0'?>
+<manifest xmlns:a='http://schemas.android.com/apk/res/android' package='com.gluonhq.tests' a:versionCode='1' a:versionName='1.0'>
+    <application a:label='HelloTest'>
+        <activity a:name='com.gluonhq.helloandroid.MainActivity' a:configChanges="orientation|keyboardHidden"/>
+    </application>
+</manifest>
+

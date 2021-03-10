@@ -1,5 +1,5 @@
 plugins {
-    id 'org.openjfx.javafxplugin' version '0.0.8'
+    id 'org.openjfx.javafxplugin' version '0.0.9'
 }
 
 repositories {
@@ -18,7 +18,7 @@ dependencies {
 }
 
 javafx {
-    version = "13.0.1"
+    version = "15.0.1"
     modules = [ "javafx.controls", "javafx.fxml" ]
 }
 
@@ -32,6 +32,7 @@ task runScript(type: Exec) {
     def javafxStaticSdk = validateJavafxStaticSdk()
 
     def expected = System.getProperty("expected")
+    def consoleProcessLog = System.getProperty("consoleProcessLog")
 
     def argsList = ["${javaHome}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
                     "-Dimagecp=${javafxStaticSdk}/lib/javafx.base.jar:${javafxStaticSdk}/lib/javafx.graphics.jar:${javafxStaticSdk}/lib/javafx.controls.jar:${javafxStaticSdk}/lib/javafx.fxml.jar:" +
@@ -48,6 +49,9 @@ task runScript(type: Exec) {
     }
     if (expected != null) {
         argsList += ["-Dexpected=$expected"]
+    }
+    if (consoleProcessLog != null) {
+        argsList += ["-DconsoleProcessLog=$consoleProcessLog"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList
