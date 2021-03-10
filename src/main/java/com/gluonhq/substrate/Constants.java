@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ public class Constants {
 
     // public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+4";
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+1";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "16-ea+gvm31";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "17-ea+gvm1";
 
     /**
      * Supported GraalVM versions
