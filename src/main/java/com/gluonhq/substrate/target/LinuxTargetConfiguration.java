@@ -71,6 +71,15 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
             "-Wl,--no-whole-archive"
     );
+
+    // we might rename libprism_es2_monocle.a to libprism_es2.a in the future
+    private static final List<String> linuxfxlibsaarch64 = List.of(
+            "-Wl,--whole-archive",
+            "-lprism_es2_monocle", "-lglass", "-lglassgtk3", "-ljavafx_font",
+            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
+            "-Wl,--no-whole-archive"
+    );
+
     private static final List<String> linuxfxMedialibs = List.of(
             "-ljfxmedia", "-lfxplugins", "-lavplugin",
             "-Wl,--no-whole-archive"
@@ -169,11 +178,18 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         }
         if (!useJavaFX) return answer;
 
-        answer.addAll(linuxfxlibs);
+        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+            answer.addAll(linuxfxlibsaarch64);
+        } else {
+            answer.addAll(linuxfxlibs);
+        }
         // TODO: Refactor
         if (projectConfiguration.getClasspath().contains("javafx-media")) {
-            answer.remove(answer.size() - 1);
-            answer.addAll(linuxfxMedialibs);
+            // for now, we don't have media on AARCH64
+            if (!projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+                answer.remove(answer.size() - 1);
+                answer.addAll(linuxfxMedialibs);
+            }
         }
         if (projectConfiguration.getClasspath().contains("javafx-web")) {
             answer.remove(answer.size() - 1);
@@ -185,6 +201,9 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         }
         if (usePrismSW || crossCompile) {
             answer.addAll(linuxfxSWlibs);
+        }
+        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+            answer.add("-lEGL");
         }
         return answer;
     }
