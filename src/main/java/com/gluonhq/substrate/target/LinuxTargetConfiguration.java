@@ -75,8 +75,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     // we might rename libprism_es2_monocle.a to libprism_es2.a in the future
     private static final List<String> linuxfxlibsaarch64 = List.of(
             "-Wl,--whole-archive",
-            "-lprism_es2_monocle", "-lglass", "-lglassgtk3", "-ljavafx_font",
-            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
+            "-lprism_es2_monocle", "-lglass", "-lglassgtk3", "-lglass_monocle", "-ljavafx_font",
+            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio", "-lgluon_drm",
             "-Wl,--no-whole-archive"
     );
 
@@ -106,15 +106,18 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private final String sysroot;
 
+    private final boolean isAarch64;
+
     public LinuxTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
         super(paths, configuration);
+        this.isAarch64 = projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64);
 
         sysroot = fileDeps.getSysrootPath().toString();
     }
 
     @Override
     public boolean compile() throws IOException, InterruptedException {
-        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+        if (isAarch64) {
             projectConfiguration.setUsePrismSW(true); // for now, when compiling for AArch64, we should not assume hw rendering
         }
         return super.compile();
@@ -178,7 +181,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         }
         if (!useJavaFX) return answer;
 
-        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+        if (isAarch64) {
             answer.addAll(linuxfxlibsaarch64);
         } else {
             answer.addAll(linuxfxlibs);
@@ -186,7 +189,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         // TODO: Refactor
         if (projectConfiguration.getClasspath().contains("javafx-media")) {
             // for now, we don't have media on AARCH64
-            if (!projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+            if (!isAarch64) {
                 answer.remove(answer.size() - 1);
                 answer.addAll(linuxfxMedialibs);
             }
@@ -202,8 +205,10 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         if (usePrismSW || crossCompile) {
             answer.addAll(linuxfxSWlibs);
         }
-        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+        if (isAarch64) {
             answer.add("-lEGL");
+            answer.add("-ldrm");
+            answer.add("-lgbm");
         }
         return answer;
     }
@@ -239,7 +244,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("linux").toString()
             ));
             
-        if (projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64)) {
+        if (isAarch64) {
             flags.add("-DAARCH64");
         }
         return flags;
