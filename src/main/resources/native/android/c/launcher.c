@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Gluon
+ * Copyright (c) 2020, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -172,11 +172,6 @@ int *__errno_location(void)
 void getEnviron()
 {
     LOGE(stderr, "\n\ngetEnviron NYI\n\n");
-}
-
-void determineCPUFeatures()
-{
-    LOGE(stderr,  "\n\n\ndetermineCpuFeaures\n");
 }
 
 int getdtablesize() {
