@@ -174,11 +174,6 @@ void getEnviron()
     LOGE(stderr, "\n\ngetEnviron NYI\n\n");
 }
 
-void determineCPUFeatures()
-{
-    LOGE(stderr,  "\n\n\ndetermineCpuFeaures\n");
-}
-
 int getdtablesize() {
     return sysconf(_SC_OPEN_MAX);
 }
