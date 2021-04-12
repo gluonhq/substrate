@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     private static final List<String> staticJavaLibs = Arrays.asList(
             "j2pkcs11", "java", "net", "nio", "prefs", "fdlibm", "sunec", "zip");
     private static final List<String> staticJvmLibs = Arrays.asList(
-            "ffi", "jvm", "libchelper");
+            "jvm", "libchelper");
 
     private static final List<String> javaFxWindowsLibs = List.of(
             "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",

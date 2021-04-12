@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
             "java", "nio", "zip", "net", "prefs", "j2pkcs11", "fdlibm", "sunec", "extnet"
     );
     private static final List<String> staticJvmLibs = Arrays.asList(
-            "ffi", "jvm", "libchelper", "darwin"
+            "jvm", "libchelper", "darwin"
     );
     private static final List<String> staticJavaFxLibs = Arrays.asList(
             "glass", "javafx_font", "javafx_iio", "prism_es2"
