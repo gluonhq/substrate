@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Gluon
+ * Copyright (c) 2020, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,12 +34,15 @@ jclass nativeWebViewClass;
 jobject nativeWebViewObj;
 jmethodID nativeWebView_init;
 jmethodID nativeWebView_loadUrl;
+jmethodID nativeWebView_loadContent;
 jmethodID nativeWebView_x;
 jmethodID nativeWebView_y;
 jmethodID nativeWebView_width;
 jmethodID nativeWebView_height;
 jmethodID nativeWebView_visible;
 jmethodID nativeWebView_executeScript;
+jmethodID nativeWebView_reload;
+jmethodID nativeWebView_remove;
 int reg = -1;
 
 void registerJavaFXMethodHandles(JNIEnv *aenv)
@@ -48,12 +51,15 @@ void registerJavaFXMethodHandles(JNIEnv *aenv)
         nativeWebViewClass = (*aenv)->NewGlobalRef(aenv, (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/NativeWebView"));
         nativeWebView_init = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "<init>", "()V");
         nativeWebView_loadUrl = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "loadUrl", "(Ljava/lang/String;)V");
+        nativeWebView_loadContent = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "loadContent", "(Ljava/lang/String;)V");
         nativeWebView_x = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "setX", "(D)V");
         nativeWebView_y = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "setY", "(D)V");
         nativeWebView_width = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "setWidth", "(D)V");
         nativeWebView_height = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "setHeight", "(D)V");
         nativeWebView_visible = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "setVisible", "(Z)V");
         nativeWebView_executeScript = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "executeScript", "(Ljava/lang/String;)Ljava/lang/String;");
+        nativeWebView_reload = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "reload", "()V");
+        nativeWebView_remove = (*aenv)->GetMethodID(aenv, nativeWebViewClass, "remove", "()V");
         reg = 1;
     }
 }
@@ -168,6 +174,16 @@ void substrate_loadUrl(char* curl) {
     DETACH_DALVIK();
 }
 
+void substrate_loadContent(char* curl) {
+    ATTACH_DALVIK();
+    LOGE(stderr, "load content: %s\n", curl);
+    jstring jurl = (*dalvikEnv)->NewStringUTF(dalvikEnv, curl);
+    LOGE(stderr, "call loadContent and wvo = %p\n", nativeWebViewObj);
+    (*dalvikEnv)->CallVoidMethod(dalvikEnv, nativeWebViewObj, nativeWebView_loadContent, jurl);
+    // Release
+    DETACH_DALVIK();
+}
+
 void substrate_setWebViewX(double x) {
     ATTACH_DALVIK();
     LOGE(stderr, "webView x %f\n", x);
@@ -215,6 +231,20 @@ char* substrate_executeScript(char* script) {
     return resultChars;
 }
 
+void substrate_reloadWebView() {
+    ATTACH_DALVIK();
+    LOGE(stderr, "reload webView\n");
+    (*dalvikEnv)->CallVoidMethod(dalvikEnv, nativeWebViewObj, nativeWebView_reload);
+    DETACH_DALVIK();
+}
+
+void substrate_removeWebView() {
+    ATTACH_DALVIK();
+    LOGE(stderr, "remove webView\n");
+    (*dalvikEnv)->CallVoidMethod(dalvikEnv, nativeWebViewObj, nativeWebView_remove);
+    DETACH_DALVIK();
+}
+
 // Callbacks
 
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_NativeWebView_nativeStartURL(JNIEnv *env, jobject activity, jstring url)
@@ -242,4 +272,13 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_NativeWebView_nativeFailedU
     androidJfx_failedURL(curl);
     (*env)->ReleaseStringUTFChars(env, url, curl);
 }
+
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_NativeWebView_nativeJavaCallURL(JNIEnv *env, jobject activity, jstring url)
+{
+    LOGE(stderr, "nativeJavaCallURL called. Invoke method on webView\n");
+    const char *curl = (*env)->GetStringUTFChars(env, url, NULL);
+    androidJfx_javaCallURL(curl);
+    (*env)->ReleaseStringUTFChars(env, url, curl);
+}
+
 #endif

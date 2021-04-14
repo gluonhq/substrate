@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Gluon
+ * Copyright (c) 2020, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,3 +54,4 @@ int  __attribute__((weak)) to_jfx_touch_action(int state) { return 0; }
 void __attribute__((weak)) androidJfx_startURL(const char *url) {}
 void __attribute__((weak)) androidJfx_finishURL(const char *url, const char *html) {}
 void __attribute__((weak)) androidJfx_failedURL(const char *url) {}
+void __attribute__((weak)) androidJfx_javaCallURL(const char *url) {}
