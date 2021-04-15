@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -186,7 +186,24 @@ int startGVM(const char* userHome, const char* userTimeZone, const char* userLau
     return 0;
 }
 
-void determineCPUFeatures()
+typedef struct {
+  char fFP;
+  char fASIMD;
+  char fEVTSTRM;
+  char fAES;
+  char fPMULL;
+  char fSHA1;
+  char fSHA2;
+  char fCRC32;
+  char fLSE;
+  char fSTXRPREFETCH;
+  char fA53MAC;
+  char fDMBATOMICS;
+} CPUFeatures;
+
+void determineCPUFeatures(CPUFeatures* features)
 {
     fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
+    features->fFP = 1;
+    features->fASIMD = 1;
 }
