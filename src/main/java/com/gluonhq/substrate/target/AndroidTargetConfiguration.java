@@ -82,7 +82,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private final List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c",
             "touch_events.c", "glibc_shim.c", "attach_adapter.c", "logger.c");
+    private final List<String> androidAdditionalWebSourceFiles = Collections.singletonList("bridge_webview.c");
     private final List<String> androidAdditionalHeaderFiles = Arrays.asList("grandroid.h", "grandroid_ext.h");
+    private final List<String> androidAdditionalWebHeaderFiles = Collections.singletonList("bridge_webview.h");
     private final List<String> cFlags = new ArrayList<>(Arrays.asList("-target", ANDROID_TRIPLET, "-I."));
     private final List<String> linkFlags = Arrays.asList("-target",
             ANDROID_TRIPLET + ANDROID_MIN_SDK_VERSION, "-fPIC", "-fuse-ld=gold",
@@ -254,7 +256,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
-        if (projectConfiguration.getClasspath().contains("javafx-web")) {
+        if (projectConfiguration.hasWeb()) {
             cFlags.add("-DJAVAFX_WEB");
         }
         return cFlags;
@@ -265,7 +267,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (!useJavaFX) return linkFlags;
         List<String> answer = new ArrayList<>();
         answer.addAll(linkFlags);
-        if (projectConfiguration.getClasspath().contains("javafx-web")) {
+        if (projectConfiguration.hasWeb()) {
             javafxLinkFlags.addAll(Arrays.asList(WL_WHOLE_ARCHIVE, javafxWebLib, WL_NO_WHOLE_ARCHIVE));
         }
         answer.addAll(javafxLinkFlags);
@@ -321,12 +323,20 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        return androidAdditionalSourceFiles;
+        List<String> answer = new ArrayList<>(androidAdditionalSourceFiles);
+        if (projectConfiguration.hasWeb()) {
+            answer.addAll(androidAdditionalWebSourceFiles);
+        }
+        return answer;
     }
 
     @Override
     List<String> getAdditionalHeaderFiles() {
-        return androidAdditionalHeaderFiles;
+        List<String> answer = new ArrayList<>(androidAdditionalHeaderFiles);
+        if (projectConfiguration.hasWeb()) {
+            answer.addAll(androidAdditionalWebHeaderFiles);
+        }
+        return answer;
     }
 
     private Path getAndroidProjectPath() {
@@ -460,7 +470,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             FileOps.deleteDirectory(androidProject);
         }
         FileOps.copyDirectoryFromResources(ANDROID_NATIVE_FOLDER + ANDROID_PROJECT_NAME, androidProject);
-        if (!projectConfiguration.getClasspath().contains("javafx-web")) {
+        if (!projectConfiguration.hasWeb()) {
             Files.deleteIfExists(Path.of(androidProject.toString(), "app", "src", "main", "java", "com", "gluonhq", "helloandroid", "NativeWebView.java"));
         }
         androidProject.resolve("gradlew").toFile().setExecutable(true);

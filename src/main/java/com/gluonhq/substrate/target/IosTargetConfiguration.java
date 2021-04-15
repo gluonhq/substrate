@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         if (useJavaFX) {
             String javafxSDK = projectConfiguration.getJavafxStaticLibsPath().toString();
             List<String> libs = new ArrayList<>(javafxLibs);
-            if (projectConfiguration.getClasspath().contains("javafx-web")) {
+            if (projectConfiguration.hasWeb()) {
                 libs.add(javafxWebLib);
             }
             libs.forEach(name ->

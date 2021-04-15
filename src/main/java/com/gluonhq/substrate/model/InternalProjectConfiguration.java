@@ -415,6 +415,10 @@ public class InternalProjectConfiguration {
         return publicConfig.getClasspath();
     }
 
+    public boolean hasWeb() {
+        return getClasspath().contains("javafx-web") || getClasspath().contains("javafx.web");
+    }
+
     public ReleaseConfiguration getReleaseConfiguration() {
         return Optional.ofNullable(publicConfig.getReleaseConfiguration()).orElse(new ReleaseConfiguration());
     }
