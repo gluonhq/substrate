@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Gluon
+ * Copyright (c) 2020, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -95,6 +95,16 @@ public class NativeWebView {
                         });
                     }
 
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                        if (url.contains("javacall")) {
+                            Log.v(TAG, "Stop url loading, due to javacall: " + url);
+                            nativeJavaCallURL(url);
+                            return true;
+                        }
+                        return false;
+                    }
+
                     @RequiresApi(api = Build.VERSION_CODES.M)
                     @Override
                     public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
@@ -119,9 +129,14 @@ public class NativeWebView {
                 webSettings.setDomStorageEnabled(true);
                 webSettings.setUseWideViewPort(true);
                 webSettings.setLoadWithOverviewMode(true);
+                webSettings.setAllowContentAccess(true);
+                webSettings.setAllowFileAccess(true);
+                webSettings.setBuiltInZoomControls(true);
+
+                // TODO: Allow remote debugging
+                WebView.setWebContentsDebuggingEnabled(false);
 
                 Log.v(TAG, "NATIVEWEBVIEW wv = "+NativeWebView.this.webView);
-                Log.v(TAG, "finally, NATIVEWEBVIEW wv = "+NativeWebView.this.webView);
             }
         });
         reLayout();
@@ -137,6 +152,15 @@ public class NativeWebView {
         });
     }
 
+    public void loadContent(final String content) {
+        Log.v(TAG, "in dalvik, loadContent called with webView = "+this.webView);
+        instance.runOnUiThread(new Runnable () {
+            public void run() {
+                NativeWebView.this.webView.loadData(content, "text/html; charset=utf-8", "UTF-8");
+            }
+        });
+    }
+
     public String executeScript(final String script) {
         Log.v(TAG, "in dalvik, loadUrl called with script  and webView = "+this.webView);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -147,8 +171,8 @@ public class NativeWebView {
                 NativeWebView.this.webView.evaluateJavascript(script, new ValueCallback<String>() {
                     @Override
                     public void onReceiveValue(String s) {
-                        Log.v(TAG, "in dalvik, script result: " + s);
-                        scriptResult = s;
+                        scriptResult = s.replace("\\\"", "");
+                        Log.v(TAG, "in dalvik, script result: " + scriptResult);
                         latch.countDown();
                     }
                 });
@@ -239,7 +263,28 @@ public class NativeWebView {
 
     }
 
+    private void reload() {
+        Log.v(TAG, "reload webView");
+        instance.runOnUiThread(new Runnable () {
+            public void run() {
+                NativeWebView.this.webView.reload();
+            }
+        });
+    }
+
+    private void remove() {
+        Log.v(TAG, "remove webView");
+        instance.runOnUiThread(new Runnable () {
+            public void run() {
+                MainActivity.getViewGroup().removeView(webView);
+                // TODO: destroy webView ?
+                layoutStarted = false;
+            }
+        });
+    }
+
     private native void nativeStartURL(String url);
     private native void nativeFinishURL(String url, String innerHTML);
     private native void nativeFailedURL(String url);
+    private native void nativeJavaCallURL(String url);
 }
