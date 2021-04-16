@@ -58,7 +58,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
 
     private static final List<String> staticJavaLibs = Arrays.asList(
-            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet", "fdlibm"
+            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet", "fdlibm",
+            "fontmanager", "javajpeg", "lcms", "awt_headless", "awt"
     );
 
     private static final List<String> staticJvmLibs = Arrays.asList(
@@ -194,14 +195,14 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 answer.addAll(linuxfxMedialibs);
             }
         }
-        if (projectConfiguration.getClasspath().contains("javafx-web")) {
+        if (projectConfiguration.hasWeb()) {
             answer.remove(answer.size() - 1);
             answer.addAll(linuxfxWeblibs);
         }
-        answer.addAll(LinuxLinkerFlags.getLinkerFlags());
         if (!crossCompile) {
             answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
         }
+        answer.addAll(LinuxLinkerFlags.getLinkerFlags());
         if (usePrismSW || crossCompile) {
             answer.addAll(linuxfxSWlibs);
         }
