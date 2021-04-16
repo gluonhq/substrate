@@ -28,7 +28,11 @@
     "name" : "java.lang.Class",
     "methods" : [
       {"name":"forName","parameterTypes":["java.lang.String", "boolean", "java.lang.ClassLoader"] },
-      {"name":"getCanonicalName","parameterTypes":[] }
+      {"name":"getCanonicalName","parameterTypes":[] },
+      {"name":"getFields","parameterTypes":[] },
+      {"name":"getMethods","parameterTypes":[] },
+      {"name":"getName","parameterTypes":[] },
+      {"name":"isArray","parameterTypes":[] }
     ]
   }
 ,
@@ -60,6 +64,25 @@
     "name" : "java.lang.Long",
     "methods" : [
       {"name":"longValue","parameterTypes":[] }
+    ]
+  }
+,
+  {
+    "name":"java.lang.Number"
+  }
+,
+  {
+    "name":"java.lang.Object",
+    "methods":[{"name":"getClass","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"java.lang.reflect.Method",
+    "methods":[
+      {"name":"getModifiers","parameterTypes":[] },
+      {"name":"getName","parameterTypes":[] },
+      {"name":"getParameterTypes","parameterTypes":[] },
+      {"name":"getReturnType","parameterTypes":[] }
     ]
   }
 ,
