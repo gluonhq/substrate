@@ -103,7 +103,7 @@ public class Constants {
 
     // public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "15-ea+4";
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+1";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "17-ea+gvm1";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "17-ea+7";
 
     /**
      * Supported GraalVM versions
