@@ -23,6 +23,8 @@ jobs:
           sudo apt-get install at-spi2-core build-essential libgtk-3-dev libxtst-dev libavcodec-dev libavformat-dev libasound2-dev libgl-dev
           sudo apt-get install xvfb tigervnc-standalone-server tigervnc-common
 
+      - uses: actions/checkout@v2
+
       - name: Setup Gluon's GraalVM
         uses: gluonhq/setup-graalvm@master
         env:
