@@ -55,11 +55,11 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     private static final List<String> staticJavaFxLibs = Arrays.asList(
             "glass", "javafx_font", "javafx_iio", "prism_es2"
     );
-    private static final List<String> macfxWebkit = List.of("jfxwebkit");
-    private static final List<String> macfxWeblibs = List.of(
-            "-lWebCore", "-lXMLJava", "-lJavaScriptCore", "-lbmalloc",
-            "-licui18n", "-lSqliteJava", "-lXSLTJava", "-lPAL", "-lWebCoreTestSupport",
-            "-lWTF", "-licuuc", "-licudata"
+    private static final String staticWebKitLib = "jfxwebkit";
+    private static final List<String> webKitDarwinLibs = List.of(
+            "WebCore", "XMLJava", "JavaScriptCore", "bmalloc",
+            "icui18n", "SqliteJava", "XSLTJava", "PAL", "WebCoreTestSupport",
+            "WTF", "icuuc", "icudata"
     );
 
     public MacOSTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
@@ -78,31 +78,29 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        List<String> linkFlags = new ArrayList<>();
-
-        linkFlags.addAll(asListOfLibraryLinkFlags(javaDarwinLibs));
+        List<String> linkFlags = new ArrayList<>(asListOfLibraryLinkFlags(javaDarwinLibs));
         if (useJavaFX) {
             linkFlags.addAll(asListOfLibraryLinkFlags(javaFxDarwinLibs));
+            if (projectConfiguration.hasWeb()) {
+                linkFlags.addAll(asListOfLibraryLinkFlags(webKitDarwinLibs));
+            }
         }
 
         linkFlags.addAll(asListOfFrameworkLinkFlags(javaDarwinFrameworks));
-        if (useJavaFX) {
-            linkFlags.addAll(asListOfFrameworkLinkFlags(javaFxDarwinFrameworks));
-        }
 
         if (useJavaFX) {
+            linkFlags.addAll(asListOfFrameworkLinkFlags(javaFxDarwinFrameworks));
+
             List<String> javafxLibs = new ArrayList<>(staticJavaFxLibs);
             if (usePrismSW) {
                 javafxLibs.add("prism_sw");
             }
+            if (projectConfiguration.hasWeb()) {
+                javafxLibs.add(staticWebKitLib);
+            }
 
             String staticLibPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
             linkFlags.addAll(asListOfStaticLibraryLinkFlags(staticLibPath, javafxLibs));
-
-            if (projectConfiguration.hasWeb()) {
-                linkFlags.addAll(asListOfStaticLibraryLinkFlags(staticLibPath, macfxWebkit));
-                linkFlags.addAll(macfxWeblibs);
-            }
         }
 
         return linkFlags;
