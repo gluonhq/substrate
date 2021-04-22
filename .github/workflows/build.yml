@@ -28,7 +28,7 @@ jobs:
       - name: Setup Gluon's GraalVM
         uses: gluonhq/setup-graalvm@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GLUONTEAM_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install linux JavaFX static libs (Linux)
         if: runner.os == 'Linux'
