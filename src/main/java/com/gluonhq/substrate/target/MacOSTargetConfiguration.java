@@ -43,7 +43,7 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     private static final List<String> javaFxDarwinLibs = Arrays.asList("objc");
     private static final List<String> javaFxDarwinFrameworks = Arrays.asList(
-            "ApplicationServices", "OpenGL", "QuartzCore", "Security"
+            "ApplicationServices", "OpenGL", "QuartzCore", "Security", "Accelerate"
     );
 
     private static final List<String> staticJavaLibs = Arrays.asList(
@@ -54,6 +54,12 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     );
     private static final List<String> staticJavaFxLibs = Arrays.asList(
             "glass", "javafx_font", "javafx_iio", "prism_es2"
+    );
+    private static final List<String> macfxWebkit = List.of("jfxwebkit");
+    private static final List<String> macfxWeblibs = List.of(
+            "-lWebCore", "-lXMLJava", "-lJavaScriptCore", "-lbmalloc",
+            "-licui18n", "-lSqliteJava", "-lXSLTJava", "-lPAL", "-lWebCoreTestSupport",
+            "-lWTF", "-licuuc", "-licudata"
     );
 
     public MacOSTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
@@ -92,6 +98,11 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
             String staticLibPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
             linkFlags.addAll(asListOfStaticLibraryLinkFlags(staticLibPath, javafxLibs));
+
+            if (projectConfiguration.hasWeb()) {
+                linkFlags.addAll(asListOfStaticLibraryLinkFlags(staticLibPath, macfxWebkit));
+                linkFlags.addAll(macfxWeblibs);
+            }
         }
 
         return linkFlags;
