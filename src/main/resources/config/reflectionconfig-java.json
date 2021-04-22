@@ -4,7 +4,11 @@
     "methods":[{"name":"isIdeographic","parameterTypes":["int"] }]
   },
   {
-    "name":"java.lang.Class"
+    "name":"java.lang.Class",
+    "methods":[
+      {"name":"getFields","parameterTypes":[] },
+      {"name":"getMethods","parameterTypes":[] }
+    ]
   },
   {
     "name":"java.lang.Deprecated",
