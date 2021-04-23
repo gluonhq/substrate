@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,9 +49,28 @@ void Java_java_io_ObjectOutputStream_doublesToBytes() {
 }
 
 #ifdef AARCH64
-void determineCPUFeatures() {
-    fprintf(stderr, "determineCPUFeatures asked, not supported\n");
+
+typedef struct {
+  char fFP;
+  char fASIMD;
+  char fEVTSTRM;
+  char fAES;
+  char fPMULL;
+  char fSHA1;
+  char fSHA2;
+  char fCRC32;
+  char fLSE;
+  char fSTXRPREFETCH;
+  char fA53MAC;
+  char fDMBATOMICS;
+} CPUFeatures;
+
+void determineCPUFeatures(CPUFeatures* features) {
+    fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
+    features->fFP = 1;
+    features->fASIMD = 1;
 }
+
 void JVM_NativePath() {
     fprintf(stderr, "We should never reach here (JVM_nativePath)\n");
 }
@@ -70,19 +89,6 @@ void JVM_RawMonitorEnter() {
 
 void JVM_RawMonitorExit() {
     fprintf(stderr, "We should never reach here (JVM_RawMonitorExit)\n");
-}
-
-// AWT calls might be linked via GraalVM code
-void Java_java_awt_Toolkit_initIDs() {
-fprintf(stderr, "NOT IMPLEMENTED\n");
-}
-
-void JNI_OnLoad_awt_headless() {
-fprintf(stderr, "NOT IMPLEMENTED\n");
-}
-
-void JNI_OnLoad_awt() {
-fprintf(stderr, "NOT IMPLEMENTED\n");
 }
 
 // Thise functions come from unused glass-monocle code that should be removed from OpenJFX
