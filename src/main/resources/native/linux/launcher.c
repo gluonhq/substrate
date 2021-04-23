@@ -91,19 +91,6 @@ void JVM_RawMonitorExit() {
     fprintf(stderr, "We should never reach here (JVM_RawMonitorExit)\n");
 }
 
-// AWT calls might be linked via GraalVM code
-void Java_java_awt_Toolkit_initIDs() {
-fprintf(stderr, "NOT IMPLEMENTED\n");
-}
-
-void JNI_OnLoad_awt_headless() {
-fprintf(stderr, "NOT IMPLEMENTED\n");
-}
-
-void JNI_OnLoad_awt() {
-fprintf(stderr, "NOT IMPLEMENTED\n");
-}
-
 // Thise functions come from unused glass-monocle code that should be removed from OpenJFX
 void getNativeWindowType() {
 fprintf(stderr, "NOT IMPLEMENTED\n");
