@@ -82,7 +82,7 @@ public final class FileDeps {
             "platforms;android-29", "build-tools;29.0.3", "platform-tools",
             "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle" };
 
-    private static final String ARCH_SYSROOT_URL = "https://download2.gluonhq.com/substrate/${arch}sysroot.zip";
+    private static final String ARCH_SYSROOT_URL = "https://download2.gluonhq.com/substrate/sysroot/${arch}sysroot-${version}.zip";
 
     private final InternalProjectConfiguration configuration;
 
@@ -477,7 +477,7 @@ public final class FileDeps {
 
     private void downloadSysrootZip(String arch) throws IOException {
         Logger.logInfo("Downloading sysroot zip...");
-        String sysrootZip = Strings.substitute(ARCH_SYSROOT_URL, Map.of("arch", arch));
+        String sysrootZip = Strings.substitute(ARCH_SYSROOT_URL, Map.of("arch", arch, "version", Constants.DEFAULT_SYSROOT_VERSION));
         FileOps.downloadAndUnzip(sysrootZip,
                 Constants.USER_SUBSTRATE_PATH,
                 arch+"sysroot.zip",
