@@ -103,7 +103,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private final String capLocation= "/native/linux-aarch64/cap/";
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
-            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
+            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive",
+            "-l:libm.a");
 
     private final String sysroot;
 

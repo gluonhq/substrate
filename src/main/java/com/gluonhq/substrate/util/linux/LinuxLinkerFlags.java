@@ -75,7 +75,7 @@ public class LinuxLinkerFlags {
         activeOf(debian("xtst", "libxtst-dev"),
                  fedora("xtst", "libXtst-devel")),
 
-        hardwired("-lm"),
+        hardwired("-l:libm.a"),
 
         activeOf(debian("gmodule-no-export-2.0", "libglib2.0-dev"),
                  fedora("gmodule-no-export-2.0", "glib2-devel"))
