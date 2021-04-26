@@ -63,7 +63,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     );
 
     private static final List<String> staticJvmLibs = Arrays.asList(
-           "jvm", "libchelper"
+            "jvm", "libchelper"
     );
 
     private static final List<String> linuxfxlibs = List.of(
@@ -94,16 +94,16 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     );
 
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
-            "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
-            "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
-            "PosixDirectives.cap"};
+        "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
+        "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
+        "PosixDirectives.cap"};
 
     private String llvmCapFile = "LLVMDirectives.cap";
 
-    private final String capLocation= "/native/linux-aarch64/cap/";
+    private final String capLocation = "/native/linux-aarch64/cap/";
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
-            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive", "-lm");
+            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive");
 
     private final String sysroot;
 
@@ -140,7 +140,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificJavaLinkLibraries(){
+    List<String> getTargetSpecificJavaLinkLibraries() {
         List<String> targetLibraries = new ArrayList<>();
 
         Path javaStaticLibPath = null;
@@ -151,10 +151,10 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             throw new RuntimeException("Fatal error, we have no static Java libraries, so we can't link with them.");
         }
         for (String lib : staticJavaLibs) {
-            targetLibraries.add(javaStaticLibPath.resolve("lib"+lib+".a").toString());
+            targetLibraries.add(javaStaticLibPath.resolve("lib" + lib + ".a").toString());
         }
         for (String lib : staticJvmLibs) {
-            targetLibraries.add(graalClibsPath.resolve("lib"+lib+".a").toString());
+            targetLibraries.add(graalClibsPath.resolve("lib" + lib + ".a").toString());
         }
 
         targetLibraries.addAll(asListOfLibraryLinkFlags(linuxLibs));
@@ -180,37 +180,40 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             answer.add("--sysroot");
             answer.add(sysroot);
         }
-        if (!useJavaFX) return answer;
+        if (useJavaFX) {
 
-        if (isAarch64) {
-            answer.addAll(linuxfxlibsaarch64);
-        } else {
-            answer.addAll(linuxfxlibs);
-        }
-        // TODO: Refactor
-        if (projectConfiguration.getClasspath().contains("javafx-media")) {
-            // for now, we don't have media on AARCH64
-            if (!isAarch64) {
+            if (isAarch64) {
+                answer.addAll(linuxfxlibsaarch64);
+            } else {
+                answer.addAll(linuxfxlibs);
+            }
+            // TODO: Refactor
+            if (projectConfiguration.getClasspath().contains("javafx-media")) {
+                // for now, we don't have media on AARCH64
+                if (!isAarch64) {
+                    answer.remove(answer.size() - 1);
+                    answer.addAll(linuxfxMedialibs);
+                }
+            }
+            if (projectConfiguration.hasWeb()) {
                 answer.remove(answer.size() - 1);
-                answer.addAll(linuxfxMedialibs);
+                answer.addAll(linuxfxWeblibs);
+            }
+            if (!crossCompile) {
+                answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
+            }
+            answer.addAll(LinuxLinkerFlags.getLinkerFlags());
+            if (usePrismSW || crossCompile) {
+                answer.addAll(linuxfxSWlibs);
+            }
+            if (isAarch64) {
+                answer.add("-lEGL");
+                answer.add("-ldrm");
+                answer.add("-lgbm");
             }
         }
-        if (projectConfiguration.hasWeb()) {
-            answer.remove(answer.size() - 1);
-            answer.addAll(linuxfxWeblibs);
-        }
-        if (!crossCompile) {
-            answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
-        }
-        answer.addAll(LinuxLinkerFlags.getLinkerFlags());
-        if (usePrismSW || crossCompile) {
-            answer.addAll(linuxfxSWlibs);
-        }
-        if (isAarch64) {
-            answer.add("-lEGL");
-            answer.add("-ldrm");
-            answer.add("-lgbm");
-        }
+        answer.add("-lm");
+        answer.add("-ldl");
         return answer;
     }
 
@@ -240,63 +243,63 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     protected List<String> getTargetSpecificCCompileFlags() {
-        List<String> flags = new ArrayList<>(Arrays.asList("-I" + 
-            projectConfiguration.getGraalPath().resolve("include").toString(),
-            "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("linux").toString()
-            ));
-            
+        List<String> flags = new ArrayList<>(Arrays.asList("-I"
+                + projectConfiguration.getGraalPath().resolve("include").toString(),
+                "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("linux").toString()
+        ));
+
         if (isAarch64) {
             flags.add("-DAARCH64");
         }
         return flags;
     }
 
-   /*
+    /*
     * Copies the .cap files from the jar resource and store them in
     * a directory. Return that directory
-    */
+     */
     private Path getCapCacheDir() throws IOException {
         Path capPath = paths.getGvmPath().resolve("capcache");
         if (!Files.exists(capPath)) {
             Files.createDirectory(capPath);
         }
         for (String cap : capFiles) {
-            FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
+            FileOps.copyResource(capLocation + cap, capPath.resolve(cap));
         }
         return capPath;
     }
 
     private void checkCompiler() throws IOException, InterruptedException {
-        validateVersion(new String[] { "gcc", "--version" }, "compiler", COMPILER_MINIMAL_VERSION);
+        validateVersion(new String[]{"gcc", "--version"}, "compiler", COMPILER_MINIMAL_VERSION);
     }
 
     private void checkLinker() throws InterruptedException, IOException {
-        validateVersion(new String[] { "ld", "--version" }, "linker", LINKER_MINIMAL_VERSION);
+        validateVersion(new String[]{"ld", "--version"}, "linker", LINKER_MINIMAL_VERSION);
     }
 
     private void validateVersion(String[] processCommand, String processName, Version minimalVersion) throws InterruptedException, IOException {
         String versionLine = getFirstLineFromProcess(processCommand);
         if (versionLine == null) {
             System.err.println(
-                    "WARNING: we were unable to parse the version of your " + processName + ".\n" +
-                    "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is " + minimalVersion + ".");
+                    "WARNING: we were unable to parse the version of your " + processName + ".\n"
+                    + "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is " + minimalVersion + ".");
         } else {
             VersionParser versionParser = new VersionParser();
             Version version = versionParser.parseVersion(versionLine);
             if (version == null) {
                 System.err.println(
-                        "WARNING: we were unable to parse the version of your " + processName + ": \"" + versionLine + "\".\n" +
-                        "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is \"" + minimalVersion + "\".");
+                        "WARNING: we were unable to parse the version of your " + processName + ": \"" + versionLine + "\".\n"
+                        + "         The build will continue, but please bare in mind that the minimal required version for " + processCommand[0] + " is \"" + minimalVersion + "\".");
             } else if (version.compareTo(minimalVersion) < 0) {
                 System.err.println(
-                        "ERROR: The version of your " + processName + ": \"" + version + "\", does not match the minimal required version: \"" + minimalVersion + "\".\n" +
-                        "       Please check https://docs.gluonhq.com/client/#_linux and make sure that your environment meets the requirements.");
+                        "ERROR: The version of your " + processName + ": \"" + version + "\", does not match the minimal required version: \"" + minimalVersion + "\".\n"
+                        + "       Please check https://docs.gluonhq.com/client/#_linux and make sure that your environment meets the requirements.");
                 throw new IllegalArgumentException(processCommand[0] + " version too old");
             }
         }
     }
 
-    private String getFirstLineFromProcess(String...command) throws InterruptedException, IOException {
+    private String getFirstLineFromProcess(String... command) throws InterruptedException, IOException {
         ProcessBuilder compiler = new ProcessBuilder(command);
         compiler.redirectErrorStream(true);
 
@@ -304,7 +307,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         InputStream processInputStream = compilerProcess.getInputStream();
         compilerProcess.waitFor();
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(processInputStream))) {
+        try ( BufferedReader reader = new BufferedReader(new InputStreamReader(processInputStream))) {
             return reader.readLine();
         }
     }
@@ -341,9 +344,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             ProcessRunner pr = new ProcessRunner("objdump", "-f", path.toFile().getAbsolutePath());
             pr.showSevereMessage(false);
             int op = pr.runProcess("objdump");
-            if (op == 0) return true;
+            if (op == 0) {
+                return true;
+            }
         } catch (IOException | InterruptedException e) {
-            Logger.logSevere("Unrecoverable error checking file "+path+": "+e);
+            Logger.logSevere("Unrecoverable error checking file " + path + ": " + e);
         }
         Logger.logDebug("Ignore file " + path + " since objdump failed on it");
         return false;
