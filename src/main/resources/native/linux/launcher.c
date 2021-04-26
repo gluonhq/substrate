@@ -26,7 +26,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <stdio.h>
+#include <math.h>
 
+__asm__(".symver pow,pow@GLIBC_2.2.5");
 extern int *run_main(int argc, const char* argv[]);
 
 int main(int argc, const char* argv[]) {
@@ -35,6 +37,11 @@ int main(int argc, const char* argv[]) {
     #endif
     (*run_main)(argc, argv);
 }
+
+float powwrapper(float a, float b) {
+    return pow(a,b);
+}
+
 
 // the following functions are used in Java 11 but not in 14
 // we use the native libs from 14.
