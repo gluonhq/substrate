@@ -28,7 +28,18 @@
 #include <stdio.h>
 #include <math.h>
 
-__asm__(".symver pow,pow@GLIBC_2.2.5");
+double pow_old(double x, double y) {
+#ifdef __amd64__
+    __asm__(".symver pow_old,pow@GLIBC_2.2.5");
+#elif defined(__aarch64__)
+    __asm__(".symver pow_old,pow@GLIBC_2.17");
+#endif
+}
+
+double __wrap_pow(double x, double y) {
+    return pow_old(x, y);
+}
+
 extern int *run_main(int argc, const char* argv[]);
 
 int main(int argc, const char* argv[]) {
