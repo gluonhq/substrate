@@ -174,6 +174,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) throws IOException, InterruptedException {
         List<String> answer = new LinkedList<>();
+        answer.add("-Wl,--wrap=pow");
         answer.add("-rdynamic");
         if (crossCompile) {
             answer.add("-fuse-ld=gold");
