@@ -177,4 +177,9 @@ public class Constants {
      */
     public static final String NATIVE_IMAGE_ARG_CLASSPATH = "-cp";
 
+    /**
+     * Linker flags
+     */
+    public static final String WL_WHOLE_ARCHIVE = "-Wl,--whole-archive";
+    public static final String WL_NO_WHOLE_ARCHIVE = "-Wl,--no-whole-archive";
 }

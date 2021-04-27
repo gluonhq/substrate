@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,10 +36,14 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public final class Strings {
 
     private static final Pattern substitutionPattern = Pattern.compile("\\$\\{(.+?)}");
+    private static final String KEEP_STRING_SUFFIX = "_$$";
+
     /**
      * Replaces keys within the template with values using context function
      * Throws IllegalArgumentException if the key found in the template has no corresponding value
@@ -108,4 +112,46 @@ public final class Strings {
                 .toString();
     }
 
+    /**
+     * Removes duplicated strings from a sourceList list, keeping the items with higher index
+     * in the list. Any item in the keep list will not be removed.
+     *
+     * @param sourceList the initial list of strings with possible duplicates
+     * @param keepList the list of items that can't be removed
+     * @return
+     */
+    public static List<String> removeDuplicates(List<String> sourceList, List<String> keepList) {
+        List<String> modSourceList = IntStream.range(0, sourceList.size())
+                .mapToObj(i -> {
+                    String s = sourceList.get(i);
+                    if (keepList.stream().anyMatch(k -> k.equals(s))) {
+                        return s + KEEP_STRING_SUFFIX + i;
+                    }
+                    return s;
+                }).collect(Collectors.toList());
+
+        List<String> uniqueReversedSourceList = reverseIndices(0, modSourceList.size())
+                .mapToObj(modSourceList::get)
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<String> uniqueSortedSourceList = reverseIndices(0, uniqueReversedSourceList.size())
+                .mapToObj(uniqueReversedSourceList::get)
+                .collect(Collectors.toList());
+
+        return uniqueSortedSourceList.stream()
+                .map(s -> s.contains(KEEP_STRING_SUFFIX) ? s.substring(0, s.indexOf(KEEP_STRING_SUFFIX)) : s)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns an IntStream with reversed indices
+     * @param from initial index of a given range
+     * @param to final index of a given range
+     * @return an {@link IntStream}
+     */
+    private static IntStream reverseIndices(int from, int to) {
+        return IntStream.range(from, to)
+                .map(i -> to - i + from - 1);
+    }
 }

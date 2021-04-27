@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,6 +50,9 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.gluonhq.substrate.Constants.WL_NO_WHOLE_ARCHIVE;
+import static com.gluonhq.substrate.Constants.WL_WHOLE_ARCHIVE;
+
 public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private static final Version COMPILER_MINIMAL_VERSION = new Version(6);
@@ -67,43 +70,41 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     );
 
     private static final List<String> linuxfxlibs = List.of(
-            "-Wl,--whole-archive",
+            WL_WHOLE_ARCHIVE,
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
-            "-Wl,--no-whole-archive"
+            WL_NO_WHOLE_ARCHIVE
     );
 
     // we might rename libprism_es2_monocle.a to libprism_es2.a in the future
     private static final List<String> linuxfxlibsaarch64 = List.of(
-            "-Wl,--whole-archive",
+            WL_WHOLE_ARCHIVE,
             "-lprism_es2_monocle", "-lglass", "-lglassgtk3", "-lglass_monocle", "-ljavafx_font",
             "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio", "-lgluon_drm",
-            "-Wl,--no-whole-archive"
+            WL_NO_WHOLE_ARCHIVE
     );
 
     private static final List<String> linuxfxMedialibs = List.of(
             "-ljfxmedia", "-lfxplugins", "-lavplugin",
-            "-Wl,--no-whole-archive"
+            WL_NO_WHOLE_ARCHIVE
     );
     private static final List<String> linuxfxWeblibs = List.of(
             "-ljfxwebkit",
-            "-Wl,--no-whole-archive",
+            WL_NO_WHOLE_ARCHIVE,
             "-lWebCore", "-lXMLJava", "-lJavaScriptCore", "-lbmalloc",
             "-licui18n", "-lSqliteJava", "-lXSLTJava", "-lPAL", "-lWebCoreTestSupport",
             "-lWTF", "-licuuc", "-licudata"
     );
 
-    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
+    private final String[] capFiles = {"AArch64LibCHelperDirectives.cap",
         "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
         "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
         "PosixDirectives.cap"};
 
-    private String llvmCapFile = "LLVMDirectives.cap";
-
     private final String capLocation = "/native/linux-aarch64/cap/";
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
-            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive");
+            "-lprism_sw", WL_NO_WHOLE_ARCHIVE);
 
     private final String sysroot;
 
@@ -189,24 +190,25 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 answer.addAll(linuxfxlibs);
             }
             // TODO: Refactor
+            if (usePrismSW || crossCompile) {
+                answer.remove(WL_NO_WHOLE_ARCHIVE);
+                answer.addAll(linuxfxSWlibs);
+            }
             if (projectConfiguration.getClasspath().contains("javafx-media")) {
                 // for now, we don't have media on AARCH64
                 if (!isAarch64) {
-                    answer.remove(answer.size() - 1);
+                    answer.remove(WL_NO_WHOLE_ARCHIVE);
                     answer.addAll(linuxfxMedialibs);
                 }
             }
             if (projectConfiguration.hasWeb()) {
-                answer.remove(answer.size() - 1);
+                answer.remove(WL_NO_WHOLE_ARCHIVE);
                 answer.addAll(linuxfxWeblibs);
             }
             if (!crossCompile) {
                 answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
             }
             answer.addAll(LinuxLinkerFlags.getLinkerFlags());
-            if (usePrismSW || crossCompile) {
-                answer.addAll(linuxfxSWlibs);
-            }
             if (isAarch64) {
                 answer.add("-lEGL");
                 answer.add("-ldrm");
@@ -221,11 +223,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
         List<String> linkFlags = new ArrayList<>();
-        linkFlags.add("-Wl,--whole-archive");
+        linkFlags.add(WL_WHOLE_ARCHIVE);
         linkFlags.addAll(libs.stream()
                 .map(s -> libPath.resolve(s).toString())
                 .collect(Collectors.toList()));
-        linkFlags.add("-Wl,--no-whole-archive");
+        linkFlags.add(WL_NO_WHOLE_ARCHIVE);
         return linkFlags;
     }
 

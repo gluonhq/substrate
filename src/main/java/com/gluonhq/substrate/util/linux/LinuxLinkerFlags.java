@@ -52,8 +52,6 @@ public class LinuxLinkerFlags {
      * name that provides it.
      */
     private static final List<PkgInfo> LINK_DEPENDENCIES = List.of(
-        hardwired("-Wl,--no-whole-archive"),
-
         activeOf(debian("gl", "libgl-dev"),
                  fedora("gl", "mesa-libGL-devel")),
         activeOf(debian("x11", "libx11-dev"),
