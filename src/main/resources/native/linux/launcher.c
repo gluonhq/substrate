@@ -49,11 +49,6 @@ int main(int argc, const char* argv[]) {
     (*run_main)(argc, argv);
 }
 
-float powwrapper(float a, float b) {
-    return pow(a,b);
-}
-
-
 // the following functions are used in Java 11 but not in 14
 // we use the native libs from 14.
 // in case they are still able to be called, we need to implement them
