@@ -87,7 +87,20 @@ public class InternalProjectConfiguration {
             getReleaseConfiguration().setSkipSigning(true);
         }
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
-        setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
+        String javafxStaticSdkPath = System.getenv("JAVAFX_STATIC_SDK_PATH");
+        if (javafxStaticSdkPath != null) {
+            Path lib = Path.of(javafxStaticSdkPath, "lib");
+            if (!Files.exists(lib) || !Files.isDirectory(lib)) {
+                throw new IllegalArgumentException("Error: " + lib + " is not a valid SDK path.\n" +
+                        "Make sure you provide a valid JAVAFX_STATIC_SDK_PATH or unset it");
+            }
+            if (!Files.exists(lib.resolve("javafx.base.jar")) ||
+                    !Files.exists(lib.resolve("javafx.graphics.jar"))) {
+                throw new IllegalArgumentException("Error: " + lib + " doesn't contain required JavaFX jars.\n" +
+                        "Make sure you provide a valid JAVAFX_STATIC_SDK_PATH or unset it");
+            }
+        }
+        setJavaFXStaticSDK(javafxStaticSdkPath);  // this can be safely set even if null. Default will be used in that case
         setInitBuildTimeList(Strings.split(System.getProperty("initbuildtimelist")));
 
         boolean useJavaFX = new ClassPath(config.getClasspath()).contains(s -> s.contains("javafx"));

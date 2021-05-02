@@ -84,18 +84,45 @@ public class ClassPath {
     }
 
     /**
-     * Returns a String classpath consisting existing class. Tries to find libraries by name
+     * Returns a String classpath consisting of existing classes. Tries to find libraries by name
      * and replace them with full path to this library within the given library path
      * @param libsPath library path
      * @param libNames library names to look for
      * @return the string classpath
      */
     public String mapWithLibs(Path libsPath, String... libNames) {
+        return mapWithLibs(libsPath, null, null, libNames);
+    }
+
+    /**
+     * Returns a String classpath consisting of existing classes. Tries to find libraries by name
+     * and replace them with full path to this library within the given library path.
+     *
+     * A function can be used to map the library names, if the files in the library path follow
+     * a different pattern than those on the classpath
+     *
+     * A predicate can be used to verify certain conditions to the found libraries, for
+     * instance checking that the files actually exist. If the test fails, the original string will
+     * be returned unmapped
+     *
+     * @param libsPath library path
+     * @param libMap a function that maps the library name, can be null
+     * @param pathPredicate test to apply to the replaced libraries, can be null
+     * @param libNames library names to look for
+     * @return the string classpath
+     */
+    public String mapWithLibs(Path libsPath, Function<String, String> libMap, Predicate<Path> pathPredicate,
+                              String... libNames) {
         Objects.requireNonNull(libsPath);
         return mapToString(s -> Arrays.stream(libNames)
                 .filter(s::contains)
                 .findFirst()
-                .map( d -> libsPath.resolve(d + ".jar").toString())
+                .map(d -> {
+                    String libName = libMap != null ? libMap.apply(d) : d;
+                    Path libPath = libsPath.resolve(libName + ".jar");
+                    return pathPredicate == null || pathPredicate.test(libPath) ?
+                            libPath.toString() : null;
+                })
                 .orElse(s));
     }
 
