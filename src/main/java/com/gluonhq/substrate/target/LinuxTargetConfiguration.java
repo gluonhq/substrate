@@ -251,6 +251,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
         if (isAarch64) {
             flags.add("-DAARCH64");
+            flags.add("--sysroot");
+            flags.add(sysroot);
         }
         return flags;
     }
