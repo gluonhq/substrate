@@ -29,6 +29,7 @@ package com.gluonhq.substrate.util;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.Triplet;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,7 +51,7 @@ public final class FileDeps {
 
     private static final String JAVA_STATIC_ZIP = "labs-staticjdk-${target}-gvm-${version}.zip";
     private static final String JAVA_STATIC_URL = "https://download2.gluonhq.com/substrate/staticjdk/";
-    private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static.zip";
+    private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static${variant}.zip";
     private static final String JAVAFX_STATIC_URL = "https://download2.gluonhq.com/substrate/javafxstaticsdk/";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
@@ -201,6 +202,7 @@ public final class FileDeps {
      */
     private boolean setupDependencies() throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
+        boolean isLinuxAarch64 = new Triplet(Constants.Profile.LINUX_AARCH64).equals(configuration.getTargetTriplet());
 
         if (!Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
             Files.createDirectories(Constants.USER_SUBSTRATE_PATH);
@@ -265,7 +267,8 @@ public final class FileDeps {
             } else {
                 String path = javafxStatic.toString();
                 if (JAVAFX_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists()) ||
-                        JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).noneMatch(File::exists)) {
+                        (isLinuxAarch64 && JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists())) ||
+                        (!isLinuxAarch64 && JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).noneMatch(File::exists))) {
                     Logger.logDebug("JavaFX file not found");
                     downloadJavaFXStatic = true;
                 } else if (configuration.isEnableCheckHash()) {
@@ -321,7 +324,7 @@ public final class FileDeps {
             }
 
             if (downloadJavaFXStatic) {
-                downloadJavaFXZip(target);
+                downloadJavaFXZip(target, isLinuxAarch64 ? "-monocle" : "");
             }
 
             if (downloadAndroidSdk) { // First we get SDK
@@ -381,11 +384,12 @@ public final class FileDeps {
         Logger.logInfo("Java static libs downloaded successfully");
     }
 
-    private void downloadJavaFXZip(String osarch) throws IOException {
+    private void downloadJavaFXZip(String osarch, String variant) throws IOException {
         Logger.logInfo("Downloading JavaFX static libs...");
         String javafxZip = Strings.substitute(JAVAFX_STATIC_ZIP, Map.of(
             "version", configuration.getJavafxStaticSdkVersion(),
-            "target", osarch));
+            "target", osarch,
+            "variant", variant));
         FileOps.downloadAndUnzip(JAVAFX_STATIC_URL + javafxZip,
                 Constants.USER_SUBSTRATE_PATH,
                 javafxZip,
