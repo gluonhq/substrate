@@ -33,7 +33,6 @@ import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 import com.gluonhq.substrate.util.Version;
-import com.gluonhq.substrate.util.XcodeUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -68,7 +67,6 @@ public class InternalProjectConfiguration {
 
     private String backend;
     private List<String> initBuildTimeList;
-    private List<String> runtimeArgsList;
     private List<String> releaseSymbolsList;
 
     private final ProjectConfiguration publicConfig;
@@ -384,7 +382,7 @@ public class InternalProjectConfiguration {
     }
 
     public List<String> getRuntimeArgsList() {
-        return runtimeArgsList;
+        return publicConfig.getRuntimeArgs();
     }
 
     /**
@@ -397,14 +395,6 @@ public class InternalProjectConfiguration {
 
     public List<String> getReleaseSymbolsList() {
         return releaseSymbolsList;
-    }
-
-    /**
-     * Sets additional lists
-     * @param runtimeArgsList a list of classes that will be added to the default runtime args list
-     */
-    public void setRuntimeArgsList(List<String> runtimeArgsList) {
-        this.runtimeArgsList = runtimeArgsList;
     }
 
     /**
@@ -431,6 +421,10 @@ public class InternalProjectConfiguration {
     public boolean hasWeb() {
         return getClasspath().contains("javafx-web") || getClasspath().contains("javafx.web");
     }
+
+    public String getRemoteHostName() { return publicConfig.getRemoteHostName(); }
+
+    public String getRemoteDir() { return publicConfig.getRemoteDir(); }
 
     public ReleaseConfiguration getReleaseConfiguration() {
         return Optional.ofNullable(publicConfig.getReleaseConfiguration()).orElse(new ReleaseConfiguration());
@@ -614,7 +608,7 @@ public class InternalProjectConfiguration {
                 ", reflectionList=" + getReflectionList() +
                 ", jniList=" + getJniList() +
                 ", initBuildTimeList=" + getInitBuildTimeList() +
-                ", runtimeArgsList=" + runtimeArgsList +
+                ", runtimeArgsList=" + getRuntimeArgsList() +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + getAppName() + '\'' +
                 ", releaseConfiguration='" + getReleaseConfiguration() + '\'' +
