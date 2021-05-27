@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -129,6 +130,92 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         checkCompiler();
         checkLinker();
         return super.link();
+    }
+
+    @Override
+    public boolean install() throws IOException, InterruptedException {
+        if (!crossCompile) {
+            return super.install();
+        }
+
+        String remoteHostName = projectConfiguration.getRemoteHostName();
+        String remoteDir = projectConfiguration.getRemoteDir();
+        if (remoteHostName == null || remoteHostName.isEmpty() || remoteDir == null || remoteDir.isEmpty()) {
+            Logger.logSevere("install was called, but remote hostName and/or remote dir were not set");
+            return false;
+        }
+
+        Path appPath = Objects.requireNonNull(paths.getAppPath(), "Application path can't be null");
+        String appName = Objects.requireNonNull(getLinkOutputName(), "Application name can't be null");
+        Path app = appPath.resolve(appName);
+        if (!Files.exists(app)) {
+            throw new IOException("Application not found at path " + app.toString());
+        }
+
+        ProcessRunner checkDirRunner = new ProcessRunner("ssh", remoteHostName, "test", "-d", remoteDir, "&&", "echo 1", "||", "echo 0");
+        int result = checkDirRunner.runProcess("ssh-check-dir");
+        if (result != 0) {
+            Logger.logSevere("Error connecting to "+ remoteHostName + ": " + result +
+                    "\nMake sure the remote host is reachable and SSH is enabled on it.");
+            return false;
+        }
+
+        if ("0".equals(checkDirRunner.getLastResponse())) {
+            Logger.logDebug("Directory " + remoteDir + " does not exist, creating it");
+            ProcessRunner mkdirRunner = new ProcessRunner("ssh", remoteHostName, "mkdir", "-p", remoteDir);
+            result = mkdirRunner.runProcess("ssh-mkdir");
+            if (result != 0) {
+                Logger.logSevere("Error creating directory " + remoteDir + ": " + result);
+                return false;
+            }
+        }
+
+        ProcessRunner scpRunner = new ProcessRunner("scp",
+                appPath.resolve(appName).toString(), remoteHostName + ":" + remoteDir);
+        scpRunner.setInfo(true);
+        scpRunner.setInteractive(true);
+        return scpRunner.runProcess("scp") == 0;
+    }
+
+    @Override
+    public boolean runUntilEnd() throws IOException, InterruptedException {
+        if (!crossCompile) {
+            return super.runUntilEnd();
+        }
+
+        String remoteHostName = projectConfiguration.getRemoteHostName();
+        String remoteDir = projectConfiguration.getRemoteDir();
+        if (remoteHostName == null || remoteHostName.isEmpty() || remoteDir == null || remoteDir.isEmpty()) {
+            Logger.logSevere("install was called, but remote hostName and/or remote dir were not set");
+            return false;
+        }
+        String appName = Objects.requireNonNull(getLinkOutputName(), "Application name can't be null");
+
+        ProcessRunner checkExecRunner = new ProcessRunner("ssh",
+                remoteHostName, "test", "-f", Path.of(remoteDir, appName).toString(), "&&", "echo 1", "||", "echo 0");
+        int result = checkExecRunner.runProcess("ssh-check-exec");
+        if (result != 0) {
+            Logger.logSevere("Error connecting to "+ remoteHostName + ": " + result +
+                    "\nMake sure the remote host is reachable and SSH is enabled on it.");
+            return false;
+        }
+
+        if ("0".equals(checkExecRunner.getLastResponse())) {
+            throw new IOException("Application " + appName + " not found at " + remoteHostName + ":" + remoteDir);
+        }
+
+        Logger.logInfo("Enabling Gluon commercial extensions. Please see https://docs.gluonhq.com/#_legal_notice");
+        ProcessRunner execRunner = new ProcessRunner("ssh", "-t", "-t",
+                remoteHostName, "env", "ENABLE_GLUON_COMMERCIAL_EXTENSIONS=true",
+                "sudo", "-E", Path.of(remoteDir, appName).toString());
+        if (projectConfiguration.getRuntimeArgsList() != null) {
+            execRunner.addArgs(projectConfiguration.getRuntimeArgsList());
+        }
+        execRunner.setInfo(true);
+        execRunner.setInteractive(true);
+        execRunner.runProcess("ssh-run");
+        return true;
+
     }
 
     @Override
