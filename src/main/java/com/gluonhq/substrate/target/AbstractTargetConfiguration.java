@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -279,6 +279,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             throw new IOException("Application not found at path " + app.toString());
         }
         ProcessRunner runProcess = new ProcessRunner(appPath.resolve(appName).toString());
+        List<String> runtimeArgsList = projectConfiguration.getRuntimeArgsList();
+        if (runtimeArgsList != null) {
+            runProcess.addArgs(runtimeArgsList);
+        }
         runProcess.setInfo(true);
         int result = runProcess.runProcess("run until end");
         return result == 0;
@@ -303,11 +307,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         processRunner.addArg("-I" + workDir.toString());
 
-        for (String fileName : getAdditionalSourceFiles()) {
-            FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
-            processRunner.addArg(fileName);
-        }
-        
+        processRunner.addArgs(copyAdditionalSourceFiles(workDir));
+
         Path nativeCodeDir = paths.getNativeCodePath();
         if (Files.isDirectory(nativeCodeDir)) {
             FileOps.copyDirectory(nativeCodeDir, workDir);
@@ -758,6 +759,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     List<String> getAdditionalSourceFiles() {
         return defaultAdditionalSourceFiles;
+    }
+
+    List<String> copyAdditionalSourceFiles(Path workDir) throws IOException {
+        List<String> files = new ArrayList<>();
+        for (String fileName : getAdditionalSourceFiles()) {
+            FileOps.copyResource(getAdditionalSourceFileLocation() + fileName, workDir.resolve(fileName));
+            files.add(fileName);
+        }
+        return files;
     }
 
     List<String> getAdditionalHeaderFiles() {

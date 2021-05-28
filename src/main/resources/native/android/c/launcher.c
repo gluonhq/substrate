@@ -51,6 +51,11 @@ int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
 
 extern int __svm_vm_is_static_binary __attribute__((weak)) = 1;
 
+// this array is filled during compile/link phases
+const char *userArgs[] = {
+// USER_RUNTIME_ARGS
+};
+
 const char *origArgs[] = {
     "myapp",
     "-Djavafx.platform=android",
@@ -119,9 +124,10 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
     LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
     LOGE(stderr, "EnvVersion = %d\n", (*env)->GetVersion(env));
 
+    int userArgsSize = sizeof(userArgs) / sizeof(char *);
     int origArgsSize = sizeof(origArgs) / sizeof(char *);
     int launchArgsSize = (*env)->GetArrayLength(env, launchArgsArray);
-    int argsSize = origArgsSize + launchArgsSize;
+    int argsSize = userArgsSize + origArgsSize + launchArgsSize;
     char **graalArgs = (char **)malloc(argsSize * sizeof(char *));
     for (int i = 0; i < origArgsSize; i++)
     {
@@ -133,10 +139,15 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
         const char *launchString = (*env)->GetStringUTFChars(env, jlaunchItem, NULL);
         graalArgs[origArgsSize + i] = (char *)launchString;
     }
+    for (int i = 0; i < userArgsSize; i++)
+    {
+        graalArgs[origArgsSize + launchArgsSize + i] = (char *)userArgs[i];
+    }
 
     LOGE(stderr, "calling JavaMainWrapper_run with argsize: %d\n", argsSize);
 
     (*run_main)(argsSize, graalArgs);
+    free(graalArgs);
 
     LOGE(stderr, "called JavaMainWrapper_run\n");
 
