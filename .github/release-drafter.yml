@@ -1,3 +1,5 @@
+exclude-labels:
+  - 'housekeeping'
 template: |
   ## What’s Changed
   $CHANGES
