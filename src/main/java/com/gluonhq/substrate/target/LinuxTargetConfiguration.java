@@ -207,7 +207,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         Logger.logInfo("Enabling Gluon commercial extensions. Please see https://docs.gluonhq.com/#_legal_notice");
         ProcessRunner execRunner = new ProcessRunner("ssh", "-t", "-t",
                 remoteHostName, "env", "ENABLE_GLUON_COMMERCIAL_EXTENSIONS=true",
-                "sudo", "-E", Path.of(remoteDir, appName).toString());
+                "sudo", "-E", "\"" + Path.of(remoteDir, appName).toString() + "\"");
         if (projectConfiguration.getRuntimeArgsList() != null) {
             execRunner.addArgs(projectConfiguration.getRuntimeArgsList());
         }
