@@ -331,6 +331,26 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
+    List<String> copyAdditionalSourceFiles(Path workDir) throws IOException {
+        String runtimeArgs = "";
+        List<String> runtimeArgsList = projectConfiguration.getRuntimeArgsList();
+        if (runtimeArgsList != null) {
+            runtimeArgs = runtimeArgsList.stream()
+                    .map((s -> "\"" + s + "\""))
+                    .collect(Collectors.joining(",\n "));
+        }
+        List<String> files = new ArrayList<>();
+        for (String fileName : getAdditionalSourceFiles()) {
+            Path resource = FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
+            if ("launcher.c".equals(fileName)) {
+                FileOps.replaceInFile(resource, "// USER_RUNTIME_ARGS", runtimeArgs);
+            }
+            files.add(fileName);
+        }
+        return files;
+    }
+
+    @Override
     List<String> getAdditionalHeaderFiles() {
         List<String> answer = new ArrayList<>(androidAdditionalHeaderFiles);
         if (projectConfiguration.hasWeb()) {

@@ -174,13 +174,30 @@ int main(int argc, char * argv[]) {
 int startGVM(const char* userHome, const char* userTimeZone, const char* userLaunchKey) {
     gvmlog(@"Starting GVM for ios");
 
+    // this array is filled during compile/link phases
+    const char *userArgs[] = {
+    // USER_RUNTIME_ARGS
+    };
 
     const char* args[] = {"myapp",
           "-Dcom.sun.javafx.isEmbedded=true",
           "-Djavafx.platform=ios",
           userHome, userTimeZone, userLaunchKey};
+
+    int userArgsSize = sizeof(userArgs) / sizeof(char *);
     int argc = sizeof(args) / sizeof(char *);
-    (*run_main)(argc, args);
+    int argsSize = userArgsSize + argc;
+    char **graalArgs = (char **)malloc(argsSize * sizeof(char *));
+    for (int i = 0; i < argc; i++)
+    {
+         graalArgs[i] = (char *)args[i];
+    }
+    for (int i = 0; i < userArgsSize; i++)
+    {
+        graalArgs[argc + i] = (char *)userArgs[i];
+    }
+    (*run_main)(argsSize, graalArgs);
+    free(graalArgs);
 
     gvmlog(@"Finished running GVM, done with isolatehread");
     return 0;
