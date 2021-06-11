@@ -435,8 +435,14 @@ public class InfoPlist {
     }
 
     private void copyVerifyBase(Path resourcePath) throws IOException {
-        if (resourcePath == null || !Files.exists(resourcePath)) {
-            throw new RuntimeException("Error: invalid path " + resourcePath);
+        Objects.requireNonNull(resourcePath, "Error: invalid path for Base.lproj");
+        if (!Files.exists(resourcePath)) {
+            Logger.logInfo("Screen storyboards not found. Adding default ones at path: " + resourcePath.toString());
+            Path userPath = Files.createDirectories(resourcePath);
+            FileOps.copyResource("/native/ios/assets/Base.lproj/LaunchScreen.storyboard",
+                    userPath.resolve("LaunchScreen.storyboard"));
+            FileOps.copyResource("/native/ios/assets/Base.lproj/MainScreen.storyboard",
+                    userPath.resolve("MainScreen.storyboard"));
         }
         if (minOSVersion == null) {
             minOSVersion = "11.0";
