@@ -113,7 +113,7 @@ public class Constants {
     /**
      * Paths
      */
-    public static final String CLIENT_PATH = "client";
+    public static final String GLUONFX_PATH = "gluonfx";
     public static final String GVM_PATH = "gvm";
     public static final String GEN_PATH = "gensrc";
     public static final String SOURCE_PATH = "src";
