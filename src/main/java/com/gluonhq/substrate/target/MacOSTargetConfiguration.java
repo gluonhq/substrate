@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
 
 public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
+    private static final String MIN_MACOS_VERSION = "10.12";
+
     private static final List<String> javaDarwinLibs = Arrays.asList("pthread", "z", "dl", "stdc++");
     private static final List<String> javaDarwinFrameworks = Arrays.asList("Foundation", "AppKit");
 
@@ -77,8 +79,16 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
+    List<String> getTargetSpecificCCompileFlags() {
+        return Arrays.asList("-mmacosx-version-min=" + MIN_MACOS_VERSION);
+    }
+
+    @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(asListOfLibraryLinkFlags(javaDarwinLibs));
+
+        linkFlags.add("-mmacosx-version-min=" + MIN_MACOS_VERSION);
+
         if (useJavaFX) {
             linkFlags.addAll(asListOfLibraryLinkFlags(javaFxDarwinLibs));
             if (projectConfiguration.hasWeb()) {
