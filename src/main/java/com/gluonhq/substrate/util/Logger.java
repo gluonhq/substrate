@@ -55,7 +55,7 @@ public class Logger {
     public static void logSevere(String s) {
         LOGGER.severe(s + "\n" +
                 "Check the log files under "+logDirectory +
-                "\nAnd please check https://docs.gluonhq.com/client/ for more information.");
+                "\nAnd please check https://docs.gluonhq.com/ for more information.");
     }
 
     /**
