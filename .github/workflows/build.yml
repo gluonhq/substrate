@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - gradle.properties
   pull_request:
     branches:
       - master
@@ -50,7 +52,7 @@ jobs:
           mkdir -p $HOME/javafx-static-libs-ios && cd $HOME/javafx-static-libs-ios
           wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-ios-arm64-static.zip
           unzip openjfx-16-latest-ios-arm64-static.zip && cd $GITHUB_WORKSPACE
-    
+
       - name: Shutdown and Reset all Simulators (MacOS)
         if: runner.os == 'macOS'
         run: sudo xcrun simctl shutdown all && sudo xcrun simctl erase all
