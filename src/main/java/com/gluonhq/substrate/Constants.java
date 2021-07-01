@@ -102,7 +102,7 @@ public class Constants {
     public static final String PROFILE_LINUX_AARCH64 = "linux-aarch64";
 
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+10";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "17-ea+11";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "17-ea+14";
     public static final String DEFAULT_SYSROOT_VERSION  = "20210424";
 
     /**
