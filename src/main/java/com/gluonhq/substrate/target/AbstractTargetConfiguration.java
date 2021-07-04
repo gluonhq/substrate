@@ -96,7 +96,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     final ProcessPaths paths;
     protected final boolean crossCompile;
 
-    private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
+    private final List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
 
     AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         this.projectConfiguration = configuration;
@@ -203,14 +203,17 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             .map(sourceFile -> gvmAppPath.resolve(sourceFile).toString())
             .collect(Collectors.toList()));
 
-        linkRunner.addArgs(getTargetSpecificJavaLinkLibraries());
-        linkRunner.addArgs(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(),
+        List<String> linkFlags = new ArrayList<>(getTargetSpecificJavaLinkLibraries());
+        linkFlags.addAll(getTargetSpecificLinkFlags(projectConfiguration.isUseJavaFX(),
                 projectConfiguration.isUsePrismSW()));
 
-        linkRunner.addArgs(getTargetSpecificLinkOutputFlags());
+        linkFlags.addAll(getTargetSpecificLinkOutputFlags());
 
-        linkRunner.addArgs(getLinkerLibraryPathFlags());
-        linkRunner.addArgs(getNativeLibsLinkFlags());
+        linkFlags.addAll(getLinkerLibraryPathFlags());
+        linkFlags.addAll(getNativeLibsLinkFlags());
+
+        linkRunner.addArgs(Strings.removeDuplicates(linkFlags,
+                List.of(Constants.WL_WHOLE_ARCHIVE, Constants.WL_NO_WHOLE_ARCHIVE)));
         linkRunner.setInfo(true);
         linkRunner.setLogToFile(true);
         int result = linkRunner.runProcess("link");

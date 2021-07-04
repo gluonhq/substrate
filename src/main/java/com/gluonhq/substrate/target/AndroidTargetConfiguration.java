@@ -61,6 +61,8 @@ import static com.gluonhq.substrate.Constants.ANDROID_NATIVE_FOLDER;
 import static com.gluonhq.substrate.Constants.ANDROID_PROJECT_NAME;
 import static com.gluonhq.substrate.Constants.DALVIK_PRECOMPILED_CLASSES;
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_DALVIK;
+import static com.gluonhq.substrate.Constants.WL_NO_WHOLE_ARCHIVE;
+import static com.gluonhq.substrate.Constants.WL_WHOLE_ARCHIVE;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_NAME;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_VERSION;
 
@@ -69,8 +71,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private static final String ANDROID_TRIPLET = new Triplet(Constants.Profile.ANDROID).toString();
     private static final String ANDROID_MIN_SDK_VERSION = "21";
     private static final List<String> ANDROID_KEYSTORE_EXTENSIONS = List.of(".keystore", ".jks");
-    private static final String WL_WHOLE_ARCHIVE = "-Wl,--whole-archive";
-    private static final String WL_NO_WHOLE_ARCHIVE = "-Wl,--no-whole-archive";
 
     private final String ndk;
     private final String sdk;
@@ -265,10 +265,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         if (!useJavaFX) return linkFlags;
-        List<String> answer = new ArrayList<>();
-        answer.addAll(linkFlags);
+        List<String> answer = new ArrayList<>(linkFlags);
         if (projectConfiguration.hasWeb()) {
-            javafxLinkFlags.addAll(Arrays.asList(WL_WHOLE_ARCHIVE, javafxWebLib, WL_NO_WHOLE_ARCHIVE));
+            javafxLinkFlags.add(javafxLinkFlags.indexOf(WL_NO_WHOLE_ARCHIVE) - 1, javafxWebLib);
         }
         answer.addAll(javafxLinkFlags);
         return answer;
@@ -288,11 +287,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
         List<String> linkFlags = new ArrayList<>();
-        linkFlags.add("-Wl,--whole-archive");
+        linkFlags.add(WL_WHOLE_ARCHIVE);
         linkFlags.addAll(libs.stream()
                 .map(s -> libPath.resolve(s).toString())
                 .collect(Collectors.toList()));
-        linkFlags.add("-Wl,--no-whole-archive");
+        linkFlags.add(WL_NO_WHOLE_ARCHIVE);
         return linkFlags;
     }
 
