@@ -68,27 +68,21 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     );
 
     private static final List<String> linuxfxlibs = List.of(
-            "-Wl,--whole-archive",
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
-            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio",
-            "-Wl,--no-whole-archive"
+            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio"
     );
 
     // we might rename libprism_es2_monocle.a to libprism_es2.a in the future
     private static final List<String> linuxfxlibsaarch64 = List.of(
-            "-Wl,--whole-archive",
             "-lprism_es2_monocle", "-lglass", "-lglassgtk3", "-lglass_monocle", "-ljavafx_font",
-            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio", "-lgluon_drm",
-            "-Wl,--no-whole-archive"
+            "-ljavafx_font_freetype", "-ljavafx_font_pango", "-ljavafx_iio", "-lgluon_drm"
     );
 
     private static final List<String> linuxfxMedialibs = List.of(
-            "-ljfxmedia", "-lfxplugins", "-lavplugin",
-            "-Wl,--no-whole-archive"
+            "-ljfxmedia", "-lfxplugins", "-lavplugin"
     );
     private static final List<String> linuxfxWeblibs = List.of(
             "-ljfxwebkit",
-            "-Wl,--no-whole-archive",
             "-lWebCore", "-lXMLJava", "-lJavaScriptCore", "-lbmalloc",
             "-licui18n", "-lSqliteJava", "-lXSLTJava", "-lPAL", "-lWebCoreTestSupport",
             "-lWTF", "-licuuc", "-licudata"
@@ -104,7 +98,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private final String capLocation = "/native/linux-aarch64/cap/";
 
     private static final List<String> linuxfxSWlibs = Arrays.asList(
-            "-Wl,--whole-archive", "-lprism_sw", "-Wl,--no-whole-archive");
+            "-lprism_sw");
 
     private final String sysroot;
 
@@ -308,11 +302,9 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificNativeLibsFlags(Path libPath, List<String> libs) {
         List<String> linkFlags = new ArrayList<>();
-        linkFlags.add("-Wl,--whole-archive");
         linkFlags.addAll(libs.stream()
                 .map(s -> libPath.resolve(s).toString())
                 .collect(Collectors.toList()));
-        linkFlags.add("-Wl,--no-whole-archive");
         return linkFlags;
     }
 
