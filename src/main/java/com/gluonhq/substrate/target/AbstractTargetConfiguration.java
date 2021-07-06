@@ -40,10 +40,12 @@ import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -55,6 +57,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -117,6 +120,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     @Override
     public boolean compile() throws IOException, InterruptedException {
+        String subscp = "";
+        try {
+            subscp =  new File(AbstractTargetConfiguration.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).getPath();
+        } catch (URISyntaxException ex) {
+            throw new IOException ("Can't locate Substrate.jar", ex);
+        }
         String processedClasspath = validateCompileRequirements();
 
         extractNativeLibs(processedClasspath);
@@ -151,7 +161,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileRunner.addArg(getJniPlatformArg());
         compileRunner.addArg(Constants.NATIVE_IMAGE_ARG_CLASSPATH);
-        compileRunner.addArg("/home/johan/.m2/repository/com/gluonhq/substrate/0.0.43-SNAPSHOT/substrate-0.0.43-SNAPSHOT.jar:"+FileOps.createPathingJar(paths.getTmpPath(), processedClasspath));
+        compileRunner.addArg(subscp+":"+FileOps.createPathingJar(paths.getTmpPath(), processedClasspath));
         compileRunner.addArgs(projectConfiguration.getCompilerArgs());
         compileRunner.addArg(projectConfiguration.getMainClassName());
 

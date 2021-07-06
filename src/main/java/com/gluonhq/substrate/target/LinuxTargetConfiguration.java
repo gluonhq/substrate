@@ -273,12 +273,10 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             if (projectConfiguration.getClasspath().contains("javafx-media")) {
                 // for now, we don't have media on AARCH64
                 if (!isAarch64) {
-                    answer.remove(answer.size() - 1);
                     answer.addAll(linuxfxMedialibs);
                 }
             }
             if (projectConfiguration.hasWeb()) {
-                answer.remove(answer.size() - 1);
                 answer.addAll(linuxfxWeblibs);
             }
             if (!crossCompile) {
