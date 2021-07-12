@@ -111,7 +111,7 @@ class IOSTest {
 
         String javafxStaticSdkIos = System.getenv("JAVAFX_STATIC_SDK_IOS");
         if (javafxStaticSdkIos != null) {
-            gradleRunnerArguments.add("-Djavafx.static.sdk=" + System.getenv("JAVAFX_STATIC_SDK_IOS"));
+            gradleRunnerArguments.add("-Djavafx.static.sdk=" + javafxStaticSdkIos);
         }
 
         gradleRunnerArguments.addAll(Arrays.asList(":helloWorld:run", ":helloWorld:runScript", "--stacktrace"));
@@ -137,7 +137,7 @@ class IOSTest {
 
         String javafxStaticSdkIos = System.getenv("JAVAFX_STATIC_SDK_IOS");
         if (javafxStaticSdkIos != null) {
-            gradleRunnerArguments.add("-Djavafx.static.sdk=" + System.getenv("JAVAFX_STATIC_SDK_IOS"));
+            gradleRunnerArguments.add("-Djavafx.static.sdk=" + javafxStaticSdkIos);
         }
 
         gradleRunnerArguments.addAll(Arrays.asList(":helloFX:run", ":helloFX:runScript", "--stacktrace"));

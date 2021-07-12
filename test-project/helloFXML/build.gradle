@@ -49,7 +49,7 @@ task runScript(type: Exec) {
                     "-Dimagecp=${imageClasspath}",
                     "-Dgraalvm=${graalvmHome}",
                     "-Dbundleslist=com.gluonhq.substrate.test.bundle",
-                    "-Dreflectionlist=javafx.fxml.FXMLLoader,com.gluonhq.substrate.test.MainController,javafx.scene.control.Button,javafx.scene.control.Label"]
+                    "-Dreflectionlist=com.gluonhq.substrate.test.MainController"]
     if (javafxStaticSdk != null) {
         argsList += "-Djavafxsdk=${javafxStaticSdk}"
     }
@@ -62,7 +62,7 @@ task runScript(type: Exec) {
         argsList += ["-Dexpected=$expected"]
     }
     if (consoleProcessLog != null) {
-        argsList += ["-DconsoleProcessLog=$consoleProcessLog"]
+        argsList += ["-DconsoleProcessLog=$consoleProcessLog", "-Dverbose=true"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList

@@ -45,7 +45,6 @@ task runScript(type: Exec) {
     }
 
     def argsList = ["${javaHome}/bin/java", '-cp', project.configurations.substrate.asPath,
-                    "-Dverbose=true",
                     "-Dimagecp=${imageClasspath}",
                     "-Dgraalvm=${graalvmHome}"]
     if (javafxStaticSdk != null) {
@@ -60,7 +59,7 @@ task runScript(type: Exec) {
         argsList += ["-Dexpected=$expected"]
     }
     if (consoleProcessLog != null) {
-        argsList += ["-DconsoleProcessLog=$consoleProcessLog"]
+        argsList += ["-DconsoleProcessLog=$consoleProcessLog", "-Dverbose=true"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList
