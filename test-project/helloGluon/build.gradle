@@ -1,5 +1,5 @@
 plugins {
-    id 'org.openjfx.javafxplugin' version '0.0.9'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
 }
 
 repositories {
@@ -34,7 +34,7 @@ dependencies {
 }
 
 javafx {
-    version = "15.0.1"
+    version = "16"
     modules = [ "javafx.controls" ]
 }
 
@@ -48,9 +48,14 @@ task runScript(type: Exec) {
     def javafxStaticSdk = validateJavafxStaticSdk()
     def consoleProcessLog = System.getProperty("consoleProcessLog")
 
-    def imageClasspath = project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath
+    def imageClasspath = ""
     if (javafxStaticSdk != null) {
-        imageClasspath = "${javafxStaticSdk}/lib/javafx.base.jar:${javafxStaticSdk}/lib/javafx.graphics.jar:${javafxStaticSdk}/lib/javafx.controls.jar:" + imageClasspath
+        imageClasspath = "${javafxStaticSdk}/lib/javafx.base.jar:" +
+                "${javafxStaticSdk}/lib/javafx.graphics.jar:" +
+                "${javafxStaticSdk}/lib/javafx.controls.jar:" +
+                project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath
+    } else {
+        imageClasspath = project.sourceSets.main.runtimeClasspath.asPath
     }
 
     def argsList = ["${javaHome}/bin/java", '-cp', project.configurations.substrate.asPath,
