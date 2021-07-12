@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.gluonhq.substrate.TestUtils.isCIMacOS;
@@ -102,12 +104,21 @@ class IOSTest {
     void helloWorldTest() {
         boolean skipSigning = isCI();
 
+        List<String> gradleRunnerArguments = new ArrayList<>(Arrays.asList(
+            ":helloWorld:clean", ":helloWorld:build",
+            "-Dsubstrate.target=ios", "-Dskipsigning=" + skipSigning, "-DconsoleProcessLog=" + (isCI() ? "true" : "false")
+        ));
+
+        String javafxStaticSdkIos = System.getenv("JAVAFX_STATIC_SDK_IOS");
+        if (javafxStaticSdkIos != null) {
+            gradleRunnerArguments.add("-Djavafx.static.sdk=" + javafxStaticSdkIos);
+        }
+
+        gradleRunnerArguments.addAll(Arrays.asList(":helloWorld:run", ":helloWorld:runScript", "--stacktrace"));
+
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
-                .withArguments(":helloWorld:clean", ":helloWorld:build",
-                        "-Djavafx.static.sdk=" + System.getenv("JAVAFX_STATIC_SDK_IOS"),
-                        "-Dsubstrate.target=ios", "-Dskipsigning=" + skipSigning, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
-                        ":helloWorld:run", ":helloWorld:runScript", "--stacktrace")
+                .withArguments(gradleRunnerArguments)
                 .forwardOutput()
                 .build();
 
@@ -119,12 +130,21 @@ class IOSTest {
     void helloFXTest() {
         assumeTrue(!isCI());
 
+        List<String> gradleRunnerArguments = new ArrayList<>(Arrays.asList(
+            ":helloFX:clean", ":helloFX:build",
+            "-Dsubstrate.target=ios", "-DconsoleProcessLog=" + (isCI() ? "true" : "false")
+        ));
+
+        String javafxStaticSdkIos = System.getenv("JAVAFX_STATIC_SDK_IOS");
+        if (javafxStaticSdkIos != null) {
+            gradleRunnerArguments.add("-Djavafx.static.sdk=" + javafxStaticSdkIos);
+        }
+
+        gradleRunnerArguments.addAll(Arrays.asList(":helloFX:run", ":helloFX:runScript", "--stacktrace"));
+
         BuildResult result = GradleRunner.create()
                 .withProjectDir(new File("test-project"))
-                .withArguments(":helloFX:clean", ":helloFX:build",
-                        "-Djavafx.static.sdk=" + System.getenv("JAVAFX_STATIC_SDK_IOS"),
-                        "-Dsubstrate.target=ios", "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
-                        ":helloFX:run", ":helloFX:runScript", "--stacktrace")
+                .withArguments(gradleRunnerArguments)
                 .forwardOutput()
                 .build();
 

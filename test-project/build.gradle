@@ -16,8 +16,8 @@ def validateGraalvmHome() {
 
 def validateJavafxStaticSdk() {
     def javafxStaticSdk = hasProperty('javafx.static.sdk') ? getProperty('javafx.static.sdk') : System.getenv('JAVAFX_STATIC_SDK')
-    if (javafxStaticSdk == null || !file(javafxStaticSdk).exists()) {
-        throw new GradleException("JAVAFX_STATIC_SDK is not defined or is pointing to a non-existing directory: ${javafxStaticSdk}")
+    if (javafxStaticSdk != null && !file(javafxStaticSdk).exists()) {
+        throw new GradleException("JAVAFX_STATIC_SDK is pointing to a non-existing directory: ${javafxStaticSdk}")
     }
     return javafxStaticSdk
 }
