@@ -44,8 +44,6 @@ task runScript(type: Exec) {
         imageClasspath = project.sourceSets.main.runtimeClasspath.asPath
     }
 
-    println "IMAGECLASSPATH: " + imageClasspath
-
     def argsList = ["${javaHome}/bin/java", '-cp', project.configurations.substrate.asPath,
                     "-Dverbose=true",
                     "-Dimagecp=${imageClasspath}",
