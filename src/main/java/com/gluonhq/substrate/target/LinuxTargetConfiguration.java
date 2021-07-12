@@ -107,7 +107,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     public LinuxTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
         super(paths, configuration);
         this.isAarch64 = projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64);
-
+        ENABLED_FEATURES.add("com.gluonhq.substrate.feature.GluonFeature");
         sysroot = fileDeps.getSysrootPath().toString();
     }
 

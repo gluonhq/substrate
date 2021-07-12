@@ -74,7 +74,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json", "dat",
             "license", "frag", "vert", "obj", "mtl", "js");
-    private static final List<String> ENABLED_FEATURES = Arrays.asList(
+    protected static final List<String> ENABLED_FEATURES = Arrays.asList(
             "org.graalvm.home.HomeFinderFeature"
     );
 
