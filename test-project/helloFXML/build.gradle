@@ -34,14 +34,19 @@ task runScript(type: Exec) {
     def expected = System.getProperty("expected")
     def consoleProcessLog = System.getProperty("consoleProcessLog")
 
-    def argsList = ["${javaHome}/bin/java", '-cp', "${project.configurations.substrate.asPath}",
-                    "-Dimagecp=${javafxStaticSdk}/lib/javafx.base.jar:${javafxStaticSdk}/lib/javafx.graphics.jar:${javafxStaticSdk}/lib/javafx.controls.jar:${javafxStaticSdk}/lib/javafx.fxml.jar:" +
-                            "${project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath}",
-                    "-Djavafxsdk=${javafxStaticSdk}",
+    def imageClasspath = project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath
+    if (javafxStaticSdk != null) {
+        imageClasspath = "${javafxStaticSdk}/lib/javafx.base.jar:${javafxStaticSdk}/lib/javafx.graphics.jar:${javafxStaticSdk}/lib/javafx.controls.jar:${javafxStaticSdk}/lib/javafx.fxml.jar:" + imageClasspath
+    }
+
+    def argsList = ["${javaHome}/bin/java", '-cp', project.configurations.substrate.asPath,
+                    "-Dimagecp=${imageClasspath}",
                     "-Dgraalvm=${graalvmHome}",
                     "-Dbundleslist=com.gluonhq.substrate.test.bundle",
-                    "-Dreflectionlist=javafx.fxml.FXMLLoader,com.gluonhq.substrate.test.MainController,javafx.scene.control.Button,javafx.scene.control.Label",
-            ]
+                    "-Dreflectionlist=javafx.fxml.FXMLLoader,com.gluonhq.substrate.test.MainController,javafx.scene.control.Button,javafx.scene.control.Label"]
+    if (javafxStaticSdk != null) {
+        argsList += "-Djavafxsdk=${javafxStaticSdk}"
+    }
     if (target != null) {
         argsList += ["-DtargetProfile=$target"]
     } else {
