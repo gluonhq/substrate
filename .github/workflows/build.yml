@@ -32,27 +32,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install linux JavaFX static libs (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          mkdir -p $HOME/javafx-static-libs-linux && cd $HOME/javafx-static-libs-linux
-          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-linux-x86_64-static.zip
-          unzip openjfx-16-latest-linux-x86_64-static.zip && cd $GITHUB_WORKSPACE
-
-      - name: Install darwin JavaFX static libs (MacOS)
-        if: runner.os == 'macOS'
-        run: |
-          mkdir -p $HOME/javafx-static-libs-darwin && cd $HOME/javafx-static-libs-darwin
-          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-darwin-x86_64-static.zip
-          unzip openjfx-16-latest-darwin-x86_64-static.zip && cd $GITHUB_WORKSPACE
-
-      - name: Install iOS JavaFX static libs (MacOS)
-        if: runner.os == 'macOS'
-        run: |
-          mkdir -p $HOME/javafx-static-libs-ios && cd $HOME/javafx-static-libs-ios
-          wget https://download2.gluonhq.com/substrate/javafxstaticsdk/openjfx-16-latest-ios-arm64-static.zip
-          unzip openjfx-16-latest-ios-arm64-static.zip && cd $GITHUB_WORKSPACE
-
       - name: Shutdown and Reset all Simulators (MacOS)
         if: runner.os == 'macOS'
         run: sudo xcrun simctl shutdown all && sudo xcrun simctl erase all
@@ -71,7 +50,6 @@ jobs:
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
         run: |
-          export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-linux/sdk
           export DISPLAY=:90
           mkdir /home/runner/.vnc
           echo 123456 | vncpasswd -f > /home/runner/.vnc/passwd
@@ -83,8 +61,6 @@ jobs:
       - name: Run Tests (MacOS)
         if: runner.os == 'macOS'
         run: |
-          export JAVAFX_STATIC_SDK=$HOME/javafx-static-libs-darwin/sdk
-          export JAVAFX_STATIC_SDK_IOS=$HOME/javafx-static-libs-ios/sdk
           ./gradlew -i test
 
       - name: Build project
