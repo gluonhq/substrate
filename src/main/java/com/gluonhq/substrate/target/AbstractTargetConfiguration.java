@@ -119,9 +119,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     @Override
     public boolean compile() throws IOException, InterruptedException {
-        String subscp = "";
+        String substrateClasspath = "";
         try {
-            subscp =  new File(AbstractTargetConfiguration.class.getProtectionDomain()
+            substrateClasspath =  new File(AbstractTargetConfiguration.class.getProtectionDomain()
                     .getCodeSource().getLocation().toURI()).getPath();
         } catch (URISyntaxException ex) {
             throw new IOException ("Can't locate Substrate.jar", ex);
@@ -160,7 +160,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         }
         compileRunner.addArg(getJniPlatformArg());
         compileRunner.addArg(Constants.NATIVE_IMAGE_ARG_CLASSPATH);
-        compileRunner.addArg(subscp+":"+FileOps.createPathingJar(paths.getTmpPath(), processedClasspath));
+        compileRunner.addArg(substrateClasspath + File.pathSeparator + FileOps.createPathingJar(paths.getTmpPath(), processedClasspath));
         compileRunner.addArgs(projectConfiguration.getCompilerArgs());
         compileRunner.addArg(projectConfiguration.getMainClassName());
 

@@ -64,10 +64,6 @@ public class GluonFeature implements Feature {
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess a) {
-        NativeLibraries nativeLibraries = ((BeforeAnalysisAccessImpl) a).getNativeLibraries();
-        nativeLibraries.addStaticJniLibrary("prism_es2");
-        nativeLibraries.addStaticJniLibrary("glass");
-        nativeLibraries.addStaticJniLibrary("glassgtk3");
         
         PlatformNativeLibrarySupport pnls = PlatformNativeLibrarySupport.singleton();
         pnls.addBuiltinPkgNativePrefix("com_sun_javafx_iio_jpeg");
