@@ -46,14 +46,16 @@ import org.graalvm.nativeimage.hosted.Feature;
 // supported only, so we include the feature in LinuxTargetConfiguration
 // @AutomaticFeature 
 public class GluonFeature implements Feature {
-  @Override
+    @Override
     public boolean isInConfiguration(IsInConfigurationAccess access) {
         System.err.println("[GluonFeature] enabled for config " + access);
         return true;
     }
     
+    @Override
     public void duringSetup(DuringSetupAccess access) {
         System.err.println("GluonFeature enabled in setup " + access);
+        NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("prism_sw");
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("prism_es2");
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glass");
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glassgtk3");
