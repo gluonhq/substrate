@@ -28,6 +28,7 @@ test {
 dependencies {
     implementation 'com.googlecode.plist:dd-plist:1.22'
     implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
+    implementation 'org.graalvm.nativeimage:svm:21.1.0'
 
     testImplementation gradleTestKit()
     testImplementation "org.junit.jupiter:junit-jupiter-api:$jUnitVersion"
@@ -37,7 +38,7 @@ dependencies {
 
 compileJava {
     doFirst {
-        options.compilerArgs = ['--module-path', classpath.asPath]
+        options.compilerArgs = ['--module-path', classpath.filter { f -> !f.name.endsWith(".tar.gz") }.asPath]
         classpath = files()
     }
 }
@@ -47,7 +48,7 @@ javadoc {
     options.addBooleanOption('html5', true)
     options.addBooleanOption('javafx', true)
     doFirst {
-        options.modulePath = classpath.flatten()
+        options.modulePath = classpath.filter { f -> !f.name.endsWith(".tar.gz") }.flatten()
     }
 }
 
