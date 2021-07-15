@@ -652,8 +652,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     /**
      * Loops over every jar on the classpath that isn't a JavaFX jar and checks
-     * if it contains native static libraries (*.a or *.lib files). If found, the
-     * libraries are extracted into a temporary folder for use in the link step.
+     * if it contains native static libraries (*.a or *.lib files) or object files. If found, the
+     * libraries and object files are extracted into a temporary folder for use in the link step.
      *
      * @param classPath The classpath of the project
      * @throws IOException
@@ -669,6 +669,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         for (String jar : jars) {
             FileOps.extractFilesFromJar("." + getStaticLibraryFileExtension(), Path.of(jar),
                     libPath, getTargetSpecificNativeLibsFilter());
+            FileOps.extractFilesFromJar(".o" , Path.of(jar),
+                    libPath, getTargetSpecificNativeLibsFilter());
+
         }
     }
 
