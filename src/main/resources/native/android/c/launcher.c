@@ -209,7 +209,7 @@ void JVM_RawMonitorExit() {
     fprintf(stderr, "We should never reach here (JVM_RawMonitorExit)\n");
 }
 
-// AWT
+// AWT: Provide dummy methods for unresolved references to libawt
 void Java_java_awt_Toolkit_initIDs() {
     fprintf(stderr, "We should never reach here (Java_java_awt_Toolkit_initIDs)\n");
 }
