@@ -208,3 +208,16 @@ void JVM_RawMonitorEnter() {
 void JVM_RawMonitorExit() {
     fprintf(stderr, "We should never reach here (JVM_RawMonitorExit)\n");
 }
+
+// AWT
+void Java_java_awt_Toolkit_initIDs() {
+    fprintf(stderr, "We should never reach here (Java_java_awt_Toolkit_initIDs)\n");
+}
+
+void JNI_OnLoad_awt() {
+    fprintf(stderr, "We should never reach here (JNI_OnLoad_awt)\n");
+}
+
+void JNI_OnLoad_awt_headless() {
+    fprintf(stderr, "We should never reach here (JNI_OnLoad_awt_headless)\n");
+}
