@@ -212,6 +212,10 @@ void JVM_RawMonitorExit() {
 // AWT: GraalVM native-image explicitly adds (unresolved) references to libawt
 // so we need to make sure the JNI_OnLoad symbols are there.
 
+void Java_java_awt_Font_initIDs() {
+    fprintf(stderr, "We should never reach here (Java_java_awt_Font_initIDs)\n");
+}
+
 void Java_java_awt_Toolkit_initIDs() {
     fprintf(stderr, "We should never reach here (Java_java_awt_Toolkit_initIDs)\n");
 }
