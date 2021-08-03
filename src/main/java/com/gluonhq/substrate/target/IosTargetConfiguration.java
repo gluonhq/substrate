@@ -37,6 +37,7 @@ import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
+import com.gluonhq.substrate.util.ios.Simulator;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -69,7 +70,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit"
     );
 
-    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
+    private final String[] capFiles = {"AArch64LibCHelperDirectives.cap",
             "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
             "LLVMDirectives.cap", "PosixDirectives.cap"};
@@ -110,23 +111,31 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
-        return Arrays.asList("-xobjective-c",
+        List<String> flags = new ArrayList<>(Arrays.asList("-xobjective-c",
                 "-arch", getTargetArch(),
                 "-mios-version-min=11.0",
-                "-I"+projectConfiguration.getGraalPath().resolve("include").toString(),
-                "-I"+projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
-                "-isysroot", getSysroot());
+                "-I" + projectConfiguration.getGraalPath().resolve("include").toString(),
+                "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
+                "-isysroot", getSysroot()));
+        if (isSimulator()) {
+            flags.add("-DGVM_IOS_SIM");
+        }
+        return flags;
     }
 
     @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
-        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
-                "-H:-SpawnIsolates",
+        List<String> flags = new ArrayList<>(Arrays.asList(
                 "-H:PageSize=16384",
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getTargetArch(),
                 "-H:+UseCAPCache",
-                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString());
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString()));
+        if (!isSimulator()) {
+            flags.add("-H:CompilerBackend=" + Constants.BACKEND_LLVM);
+            flags.add("-H:-SpawnIsolates");
+        }
+        return flags;
     }
 
     @Override
@@ -166,6 +175,9 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
+        if (isSimulator()) {
+            return List.of();
+        }
         return FileOps.findFile( paths.getGvmPath(), "llvm.o").map( objectFile ->
            Collections.singletonList(objectFile.toAbsolutePath().toString())
         ).orElseThrow();
@@ -220,8 +232,9 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         Deploy deploy = new Deploy();
         deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
         if (isSimulator()) {
-            // TODO: launchOnSimulator(appPath);
-            return false;
+            Simulator simulator = new Simulator(paths, projectConfiguration);
+            simulator.launchSimulator();
+            return true;
         } else {
             return deploy.install(app.toString());
         }

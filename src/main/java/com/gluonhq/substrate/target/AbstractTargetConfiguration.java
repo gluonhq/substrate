@@ -368,6 +368,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                         throw new IllegalArgumentException("No support yet for " + os + ":" + arch);
                 }
             case Constants.OS_IOS:
+                if (Constants.ARCH_AMD64.equals(arch)) {
+                    return "IOS_AMD64";
+                }
                 return "IOS_AARCH64";
             case Constants.OS_DARWIN:
                 return "DARWIN_AMD64";

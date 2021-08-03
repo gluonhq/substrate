@@ -54,9 +54,6 @@ static __inline__ void gvmlog(NSString* format, ...)
 
 int startGVM(const char* userHome, const char* userTimeZone, const char* userLaunchKey);
 
-// TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
-int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
-
 extern int __svm_vm_is_static_binary __attribute__((weak)) = 1;
 
 extern int *run_main(int argc, const char* argv[]);
@@ -130,9 +127,6 @@ int main(int argc, char * argv[]) {
     }
 
     startGVM(userHome, userTimeZone, userLaunchKey);
-
-    // Invoke sunec
-    JNI_OnLoad_sunec(nil, nil);
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -204,6 +198,43 @@ int startGVM(const char* userHome, const char* userTimeZone, const char* userLau
 }
 
 typedef struct {
+#ifdef GVM_IOS_SIM
+  char fCX8;
+  char fCMOV;
+  char fFXSR;
+  char fHT;
+  char fMMX;
+  char fAMD3DNOWPREFETCH;
+  char fSSE;
+  char fSSE2;
+  char fSSE3;
+  char fSSSE3;
+  char fSSE4A;
+  char fSSE41;
+  char fSSE42;
+  char fPOPCNT;
+  char fLZCNT;
+  char fTSC;
+  char fTSCINV;
+  char fAVX;
+  char fAVX2;
+  char fAES;
+  char fERMS;
+  char fCLMUL;
+  char fBMI1;
+  char fBMI2;
+  char fRTM;
+  char fADX;
+  char fAVX512F;
+  char fAVX512DQ;
+  char fAVX512PF;
+  char fAVX512ER;
+  char fAVX512CD;
+  char fAVX512BW;
+  char fAVX512VL;
+  char fSHA;
+  char fFMA;
+#else
   char fFP;
   char fASIMD;
   char fEVTSTRM;
@@ -216,11 +247,17 @@ typedef struct {
   char fSTXRPREFETCH;
   char fA53MAC;
   char fDMBATOMICS;
+#endif
 } CPUFeatures;
 
 void determineCPUFeatures(CPUFeatures* features)
 {
     fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
+#ifdef GVM_IOS_SIM
+    features->fSSE = 1;
+    features->fSSE2 = 1;
+#else
     features->fFP = 1;
     features->fASIMD = 1;
+#endif
 }
