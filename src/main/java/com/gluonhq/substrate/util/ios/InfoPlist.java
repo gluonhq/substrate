@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,8 +32,9 @@ import com.dd.plist.NSDictionary;
 import com.dd.plist.NSString;
 import com.dd.plist.PropertyListParser;
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ReleaseConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
@@ -46,11 +47,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
+import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_IOS;
+import static com.gluonhq.substrate.Constants.PARTIAL_PLIST_FILE;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_SHORT_VERSION;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_VERSION;
 
@@ -84,8 +90,8 @@ public class InfoPlist {
     private final Path appPath;
     private final Path rootPath;
     private final Path tmpPath;
+    private final Path partialPListDir;
 
-    private Path partialPListDir;
     private Path tmpStoryboardsDir;
     private String bundleId;
     private String minOSVersion = "11.0";
@@ -99,9 +105,10 @@ public class InfoPlist {
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
         rootPath = paths.getSourcePath().resolve(sourceOS);
         tmpPath = paths.getTmpPath();
+        partialPListDir = tmpPath.resolve("partial-plists");
     }
 
-    public Path processInfoPlist() throws IOException {
+    public Path processInfoPlist() throws IOException, InterruptedException {
         String appName = projectConfiguration.getAppName();
         String executableName = getExecutableName(appName, sourceOS);
         String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getMainClassName());
@@ -176,6 +183,8 @@ public class InfoPlist {
             throw new IOException("The file " + executable + " is not executable.");
         }
 
+        copyPartialPlistFiles();
+
         try {
             NSDictionaryEx dict = new NSDictionaryEx(plist.toFile());
             if (!inited) {
@@ -220,14 +229,23 @@ public class InfoPlist {
             dict.getKeySet().forEach(k -> orderedDict.put(k, dict.get(k)));
 
             if (partialPListDir != null) {
-                Files.walk(partialPListDir)
-                        .filter(f -> f.toString().endsWith(".plist"))
-                        .forEach(f -> {
+                Files.walk(partialPListDir, 1)
+                        .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".plist"))
+                        .sorted((p1, p2) -> {
+                            // classes.plist should be the last one, to override previous plist files
+                            if (p1.toString().endsWith("classes_" + PARTIAL_PLIST_FILE)) {
+                                return 1;
+                            } else if (p2.toString().endsWith("classes_" + PARTIAL_PLIST_FILE)) {
+                                return -1;
+                            }
+                            return p1.compareTo(p2);
+                        })
+                        .forEach(path -> {
                             try {
-                                NSDictionary d = (NSDictionary) PropertyListParser.parse(f.toFile());
+                                NSDictionary d = (NSDictionary) PropertyListParser.parse(path.toFile());
                                 d.keySet().forEach(k -> orderedDict.put(k, d.get(k)));
                             } catch (Exception e) {
-                                Logger.logFatal(e, "Error reading plist");
+                                Logger.logFatal(e, "Error parsing plist file: " + path);
                             }
                         });
             }
@@ -317,6 +335,41 @@ public class InfoPlist {
                 "Please check the src/ios/Default-info.plist file and make sure CFBundleIdentifier key exists");
     }
 
+    /**
+     * Walks through the classes jar and other dependency jars files in the classpath,
+     * and looks for META-INF/substrate/ios/Partial-Info.plist files.
+     *
+     * The method will copy all the plist files found into the partial plist folder
+     *
+     * @throws IOException
+     */
+    private void copyPartialPlistFiles() throws IOException, InterruptedException {
+        if (!Files.exists(partialPListDir)) {
+            Files.createDirectories(partialPListDir);
+        }
+
+        Logger.logDebug("Scanning for plist files");
+        final List<File> jars = new ClassPath(projectConfiguration.getClasspath()).getJars(true);
+        String prefix = META_INF_SUBSTRATE_IOS + PARTIAL_PLIST_FILE;
+        for (File jar : jars) {
+            try (ZipFile zip = new ZipFile(jar)) {
+                Logger.logDebug("Scanning " + jar);
+                for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements(); ) {
+                    ZipEntry zipEntry = e.nextElement();
+                    String name = zipEntry.getName();
+                    if (!zipEntry.isDirectory() && name.equals(prefix)) {
+                        String jarName = jar.getName().substring(0, jar.getName().lastIndexOf(".jar"));
+                        Path classPath = partialPListDir.resolve(jarName + "_" + PARTIAL_PLIST_FILE);
+                        Logger.logDebug("Adding plist from " + zip.getName() + " :: " + name + " into " + classPath);
+                        FileOps.copyStream(zip.getInputStream(zipEntry), classPath);
+                    }
+                }
+            } catch (IOException e) {
+                throw new IOException("Error processing partial plist files from jar: " + jar + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
+            }
+        }
+    }
+
     private void copyVerifyAssets(Path resourcePath) throws IOException {
         if (resourcePath == null || !Files.exists(resourcePath)) {
             throw new RuntimeException("Error: invalid path " + resourcePath);
@@ -368,7 +421,6 @@ public class InfoPlist {
             }
         });
 
-        partialPListDir = tmpPath.resolve("partial-plists");
         if (Files.exists(partialPListDir)) {
             try {
                 Files.walk(partialPListDir).forEach(f -> f.toFile().delete());
