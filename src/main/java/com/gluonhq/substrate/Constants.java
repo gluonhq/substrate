@@ -136,11 +136,13 @@ public class Constants {
      * Supported files
      */
     public static final String PLIST_FILE = "Default-Info.plist";
+    public static final String PARTIAL_PLIST_FILE = "Partial-Info.plist";
     public static final String IOS_ASSETS_FOLDER = "assets";
     public static final String MANIFEST_FILE = "AndroidManifest.xml";
     public static final String ANDROID_RES_FOLDER = "res";
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
+    public static final String META_INF_SUBSTRATE_IOS = "META-INF/substrate/ios/";
     public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik/";
     public static final String USER_ANDROID_PERMISSIONS_FILE = "android-permissions.txt";
     public static final String USER_ANDROID_DEPENDENCIES_FILE = "android-dependencies.txt";

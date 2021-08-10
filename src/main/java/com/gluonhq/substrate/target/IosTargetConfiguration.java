@@ -282,7 +282,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
-    private void createInfoPlist(ProcessPaths paths) throws IOException {
+    private void createInfoPlist(ProcessPaths paths) throws IOException, InterruptedException {
         InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
                 XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
         Path plist = infoPlist.processInfoPlist();
