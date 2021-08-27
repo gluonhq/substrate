@@ -71,6 +71,7 @@ public class GluonFeature implements Feature {
         pnls.addBuiltinPkgNativePrefix("com_sun_javafx_font_freetype");
         pnls.addBuiltinPkgNativePrefix("com_sun_prism");
         pnls.addBuiltinPkgNativePrefix("com_sun_glass");
+        pnls.addBuiltinPkgNativePrefix("com_sun_pisces");
     }
 
 }
