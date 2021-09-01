@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ import com.gluonhq.substrate.target.MacOSTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
+import com.gluonhq.substrate.target.WebTargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -385,7 +386,7 @@ public class SubstrateDispatcher {
     }
 
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) throws IOException {
-        if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
+        if (!Constants.OS_WEB.equals(targetTriplet.getOs()) && !config.getHostTriplet().canCompileTo(targetTriplet)) {
             throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
         }
         switch (targetTriplet.getOs()) {
@@ -394,6 +395,7 @@ public class SubstrateDispatcher {
             case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config);
             case Constants.OS_IOS    : return new IosTargetConfiguration(paths, config);
             case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config);
+            case Constants.OS_WEB    : return new WebTargetConfiguration(paths, config);
             default                  : return null;
         }
     }

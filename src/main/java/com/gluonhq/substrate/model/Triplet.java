@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -124,6 +124,11 @@ public class Triplet {
                 this.arch = ARCH_AARCH64;
                 this.vendor = VENDOR_LINUX;
                 this.os = OS_ANDROID;
+                break;
+            case WEB:
+                this.arch = ARCH_AMD64;
+                this.vendor = VENDOR_WEB;
+                this.os = OS_WEB;
                 break;
             default:
                 throw new IllegalArgumentException("Triplet for profile "+profile+" is not supported yet");
