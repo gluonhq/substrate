@@ -40,15 +40,22 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_WEB;
+import static com.gluonhq.substrate.Constants.WEB_INDEX_HTML;
 
 public class WebTargetConfiguration extends AbstractTargetConfiguration {
 
     public static final List<String> WEB_AOT_DEPENDENCIES = List.of(
-            "com.gluonhq:webscheduler:1.0.5",
+            "com.gluonhq:webscheduler:1.0.6-SNAPSHOT",
             "com.gluonhq.compat:javadate:1.1",
             "com.gluonhq.compat:javafunctions:1.1",
             "com.gluonhq.compat:javanio:1.2",
@@ -57,7 +64,7 @@ public class WebTargetConfiguration extends AbstractTargetConfiguration {
             "org.apidesign.bck2brwsr:emul.zip:" + Constants.WEB_AOT_VERSION,
             "org.apidesign.bck2brwsr:emul.zip:" + Constants.WEB_AOT_VERSION + ":" + Constants.WEB_AOT_CLASSIFIER);
 
-    private static final List<String> webFiles = List.of("uongl.js");
+    private static final List<String> webFiles = List.of("uongl.js", WEB_INDEX_HTML);
 
     private final String sourceOS;
     private final Path rootPath;
@@ -90,12 +97,36 @@ public class WebTargetConfiguration extends AbstractTargetConfiguration {
 
         File mainJavaScript = webPath.resolve(projectConfiguration.getAppName().concat(".js")).toFile();
 
+        // Extract web files to tmp folder
+        Path tmpPath = paths.getTmpPath().resolve("web");
+        if (!Files.exists(tmpPath)) {
+            Files.createDirectory(tmpPath);
+        }
+        for (String s : webFiles) {
+            for (File jar : jars) {
+                try (ZipFile zip = new ZipFile(jar)) {
+                    Logger.logDebug("Scanning " + jar);
+                    for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements(); ) {
+                        ZipEntry zipEntry = e.nextElement();
+                        String name = zipEntry.getName();
+                        if (!zipEntry.isDirectory() && name.equals(META_INF_SUBSTRATE_WEB + s)) {
+                            Logger.logDebug("Adding file from " + zip.getName() + " :: " + name + " into " + tmpPath.resolve(s));
+                            FileOps.copyStream(zip.getInputStream(zipEntry), tmpPath.resolve(s));
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new IOException("Error processing web files from jar: " + jar + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
+                }
+            }
+        }
+
+        // Copy and update files to web folder
         Path userHtml = rootPath.resolve(Constants.WEB_INDEX_HTML);
         if (!Files.exists(userHtml)) {
             // copy index to gensrc/web
             Path genHtml = paths.getGenPath().resolve(sourceOS).resolve(Constants.WEB_INDEX_HTML);
             Logger.logDebug("Copy " + Constants.WEB_INDEX_HTML + " to " + genHtml.toString());
-            FileOps.copyResource(Constants.WEB_NATIVE_FOLDER + Constants.WEB_INDEX_HTML, genHtml);
+            FileOps.copyFile(tmpPath.resolve(Constants.WEB_INDEX_HTML), genHtml);
             FileOps.replaceInFile(genHtml, "WEB_TITLE", projectConfiguration.getAppName());
             FileOps.replaceInFile(genHtml, "WEB_APP_NAME", projectConfiguration.getAppName());
             FileOps.replaceInFile(genHtml, "WEB_MAIN_CLASS", projectConfiguration.getMainClassName());
@@ -105,10 +136,15 @@ public class WebTargetConfiguration extends AbstractTargetConfiguration {
         } else {
             FileOps.copyFile(userHtml, webPath.resolve(Constants.WEB_INDEX_HTML));
         }
+
         for (String s : webFiles) {
-            FileOps.copyResource(Constants.WEB_NATIVE_FOLDER + s, webPath.resolve(s));
+            if (WEB_INDEX_HTML.equals(s)) {
+                continue;
+            }
+            FileOps.copyFile(tmpPath.resolve(s), webPath.resolve(s));
         }
 
+        // AOT
         class Work extends AheadOfTimeBase<File> {
 
             private final Map<File, String> artifacts = new HashMap<>();

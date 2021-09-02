@@ -154,6 +154,7 @@ public class Constants {
     public static final String ANDROID_NATIVE_FOLDER = "/native/android/";
     public static final String ANDROID_PROJECT_NAME = "android_project";
 
+    public static final String META_INF_SUBSTRATE_WEB = "META-INF/substrate/web/";
     public static final String WEB_NATIVE_FOLDER = "/native/web/";
     public static final String WEB_AOT_CLASSIFIER = "bck2brwsr";
     public static final String WEB_AOT_VERSION = "0.51";
