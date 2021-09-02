@@ -33,6 +33,7 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.web.AheadOfTimeBase;
 import org.apidesign.vm4brwsr.ObfuscationLevel;
 
@@ -45,6 +46,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -295,4 +297,22 @@ public class WebTargetConfiguration extends AbstractTargetConfiguration {
         return true;
     }
 
+    // TODO: Requires Chrome as default browser for now
+    @Override
+    public boolean runUntilEnd() throws IOException, InterruptedException {
+        String url = paths.getGvmPath().resolve("web").resolve(WEB_INDEX_HTML).toUri().toURL().toExternalForm();
+        Logger.logDebug("Launching url " + url);
+        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        try {
+            List<String> command = os.contains("mac") ?
+                    List.of("open", url) :
+                    os.contains("win") ?
+                            List.of("rundll32", "url.dll,FileProtocolHandler", url) :
+                            List.of("xdg-open", url);
+            ProcessRunner.runProcessForSingleOutput("browse", command.toArray(String[]::new));
+        } catch (Exception e) {
+            throw new IOException("Error launching url " + url);
+        }
+        return true;
+    }
 }
