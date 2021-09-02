@@ -57,7 +57,7 @@ public class WebTargetConfiguration extends AbstractTargetConfiguration {
             "org.apidesign.bck2brwsr:emul.zip:" + Constants.WEB_AOT_VERSION,
             "org.apidesign.bck2brwsr:emul.zip:" + Constants.WEB_AOT_VERSION + ":" + Constants.WEB_AOT_CLASSIFIER);
 
-    private static final List<String> webFiles = List.of("uongl.js", "webgl-debug.js");
+    private static final List<String> webFiles = List.of("uongl.js");
 
     private final String sourceOS;
     private final Path rootPath;

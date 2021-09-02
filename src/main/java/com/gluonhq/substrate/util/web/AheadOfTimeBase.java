@@ -125,11 +125,11 @@ public abstract class AheadOfTimeBase<Art> {
                     standalone(false).
                     resources(new Bck2Brwsr.Resources() {
 
-                @Override
-                public InputStream get(String resource) throws IOException {
-                    return null;
-                }
-            }).
+                        @Override
+                        public InputStream get(String resource) throws IOException {
+                            return null;
+                        }
+                    }).
                     generate(w);
             w.close();
         } catch (IOException ex) {
