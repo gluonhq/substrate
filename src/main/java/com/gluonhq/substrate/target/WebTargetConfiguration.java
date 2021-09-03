@@ -271,6 +271,9 @@ public class WebTargetConfiguration extends AbstractTargetConfiguration {
             protected String version(File a) {
                 String artifact = artifacts.get(a);
                 if (artifact != null) {
+                    if ("org.openjfx".equals(groupId(a)) && classifier(a) != null) {
+                        return Constants.DEFAULT_JAVAFX_JS_SDK_VERSION;
+                    }
                     return artifact.split(":")[2];
                 }
                 return null;
