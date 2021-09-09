@@ -106,7 +106,7 @@ public class Constants {
     public static final String PROFILE_WEB = "web";
 
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+10";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "17-ea+14";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "17";
     public static final String DEFAULT_JAVAFX_JS_SDK_VERSION  = "18-internal+0-2021-09-02-165800";
     public static final String DEFAULT_SYSROOT_VERSION  = "20210424";
 
