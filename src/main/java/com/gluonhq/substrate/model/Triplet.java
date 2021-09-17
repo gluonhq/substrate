@@ -193,6 +193,31 @@ public class Triplet {
         return this.os+"-"+myarch;
     }
 
+    /**
+     *
+     * On iOS/iOS-sim and Android returns a string with a valid version for clibs,
+     * for other OSes returns an empty string
+     * @return
+     */
+    public String getClibsVersion() {
+        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs())) {
+            return "-ea+" + Constants.DEFAULT_CLIBS_VERSION;
+        }
+        return "";
+    }
+    /**
+     *
+     * On iOS/iOS-sim and Android returns a string with a valid path for clibs,
+     * for other OSes returns an empty string
+     * @return
+     */
+    public String getClibsVersionPath() {
+        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs())) {
+            return Constants.DEFAULT_CLIBS_VERSION;
+        }
+        return "";
+    }
+
     @Override
     public String toString() {
         return arch + '-' + vendor + '-' + os;
