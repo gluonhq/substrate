@@ -109,6 +109,7 @@ public class Constants {
     public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "18-ea+2";
     public static final String DEFAULT_JAVAFX_JS_SDK_VERSION  = "18-internal+0-2021-09-02-165800";
     public static final String DEFAULT_SYSROOT_VERSION  = "20210424";
+    public static final String DEFAULT_CLIBS_VERSION  = "26";
 
     /**
      * Supported GraalVM versions

@@ -69,7 +69,7 @@ import java.util.stream.Stream;
  */
 public abstract class AbstractTargetConfiguration implements TargetConfiguration {
 
-    private static final String URL_CLIBS_ZIP = "https://download2.gluonhq.com/substrate/clibs/${osarch}.zip";
+    private static final String URL_CLIBS_ZIP = "https://download2.gluonhq.com/substrate/clibs/${osarch}${version}.zip";
     private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json", "dat",
@@ -389,11 +389,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Triplet target = projectConfiguration.getTargetTriplet();
         Path clibPath = getCLibPath();
         if (FileOps.isDirectoryEmpty(clibPath)) {
-            String url = Strings.substitute(URL_CLIBS_ZIP, Map.of("osarch", target.getOsArch()));
+            String url = Strings.substitute(URL_CLIBS_ZIP,
+                    Map.of("osarch", target.getOsArch(),
+                            "version", target.getClibsVersion()));
             FileOps.downloadAndUnzip(url,
-                    clibPath.getParent().getParent(),
+                    clibPath.getParent().getParent().getParent(),
                     "clibraries.zip",
                     "clibraries",
+                    target.getClibsVersionPath(),
                     target.getOsArch2());
         }
         if (FileOps.isDirectoryEmpty(clibPath)) {
@@ -922,6 +925,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .resolve("lib")
                 .resolve("svm")
                 .resolve("clibraries")
+                .resolve(target.getClibsVersionPath())
                 .resolve(target.getOsArch2());
     }
 

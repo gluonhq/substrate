@@ -189,26 +189,6 @@ int getdtablesize() {
     return sysconf(_SC_OPEN_MAX);
 }
 
-void JVM_NativePath() {
-    fprintf(stderr, "We should never reach here (JVM_nativePath)\n");
-}
-
-void JVM_RawMonitorCreate() {
-    fprintf(stderr, "We should never reach here (JVM_RawMonitorCreate)\n");
-}
-
-void JVM_RawMonitorDestroy() {
-    fprintf(stderr, "We should never reach here (JVM_RawMonitorDestroy)\n");
-}
-
-void JVM_RawMonitorEnter() {
-    fprintf(stderr, "We should never reach here (JVM_RawMonitorEnter)\n");
-}
-
-void JVM_RawMonitorExit() {
-    fprintf(stderr, "We should never reach here (JVM_RawMonitorExit)\n");
-}
-
 // AWT: GraalVM native-image explicitly adds (unresolved) references to libawt
 // so we need to make sure the JNI_OnLoad symbols are there.
 
