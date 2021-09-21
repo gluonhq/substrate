@@ -195,24 +195,27 @@ public class Triplet {
 
     /**
      *
-     * On iOS/iOS-sim and Android returns a string with a valid version for clibs,
-     * for other OSes returns an empty string
+     * On iOS/iOS-sim, Android and Linux-AArch64, it returns a string
+     * with a valid version for clibs, for other OSes returns an empty string
      * @return
      */
     public String getClibsVersion() {
-        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs())) {
+        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs()) ||
+                (OS_LINUX.equals(getOs()) && ARCH_AARCH64.equals(getArch()))) {
             return "-ea+" + Constants.DEFAULT_CLIBS_VERSION;
         }
         return "";
     }
     /**
      *
-     * On iOS/iOS-sim and Android returns a string with a valid path for clibs,
-     * for other OSes returns an empty string
+     * On iOS/iOS-sim, Android and Linux-AArch64, it returns a string
+     * with a valid path for clibs, for other OSes returns an empty string
+     *
      * @return
      */
     public String getClibsVersionPath() {
-        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs())) {
+        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs()) ||
+                (OS_LINUX.equals(getOs()) && ARCH_AARCH64.equals(getArch()))) {
             return Constants.DEFAULT_CLIBS_VERSION;
         }
         return "";
