@@ -229,7 +229,9 @@ public class WebTargetConfiguration extends AbstractTargetConfiguration {
             // ~/.m2/repository/$groupId/$artifactId/$version/$artifactId-$version-$classifier.jar
 
             private void setArtifact(File a) {
-                String artifact = null;
+                if (a == null || artifacts.containsKey(a)) {
+                    return;
+                }
                 if (a.toString().contains(".m2")) {
                     Path path = a.toPath();
                     int m2Index = 0;
@@ -237,10 +239,10 @@ public class WebTargetConfiguration extends AbstractTargetConfiguration {
                     String groupId = path.subpath(m2Index + 1, path.getNameCount() - 3).toString().replaceAll(File.separator, ".");
                     String artifactId = path.getName(path.getNameCount() - 3).toString();
                     String version = path.getName(path.getNameCount() - 2).toString();
-                    artifact = groupId + ":" + artifactId + ":" + version;
+                    String artifact = groupId + ":" + artifactId + ":" + version;
 
                     String last = path.getName(path.getNameCount() - 1).toString();
-                    String lastPrefix = artifactId(a) + "-" + version(a) + "-";
+                    String lastPrefix = artifactId + "-" + version + "-";
                     if (last.startsWith(lastPrefix)) {
                         String classifier = last.substring(lastPrefix.length(), last.length() - 4);
                         artifact += ":" + classifier;
