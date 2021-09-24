@@ -58,6 +58,7 @@ public class GluonFeature implements Feature {
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("prism_sw");
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("prism_es2");
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glass");
+        NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glass_monocle");
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glassgtk3");
 
     }
