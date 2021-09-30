@@ -158,7 +158,7 @@ public class Constants {
 
     public static final String META_INF_SUBSTRATE_WEB = "META-INF/substrate/web/";
     public static final String WEB_AOT_CLASSIFIER = "bck2brwsr";
-    public static final String WEB_AOT_VERSION = "0.51";
+    public static final String WEB_AOT_VERSION = "0.53";
     public static final String WEB_INDEX_HTML = "index.html";
 
     public static final String META_INF_SUBSTRATE_CONFIG = "META-INF/substrate/config/";

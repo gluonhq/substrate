@@ -29,7 +29,7 @@ dependencies {
     implementation 'com.googlecode.plist:dd-plist:1.22'
     implementation 'org.bouncycastle:bcpkix-jdk15on:1.49'
     implementation 'org.graalvm.nativeimage:svm:21.1.0'
-    implementation 'org.apidesign.bck2brwsr:aot:0.51'
+    implementation 'org.apidesign.bck2brwsr:aot:0.53'
 
     testImplementation gradleTestKit()
     testImplementation "org.junit.jupiter:junit-jupiter-api:$jUnitVersion"
