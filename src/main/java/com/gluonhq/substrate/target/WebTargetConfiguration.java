@@ -57,7 +57,7 @@ import static com.gluonhq.substrate.Constants.WEB_INDEX_HTML;
 public class WebTargetConfiguration extends AbstractTargetConfiguration {
 
     public static final List<String> WEB_AOT_DEPENDENCIES = List.of(
-            "com.gluonhq:webscheduler:1.0.6",
+            "com.gluonhq:webscheduler:1.0.7",
             "com.gluonhq.compat:javadate:1.1",
             "com.gluonhq.compat:javafunctions:1.1",
             "com.gluonhq.compat:javanio:1.2",
