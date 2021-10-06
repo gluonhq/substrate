@@ -10,7 +10,7 @@ repositories {
     }
 }
 
-def attachVersion = "4.0.10"
+def attachVersion = "4.0.13"
 def target = System.getProperty("substrate.target")
 def classifier = "ios" == target ? target : "desktop"
 
@@ -34,7 +34,7 @@ dependencies {
 }
 
 javafx {
-    version = "16"
+    version = "17.0.0.1"
     modules = [ "javafx.controls" ]
 }
 
