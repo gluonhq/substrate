@@ -64,6 +64,14 @@ class TestUtils {
     }
 
     /**
+     * Checks if the test is running on Windows, but not on CI server
+     * @return true if runs on a local Windows
+     */
+    boolean isLocalWindows() {
+        return !isCI() && Triplet.isWindowsHost();
+    }
+
+    /**
      * Checks if the test is running on Linux, but not on CI server
      * @return true if runs on a local Linux
      */
@@ -85,5 +93,13 @@ class TestUtils {
      */
     static boolean isCILinux() {
         return isCI() && Triplet.isLinuxHost();
+    }
+
+    /**
+     * Checks if the test is running on Windows over CI server
+     * @return true if runs on Windows over CI server
+     */
+    static boolean isCIWindows() {
+        return isCI() && Triplet.isWindowsHost();
     }
 }
