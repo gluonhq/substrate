@@ -322,7 +322,8 @@ public class SubstrateDispatcher {
                 Logger.logInfo(logTitle("RUN TASK (with expected)"));
 
                 String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(),
-                        dispatcher.config.getAppName());
+                        dispatcher.config.getAppName() + (Triplet.isWindowsHost() ? ".exe" : "")
+                );
                 if (expected.equals(response)) {
                     Logger.logInfo("Run ended successfully, the output: " + expected + " matched the expected result.");
                 } else {

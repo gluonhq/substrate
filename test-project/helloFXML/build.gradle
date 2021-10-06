@@ -36,10 +36,10 @@ task runScript(type: Exec) {
 
     def imageClasspath = ""
     if (javafxStaticSdk != null) {
-        imageClasspath = "${javafxStaticSdk}/lib/javafx.base.jar:" +
-                "${javafxStaticSdk}/lib/javafx.graphics.jar:" +
-                "${javafxStaticSdk}/lib/javafx.controls.jar:" +
-                "${javafxStaticSdk}/lib/javafx.fxml.jar:" +
+        imageClasspath = "${javafxStaticSdk}/lib/javafx.base.jar${File.pathSeparator}" +
+                "${javafxStaticSdk}/lib/javafx.graphics.jar${File.pathSeparator}" +
+                "${javafxStaticSdk}/lib/javafx.controls.jar${File.pathSeparator}" +
+                "${javafxStaticSdk}/lib/javafx.fxml.jar${File.pathSeparator}" +
                 project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath
     } else {
         imageClasspath = project.sourceSets.main.runtimeClasspath.asPath
