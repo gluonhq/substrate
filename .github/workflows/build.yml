@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Install packages (Linux)
         if: runner.os == 'Linux'
@@ -24,6 +24,14 @@ jobs:
           sudo apt-get install xvfb tigervnc-standalone-server tigervnc-common
 
       - uses: actions/checkout@v2
+
+      - name: Add msbuild to PATH (Windows)
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - name: Visual Studio shell (Windows)
+        if: runner.os == 'Windows'
+        uses: egor-tensin/vs-shell@v1
 
       - name: Setup Gluon's GraalVM
         uses: gluonhq/setup-graalvm@master
@@ -61,8 +69,22 @@ jobs:
         run: |
           ./gradlew -i test
 
-      - name: Build project
+      - name: Run Tests (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          gradlew.bat -i test
+
+      - name: Build project (Linux)
+        if: runner.os == 'Linux'
         run: ./gradlew -i build -x test
+
+      - name: Build project (MacOS)
+        if: runner.os == 'macOS'
+        run: ./gradlew -i build -x test
+
+      - name: Build project (Windows)
+        if: runner.os == 'Windows'
+        run: gradlew.bat -i build -x test
 
       - name: Deploy Snapshot
         if: runner.os == 'Linux' && github.ref == 'refs/heads/master'
