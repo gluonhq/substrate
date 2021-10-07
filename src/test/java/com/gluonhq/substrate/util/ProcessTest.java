@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate.util;
 
+import com.gluonhq.substrate.model.Triplet;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -44,7 +45,12 @@ public class ProcessTest {
 
     @Test
     public void processTest() throws IOException, InterruptedException {
-        ProcessRunner runner = new ProcessRunner("ls", "LICENSE");
+        ProcessRunner runner = new ProcessRunner();
+        if (Triplet.isWindowsHost()) {
+            runner.addArgs("cmd", "/c", "dir", "/b", "LICENSE");
+        } else {
+            runner.addArgs("ls", "LICENSE");
+        }
         assertEquals(0, runner.runProcess("dir"));
         assertEquals(1, runner.getResponses().size());
         assertEquals("LICENSE", runner.getLastResponse());
@@ -53,13 +59,21 @@ public class ProcessTest {
     @Test
     public void processLogTest() throws IOException, InterruptedException {
         Path tempDir = getTempDir();
-        ProcessRunner runner = new ProcessRunner("mkdir", "runner");
+        ProcessRunner runner = new ProcessRunner();
+        String output;
+        if (Triplet.isWindowsHost()) {
+            runner.addArgs("cmd", "/c", "mkdir", "runner");
+            output = "A subdirectory or file runner already exists.";
+        } else {
+            runner.addArgs("mkdir", "runner");
+            output = "File exists";
+        }
         assertEquals(0, runner.runProcess("mkdir", tempDir.toFile()));
         assertEquals(1, runner.getResponses().size());
         assertEquals("", runner.getLastResponse());
 
         assertEquals(1, runner.runProcess("mkdir", tempDir.toFile()));
-        assertTrue(runner.getLastResponse().endsWith("File exists"));
+        assertTrue(runner.getLastResponse().endsWith(output));
     }
 
 }

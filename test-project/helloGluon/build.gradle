@@ -10,7 +10,7 @@ repositories {
     }
 }
 
-def attachVersion = "4.0.10"
+def attachVersion = "4.0.13"
 def target = System.getProperty("substrate.target")
 def classifier = "ios" == target ? target : "desktop"
 
@@ -22,19 +22,31 @@ dependencies {
     substrate "com.gluonhq:substrate:$substrateVersion"
 
     implementation "com.gluonhq:charm-glisten:6.0.6"
-    implementation "com.gluonhq.attach:display:$attachVersion:$classifier"
-    implementation "com.gluonhq.attach:lifecycle:$attachVersion:$classifier"
-    if ("ios" == target) {
-        implementation "com.gluonhq.attach:statusbar:$attachVersion:$classifier"
-    } else {
-        implementation "com.gluonhq.attach:statusbar:$attachVersion"
+    implementation ("com.gluonhq.attach:display:$attachVersion:$classifier") {
+        exclude group:"org.openjfx"
     }
-    implementation "com.gluonhq.attach:storage:$attachVersion:$classifier"
-    implementation "com.gluonhq.attach:util:$attachVersion"
+    implementation ("com.gluonhq.attach:lifecycle:$attachVersion:$classifier") {
+        exclude group:"org.openjfx"
+    }
+    if ("ios" == target) {
+        implementation ("com.gluonhq.attach:statusbar:$attachVersion:$classifier") {
+            exclude group:"org.openjfx"
+        }
+    } else {
+        implementation ("com.gluonhq.attach:statusbar:$attachVersion") {
+            exclude group:"org.openjfx"
+        }
+    }
+    implementation ("com.gluonhq.attach:storage:$attachVersion:$classifier") {
+        exclude group:"org.openjfx"
+    }
+    implementation ("com.gluonhq.attach:util:$attachVersion") {
+        exclude group:"org.openjfx"
+    }
 }
 
 javafx {
-    version = "16"
+    version = "17.0.0.1"
     modules = [ "javafx.controls" ]
 }
 
@@ -50,9 +62,9 @@ task runScript(type: Exec) {
 
     def imageClasspath = ""
     if (javafxStaticSdk != null) {
-        imageClasspath = "${javafxStaticSdk}/lib/javafx.base.jar:" +
-                "${javafxStaticSdk}/lib/javafx.graphics.jar:" +
-                "${javafxStaticSdk}/lib/javafx.controls.jar:" +
+        imageClasspath = "${javafxStaticSdk}/lib/javafx.base.jar${File.pathSeparator}" +
+                "${javafxStaticSdk}/lib/javafx.graphics.jar${File.pathSeparator}" +
+                "${javafxStaticSdk}/lib/javafx.controls.jar${File.pathSeparator}" +
                 project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath
     } else {
         imageClasspath = project.sourceSets.main.runtimeClasspath.asPath
