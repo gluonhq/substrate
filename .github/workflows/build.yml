@@ -72,19 +72,10 @@ jobs:
       - name: Run Tests (Windows)
         if: runner.os == 'Windows'
         run: |
-          gradlew.bat -i test
+          ./gradlew -i test
 
-      - name: Build project (Linux)
-        if: runner.os == 'Linux'
-        run: ./gradlew -i build -x test
-
-      - name: Build project (MacOS)
-        if: runner.os == 'macOS'
-        run: ./gradlew -i build -x test
-
-      - name: Build project (Windows)
-        if: runner.os == 'Windows'
-        run: gradlew.bat -i build -x test
+      - name: Build project
+        run: /gradlew -i build -x test
 
       - name: Deploy Snapshot
         if: runner.os == 'Linux' && github.ref == 'refs/heads/master'
