@@ -75,7 +75,7 @@ jobs:
           ./gradlew -i test
 
       - name: Build project
-        run: /gradlew -i build -x test
+        run: ./gradlew -i build -x test
 
       - name: Deploy Snapshot
         if: runner.os == 'Linux' && github.ref == 'refs/heads/master'
