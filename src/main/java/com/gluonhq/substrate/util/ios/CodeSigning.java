@@ -90,7 +90,7 @@ public class CodeSigning {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
         this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
-        this.bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
+        this.bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
 
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
         tmpPath = paths.getTmpPath();
@@ -122,7 +122,7 @@ public class CodeSigning {
 
     private MobileProvision getProvisioningProfile() throws IOException {
         if (bundleId == null) {
-            bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
+            bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
         }
 
         if (mobileProvision == null) {
