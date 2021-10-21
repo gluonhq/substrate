@@ -79,7 +79,7 @@ class SubstrateTest {
     void testAssertGraal() {
         ProjectConfiguration publicConfig = new ProjectConfiguration("", "");
         InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
-        assertThrows(NullPointerException.class, config::canRunNativeImage);
+        assertThrows(NullPointerException.class, config::getGraalVMJavaVersion);
     }
 
     @Test

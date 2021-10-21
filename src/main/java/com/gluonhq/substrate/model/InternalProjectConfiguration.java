@@ -589,9 +589,11 @@ public class InternalProjectConfiguration {
     /**
      * Gets the Java version that GraalVM bundles
      * @return the Java version of the GraalVM's build
+     * @throws NullPointerException when the configuration is null
+     * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
      * @throws IOException if the Java version can't be found
      */
-    private Version getGraalVMJavaVersion() throws IOException {
+    public Version getGraalVMJavaVersion() throws IOException {
         ProcessRunner graalJava = null;
         try {
             graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
