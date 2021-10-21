@@ -115,6 +115,7 @@ public class Constants {
      * Supported GraalVM versions
      */
     public static final String GRAALVM_MIN_VERSION = "21.0";
+    public static final String GRAALVM_JAVA_MIN_VERSION = "11.0";
 
     /**
      * Paths
@@ -181,6 +182,7 @@ public class Constants {
     public static final String RESOURCE_ARCH_FILE = "resourceconfig-${archOs}.json";
 
     public static final String JNI_JAVA_FILE = "jniconfig-java.json";
+    public static final String JNI_JAVA_FILE11 = "jniconfig-java11.json";
     public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
     public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
 
