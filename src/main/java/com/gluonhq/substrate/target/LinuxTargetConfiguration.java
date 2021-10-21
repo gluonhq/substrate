@@ -232,6 +232,9 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             throw new RuntimeException("Fatal error, we have no static Java libraries, so we can't link with them.");
         }
         for (String lib : staticJavaLibs) {
+            if (!projectConfiguration.usesJDK11() && lib.contains("sunec")) {
+                continue;
+            }
             targetLibraries.add(javaStaticLibPath.resolve("lib" + lib + ".a").toString());
         }
         for (String lib : staticJvmLibs) {

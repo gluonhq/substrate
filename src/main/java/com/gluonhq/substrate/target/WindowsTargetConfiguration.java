@@ -139,7 +139,11 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         List<String> targetLibraries = new ArrayList<>();
 
         targetLibraries.addAll(asListOfLibraryLinkFlags(javaWindowsLibs));
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
+        List<String> javaLibs = new ArrayList<>(staticJavaLibs);
+        if (!projectConfiguration.usesJDK11()) {
+            javaLibs.removeIf(s -> s.contains("sunec"));
+        }
+        targetLibraries.addAll(asListOfLibraryLinkFlags(javaLibs));
         targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
 
         return targetLibraries;

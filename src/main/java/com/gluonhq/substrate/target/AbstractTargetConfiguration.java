@@ -471,7 +471,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private List<String> getJNIClassList(String suffix, boolean useJavaFX, boolean usePrismSW) {
         List<String> answer = new LinkedList<>();
-        answer.add(Constants.JNI_JAVA_FILE);
+        answer.add(projectConfiguration.usesJDK11() ? Constants.JNI_JAVA_FILE11 : Constants.JNI_JAVA_FILE);
         if (useJavaFX && usePrismSW) {
             answer.add(Constants.JNI_JAVAFXSW_FILE);
         }
@@ -854,8 +854,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * linker when creating images for the specific target.
      */
     List<String> getTargetSpecificJavaLinkLibraries() {
-        return Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-lprefs", "-ljvm", "-lfdlibm", "-lz", "-ldl",
-                "-lj2pkcs11", "-lsunec", "-ljaas", "-lextnet");
+        List<String> libraries = new ArrayList<>(Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-lprefs", "-ljvm", "-lfdlibm", "-lz", "-ldl",
+                "-lj2pkcs11", "-lsunec", "-ljaas", "-lextnet"));
+        if (!projectConfiguration.usesJDK11()) {
+            libraries.removeIf(s -> s.contains("sunec"));
+        }
+        return libraries;
     }
 
     List<String> getTargetSpecificLinkOutputFlags() {
