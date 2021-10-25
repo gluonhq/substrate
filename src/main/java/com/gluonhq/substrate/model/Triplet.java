@@ -36,6 +36,11 @@ import static com.gluonhq.substrate.Constants.*;
 public class Triplet {
 
     /**
+     * The system architecture of the host is evaluated at build-time
+     */
+    private static final String OS_ARCH  = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
+
+    /**
      * The operating system of the host is evaluated at build-time
      */
     private static final String OS_NAME  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
@@ -53,7 +58,11 @@ public class Triplet {
         if (isMacOSHost()) {
            return new Triplet(Constants.Profile.MACOS);
         } else if (isLinuxHost()) {
-            return new Triplet(Constants.Profile.LINUX);
+            if (isAarch64Arch()) {
+                return new Triplet(Constants.Profile.LINUX_AARCH64);
+            } else {
+                return new Triplet(Constants.Profile.LINUX);
+            }
         } else if (isWindowsHost()) {
             return new Triplet(Constants.Profile.WINDOWS);
         } else {
@@ -80,6 +89,13 @@ public class Triplet {
      */
     public static boolean isLinuxHost() {
         return OS_NAME.contains("nux");
+    }
+
+    /**
+     * @return true if host architecture is AArch64
+     */
+    public static boolean isAarch64Arch() {
+        return OS_ARCH.contains("aarch64");
     }
 
     public Triplet(String arch, String vendor, String os) {
