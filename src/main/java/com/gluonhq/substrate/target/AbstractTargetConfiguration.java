@@ -57,7 +57,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -98,7 +97,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     final ProcessPaths paths;
     protected final boolean crossCompile;
 
-    private List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
+    private final List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
+    private final List<String> defaultStaticJavaLibs = List.of("java", "nio", "zip", "net", "prefs", "jvm",
+            "fdlibm", "z", "dl", "j2pkcs11", "sunec", "jaas", "extnet");
 
     AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         this.projectConfiguration = configuration;
@@ -854,12 +855,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * linker when creating images for the specific target.
      */
     List<String> getTargetSpecificJavaLinkLibraries() {
-        List<String> libraries = new ArrayList<>(Arrays.asList("-ljava", "-lnio", "-lzip", "-lnet", "-lprefs", "-ljvm", "-lfdlibm", "-lz", "-ldl",
-                "-lj2pkcs11", "-lsunec", "-ljaas", "-lextnet"));
-        if (!projectConfiguration.usesJDK11()) {
-            libraries.removeIf(s -> s.contains("sunec"));
-        }
-        return libraries;
+        return defaultStaticJavaLibs.stream()
+                .filter(lib -> projectConfiguration.usesJDK11() || !"sunec".equals(lib))
+                .map(lib -> "-l" + lib)
+                .collect(Collectors.toList());
     }
 
     List<String> getTargetSpecificLinkOutputFlags() {
