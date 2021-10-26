@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
@@ -221,34 +222,27 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificJavaLinkLibraries() {
-        List<String> targetLibraries = new ArrayList<>();
+    List<String> getStaticJavaLibs() {
+        return staticJavaLibs.stream()
+                .map(lib -> ":lib" + lib + ".a")
+                .collect(Collectors.toList());
+    }
 
-        Path javaStaticLibPath = null;
-        Path graalClibsPath = getCLibPath();
-        try {
-            javaStaticLibPath = getStaticJDKLibPaths().get(0);
-        } catch (Exception ex) {
-            throw new RuntimeException("Fatal error, we have no static Java libraries, so we can't link with them.");
-        }
-        for (String lib : staticJavaLibs) {
-            if (!projectConfiguration.usesJDK11() && lib.contains("sunec")) {
-                continue;
-            }
-            targetLibraries.add(javaStaticLibPath.resolve("lib" + lib + ".a").toString());
-        }
-        for (String lib : staticJvmLibs) {
-            targetLibraries.add(graalClibsPath.resolve("lib" + lib + ".a").toString());
-        }
-
-        targetLibraries.addAll(asListOfLibraryLinkFlags(linuxLibs));
-
-        return targetLibraries;
+    @Override
+    List<String> getOtherStaticLibs() {
+        return Stream.concat(staticJvmLibs.stream().map(lib -> ":lib" + lib + ".a"), linuxLibs.stream())
+                .collect(Collectors.toList());
     }
 
     @Override
     protected List<Path> getLinkerLibraryPaths() throws IOException {
         List<Path> linkerLibraryPaths = new ArrayList<>();
+        try {
+            linkerLibraryPaths.add(getStaticJDKLibPaths().get(0));
+        } catch (Exception ex) {
+            throw new RuntimeException("Fatal error, we have no static Java libraries, so we can't link with them.");
+        }
+        linkerLibraryPaths.add(getCLibPath());
         if (projectConfiguration.isUseJavaFX()) {
             linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());
         }
@@ -395,12 +389,6 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         try ( BufferedReader reader = new BufferedReader(new InputStreamReader(processInputStream))) {
             return reader.readLine();
         }
-    }
-
-    private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
-        return libraries.stream()
-                .map(library -> "-l" + library)
-                .collect(Collectors.toList());
     }
 
     @Override

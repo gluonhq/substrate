@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
@@ -135,18 +136,14 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificJavaLinkLibraries() {
-        List<String> targetLibraries = new ArrayList<>();
+    List<String> getStaticJavaLibs() {
+        return staticJavaLibs;
+    }
 
-        targetLibraries.addAll(asListOfLibraryLinkFlags(javaWindowsLibs));
-        List<String> javaLibs = new ArrayList<>(staticJavaLibs);
-        if (!projectConfiguration.usesJDK11()) {
-            javaLibs.removeIf(s -> s.contains("sunec"));
-        }
-        targetLibraries.addAll(asListOfLibraryLinkFlags(javaLibs));
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
-
-        return targetLibraries;
+    @Override
+    List<String> getOtherStaticLibs() {
+        return Stream.concat(staticJvmLibs.stream(), javaWindowsLibs.stream())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -184,9 +181,14 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         return "/LIBPATH:";
     }
 
+    @Override
+    String getLinkLibraryOption(String libname) {
+        return libname + "." + getStaticLibraryFileExtension();
+    }
+
     private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
         return libraries.stream()
-                .map(library -> library + "." + getStaticLibraryFileExtension())
+                .map(this::getLinkLibraryOption)
                 .collect(Collectors.toList());
     }
 

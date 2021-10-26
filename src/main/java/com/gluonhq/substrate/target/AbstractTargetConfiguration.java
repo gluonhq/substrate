@@ -807,8 +807,26 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "a";
     }
 
+    /**
+     * Defines how the library path is added to linker.
+     * Implementations can override this for providing a different syntax.
+     *
+     * @return a search path description understood by the host-specific
+     * linker when creating images for the specific target.
+     */
     String getLinkLibraryPathOption() {
         return "-L";
+    }
+
+    /**
+     * Defines how the linker will search for this archive or object file.
+     * Implementations can override this for providing a different syntax.
+     *
+     * @return a file with a search description understood by the host-specific
+     * linker when creating images for the specific target.
+     */
+    String getLinkLibraryOption(String libname) {
+        return "-l" + libname;
     }
 
     /**
@@ -844,20 +862,39 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     /**
+     * Return a list of static Java libraries that need to be added to the link command.
+     * Implementations can override this for providing a different list.
+     *
+     * @return a List of Java libraries that will be understood by the host-specific
+     * linker when creating images for the specific target.
+     */
+    List<String> getStaticJavaLibs() {
+        return defaultStaticJavaLibs;
+    }
+
+    /**
+     * Return a list of other static libraries (JVM libraries, platform-specific libraries)
+     * that need to be added to the link command.
+     * Implementations can override this for providing a different list.
+     *
+     * @return a List of other static libraries that will be understood by the host-specific
+     * linker when creating images for the specific target.
+     */
+    List<String> getOtherStaticLibs() {
+        return List.of();
+    }
+
+    /**
      * Return the arguments that need to be passed to the linker for including
      * the Java libraries in the final image.
-     * Implementations can override this for providing the required syntax.
-     *
-     * TODO: the list of java libraries should be final (e.g. java, nio, net...) 
-     * and separated from the linker options (e.g. -l, -Bstatic,...)
      *
      * @return a List of arguments that will be understood by the host-specific
      * linker when creating images for the specific target.
      */
-    List<String> getTargetSpecificJavaLinkLibraries() {
-        return defaultStaticJavaLibs.stream()
+    private List<String> getTargetSpecificJavaLinkLibraries() {
+        return Stream.concat(getStaticJavaLibs().stream(), getOtherStaticLibs().stream())
                 .filter(lib -> projectConfiguration.usesJDK11() || !"sunec".equals(lib))
-                .map(lib -> "-l" + lib)
+                .map(this::getLinkLibraryOption)
                 .collect(Collectors.toList());
     }
 
