@@ -54,9 +54,6 @@ static __inline__ void gvmlog(NSString* format, ...)
 
 int startGVM(const char* userHome, const char* userTimeZone, const char* userLaunchKey);
 
-// TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
-int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
-
 extern int __svm_vm_is_static_binary __attribute__((weak)) = 1;
 
 extern int *run_main(int argc, const char* argv[]);
@@ -131,8 +128,6 @@ int main(int argc, char * argv[]) {
 
     startGVM(userHome, userTimeZone, userLaunchKey);
 
-    // Invoke sunec
-    JNI_OnLoad_sunec(nil, nil);
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {

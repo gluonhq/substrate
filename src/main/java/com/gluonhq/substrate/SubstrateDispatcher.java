@@ -377,6 +377,7 @@ public class SubstrateDispatcher {
         }
 
         this.config.checkGraalVMVersion();
+        this.config.checkGraalVMJavaVersion();
 
         Triplet targetTriplet = config.getTargetTriplet();
 
@@ -413,8 +414,6 @@ public class SubstrateDispatcher {
     public boolean nativeCompile() throws Exception {
         Logger.logInfo(logTitle("COMPILE TASK"));
         printMessage("compile");
-
-        config.canRunNativeImage();
 
         Triplet targetTriplet  = config.getTargetTriplet();
         config.canRunLLVM(targetTriplet);

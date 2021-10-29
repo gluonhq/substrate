@@ -106,7 +106,7 @@ public class Constants {
     public static final String PROFILE_WEB = "web";
 
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+10";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "18-ea+4";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "18-ea+5";
     public static final String DEFAULT_JAVAFX_JS_SDK_VERSION  = "18-internal+0-2021-09-02-165800";
     public static final String DEFAULT_SYSROOT_VERSION  = "20210424";
     public static final String DEFAULT_CLIBS_VERSION  = "26";
@@ -115,6 +115,7 @@ public class Constants {
      * Supported GraalVM versions
      */
     public static final String GRAALVM_MIN_VERSION = "21.0";
+    public static final String GRAALVM_JAVA_MIN_VERSION = "11.0";
 
     /**
      * Paths
@@ -181,6 +182,7 @@ public class Constants {
     public static final String RESOURCE_ARCH_FILE = "resourceconfig-${archOs}.json";
 
     public static final String JNI_JAVA_FILE = "jniconfig-java.json";
+    public static final String JNI_JAVA_FILE11 = "jniconfig-java11.json";
     public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
     public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
 

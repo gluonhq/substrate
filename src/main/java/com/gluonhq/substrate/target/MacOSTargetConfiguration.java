@@ -117,11 +117,13 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificJavaLinkLibraries() {
-        List<String> targetLibraries = new ArrayList<>();
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
-        return targetLibraries;
+    List<String> getStaticJavaLibs() {
+        return staticJavaLibs;
+    }
+
+    @Override
+    List<String> getOtherStaticLibs() {
+        return staticJvmLibs;
     }
 
     @Override

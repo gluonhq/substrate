@@ -111,7 +111,7 @@ public class InfoPlist {
     public Path processInfoPlist() throws IOException, InterruptedException {
         String appName = projectConfiguration.getAppName();
         String executableName = getExecutableName(appName, sourceOS);
-        String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getMainClassName());
+        String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
         String bundleName = Objects.requireNonNullElse(releaseConfiguration.getBundleName(), appName);
         String bundleVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleVersion(), DEFAULT_BUNDLE_VERSION);
@@ -307,13 +307,10 @@ public class InfoPlist {
                 "Please check the src/ios/Default-info.plist file and make sure CFBundleExecutable key exists");
     }
 
-    static String getBundleId(Path plist, String mainClassName) {
+    static String getBundleId(Path plist, String appId) {
         if (plist == null) {
-            String className = mainClassName;
-            if (className.contains("/")) {
-                className = className.substring(className.indexOf("/") + 1);
-            }
-            return className;
+            Objects.requireNonNull(appId, "AppId can't be null if plist is not provided");
+            return appId;
         }
 
         try {
