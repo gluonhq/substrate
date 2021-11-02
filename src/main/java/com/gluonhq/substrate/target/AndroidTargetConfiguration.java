@@ -150,13 +150,14 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         String configuration = generateSigningConfiguration();
 
         fileDeps.checkAndroidPackages(sdk);
-        ProcessRunner assembleDebug = new ProcessRunner(
+        // create apk for installing on device
+        ProcessRunner assembleRunner = new ProcessRunner(
                             getAndroidProjectPath().resolve("gradlew").toString(),
                             "-p", getAndroidProjectPath().toString(),
                             "assemble" + configuration);
-        assembleDebug.addToEnv("ANDROID_HOME", sdk);
-        assembleDebug.addToEnv("JAVA_HOME", projectConfiguration.getGraalPath().toString());
-        if (assembleDebug.runProcess("package-task") != 0) {
+        assembleRunner.addToEnv("ANDROID_HOME", sdk);
+        assembleRunner.addToEnv("JAVA_HOME", projectConfiguration.getGraalPath().toString());
+        if (assembleRunner.runProcess("package-task") != 0) {
             return false;
         }
         Path generatedApk = getAndroidProjectPath().resolve("app").resolve("build")
@@ -165,6 +166,23 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path targetApk = paths.getGvmPath().resolve(projectConfiguration.getAppName()+".apk");
         if (Files.exists(generatedApk)) {
             FileOps.copyFile(generatedApk, targetApk);
+        }
+        // create aab for google play
+        ProcessRunner bundleRunner = new ProcessRunner(
+                getAndroidProjectPath().resolve("gradlew").toString(),
+                "-p", getAndroidProjectPath().toString(),
+                "bundle" + configuration);
+        bundleRunner.addToEnv("ANDROID_HOME", sdk);
+        bundleRunner.addToEnv("JAVA_HOME", projectConfiguration.getGraalPath().toString());
+        if (bundleRunner.runProcess("bundle-task") != 0) {
+            return false;
+        }
+        Path generatedAAB = getAndroidProjectPath().resolve("app").resolve("build")
+                .resolve("outputs").resolve("bundle").resolve(configuration.toLowerCase(Locale.ROOT))
+                .resolve("app-"+configuration.toLowerCase(Locale.ROOT)+".aab");
+        Path targetAAB = paths.getGvmPath().resolve(projectConfiguration.getAppName()+".aab");
+        if (Files.exists(generatedAAB)) {
+            FileOps.copyFile(generatedAAB, targetAAB);
         }
         return true;
     }
