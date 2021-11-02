@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 
 import static com.gluonhq.substrate.TestUtils.isCI;
+import static com.gluonhq.substrate.TestUtils.isCIWindows;
 import static com.gluonhq.substrate.TestUtils.isTravis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -45,6 +46,7 @@ class HelloGluonTest {
     @BeforeEach
     void notForTravis() {
         assumeTrue(!isTravis());
+        assumeTrue(!isCIWindows());
     }
 
     @Test
