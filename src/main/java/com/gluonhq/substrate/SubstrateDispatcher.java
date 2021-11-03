@@ -175,7 +175,9 @@ public class SubstrateDispatcher {
         config.setVerbose(verbose);
         config.setUsePrismSW(usePrismSW);
         config.setUsePrecompiledCode(usePrecompiledCode);
-        config.setCompilerArgs(nativeImageArgs);
+        if (!nativeImageArgs.isEmpty()) {
+            config.setCompilerArgs(nativeImageArgs);
+        }
         return config;
     }
 
