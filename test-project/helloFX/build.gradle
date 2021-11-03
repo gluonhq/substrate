@@ -32,6 +32,7 @@ task runScript(type: Exec) {
 
     def expected = System.getProperty("expected")
     def consoleProcessLog = System.getProperty("consoleProcessLog")
+    def nativeImageArgs = System.getProperty("nativeImageArgs")
 
     def imageClasspath = ""
     if (javafxStaticSdk != null) {
@@ -59,6 +60,9 @@ task runScript(type: Exec) {
     }
     if (consoleProcessLog != null) {
         argsList += ["-DconsoleProcessLog=$consoleProcessLog", "-Dverbose=true"]
+    }
+    if (nativeImageArgs != null && nativeImageArgs != "") {
+        argsList += ["-DnativeImageArgs=$nativeImageArgs"]
     }
     argsList += ["-Dmainclass=$mainClassName", 'com.gluonhq.substrate.SubstrateDispatcher']
     commandLine argsList

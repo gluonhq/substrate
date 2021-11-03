@@ -52,6 +52,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -157,7 +158,7 @@ public class SubstrateDispatcher {
 
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean usePrecompiledCode = Boolean.parseBoolean(System.getProperty("usePrecompiledCode", "true"));
-
+        List<String> nativeImageArgs = Arrays.asList(System.getProperty("nativeImageArgs", "").split(","));
         String targetProfile = System.getProperty("targetProfile");
         Triplet targetTriplet = targetProfile != null ?
                 new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase())) :
@@ -174,6 +175,7 @@ public class SubstrateDispatcher {
         config.setVerbose(verbose);
         config.setUsePrismSW(usePrismSW);
         config.setUsePrecompiledCode(usePrecompiledCode);
+        config.setCompilerArgs(nativeImageArgs);
         return config;
     }
 
