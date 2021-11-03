@@ -78,7 +78,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private static final List<String> baseNativeImageArguments = Arrays.asList(
             "-Djdk.internal.lambda.eagerlyInitialize=false",
-//            "--no-server",
+            "--no-server",
             "-H:+ExitAfterRelocatableImageWrite",
             "-H:+SharedLibrary",
             "-H:+AddAllCharsets",
