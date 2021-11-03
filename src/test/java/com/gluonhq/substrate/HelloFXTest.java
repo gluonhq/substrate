@@ -47,7 +47,7 @@ class HelloFXTest {
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFX:clean", ":helloFX:build",
                         "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
-                        "-DnativeImageArgs=" + (isCIWindows() ? "-J-Xmx8G" : ""),
+                        "-DnativeImageArgs=" + (isCIWindows() ? "-J-Xmx5G" : ""),
                         ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
