@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 
 import static com.gluonhq.substrate.TestUtils.isCI;
+import static com.gluonhq.substrate.TestUtils.isCIWindows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HelloFXTest {
@@ -46,6 +47,7 @@ class HelloFXTest {
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFX:clean", ":helloFX:build",
                         "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
+                        "-DnativeImageArgs=" + (isCIWindows() ? "-J-Xmx5G" : ""),
                         ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
