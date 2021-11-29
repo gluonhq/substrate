@@ -33,6 +33,7 @@ import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.XcodeUtils;
+import com.gluonhq.substrate.util.plist.NSDictionaryEx;
 
 import java.io.IOException;
 import java.io.InputStream;
