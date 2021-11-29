@@ -67,7 +67,7 @@ public class CodeSigning {
 
     private static final String CODESIGN_ALLOCATE_ENV = "CODESIGN_ALLOCATE";
     private static final String EMBEDDED_PROVISIONING_PROFILE = "embedded.mobileprovision";
-    private static String ERRLINK = "Please check https://docs.gluonhq.com/client/ for more information.";
+    private static final String ERRLINK = "Please check https://docs.gluonhq.com/ for more information.";
 
     private static final String KEYCHAIN_ERROR_MESSAGE = "errSecInternalComponent";
 

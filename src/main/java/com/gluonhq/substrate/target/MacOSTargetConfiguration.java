@@ -29,7 +29,13 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.XcodeUtils;
+import com.gluonhq.substrate.util.macos.CodeSigning;
+import com.gluonhq.substrate.util.macos.InfoPlist;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -131,6 +137,44 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
         return libs.stream()
                 .map(s -> "-Wl,-force_load," + libPath.resolve(s))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean link() throws IOException, InterruptedException {
+        boolean result = super.link();
+
+        if (result) {
+            createInfoPlist(paths);
+
+            if (!projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+                CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
+                if (!codeSigning.signApp()) {
+                    throw new RuntimeException("Error signing the app");
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
+    String getAppPath(String appName) {
+        Path appPath = paths.getAppPath().resolve(appName + ".app").resolve("Contents").resolve("MacOS");
+        if (!Files.exists(appPath)) {
+            try {
+                Files.createDirectories(appPath);
+            } catch (IOException e) {
+                Logger.logFatal(e, "Error creating path " + appPath);
+            }
+        }
+        return appPath.toString() + "/" + appName;
+    }
+
+    private void createInfoPlist(ProcessPaths paths) throws IOException, InterruptedException {
+        InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, XcodeUtils.SDKS.MACOSX);
+        Path plist = infoPlist.processInfoPlist();
+        if (plist != null) {
+            Logger.logDebug("Plist at " + plist.toString());
+        }
     }
 
     private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
