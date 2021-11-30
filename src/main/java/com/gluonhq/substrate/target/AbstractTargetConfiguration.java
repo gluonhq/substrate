@@ -251,20 +251,22 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     /**
      * Runs the generated native image
-     * @param appPath Path to the application to be run
-     * @param appName application name
      * @return a string with the last logged output of the process
      * @throws IOException
      * @throws InterruptedException
      */
     @Override
-    public String run(Path appPath, String appName) throws IOException, InterruptedException {
-        Path app = Objects.requireNonNull(appPath, "Application path can't be null")
-                .resolve(Objects.requireNonNull(appName, "Application name can't be null"));
+    public String run() throws IOException, InterruptedException {
+        String appName = Objects.requireNonNull(getLinkOutputName(), "Application name can't be null");
+        Path app = Path.of(getAppPath(appName));
         if (!Files.exists(app)) {
             throw new IOException("Application not found at path " + app.toString());
         }
         ProcessRunner runner = new ProcessRunner(app.toString());
+        List<String> runtimeArgsList = projectConfiguration.getRuntimeArgsList();
+        if (runtimeArgsList != null) {
+            runner.addArgs(runtimeArgsList);
+        }
         runner.setInfo(true);
         runner.setLogToFile(true);
         if (runner.runProcess("run " + appName) == 0) {

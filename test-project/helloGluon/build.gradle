@@ -57,6 +57,8 @@ task runScript(type: Exec) {
     def javaHome = validateJavaHome()
     def graalvmHome = validateGraalvmHome()
     def javafxStaticSdk = validateJavafxStaticSdk()
+
+    def expected = System.getProperty("expected")
     def skipsigning = System.getProperty("skipsigning")
     def consoleProcessLog = System.getProperty("consoleProcessLog")
 
@@ -80,6 +82,9 @@ task runScript(type: Exec) {
         argsList += ["-DtargetProfile=$target"]
     } else {
         argsList += ["-Dprism.sw=true"]
+    }
+    if (expected != null) {
+        argsList += ["-Dexpected=$expected"]
     }
     if (skipsigning != null) {
         argsList += ["-Dskipsigning=$skipsigning"]
