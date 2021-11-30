@@ -282,15 +282,13 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
-        Path appPath = Objects.requireNonNull(paths.getAppPath(),
-                "Application path can't be null");
         String appName = Objects.requireNonNull(getLinkOutputName(),
                 "Application name can't be null");
-        Path app = appPath.resolve(appName);
+        Path app = Path.of(getAppPath(appName));
         if (!Files.exists(app)) {
             throw new IOException("Application not found at path " + app.toString());
         }
-        ProcessRunner runProcess = new ProcessRunner(appPath.resolve(appName).toString());
+        ProcessRunner runProcess = new ProcessRunner(app.toString());
         List<String> runtimeArgsList = projectConfiguration.getRuntimeArgsList();
         if (runtimeArgsList != null) {
             runProcess.addArgs(runtimeArgsList);
