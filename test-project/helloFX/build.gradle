@@ -31,6 +31,7 @@ task runScript(type: Exec) {
     def javafxStaticSdk = validateJavafxStaticSdk()
 
     def expected = System.getProperty("expected")
+    def skipsigning = System.getProperty("skipsigning")
     def consoleProcessLog = System.getProperty("consoleProcessLog")
     def nativeImageArgs = System.getProperty("nativeImageArgs")
 
@@ -57,6 +58,9 @@ task runScript(type: Exec) {
     }
     if (expected != null) {
         argsList += ["-Dexpected=$expected"]
+    }
+    if (skipsigning != null) {
+        argsList += ["-Dskipsigning=$skipsigning"]
     }
     if (consoleProcessLog != null) {
         argsList += ["-DconsoleProcessLog=$consoleProcessLog", "-Dverbose=true"]
