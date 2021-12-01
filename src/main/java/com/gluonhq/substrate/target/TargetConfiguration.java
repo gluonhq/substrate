@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 package com.gluonhq.substrate.target;
 
 import java.io.IOException;
-import java.nio.file.Path;
 
 public interface TargetConfiguration {
 
@@ -69,16 +68,20 @@ public interface TargetConfiguration {
     boolean install() throws IOException, InterruptedException;
 
     /**
-     * Runs the application at the given path, and if successful, returns the last line
-     * printed by the process
-     * @param appPath Path to the application
-     * @param appName application name
+     * Runs the application, and if successful, returns the last line
+     * printed out by the process
      * @return A string (it can be empty) or null if the process failed
      * @throws IOException
      * @throws InterruptedException
      */
-    String run(Path appPath, String appName) throws IOException, InterruptedException;
+    String run() throws IOException, InterruptedException;
 
+    /**
+     * Runs the application, and if successful, returns true
+     * @return true if the process succeeded or false if the process failed
+     * @throws IOException
+     * @throws InterruptedException
+     */
     boolean runUntilEnd() throws IOException, InterruptedException;
 
 }

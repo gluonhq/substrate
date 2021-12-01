@@ -56,6 +56,7 @@ class HelloGluonTest {
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloGluon:clean", ":helloGluon:build",
                         "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
+                        "-Dskipsigning=" + (isCI() ? "true" : "false"),
                         ":helloGluon:run", ":helloGluon:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();

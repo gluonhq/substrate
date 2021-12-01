@@ -142,6 +142,9 @@ public class Constants {
     /**
      * Supported files
      */
+    public static final String MACOS_ASSETS_FOLDER = "assets";
+    public static final String MACOS_PLIST_FILE = "Info.plist";
+    public static final String MACOS_PKGINFO_FILE = "PkgInfo";
     public static final String PLIST_FILE = "Default-Info.plist";
     public static final String PARTIAL_PLIST_FILE = "Partial-Info.plist";
     public static final String IOS_ASSETS_FOLDER = "assets";
@@ -149,6 +152,7 @@ public class Constants {
     public static final String ANDROID_RES_FOLDER = "res";
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
+    public static final String META_INF_SUBSTRATE_MACOS = "META-INF/substrate/macos/";
     public static final String META_INF_SUBSTRATE_IOS = "META-INF/substrate/ios/";
     public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik/";
     public static final String USER_ANDROID_PERMISSIONS_FILE = "android-permissions.txt";

@@ -54,6 +54,7 @@ class HelloFXMLTest {
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFXML:clean", ":helloFXML:build",
                         "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
+                        "-Dskipsigning=" + (isCI() ? "true" : "false"),
                         ":helloFXML:run", ":helloFXML:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();

@@ -48,6 +48,7 @@ class HelloFXTest {
                 .withArguments(":helloFX:clean", ":helloFX:build",
                         "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
                         "-DnativeImageArgs=" + (isCIWindows() ? "-J-Xmx5G" : ""),
+                        "-Dskipsigning=" + (isCI() ? "true" : "false"),
                         ":helloFX:run", ":helloFX:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();

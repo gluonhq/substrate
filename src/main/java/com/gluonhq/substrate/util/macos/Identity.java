@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,34 +25,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate;
+package com.gluonhq.substrate.util.macos;
 
-import org.gradle.testkit.runner.BuildResult;
-import org.gradle.testkit.runner.GradleRunner;
-import org.gradle.testkit.runner.TaskOutcome;
-import org.junit.jupiter.api.Test;
+import java.util.regex.Pattern;
 
-import java.io.File;
+public class Identity {
 
-import static com.gluonhq.substrate.TestUtils.isCI;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+    static final Pattern IDENTITY_PATTERN = Pattern.compile("^\\d+\\)\\s+([0-9A-F]+)\\s+\"([^\"]*)\"\\s*(.*)");
+    static final Pattern IDENTITY_NAME_PATTERN = Pattern.compile("Apple Development|Apple Distribution|Mac Development|Mac App Distribution|Mac Installer Distribution|Developer ID Application");
+    static final String IDENTITY_ERROR_FLAG = "CSSMERR";
 
-class HelloWorldTest {
+    private final String commonName;
+    private final String sha1;
 
-    @Test
-    void helloWorldTest() {
-        String expected = "Hello World";
-        BuildResult result = GradleRunner.create()
-                .withProjectDir(new File("test-project"))
-                .withArguments(":helloWorld:clean", ":helloWorld:build", ":helloWorld:run",
-                        "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
-                        "-Dskipsigning=" + (isCI() ? "true" : "false"),
-                        ":helloWorld:runScript", "--stacktrace")
-                .forwardOutput()
-                .build();
-
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:run").getOutcome(), "Run failed!");
-        assertEquals(TaskOutcome.SUCCESS, result.task(":helloWorld:runScript").getOutcome(), "RunScript failed!");
+    public Identity(String sha1, String commonName) {
+        this.sha1 = sha1;
+        this.commonName = commonName;
     }
 
+    public String getCommonName() {
+        return commonName;
+    }
+
+    public String getSha1() {
+        return sha1;
+    }
+
+    @Override
+    public String toString() {
+        return "SigningIdentity{" +
+                "name='" + commonName + '\'' +
+                ", sha1='" + sha1 + '\'' +
+                '}';
+    }
 }
