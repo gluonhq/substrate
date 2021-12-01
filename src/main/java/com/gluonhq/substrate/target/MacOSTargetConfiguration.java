@@ -33,6 +33,7 @@ import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.macos.CodeSigning;
 import com.gluonhq.substrate.util.macos.InfoPlist;
+import com.gluonhq.substrate.util.macos.Packager;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -154,6 +155,12 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
             }
         }
         return result;
+    }
+
+    @Override
+    public boolean packageApp() throws IOException, InterruptedException {
+        Packager packager = new Packager(paths, projectConfiguration);
+        return packager.createPackage(!projectConfiguration.getReleaseConfiguration().isSkipSigning());
     }
 
     @Override
