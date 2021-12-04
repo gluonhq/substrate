@@ -27,14 +27,20 @@
  */
 package com.gluonhq.substrate.util.macos;
 
+import com.dd.plist.PropertyListFormatException;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
+import com.gluonhq.substrate.util.plist.NSDictionaryEx;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -58,16 +64,23 @@ public class CodeSigning {
     private static final String ERRLINK = "Please check https://docs.gluonhq.com/ for more information.";
 
     private static final String KEYCHAIN_ERROR_MESSAGE = "errSecInternalComponent";
+    private static final List<String> SANDBOX_KEYS = List.of(
+            "com.apple.security.app-sandbox",
+//            "com.apple.security.cs.allow-jit", "com.apple.security.cs.allow-dyld-environment-variables",
+            "com.apple.security.cs.allow-unsigned-executable-memory", "com.apple.security.cs.disable-library-validation",
+            "com.apple.security.cs.debugger", "com.apple.security.device.audio-input");
 
     private Identity identity = null;
     private List<Identity> identities;
 
     private final String providedIdentityName; // if provided, use this one
+    private final ProcessPaths paths;
     private final InternalProjectConfiguration projectConfiguration;
     private final Path appPath;
     private final Path rootPath;
 
     public CodeSigning(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
+        this.paths = paths;
         this.projectConfiguration = projectConfiguration;
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
         rootPath = paths.getSourcePath().resolve(projectConfiguration.getTargetTriplet().getOs());
@@ -185,17 +198,32 @@ public class CodeSigning {
 
     private Path getEntitlementsPath() throws IOException {
         Path entitlements = rootPath.resolve("Entitlements.plist");
-        if (Files.exists(entitlements)) {
-            return entitlements;
+        boolean macAppStore = projectConfiguration.getReleaseConfiguration().isMacAppStore();
+        if (!macAppStore) {
+            return Files.exists(entitlements) ? entitlements : null;
         }
-        return null;
+
+        Path tmpEntitlements = paths.getTmpPath().resolve("Entitlements.plist");
+        if (!Files.exists(entitlements)) {
+            entitlements = FileOps.copyResource("/native/macosx/assets/Entitlements.plist", tmpEntitlements);
+        }
+        try {
+            NSDictionaryEx dict = new NSDictionaryEx(entitlements);
+            SANDBOX_KEYS.stream()
+                    .filter(key -> dict.get(key) == null)
+                    .forEach(key -> dict.put(key, true));
+            dict.saveAsXML(tmpEntitlements);
+        } catch (ParserConfigurationException | ParseException | SAXException | PropertyListFormatException e) {
+            e.printStackTrace();
+        }
+        return tmpEntitlements;
     }
 
     private List<Identity> getIdentity() {
         if (providedIdentityName != null) {
             return findIdentityByName(providedIdentityName);
         }
-        return findIdentityByPattern();
+        return findIdentityByPattern(projectConfiguration.getReleaseConfiguration().getMacSigningUserName());
     }
 
     private List<Identity> findIdentityByName(String name) {
@@ -211,13 +239,14 @@ public class CodeSigning {
                 .collect(Collectors.toList());
     }
 
-    private List<Identity> findIdentityByPattern() {
+    private List<Identity> findIdentityByPattern(String userName) {
         if (identities == null) {
             identities = retrieveAllIdentities();
         }
         Logger.logDebug("Find identity by pattern from " + identities.size() + " identities");
         return identities.stream()
                 .filter(identity -> IDENTITY_NAME_PATTERN.matcher(identity.getCommonName()).find())
+                .filter(identity -> userName == null || identity.getCommonName().contains(userName))
                 .collect(Collectors.toList());
     }
 

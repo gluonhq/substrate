@@ -35,6 +35,18 @@ public class ReleaseConfiguration {
     public static final String DEFAULT_CODE_VERSION = "1";
     public static final String DEFAULT_CODE_NAME = "1.0";
 
+    // Mac
+
+    /**
+     * Boolean that can be used to sign Mac bundles to publish to the Mac App Store.
+     */
+    private boolean macAppStore;
+
+    /**
+     * Team or user name portion in Apple signing identities
+     */
+    private String macSigningUserName;
+
     // iOS
 
     /**
@@ -147,6 +159,22 @@ public class ReleaseConfiguration {
      * Default: null. If not set, Substrate creates and uses a debug keystore.
      */
     private String providedKeyAliasPassword;
+
+    public boolean isMacAppStore() {
+        return macAppStore;
+    }
+
+    public void setMacAppStore(boolean macAppStore) {
+        this.macAppStore = macAppStore;
+    }
+
+    public String getMacSigningUserName() {
+        return macSigningUserName;
+    }
+
+    public void setMacSigningUserName(String macSigningUserName) {
+        this.macSigningUserName = macSigningUserName;
+    }
 
     public String getBundleName() {
         return bundleName;
@@ -263,7 +291,9 @@ public class ReleaseConfiguration {
     @Override
     public String toString() {
         return "ReleaseConfiguration{" +
-                "bundleName='" + bundleName + '\'' +
+                "macAppStore=" + macAppStore +
+                ", macSigningUserName=" + macSigningUserName +
+                ", bundleName='" + bundleName + '\'' +
                 ", bundleVersion='" + bundleVersion + '\'' +
                 ", bundleShortVersion='" + bundleShortVersion + '\'' +
                 ", providedSigningIdentity='" + providedSigningIdentity + '\'' +
