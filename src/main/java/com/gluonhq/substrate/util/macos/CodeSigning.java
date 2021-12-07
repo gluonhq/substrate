@@ -120,6 +120,9 @@ public class CodeSigning {
         }
 
         ProcessRunner appRunner = new ProcessRunner("codesign", "--options", "runtime", "--force", "--sign", identity.getSha1());
+        if (entitlementsPath != null) {
+            appRunner.addArgs("--entitlements", entitlementsPath.toString());
+        }
         if (projectConfiguration.isVerbose()) {
             appRunner.addArg("--verbose");
         }
