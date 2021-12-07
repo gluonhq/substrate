@@ -221,7 +221,7 @@ public class Packager {
                 "--resources", config.toString());
         if (appStore) {
             runner4.addArgs("--product", configResource.toString(),
-                "--component", root.resolve(appName + ".app").toString());
+                "--component", root.resolve(appName + ".app").toString(), "/Applications");
         } else {
             runner4.addArgs("--distribution", configResource.toString(),
                 "--package-path", appPkg.getParent().toString());
