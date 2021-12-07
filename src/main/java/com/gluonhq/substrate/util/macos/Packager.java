@@ -163,15 +163,15 @@ public class Packager {
         Path backgroundPath = null, backgroundAquaPath = null, licensePath = null;
         if (Files.exists(userAssets) && Files.isDirectory(userAssets)) {
             backgroundPath = Files.list(userAssets)
-                    .filter(p -> p.endsWith("-background.png"))
+                    .filter(p -> p.toString().endsWith("-background.png"))
                     .findFirst()
                     .orElse(null);
             backgroundAquaPath = Files.list(userAssets)
-                    .filter(p -> p.endsWith("-background-darkAqua.png"))
+                    .filter(p -> p.toString().endsWith("-background-darkAqua.png"))
                     .findFirst()
                     .orElse(null);
             licensePath = Files.list(userAssets)
-                    .filter(p -> p.endsWith("license.html"))
+                    .filter(p -> p.toString().endsWith("license.html"))
                     .findFirst()
                     .orElse(null);
         }
