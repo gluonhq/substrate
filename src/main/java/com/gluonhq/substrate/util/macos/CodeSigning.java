@@ -27,15 +27,24 @@
  */
 package com.gluonhq.substrate.util.macos;
 
+import com.dd.plist.PropertyListFormatException;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
+import com.gluonhq.substrate.util.plist.NSDictionaryEx;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.ParseException;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -44,9 +53,11 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import static com.gluonhq.substrate.util.macos.ProvisionProfile.DESKTOP_PROVISION_EXTENSION;
 import static com.gluonhq.substrate.util.macos.Identity.IDENTITY_NAME_PATTERN;
 import static com.gluonhq.substrate.util.macos.Identity.IDENTITY_PATTERN;
 import static com.gluonhq.substrate.util.macos.Identity.IDENTITY_ERROR_FLAG;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class CodeSigning {
 
@@ -58,24 +69,63 @@ public class CodeSigning {
     private static final String ERRLINK = "Please check https://docs.gluonhq.com/ for more information.";
 
     private static final String KEYCHAIN_ERROR_MESSAGE = "errSecInternalComponent";
+    private static final List<String> SANDBOX_KEYS = List.of(
+            "com.apple.security.app-sandbox",
+            "com.apple.security.cs.allow-unsigned-executable-memory", "com.apple.security.cs.disable-library-validation",
+            "com.apple.security.cs.debugger", "com.apple.security.device.audio-input");
 
     private Identity identity = null;
     private List<Identity> identities;
+    private List<ProvisionProfile> provisionProfiles;
 
+    private final String bundleId;
     private final String providedIdentityName; // if provided, use this one
+    private final String providedProvisionProfile;// if provided, use this one
+    private final ProcessPaths paths;
     private final InternalProjectConfiguration projectConfiguration;
     private final Path appPath;
     private final Path rootPath;
+    private final Path embeddedPath;
+    private ProvisionProfile provisionProfile;
 
     public CodeSigning(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
+        this.paths = paths;
         this.projectConfiguration = projectConfiguration;
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        embeddedPath = appPath.resolve("Contents").resolve("embedded.provisionprofile");
         rootPath = paths.getSourcePath().resolve(projectConfiguration.getTargetTriplet().getOs());
         providedIdentityName = projectConfiguration.getReleaseConfiguration().getProvidedSigningIdentity();
+        providedProvisionProfile = projectConfiguration.getReleaseConfiguration().getProvidedProvisioningProfile();
+        this.bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, projectConfiguration.getTargetTriplet().getOs()), projectConfiguration.getAppId());
     }
 
     public boolean signApp() throws IOException, InterruptedException {
         assertValidIdentity();
+
+        // Mac App Store submissions can be tested with TestFlight for macOS (requires macOS 12)
+        //
+        // - App can be signed with Developer ID Application certificate, without provisioning profile
+        // - App can be signed with Apple Distribution or 3rd Party Mac Developer Application certificates,
+        //   with/without provisioning profile.
+        //
+        // If a provisioning profile is not found, submitting the app for App Store works, and shows a warning
+        // that can't be tested through TestFlight. If it is found, then it must include the same
+        // Apple Distribution/3rd Party Mac Developer Application certificate
+
+        Files.deleteIfExists(embeddedPath);
+        provisionProfile = getProvisioningProfile();
+        if (provisionProfile == null) {
+            if (projectConfiguration.getReleaseConfiguration().isMacAppStore()) {
+                Logger.logSevere("Provisioning profile not found. App can't be submitted to TestFlight");
+            } else {
+                Logger.logDebug("Provisioning profile not found.");
+            }
+        } else {
+            Path provisioningProfilePath = provisionProfile.getProvisioningPath();
+            Logger.logDebug("Provisioning profile \"" + provisionProfile.getName() +"\" copied to " + embeddedPath);
+            Files.copy(provisioningProfilePath, embeddedPath, REPLACE_EXISTING);
+        }
+
         Path entitlementsPath = getEntitlementsPath();
         Logger.logDebug("Signing with entitlements path: " + entitlementsPath);
         return sign(entitlementsPath, appPath);
@@ -188,17 +238,40 @@ public class CodeSigning {
 
     private Path getEntitlementsPath() throws IOException {
         Path entitlements = rootPath.resolve("Entitlements.plist");
-        if (Files.exists(entitlements)) {
-            return entitlements;
+        boolean macAppStore = projectConfiguration.getReleaseConfiguration().isMacAppStore();
+        if (!macAppStore) {
+            return Files.exists(entitlements) ? entitlements : null;
         }
-        return null;
+
+        Path tmpEntitlements = paths.getTmpPath().resolve("Entitlements.plist");
+        if (!Files.exists(entitlements)) {
+            entitlements = FileOps.copyResource("/native/macosx/assets/Entitlements.plist", tmpEntitlements);
+        }
+        try {
+            NSDictionaryEx dict = new NSDictionaryEx(entitlements);
+            SANDBOX_KEYS.stream()
+                    .filter(key -> dict.get(key) == null)
+                    .forEach(key -> dict.put(key, true));
+
+            if (provisionProfile != null) {
+                NSDictionaryEx profileEntitlements = provisionProfile.getEntitlements();
+                Arrays.stream(profileEntitlements.getAllKeys())
+                        .filter(key -> dict.get(key) == null)
+                        .forEach(key -> dict.put(key, profileEntitlements.get(key)));
+            }
+
+            dict.saveAsXML(tmpEntitlements);
+        } catch (ParserConfigurationException | ParseException | SAXException | PropertyListFormatException e) {
+            Logger.logFatal(e, "There was an error processing the plist file: " + entitlements);
+        }
+        return tmpEntitlements;
     }
 
     private List<Identity> getIdentity() {
         if (providedIdentityName != null) {
             return findIdentityByName(providedIdentityName);
         }
-        return findIdentityByPattern();
+        return findIdentityByPattern(projectConfiguration.getReleaseConfiguration().getMacSigningUserName());
     }
 
     private List<Identity> findIdentityByName(String name) {
@@ -214,13 +287,14 @@ public class CodeSigning {
                 .collect(Collectors.toList());
     }
 
-    private List<Identity> findIdentityByPattern() {
+    private List<Identity> findIdentityByPattern(String userName) {
         if (identities == null) {
             identities = retrieveAllIdentities();
         }
         Logger.logDebug("Find identity by pattern from " + identities.size() + " identities");
         return identities.stream()
                 .filter(identity -> IDENTITY_NAME_PATTERN.matcher(identity.getCommonName()).find())
+                .filter(identity -> userName == null || identity.getCommonName().contains(userName))
                 .collect(Collectors.toList());
     }
 
@@ -248,4 +322,80 @@ public class CodeSigning {
         return new ArrayList<>();
     }
 
+    private ProvisionProfile getProvisioningProfile() {
+        if (bundleId == null) {
+            return null;
+        }
+        if (provisionProfile == null) {
+            provisionProfile = identities.stream()
+                    .map(id -> findProvisionProfile(id, bundleId))
+                    .filter(Objects::nonNull)
+                    .filter(profile -> providedProvisionProfile == null
+                            || providedProvisionProfile.equals(profile.getName()))
+                    .findFirst()
+                    .orElse(null);
+        }
+        Logger.logDebug("Provisioning profile: " + (provisionProfile != null ? provisionProfile.getName() : null));
+        return provisionProfile;
+    }
+
+    private ProvisionProfile findProvisionProfile(Identity identity, String bundleId) {
+        Logger.logDebug("Provision profile asked with bundleId = " + bundleId);
+        return retrieveValidProvisionProfiles().stream()
+                .filter(provision -> filterByIdentifier(provision, bundleId))
+                .filter(provision -> filterByCertificate(provision, identity))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<ProvisionProfile> retrieveValidProvisionProfiles() {
+        final LocalDate now = LocalDate.now();
+        if (provisionProfiles == null) {
+            provisionProfiles = retrieveAllProvisionProfiles().stream()
+                    .filter(provision -> {
+                        LocalDate expirationDate = provision.getExpirationDate();
+                        return expirationDate != null && !expirationDate.isBefore(now);
+                    })
+                    .collect(Collectors.toList());
+        }
+        return provisionProfiles;
+    }
+
+    private static List<ProvisionProfile> retrieveAllProvisionProfiles() {
+        Path provisionPath = Paths.get(System.getProperty("user.home"), "Library", "MobileDevice", "Provisioning Profiles");
+        if (!Files.exists(provisionPath) || !Files.isDirectory(provisionPath)) {
+            Logger.logSevere("Invalid provisioning profiles folder at " + provisionPath.toString());
+            return Collections.emptyList();
+        }
+
+        try {
+            return Files.walk(provisionPath)
+                    .filter(f -> f.toFile().getName().endsWith(DESKTOP_PROVISION_EXTENSION))
+                    .map(ProvisionProfile::new)
+                    .sorted(Comparator.comparing(provision -> provision.getName().toLowerCase(Locale.ROOT)))
+                    .collect(Collectors.toList());
+        } catch (IOException ex) {
+            Logger.logSevere("Invalid provisioning profiles files: " + ex.getMessage());
+        }
+        return Collections.emptyList();
+    }
+
+    private boolean filterByIdentifier(ProvisionProfile provision, String bundleId) {
+        Logger.logDebug("Checking provision profile " + provision.getAppIdName());
+        return provision.getAppIdentifier().equals(provision.getAppIdentifierPrefix() + "." + bundleId);
+    }
+
+    private Boolean filterByCertificate(ProvisionProfile provision, Identity identity) {
+        return provision.getDeveloperCertificates().stream()
+                .filter(certificate -> certificate.equals(identity.getSha1()))
+                .findFirst()
+                .map(c -> {
+                    Logger.logDebug(provision.getName() + " matches " + identity);
+                    return true;
+                })
+                .orElseGet(() -> {
+                    Logger.logDebug("App identifiers match, but there are not fingerprint matches");
+                    return false;
+                });
+    }
 }

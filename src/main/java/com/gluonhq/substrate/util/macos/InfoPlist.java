@@ -59,6 +59,7 @@ import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_MACOS;
 import static com.gluonhq.substrate.Constants.PARTIAL_PLIST_FILE;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_SHORT_VERSION;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_VERSION;
+import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_MAC_APP_CATEGORY;
 
 public class InfoPlist {
 
@@ -97,6 +98,7 @@ public class InfoPlist {
         String bundleName = Objects.requireNonNullElse(releaseConfiguration.getBundleName(), appName);
         String bundleVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleVersion(), DEFAULT_BUNDLE_VERSION);
         String bundleShortVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleShortVersion(), DEFAULT_BUNDLE_SHORT_VERSION);
+        String appCategory = Objects.requireNonNullElse(releaseConfiguration.getMacAppCategory(), DEFAULT_MAC_APP_CATEGORY);
 
         Path userPlist = rootPath.resolve(Constants.MACOS_PLIST_FILE);
         boolean inited = true;
@@ -160,6 +162,7 @@ public class InfoPlist {
                 dict.put("CFBundleName", bundleName);
                 dict.put("CFBundleVersion", bundleVersion);
                 dict.put("CFBundleShortVersionString", bundleShortVersion);
+                dict.put("LSApplicationCategoryType", appCategory);
                 dict.saveAsXML(plist);
             } else {
                 boolean modified = false;
@@ -173,6 +176,10 @@ public class InfoPlist {
                 }
                 if (!bundleShortVersion.equals(DEFAULT_BUNDLE_VERSION) && !bundleShortVersion.equals(dict.get("CFBundleShortVersionString").toString())) {
                     dict.put("CFBundleShortVersionString", bundleShortVersion);
+                    modified = true;
+                }
+                if (!appCategory.equals(DEFAULT_MAC_APP_CATEGORY) && !appCategory.equals(dict.get("LSApplicationCategoryType").toString())) {
+                    dict.put("LSApplicationCategoryType", appCategory);
                     modified = true;
                 }
                 if (modified) {

@@ -67,11 +67,13 @@ public class Packager {
     private final InternalProjectConfiguration projectConfiguration;
     private final String sourceOS;
     private final Path rootPath;
+    private final boolean appStore;
 
     public Packager(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
         this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
+        this.appStore = projectConfiguration.getReleaseConfiguration().isMacAppStore();
         rootPath = paths.getSourcePath().resolve(sourceOS);
     }
 
@@ -132,15 +134,15 @@ public class Packager {
             return false;
         }
 
-        // TODO: App Store
-
         Path scripts = config.resolve("scripts");
-        Files.createDirectories(scripts);
+        if (!appStore) {
+            Files.createDirectories(scripts);
 
-        Path resource = FileOps.copyResource("/native/macosx/assets/preinstall.sh", scripts.resolve("preinstall.sh"));
-        FileOps.replaceInFile(resource, "InstallLocation", "/Application");
-        resource = FileOps.copyResource("/native/macosx/assets/postinstall.sh", scripts.resolve("postinstall.sh"));
-        FileOps.replaceInFile(resource, "InstallLocation", "/Applications");
+            Path resource = FileOps.copyResource("/native/macosx/assets/preinstall.sh", scripts.resolve("preinstall.sh"));
+            FileOps.replaceInFile(resource, "InstallLocation", "/Application");
+            resource = FileOps.copyResource("/native/macosx/assets/postinstall.sh", scripts.resolve("postinstall.sh"));
+            FileOps.replaceInFile(resource, "InstallLocation", "/Applications");
+        }
 
         Logger.logDebug("Building application pkg");
         ProcessRunner runner2 = new ProcessRunner("pkgbuild",
@@ -148,35 +150,28 @@ public class Packager {
                 "--component-plist", componentPlist.toString(),
                 "--identifier", bundleId,
                 "--version", appVersion,
-                "--install-location", "/Applications",
-                "--scripts", scripts.toString(),
-                appPkg.toString());
+                "--install-location", "/Applications");
+        if (!appStore) {
+            runner2.addArgs("--scripts", scripts.toString());
+        }
+        runner2.addArg(appPkg.toString());
         if (runner2.runProcess("pkg build") != 0) {
             throw new IOException("Error running pkgbuild to build application pkg");
-        }
-
-        Logger.logDebug("Creating distribution.xml");
-        Path distributionXML = config.resolve("distribution.xml");
-        ProcessRunner runner3 = new ProcessRunner("productbuild", "--synthesize",
-                "--package", appPkg.toString(),
-                distributionXML.toString());
-        if (runner3.runProcess("productbuild distribution") != 0) {
-            throw new IOException("Error running productbuild to create distribution file");
         }
 
         Path userAssets = rootPath.resolve(Constants.MACOS_ASSETS_FOLDER);
         Path backgroundPath = null, backgroundAquaPath = null, licensePath = null;
         if (Files.exists(userAssets) && Files.isDirectory(userAssets)) {
             backgroundPath = Files.list(userAssets)
-                    .filter(p -> p.endsWith("-background.png"))
+                    .filter(p -> p.toString().endsWith("-background.png"))
                     .findFirst()
                     .orElse(null);
             backgroundAquaPath = Files.list(userAssets)
-                    .filter(p -> p.endsWith("-background-darkAqua.png"))
+                    .filter(p -> p.toString().endsWith("-background-darkAqua.png"))
                     .findFirst()
                     .orElse(null);
             licensePath = Files.list(userAssets)
-                    .filter(p -> p.endsWith("license.html"))
+                    .filter(p -> p.toString().endsWith("license.html"))
                     .findFirst()
                     .orElse(null);
         }
@@ -201,19 +196,38 @@ public class Packager {
             licensePath = FileOps.copyFile(licensePath, config.resolve(licensePath.getFileName()));
         }
 
-        modifyXML(distributionXML.toString(), appName,
-                backgroundPath.getFileName().toString(), backgroundAquaPath.getFileName().toString(),
-                licensePath == null ? null : licensePath.getFileName().toString());
+        Path configResource;
+        if (appStore) {
+            Logger.logDebug("Copying productInfo.plist");
+            configResource = FileOps.copyResource("/native/macosx/assets/productInfo.plist", config.resolve("productInfo.plist"));
+        } else {
+            Logger.logDebug("Creating distribution.xml");
+            Path distributionXML = config.resolve("distribution.xml");
+            ProcessRunner runner3 = new ProcessRunner("productbuild", "--synthesize",
+                    "--package", appPkg.toString(),
+                    distributionXML.toString());
+            if (runner3.runProcess("productbuild distribution") != 0) {
+                throw new IOException("Error running productbuild to create distribution file");
+            }
+
+            configResource = modifyXML(distributionXML.toString(), appName,
+                    backgroundPath.getFileName().toString(), backgroundAquaPath.getFileName().toString(),
+                    licensePath == null ? null : licensePath.getFileName().toString());
+        }
 
         Logger.logDebug("Building final pkg");
         Path finalPkg = paths.getAppPath().resolve(appName + "-1.0.0.pkg");
         ProcessRunner runner4 = new ProcessRunner("productbuild",
-                "--resources", config.toString(),
-                "--distribution", distributionXML.toString(),
+                "--resources", config.toString());
+        if (appStore) {
+            runner4.addArgs("--product", configResource.toString(),
+                "--component", root.resolve(appName + ".app").toString(), "/Applications");
+        } else {
+            runner4.addArgs("--distribution", configResource.toString(),
                 "--package-path", appPkg.getParent().toString());
+        }
         if (sign) {
-            // TODO: app store, type= "3rd Party Mac Developer Installer"
-            String certificate = retrieveAllValidCertificates("Developer ID Installer").stream()
+            String certificate = retrieveAllValidCertificates(appStore ? "3rd Party Mac Developer Installer" : "Developer ID Installer").stream()
                     .findFirst()
                     .orElseThrow(() -> new IOException("No valid certificate found"));
             runner4.addArgs("--sign", certificate);
@@ -226,7 +240,7 @@ public class Packager {
         return true;
     }
 
-    private static void modifyXML(String fileName, String title, String backgroundFile, String backgroundAquaFile, String licenseFile) throws IOException {
+    private static Path modifyXML(String fileName, String title, String backgroundFile, String backgroundAquaFile, String licenseFile) throws IOException {
         try {
             File xmlFile = new File(Objects.requireNonNull(fileName));
             if (!xmlFile.exists() || !fileName.endsWith(".xml")) {
@@ -272,6 +286,7 @@ public class Packager {
         } catch (SAXException | ParserConfigurationException | TransformerException ex) {
             Logger.logSevere("Error parsing xml file: " + ex.getMessage());
         }
+        return Path.of(fileName);
     }
 
     private static List<String> retrieveAllValidCertificates(String type) {
