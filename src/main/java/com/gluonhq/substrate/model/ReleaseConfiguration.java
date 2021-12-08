@@ -31,14 +31,15 @@ public class ReleaseConfiguration {
 
     public static final String DEFAULT_BUNDLE_VERSION = "1.0";
     public static final String DEFAULT_BUNDLE_SHORT_VERSION = "1.0";
+    public static final String DEFAULT_MAC_APP_CATEGORY = "public.app-category.utilities";
 
     public static final String DEFAULT_CODE_VERSION = "1";
     public static final String DEFAULT_CODE_NAME = "1.0";
 
-    // Mac
+    // macOS
 
     /**
-     * Boolean that can be used to sign Mac bundles to publish to the Mac App Store.
+     * Boolean that indicates if the macOS bundle is intended for the Mac App Store.
      */
     private boolean macAppStore;
 
@@ -47,7 +48,15 @@ public class ReleaseConfiguration {
      */
     private String macSigningUserName;
 
-    // iOS
+    /**
+     * The category that best describes the app for the Mac App Store.
+     * Default is public.app-category.utilities. See
+     * https://developer.apple.com/documentation/bundleresources/information_property_list/lsapplicationcategorytype
+     * for the full list of categories.
+     */
+    private String macAppCategory;
+
+    // macOS/iOS
 
     /**
      * A user-visible short name for the bundle
@@ -75,20 +84,21 @@ public class ReleaseConfiguration {
     private String bundleShortVersion;
 
     /**
-     * String that identifies a valid certificate that will be used for iOS development
-     * or iOS distribution.
+     * String that identifies a valid certificate that will be used for macOS/iOS development
+     * or macOS/iOS distribution.
      *
      * Default: null. When not provided, Substrate will be selected from all the valid identities found
      * installed on the machine from any of these types:
      *
-     *      iPhone Developer|Apple Development|iOS Development|iPhone Distribution
+     *      macOS: Apple Development|Apple Distribution|Mac Developer|3rd Party Mac Developer Application|Developer ID Application
+     *      iOS: iPhone Developer|Apple Development|iOS Development|iPhone Distribution
      *
      * and that were used by the provisioning profile.
      */
     private String providedSigningIdentity;
 
     /**
-     * String with the name of the provisioning profile created for iOS development or
+     * String with the name of the provisioning profile created for macOS/iOS development or
      * distribution of the given app.
      *
      * Default: null. When not provided, Substrate will try to find a valid installed
@@ -97,7 +107,7 @@ public class ReleaseConfiguration {
     private String providedProvisioningProfile;
 
     /**
-     * Boolean that can be used to skip signing iOS apps. This will prevent any
+     * Boolean that can be used to skip signing macOS/iOS apps. This will prevent any
      * deployment, but can be useful to run tests without an actual device
      */
     private boolean skipSigning;
@@ -174,6 +184,14 @@ public class ReleaseConfiguration {
 
     public void setMacSigningUserName(String macSigningUserName) {
         this.macSigningUserName = macSigningUserName;
+    }
+
+    public void setMacAppCategory(String macAppCategory) {
+        this.macAppCategory = macAppCategory;
+    }
+
+    public String getMacAppCategory() {
+        return macAppCategory;
     }
 
     public String getBundleName() {
@@ -293,6 +311,7 @@ public class ReleaseConfiguration {
         return "ReleaseConfiguration{" +
                 "macAppStore=" + macAppStore +
                 ", macSigningUserName=" + macSigningUserName +
+                ", macAppCategory=" + macAppCategory +
                 ", bundleName='" + bundleName + '\'' +
                 ", bundleVersion='" + bundleVersion + '\'' +
                 ", bundleShortVersion='" + bundleShortVersion + '\'' +

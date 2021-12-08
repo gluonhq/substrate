@@ -106,11 +106,12 @@ public class CodeSigning {
         // Mac App Store submissions can be tested with TestFlight for macOS (requires macOS 12)
         //
         // - App can be signed with Developer ID Application certificate, without provisioning profile
-        // - App can be signed with Apple Distribution certificate, with/without provisioning profile.
+        // - App can be signed with Apple Distribution or 3rd Party Mac Developer Application certificates,
+        //   with/without provisioning profile.
         //
         // If a provisioning profile is not found, submitting the app for App Store works, and shows a warning
         // that can't be tested through TestFlight. If it is found, then it must include the same
-        // Apple Distribution certificate
+        // Apple Distribution/3rd Party Mac Developer Application certificate
 
         Files.deleteIfExists(embeddedPath);
         provisionProfile = getProvisioningProfile();
@@ -122,7 +123,7 @@ public class CodeSigning {
             }
         } else {
             Path provisioningProfilePath = provisionProfile.getProvisioningPath();
-            Logger.logDebug("Provisioning profile \"" + provisionProfile.getName() +"\" copied to " + provisioningProfilePath);
+            Logger.logDebug("Provisioning profile \"" + provisionProfile.getName() +"\" copied to " + embeddedPath);
             Files.copy(provisioningProfilePath, embeddedPath, REPLACE_EXISTING);
         }
 

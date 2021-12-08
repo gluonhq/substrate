@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 public class Identity {
 
     static final Pattern IDENTITY_PATTERN = Pattern.compile("^\\d+\\)\\s+([0-9A-F]+)\\s+\"([^\"]*)\"\\s*(.*)");
-    static final Pattern IDENTITY_NAME_PATTERN = Pattern.compile("Apple Development|Apple Distribution|Mac Development|Mac App Distribution|Mac Installer Distribution|Developer ID Application");
+    static final Pattern IDENTITY_NAME_PATTERN = Pattern.compile("Apple Development|Apple Distribution|Mac Developer|3rd Party Mac Developer Application|Developer ID Application");
     static final String IDENTITY_ERROR_FLAG = "CSSMERR";
 
     private final String commonName;
