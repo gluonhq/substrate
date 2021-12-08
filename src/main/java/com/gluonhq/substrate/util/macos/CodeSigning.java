@@ -71,7 +71,6 @@ public class CodeSigning {
     private static final String KEYCHAIN_ERROR_MESSAGE = "errSecInternalComponent";
     private static final List<String> SANDBOX_KEYS = List.of(
             "com.apple.security.app-sandbox",
-//            "com.apple.security.cs.allow-jit", "com.apple.security.cs.allow-dyld-environment-variables",
             "com.apple.security.cs.allow-unsigned-executable-memory", "com.apple.security.cs.disable-library-validation",
             "com.apple.security.cs.debugger", "com.apple.security.device.audio-input");
 
@@ -263,7 +262,7 @@ public class CodeSigning {
 
             dict.saveAsXML(tmpEntitlements);
         } catch (ParserConfigurationException | ParseException | SAXException | PropertyListFormatException e) {
-            e.printStackTrace();
+            Logger.logFatal(e, "There was an error processing the plist file: " + entitlements);
         }
         return tmpEntitlements;
     }
