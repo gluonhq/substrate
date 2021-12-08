@@ -36,7 +36,6 @@ import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.plist.NSDictionaryEx;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,6 +84,7 @@ public class CodeSigning {
     private final String sourceOS;
 
     private final Path appPath;
+    private final Path rootPath;
     private final Path tmpPath;
 
     public CodeSigning(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
@@ -94,6 +94,7 @@ public class CodeSigning {
         this.bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
 
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        rootPath = paths.getSourcePath().resolve(sourceOS);
         tmpPath = paths.getTmpPath();
 
         providedIdentityName = projectConfiguration.getReleaseConfiguration().getProvidedSigningIdentity();
@@ -315,27 +316,31 @@ public class CodeSigning {
 
     private Path getEntitlementsPath(String bundleId, boolean taskAllow) throws IOException {
         getProvisioningProfile();
-        Path entitlementsPath = tmpPath.resolve("Entitlements.plist");
+        Path entitlements = rootPath.resolve("Entitlements.plist");
 
-        try (InputStream is = FileOps.resourceAsStream("/native/ios/Entitlements.plist")) {
-            dictionary = new NSDictionaryEx(is);
+        Path tmpEntitlements = tmpPath.resolve("Entitlements.plist");
+        if (!Files.exists(entitlements)) {
+            entitlements = FileOps.copyResource("/native/ios/Entitlements.plist", tmpEntitlements);
+        }
+        try {
+            dictionary = new NSDictionaryEx(entitlements);
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new IOException("Error reading default entitlements: ", ex);
+            throw new IOException("Error reading entitlements: ", ex);
         }
 
         if (mobileProvision != null) {
-            NSDictionaryEx entitlements = mobileProvision.getEntitlements();
-            Arrays.stream(entitlements.getAllKeys())
+            NSDictionaryEx provisionEntitlements = mobileProvision.getEntitlements();
+            Arrays.stream(provisionEntitlements.getAllKeys())
                     .filter(key -> dictionary.get(key) == null)
-                    .forEach(key -> dictionary.put(key, entitlements.get(key)));
+                    .forEach(key -> dictionary.put(key, provisionEntitlements.get(key)));
 
             dictionary.put("application-identifier", mobileProvision.getAppIdentifierPrefix() + "." + bundleId);
         }
         dictionary.put("get-task-allow", taskAllow);
         Logger.logDebug("Entitlements.plist = " + dictionary.getEntrySet());
-        dictionary.saveAsXML(entitlementsPath);
-        return entitlementsPath;
+        dictionary.saveAsXML(tmpEntitlements);
+        return tmpEntitlements;
     }
 
     private List<Identity> getIdentity() {
