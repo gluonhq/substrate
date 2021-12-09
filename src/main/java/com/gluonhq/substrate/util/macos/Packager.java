@@ -83,7 +83,7 @@ public class Packager {
         if (!Files.exists(localAppPath)) {
             throw new IOException("Error: " + appName + ".app not found");
         }
-        Logger.logDebug("Building pkg for " + localAppPath);
+        Logger.logInfo("Building pkg for " + localAppPath);
 
         Path tmpPkg = paths.getTmpPath().resolve("tmpPkg");
         if (Files.exists(tmpPkg)) {
@@ -236,7 +236,7 @@ public class Packager {
         if (runner4.runProcess("productbuild package") != 0) {
             throw new IOException("Error running pkgbuild to build final pkg");
         }
-        Logger.logDebug("Pkg built successfully at " + finalPkg);
+        Logger.logInfo("Pkg built successfully at " + finalPkg);
         return true;
     }
 
