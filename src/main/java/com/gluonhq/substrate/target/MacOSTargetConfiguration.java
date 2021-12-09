@@ -29,6 +29,7 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.macos.CodeSigning;
@@ -141,39 +142,39 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    public boolean link() throws IOException, InterruptedException {
-        boolean result = super.link();
-
-        if (result) {
-            createInfoPlist(paths);
-
-            if (!projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
-                CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
-                if (!codeSigning.signApp()) {
-                    throw new RuntimeException("Error signing the app");
-                }
-            }
-        }
-        return result;
-    }
-
-    @Override
     public boolean packageApp() throws IOException, InterruptedException {
+        createAppBundle();
+
         Packager packager = new Packager(paths, projectConfiguration);
         return packager.createPackage(!projectConfiguration.getReleaseConfiguration().isSkipSigning());
     }
 
-    @Override
-    String getAppPath(String appName) {
-        Path appPath = paths.getAppPath().resolve(appName + ".app").resolve("Contents").resolve("MacOS");
-        if (!Files.exists(appPath)) {
-            try {
-                Files.createDirectories(appPath);
-            } catch (IOException e) {
-                Logger.logFatal(e, "Error creating path " + appPath);
+    private void createAppBundle() throws IOException, InterruptedException {
+        String appName = projectConfiguration.getAppName();
+        Path nativeImagePath = paths.getAppPath().resolve(appName);
+        if (!Files.exists(nativeImagePath)) {
+            throw new IOException("Error: " + nativeImagePath + " not found, run link first.");
+        }
+        Path bundlePath = paths.getAppPath().resolve(appName + ".app");
+        Logger.logInfo("Building app bundle: " + bundlePath);
+
+        if (Files.exists(bundlePath)) {
+            FileOps.deleteDirectory(bundlePath);
+        }
+
+        Path appPath = bundlePath.resolve("Contents").resolve("MacOS");
+        Files.createDirectories(appPath);
+        FileOps.copyFile(nativeImagePath, appPath.resolve(appName));
+
+        createInfoPlist(paths);
+
+        if (!projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+            CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
+            if (!codeSigning.signApp()) {
+                throw new RuntimeException("Error signing the app");
             }
         }
-        return appPath.toString() + "/" + appName;
+        Logger.logInfo("App bundle built successfully at: " + bundlePath);
     }
 
     private void createInfoPlist(ProcessPaths paths) throws IOException, InterruptedException {
