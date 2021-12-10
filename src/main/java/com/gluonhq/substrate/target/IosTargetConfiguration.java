@@ -229,6 +229,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     public boolean install() throws IOException, InterruptedException {
+        if (projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+            // Without signing app can't be installed on device
+            // Simply exit and do nothing
+            return true;
+        }
+
         Path app = getAndValidateAppPath();
 
         Deploy deploy = new Deploy(paths.getTmpPath().resolve(iosCheck));
@@ -248,6 +254,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
+        if (projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+            // Without signing app can't be installed or run on device
+            // Simply exit and do nothing
+            return true;
+        }
+
         Path app = getAndValidateAppPath();
 
         Deploy deploy = new Deploy(paths.getTmpPath().resolve(iosCheck));
