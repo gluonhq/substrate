@@ -308,7 +308,7 @@ public class InfoPlist {
                 "Please check the src/ios/Default-info.plist file and make sure CFBundleExecutable key exists");
     }
 
-    static String getBundleId(Path plist, String appId) {
+    public static String getBundleId(Path plist, String appId) {
         if (plist == null) {
             Objects.requireNonNull(appId, "AppId can't be null if plist is not provided");
             return appId;

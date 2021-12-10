@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.gluonhq.substrate.util.XcodeUtils.XCODE_PRODUCTS_PATH;
@@ -55,16 +56,143 @@ public class Deploy {
 
     private Path iosDeployPath;
 
-    public Deploy() throws IOException, InterruptedException {
-        checkPrerequisites();
+    public Deploy(Path checksPath) throws IOException, InterruptedException {
+        checkPrerequisites(checksPath);
     }
 
+    /**
+     * Adds debug symbols into a .dSYM bundle
+     *
+     * @param appPath the path of the app bundle
+     * @param appName the name of the app
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public void addDebugSymbolInfo(Path appPath, String appName) throws IOException, InterruptedException {
+        Path applicationPath = appPath.resolve(appName + ".app");
+        Path debugSymbolsPath = Path.of(applicationPath.toString() + ".dSYM");
+        if (Files.exists(debugSymbolsPath)) {
+            FileOps.deleteDirectory(debugSymbolsPath);
+        }
+        Path executablePath = applicationPath.resolve(appName);
+
+        Logger.logDebug("Generating debug symbol files...");
+        ProcessRunner runner = new ProcessRunner("xcrun", "dsymutil", "-o", debugSymbolsPath.toString(), executablePath.toString());
+        if (runner.runProcess("dsymutil") == 0) {
+            copyAppToProducts(debugSymbolsPath, executablePath, appName);
+        } else {
+            throw new RuntimeException("Error generating debug symbol files");
+        }
+    }
+
+    /**
+     * Installs the .app bundle on a connected iOS device, but it doesn't launch it
+     *
+     * @param app The path of the .app bundle
+     * @return True if the process succeeds
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public boolean install(String app) throws IOException, InterruptedException {
+        String deviceId = prepareDeploy();
+
+        ProcessRunner runner = new ProcessRunner(iosDeployPath.toString(), "--id", deviceId, "--bundle", app);
+        runner.setInfo(true);
+        boolean keepTrying = true;
+        while (keepTrying) {
+            keepTrying = false;
+            boolean result = runner.runTimedProcess("install app", 60);
+            if (result) {
+                if (runner.getResponses().stream().anyMatch("Error: The device is locked."::equals)) {
+                    Logger.logInfo("\n\nDevice locked!\nPlease, unlock and press ENTER to try again");
+                    System.in.read();
+                    keepTrying = true;
+                }
+            } else {
+                Logger.logInfo("There was an error installing the app " + app);
+                return false;
+            }
+        }
+        Logger.logDebug("The app: " + app + " was installed successfully");
+        return true;
+    }
+
+    /**
+     * Runs an app on a connected iOS device, providing that is already installed,
+     * and enters debug mode
+     *
+     * @param app The path of the .app bundle
+     * @param bundleID The bundle id of the installed app
+     * @return True if the process succeeds
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public boolean run(String app, String bundleID) throws IOException, InterruptedException {
+        String deviceId = prepareDeploy();
+
+        ProcessRunner existsRunner = new ProcessRunner(iosDeployPath.toString(), "--exists", "--bundle_id", bundleID);
+        existsRunner.showSevereMessage(false);
+        if (existsRunner.runProcess("exists bundleID") != 0 || !"true".equals(existsRunner.getLastResponse())) {
+            Logger.logInfo("\n\nThe bundle id " + bundleID + " is not found on the device.\nPlease, install it first, and then try again");
+            return false;
+        }
+
+        ProcessRunner runner = new ProcessRunner(iosDeployPath.toString(), "--id", deviceId, "--bundle", app, "--noinstall", "--noninteractive");
+        runner.setInfo(true);
+        boolean keepTrying = true;
+        while (keepTrying) {
+            keepTrying = false;
+            boolean result = runner.runTimedProcess("run app", 60);
+            if (result) {
+                if (runner.getResponses().stream().anyMatch("Error: The device is locked."::equals)) {
+                    Logger.logInfo("\n\nDevice locked!\nPlease, unlock and press ENTER to try again");
+                    System.in.read();
+                    keepTrying = true;
+                } else if (runner.getResponses().stream().anyMatch("error: timed out waiting for app to launch"::equals)) {
+                    Logger.logInfo("\n\nLaunch failed!\nPlease, unplug your device, plug it again and try again");
+                    return false;
+                }
+            } else {
+                Logger.logInfo("There was an error running the app: " + app + " with bundle id: " + bundleID);
+                return false;
+            }
+        }
+        Logger.logDebug("The app: " + app + " was launched successfully");
+        return true;
+    }
+
+    /**
+     * For tests only
+     * @return the path of ios-deploy
+     */
     public Path getIosDeployPath() {
         return iosDeployPath;
     }
 
-    private void checkPrerequisites() throws IOException, InterruptedException {
+    // private
+
+    /**
+     * Checks that brew is installed, and then verifies that all the required dependencies for ios-deploy
+     * are installed too.
+     *
+     * Then checks that ios-deploy is installed and it's version is 1.11+,
+     * and stores the path into a given file.
+     *
+     * As long as this file is present these checks will be skipped.
+     *
+     * @param checksPath The path of a file that contains the path of ios-deploy. If this file exists, the
+     *                   checks will be skipped.
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private void checkPrerequisites(Path checksPath) throws IOException, InterruptedException {
         iosDeployPath = null;
+        if (Files.exists(Objects.requireNonNull(checksPath))) {
+            iosDeployPath = Path.of(Files.readString(checksPath));
+            if (iosDeployPath != null && Files.exists(iosDeployPath)) {
+                return;
+            }
+        }
 
         // Check for Homebrew installed
         String response = ProcessRunner.runProcessForSingleOutput("check brew","which", "brew");
@@ -101,7 +229,7 @@ public class Deploy {
         response = ProcessRunner.runProcessForSingleOutput("check ios-deploy","which", "ios-deploy");
         if (response == null || response.isEmpty() || !Files.exists(Path.of(response))) {
             if (installIOSDeploy()) {
-                checkPrerequisites();
+                checkPrerequisites(checksPath);
             }
         } else {
             // Check for ios-deploy version installed (it should be 1.11+)
@@ -111,117 +239,17 @@ public class Deploy {
                 Logger.logDebug("ios-deploy was outdated (version " + version + "), replacing with the latest version...");
                 uninstallIOSDeploy();
                 if (installIOSDeploy()) {
-                    checkPrerequisites();
+                    checkPrerequisites(checksPath);
                 }
             } else {
                 Logger.logDebug("ios-deploy found at " + response);
                 iosDeployPath = Path.of(response);
-            }
-        }
-    }
-
-    private String[] connectedDevices() throws IOException, InterruptedException {
-        if (iosDeployPath == null) {
-            return new String[] {};
-        }
-        ProcessRunner runner = new ProcessRunner("ios-deploy", "-c");
-        if (!runner.runTimedProcess("connected devices", 10L)) {
-            Logger.logSevere("Error finding connected devices");
-            return new String[] {};
-        }
-        List<String> devices = runner.getResponses();
-        return devices.stream()
-                .filter(line -> line.startsWith("[....] Found"))
-                .map(line -> line.substring("[....] Found ".length()).split("\\s")[0])
-                .peek(id -> Logger.logDebug("ID found: " + id))
-                .toArray(String[]::new);
-    }
-
-    public boolean install(String app) throws IOException, InterruptedException {
-        if (iosDeployPath == null) {
-            Logger.logSevere("Error: ios-deploy was not found");
-            return false;
-        }
-
-        String[] devices = connectedDevices();
-        if (devices == null || devices.length == 0) {
-            Logger.logInfo("No iOS devices connected to this system. Exit install procedure");
-            return false;
-        }
-        if (devices.length > 1) {
-            Logger.logInfo("Multiple iOS devices connected to this system: " + String.join(", ", devices ) + ". We'll use the first one.");
-        }
-        String deviceId = devices[0];
-
-        ProcessRunner trustRunner = new ProcessRunner("ios-deploy", "-C");
-        trustRunner.showSevereMessage(false);
-        if (trustRunner.runProcess("trusted computer") != 0) {
-            Logger.logInfo("\n\nComputer not trusted!\nPlease, unplug and plug again your phone, and trust your computer when the dialog shows up on your device.\nThen try again");
-            return false;
-        }
-
-        ProcessRunner runner = new ProcessRunner(iosDeployPath.toString(),
-                "--id", deviceId, "--bundle", app, "--no-wifi", "--debug", "--noninteractive");
-        runner.addToEnv("PATH", "/usr/bin/:$PATH");
-        runner.setInfo(true);
-        boolean keepTrying = true;
-        while (keepTrying) {
-            keepTrying = false;
-            boolean result = runner.runTimedProcess("run", 60);
-            Logger.logInfo("result = " + result);
-            if (result) {
-                if (runner.getResponses().stream().anyMatch("Error: The device is locked."::equals)) {
-                    Logger.logInfo("\n\nDevice locked!\nPlease, unlock and press ENTER to try again");
-                    System.in.read();
-                    keepTrying = true;
+                if (!Files.exists(checksPath.getParent())) {
+                    Files.createDirectories(checksPath.getParent());
                 }
-            } else {
-                return false;
+                Files.writeString(checksPath, iosDeployPath.toString());
             }
         }
-        return true;
-    }
-
-    public void addDebugSymbolInfo(Path appPath, String appName) throws IOException, InterruptedException {
-        Path applicationPath = appPath.resolve(appName + ".app");
-        Path debugSymbolsPath = Path.of(applicationPath.toString() + ".dSYM");
-        if (Files.exists(debugSymbolsPath)) {
-            FileOps.deleteDirectory(debugSymbolsPath);
-        }
-        Path executablePath = applicationPath.resolve(appName);
-
-        Logger.logDebug("Generating debug symbol files...");
-        ProcessRunner runner = new ProcessRunner("xcrun", "dsymutil", "-o", debugSymbolsPath.toString(), executablePath.toString());
-        if (runner.runProcess("dsymutil") == 0) {
-            copyAppToProducts(debugSymbolsPath, executablePath, appName);
-        } else {
-            throw new RuntimeException("Error generating debug symbol files");
-        }
-    }
-
-    private void copyAppToProducts(Path debugSymbolsPath, Path executablePath, String appName) throws IOException {
-        if (Files.exists(XCODE_PRODUCTS_PATH)) {
-            List<Path> oldAppsPaths = Files.walk(XCODE_PRODUCTS_PATH, 1)
-                    .filter(Objects::nonNull)
-                    .filter(path -> path.getFileName().toString().startsWith(appName))
-                    .collect(Collectors.toList());
-            for (Path path : oldAppsPaths) {
-                Logger.logDebug("Removing older version: " + path.getFileName().toString());
-                FileOps.deleteDirectory(path);
-            }
-        }
-
-        String now = DATE_TIME_FORMATTER.format(LocalDateTime.now());
-        Path productAppPath = XCODE_PRODUCTS_PATH.resolve(appName + "_" + now);
-        Files.createDirectories(productAppPath);
-
-        Path productExecAppPath = productAppPath.resolve(appName + ".app");
-        Files.createDirectories(productExecAppPath);
-        Files.copy(executablePath, productExecAppPath.resolve(executablePath.getFileName()));
-
-        Path productDebugSymbolsPath = productAppPath.resolve(debugSymbolsPath.getFileName());
-        Files.createDirectories(productDebugSymbolsPath);
-        FileOps.copyDirectory(debugSymbolsPath, productDebugSymbolsPath);
     }
 
     /**
@@ -298,5 +326,107 @@ public class Deploy {
             return true;
         }
         throw new RuntimeException("Error installing ios-deploy. See detailed message above on how to proceed. Then try to deploy again");
+    }
+
+    /**
+     * Copy .app to Library/Developer/Xcode, removing older versions if any
+     *
+     * @param debugSymbolsPath path to debug symbols
+     * @param executablePath path of executable
+     * @param appName the app name
+     * @throws IOException
+     */
+    private void copyAppToProducts(Path debugSymbolsPath, Path executablePath, String appName) throws IOException {
+        if (Files.exists(XCODE_PRODUCTS_PATH)) {
+            List<Path> oldAppsPaths = Files.walk(XCODE_PRODUCTS_PATH, 1)
+                    .filter(Objects::nonNull)
+                    .filter(path -> path.getFileName().toString().startsWith(appName))
+                    .collect(Collectors.toList());
+            for (Path path : oldAppsPaths) {
+                Logger.logDebug("Removing older version: " + path.getFileName().toString());
+                FileOps.deleteDirectory(path);
+            }
+        }
+
+        String now = DATE_TIME_FORMATTER.format(LocalDateTime.now());
+        Path productAppPath = XCODE_PRODUCTS_PATH.resolve(appName + "_" + now);
+        Files.createDirectories(productAppPath);
+
+        Path productExecAppPath = productAppPath.resolve(appName + ".app");
+        Files.createDirectories(productExecAppPath);
+        Files.copy(executablePath, productExecAppPath.resolve(executablePath.getFileName()));
+
+        Path productDebugSymbolsPath = productAppPath.resolve(debugSymbolsPath.getFileName());
+        Files.createDirectories(productDebugSymbolsPath);
+        FileOps.copyDirectory(debugSymbolsPath, productDebugSymbolsPath);
+    }
+
+    /**
+     * Returns the device id of the first connected device to the computer, verifying that
+     * the connection is trusted.
+     *
+     * @return The device id of the connected device
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private String prepareDeploy() throws IOException, InterruptedException {
+        String deviceId = getFirstConnectedDevice()
+                .orElseThrow(() -> new IOException("No iOS devices connected to this system"));
+
+        ProcessRunner trustRunner = new ProcessRunner(iosDeployPath.toString(), "-C");
+        trustRunner.showSevereMessage(false);
+        if (trustRunner.runProcess("trusted computer") != 0) {
+            Logger.logInfo("\n\nComputer not trusted!\nPlease, unplug and plug again your phone, and trust your computer when the dialog shows up on your device.\nThen try again");
+            return null;
+        }
+
+        return deviceId;
+    }
+
+    /**
+     * Retrieves the iOS device connected to the computer, if any. In case there are
+     * multiple devices, the first one will be used
+     *
+     * @return An optional with the id of the first connected device, or empty if not found
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private Optional<String> getFirstConnectedDevice() throws IOException, InterruptedException {
+        List<String> devices = connectedDevices();
+        if (devices == null || devices.isEmpty()) {
+            return Optional.empty();
+        }
+        if (devices.size() > 1) {
+            Logger.logInfo("Multiple iOS devices connected to this system: " + String.join(", ", devices) + ".\nThe first one will be used.");
+        }
+        return Optional.of(devices.get(0));
+    }
+
+    /**
+     * Retrieves a list of all iOS devices that are connected to the computer,
+     * ignoring WiFi devices
+     *
+     * @return List of all connected devices to the computer
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private List<String> connectedDevices() throws IOException, InterruptedException {
+        if (iosDeployPath == null) {
+            Logger.logSevere("Error: ios-deploy was not found");
+            return null;
+        }
+
+        ProcessRunner runner = new ProcessRunner(iosDeployPath.toString(), "-c" , "--no-wifi");
+        if (!runner.runTimedProcess("connected devices", 10L)) {
+            Logger.logSevere("Error finding connected devices");
+            return List.of();
+        }
+        List<String> devices = runner.getResponses().stream()
+                .filter(line -> line.startsWith("[....] Found"))
+                .map(line -> line.substring("[....] Found ".length()).split("\\s")[0])
+                .peek(id -> Logger.logDebug("ID found: " + id))
+                .collect(Collectors.toList());
+        Logger.logDebug("Number of iOS devices connected found: " + devices.size());
+        return devices;
     }
 }

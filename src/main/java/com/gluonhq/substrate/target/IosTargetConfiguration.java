@@ -69,11 +69,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit"
     );
 
-    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
+    private static final String[] capFiles = {"AArch64LibCHelperDirectives.cap",
             "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
             "LLVMDirectives.cap", "PosixDirectives.cap"};
-    private final String capLocation= "/native/ios/cap/";
+    private static final String capLocation= "/native/ios/cap/";
+    private static final String iosCheck = "ios/check";
 
     public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
@@ -175,23 +176,6 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    public boolean link() throws IOException, InterruptedException {
-        boolean result = super.link();
-
-        if (result) {
-            createInfoPlist(paths);
-
-            if (!isSimulator() && !projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
-                CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
-                if (!codeSigning.signApp()) {
-                    throw new RuntimeException("Error signing the app");
-                }
-            }
-        }
-        return result;
-    }
-
-    @Override
     protected List<Path> getStaticJDKLibPaths() throws IOException {
         return Arrays.asList(fileDeps.getJavaSDKLibsPath());
     }
@@ -204,49 +188,80 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    public boolean runUntilEnd() throws IOException, InterruptedException {
-        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
-            // without signing, app can't be deployed
-            return true;
-        }
-
-        Path app = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
-        if (!Files.exists(app)) {
-            throw new IOException("Application not found at path " + app);
-        }
-
-        Deploy deploy = new Deploy();
-        deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
-        if (isSimulator()) {
-            // TODO: launchOnSimulator(appPath);
-            return false;
-        } else {
-            return deploy.install(app.toString());
-        }
-    }
-
-    @Override
     public boolean packageApp() throws IOException, InterruptedException {
-        Path localAppPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
-        if (!Files.exists(localAppPath)) {
-            throw new IOException("Error: " + projectConfiguration.getAppName() + ".app not found");
+        Path appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        if (!Files.exists(appPath)) {
+            throw new IOException("Error: " + appPath + " not found. Make sure you call link first.");
         }
-        Logger.logDebug("Building IPA for " + localAppPath);
+        Logger.logInfo("Building .app bundle at: " + appPath);
+        createInfoPlist(paths);
+
+        if (!isSimulator() && !projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+            CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
+            if (!codeSigning.signApp()) {
+                throw new RuntimeException("Error signing the app");
+            }
+            Logger.logInfo("The .app bundle was created successfully at: " + appPath);
+        }
+
+        Logger.logInfo("Building .ipa for " + appPath);
 
         Path tmpAppWrapper = paths.getTmpPath().resolve("tmpApp");
         Path tmpAppPayload = tmpAppWrapper.resolve("Payload");
         Files.createDirectories(tmpAppPayload);
 
-        ProcessRunner runner = new ProcessRunner("cp", "-Rp", localAppPath.toString(), tmpAppPayload.toString());
+        ProcessRunner runner = new ProcessRunner("cp", "-Rp", appPath.toString(), tmpAppPayload.toString());
         if (runner.runProcess("cp") != 0) {
+            Logger.logInfo("Error copying app to " + tmpAppPayload);
             return false;
         }
 
         String target = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".ipa").toString();
-        Logger.logDebug("Creating IPA at " + target);
 
         runner = new ProcessRunner("zip", "--symlinks", "--recurse-paths", target, ".");
-        return runner.runProcess("zip", tmpAppWrapper.toFile()) == 0;
+        if (runner.runProcess("zip", tmpAppWrapper.toFile()) != 0) {
+            Logger.logInfo("Error zipping " + tmpAppWrapper);
+            return false;
+        }
+        Logger.logInfo("The .ipa bundle was created successfully at: " + target);
+        return true;
+    }
+
+    @Override
+    public boolean install() throws IOException, InterruptedException {
+        Path app = getAndValidateAppPath();
+
+        Deploy deploy = new Deploy(paths.getTmpPath().resolve(iosCheck));
+        deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
+        if (isSimulator()) {
+            // TODO: installOnSimulator(appPath);
+            return false;
+        }
+
+        if (!deploy.install(app.toString())) {
+            Logger.logInfo("Installing app " + app + " failed!");
+            return false;
+        }
+        Logger.logInfo("App was installed successfully");
+        return true;
+    }
+
+    @Override
+    public boolean runUntilEnd() throws IOException, InterruptedException {
+        Path app = getAndValidateAppPath();
+
+        Deploy deploy = new Deploy(paths.getTmpPath().resolve(iosCheck));
+        if (isSimulator()) {
+            // TODO: launchOnSimulator(appPath);
+            return false;
+        }
+        String bundleId = InfoPlist.getBundleId(app.resolve(Constants.PLIST_FILE), projectConfiguration.getAppId());
+        if (!deploy.run(app.toString(), bundleId)) {
+            Logger.logInfo("Running " + bundleId + " failed!");
+            return false;
+        }
+        Logger.logInfo("App was launched successfully");
+        return true;
     }
 
     @Override
@@ -289,6 +304,23 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             FileOps.copyStream(new FileInputStream(plist.toFile()),
                     paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").resolve(Constants.PLIST_FILE));
         }
+    }
+
+    private Path getAndValidateAppPath() throws IOException, InterruptedException {
+        Path app = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        if (!Files.exists(app)) {
+            throw new IOException("Application not found at path " + app + ". Make sure you call link first.");
+        }
+        if (!Files.exists(app.resolve(projectConfiguration.getAppName()))) {
+            throw new IOException("Native image not found at path " + app + ". Make sure you call link first.");
+        }
+        if (!Files.exists(app.resolve(Constants.PLIST_FILE))) {
+            throw new IOException("Plist not found at path " + app + ". Make sure you call link and package first.");
+        }
+        if (!CodeSigning.verifyCodesign(app)) {
+            throw new IOException("Codesign failed verifying the app " + app + ". Make sure you call link and package first.");
+        }
+        return app;
     }
 
     private boolean lipoMatch(Path path) {
