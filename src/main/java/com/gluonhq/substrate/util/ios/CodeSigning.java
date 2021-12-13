@@ -301,7 +301,7 @@ public class CodeSigning {
         return true;
     }
 
-    private boolean verifyCodesign(Path target) throws IOException, InterruptedException {
+    public static boolean verifyCodesign(Path target) throws IOException, InterruptedException {
         Logger.logDebug("Validating codesign...");
         ProcessRunner runner = new ProcessRunner("codesign", "--verify", "-vvvv", target.toAbsolutePath().toString());
         if (runner.runTimedProcess("verify", 5)) {
