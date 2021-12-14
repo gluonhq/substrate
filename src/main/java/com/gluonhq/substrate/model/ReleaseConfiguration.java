@@ -127,6 +127,13 @@ public class ReleaseConfiguration {
     private String appLabel;
 
     /**
+     * A short description about the application
+     *
+     * Default: Empty string.
+     */
+    private String appDescription;
+
+    /**
      * A positive integer used as an internal version number
      *
      * Default: 1
@@ -140,6 +147,12 @@ public class ReleaseConfiguration {
      * Default: 1.0
      */
     private String versionName;
+
+    /**
+     * Vendor of the application.
+     * Idly name of the company or individual developing the application.
+     */
+    private String vendor;
 
     /**
      * A string with the path to a keystore file that can be used to sign
@@ -256,6 +269,22 @@ public class ReleaseConfiguration {
 
     public void setAppLabel(String appLabel) {
         this.appLabel = appLabel;
+    }
+
+    public String getAppDescription() {
+        return appDescription == null ? "" : appDescription;
+    }
+
+    public void setAppDescription(String appDescription) {
+        this.appDescription = appDescription;
+    }
+
+    public String getVendor() {
+        return vendor;
+    }
+
+    public void setVendor(String vendor) {
+        this.vendor = vendor;
     }
 
     public String getVersionCode() {

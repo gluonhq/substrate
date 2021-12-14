@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+  <?define GSProductLanguage=1033 ?>
+  <?define GSInstallerVersion=200 ?>
+  <?define GSCompressedMsi=yes ?>
+
+  <Product
+    Id="$(var.GSProductCode)"
+    Name="$(var.GSAppName)"
+    Language="$(var.GSProductLanguage)"
+    Version="$(var.GSAppVersion)"
+    Manufacturer="$(var.GSAppVendor)"
+    UpgradeCode="$(var.GSProductUpgradeCode)">
+
+    <Package
+      Description="$(var.GSAppDescription)"
+      Manufacturer="$(var.GSAppVendor)"
+      InstallerVersion="$(var.GSInstallerVersion)"
+      Compressed="$(var.GSCompressedMsi)"
+      Platform="x64"
+      InstallScope="perMachine"
+    />
+
+    <Media Id="1" Cabinet="Data.cab" EmbedCab="yes" />
+    <Icon Id="$(var.GSAppIconName)" SourceFile="$(var.GSAppIcon)" />
+
+    <!-- Standard required root -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id='ProgramFiles64Folder' Name='PFiles'>
+        <Directory Id='Vendor' Name="$(var.GSAppVendor)">
+          <Directory Id='INSTALLDIR' Name="$(var.GSAppName)">
+            <Component Id='MainExecutable'>
+              <File Id="$(var.GSAppName)" Name="$(var.GSAppExecutable)" Source="$(var.GSApplicationPath)" >
+                <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuDir" Name="$(var.GSAppExecutable)" WorkingDirectory='INSTALLDIR' Icon="$(var.GSAppIconName)" IconIndex="0" Advertise="yes" />
+                <Shortcut Id="DesktopShortcut" Directory="DesktopFolder" Name="$(var.GSAppExecutable)" WorkingDirectory='INSTALLDIR' Icon="$(var.GSAppIconName)" IconIndex="0" Advertise="yes" />
+              </File>
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder" Name="Programs">
+        <Directory Id="ProgramMenuDir" Name="$(var.GSAppName)">
+          <Component Id="ProgramMenuDir">
+            <RemoveFolder Id='ProgramMenuDir' On='uninstall' />
+            <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+
+    <Feature Id="DefaultFeature" Title="Main Feature" Level="1">
+      <ComponentRef Id="MainExecutable"/>
+      <ComponentRef Id='ProgramMenuDir' />
+    </Feature>
+
+    <!-- UI Dialogs -->
+    <UI>
+      <!--
+        Run WixUI_InstallDir dialog in the default install directory.
+      -->
+      <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>
+      <UIRef Id="WixUI_InstallDir" />
+
+      <?ifndef GSLicenseRtf ?>
+        <!--
+          No license file provided.
+          Override the dialog sequence in built-in dialog set "WixUI_InstallDir"
+          to exclude license dialog.
+        -->
+        <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2">1</Publish>
+        <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2">1</Publish>
+      <?endif?>
+    </UI>
+
+    <?ifdef JpLicenseRtf ?>
+      <WixVariable Id="WixUILicenseRtf" Value="$(var.GSLicenseRtf)"/>
+    <?endif?>
+  </Product>
+</Wix>

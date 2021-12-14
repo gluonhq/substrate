@@ -30,7 +30,9 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.windows.MSIBundler;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -184,6 +186,12 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     String getLinkLibraryOption(String libname) {
         return libname + "." + getStaticLibraryFileExtension();
+    }
+
+    @Override
+    public boolean packageApp() throws IOException, InterruptedException {
+        MSIBundler msiBundler = new MSIBundler(paths, projectConfiguration);
+        return msiBundler.createPackage(false);
     }
 
     private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
