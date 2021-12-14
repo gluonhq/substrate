@@ -27,12 +27,15 @@
  */
 package com.gluonhq.substrate.util.macos;
 
+import com.dd.plist.NSData;
+import com.dd.plist.NSDictionary;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
+import com.gluonhq.substrate.util.plist.NSDictionaryEx;
 import com.gluonhq.substrate.util.plist.NSObjectEx;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -53,6 +56,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -237,6 +241,209 @@ public class Packager {
             throw new IOException("Error running pkgbuild to build final pkg");
         }
         Logger.logInfo("Pkg built successfully at " + finalPkg);
+        return true;
+    }
+
+    public boolean createDmg(boolean sign) throws IOException, InterruptedException {
+        final String appName = projectConfiguration.getAppName();
+        Path localAppPath = paths.getAppPath().resolve(appName + ".app");
+        if (!Files.exists(localAppPath)) {
+            throw new IOException("Error: " + appName + ".app not found");
+        }
+        Logger.logInfo("Building dmg for " + localAppPath);
+
+        Path tmpDmg = paths.getTmpPath().resolve("tmpDmg");
+        if (Files.exists(tmpDmg)) {
+            FileOps.deleteDirectory(tmpDmg);
+        }
+        Files.createDirectories(tmpDmg);
+
+        Path rootApp = tmpDmg.resolve(appName + ".app");
+        FileOps.copyDirectory(localAppPath, rootApp);
+        Path config = tmpDmg.resolve("config");
+        Files.createDirectories(config);
+        Path images = tmpDmg.resolve("images");
+        Files.createDirectories(images);
+
+        Path userAssets = rootPath.resolve(Constants.MACOS_ASSETS_FOLDER);
+        Path backgroundPath = null, licenseContentPath = null;
+        if (Files.exists(userAssets) && Files.isDirectory(userAssets)) {
+            backgroundPath = Files.list(userAssets)
+                    .filter(p -> p.toString().endsWith("-background.tiff"))
+                    .findFirst()
+                    .orElse(null);
+            licenseContentPath = Files.list(userAssets)
+                    .filter(p -> p.toString().endsWith("license.txt"))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        // copy assets to gensrc/macos
+        Path macosPath = paths.getGenPath().resolve(sourceOS);
+        Path macosAssets = macosPath.resolve(Constants.MACOS_ASSETS_FOLDER);
+        if (backgroundPath == null || !Files.exists(backgroundPath)) {
+            backgroundPath = FileOps.copyResource("/native/macosx/assets/background.tiff", macosAssets.resolve(appName + "-background.tiff"));
+            Logger.logInfo("Default background image generated in " + macosAssets.toString() + ".\n" +
+                    "Consider copying it to " + rootPath.toString() + " before performing any modification");
+        }
+
+        // copy to config
+        backgroundPath = FileOps.copyFile(backgroundPath, config.resolve(backgroundPath.getFileName()));
+        Path volumeIconPath = FileOps.copyFile(rootApp.resolve("Contents").resolve("Resources").resolve("AppIcon.icns"), config.resolve(appName + "-volume.icns"));
+
+        // setup script
+        Logger.logDebug("Setting up applescript");
+        Path volumePath = images.resolve(appName);
+        String volumeUrl = volumePath.toUri() + File.separator;
+        Path backgroundFile = Path.of(images.toString(), appName, ".background", backgroundPath.getFileName().toString());
+
+        Path scriptPath = FileOps.copyResource("/native/macosx/assets/setup.scpt", config.resolve(appName + "-setup.scpt"));
+        FileOps.replaceInFile(scriptPath, "DeployVolumePath", volumePath.toString());
+        FileOps.replaceInFile(scriptPath, "DeployVolumeURL", volumeUrl);
+        FileOps.replaceInFile(scriptPath, "DeployBackgroundFile", backgroundFile.toString());
+        FileOps.replaceInFile(scriptPath, "DeployInstallLocation", "/Applications");
+        FileOps.replaceInFile(scriptPath, "DeployTarget", rootApp.getFileName().toString());
+
+        // build
+        Path genDMG = images.resolve(appName +"-tmp.dmg");
+        Files.deleteIfExists(genDMG);
+        Path finalDmg = paths.getAppPath().resolve(appName + "-1.0.0.dmg");
+        Files.deleteIfExists(finalDmg);
+
+        Logger.logDebug("Creating tmp image");
+        String hdiutil = "/usr/bin/hdiutil";
+        String verbose = projectConfiguration.isVerbose() ? "-verbose" : "-quiet";
+        ProcessRunner runner1 = new ProcessRunner(hdiutil,
+                "create",
+                "-srcfolder", tmpDmg.toString(),
+                "-volname", appName,
+                "-ov", genDMG.toString(),
+                "-fs", "HFS+",
+                "-format", "UDRW",
+                verbose);
+        if (runner1.runProcess("dmg create tmp image") != 0) {
+            throw new IOException("Error running hdiutil to create dmg tmp image");
+        }
+
+        Logger.logDebug("Mounting tmp image");
+        ProcessRunner runner2 = new ProcessRunner(
+                hdiutil,
+                "attach",
+                genDMG.toString(),
+                "-mountroot", images.toString(),
+                verbose);
+        if (runner2.runProcess("dmg mount tmp image") != 0) {
+            throw new IOException("Error running hdiutil to mount dmg tmp image");
+        }
+
+        Path backgroundDir = volumePath.resolve(".background");
+        Files.createDirectories(backgroundDir);
+        FileOps.copyFile(backgroundPath, backgroundDir.resolve(backgroundPath.getFileName()));
+
+        Logger.logDebug("Running apple script");
+        ProcessRunner runner3 = new ProcessRunner("/usr/bin/osascript", scriptPath.toString());
+        if (!runner3.runTimedProcess("dmg run script", 180)) {
+            throw new IOException("Error running osascript to run applescript");
+        }
+
+        Logger.logDebug("Add volume icon");
+        Path volumeIcon = images.resolve(appName).resolve(".VolumeIcon.icns");
+        FileOps.copyFile(volumeIconPath, volumeIcon);
+
+        String setFile = "/usr/bin/SetFile";
+        if (!Files.exists(Path.of(setFile))) {
+            setFile = ProcessRunner.runProcessForSingleOutput("find SetFile", "/usr/bin/xcrun", "-find", "SetFile");
+            if (setFile == null || setFile.isEmpty()) {
+                throw new IOException("Error finding SetFile");
+            }
+        }
+
+        if (!volumeIcon.toFile().setWritable(true)) {
+            throw new IOException("Error: " + volumeIcon + " can be set writable");
+        }
+        ProcessRunner runner4 = new ProcessRunner(
+                setFile,
+                "-c", "icnC",
+                volumeIcon.toString());
+        if (runner4.runProcess("dmg setfile icon") != 0) {
+            throw new IOException("Error running setFile to create icon attributes");
+        }
+        if (!volumeIcon.toFile().setReadOnly()) {
+            throw new IOException("Error: " + volumeIcon + " can be set read only");
+        }
+
+        ProcessRunner runner5 = new ProcessRunner(
+                setFile,
+                "-a", "C",
+                volumePath.toString());
+        if (runner5.runProcess("dmg setfile app") != 0) {
+            throw new IOException("Error running setFile to create app attributes");
+        }
+
+        // cleanup
+        FileOps.deleteDirectory(volumePath.resolve(".fseventsd"));
+        FileOps.deleteDirectory(volumePath.resolve("images"));
+        FileOps.deleteDirectory(volumePath.resolve("config"));
+
+        Logger.logDebug("Detach tmp image");
+        ProcessRunner runner6 = new ProcessRunner(
+                hdiutil,
+                "detach",
+                volumePath.toString(),
+                verbose);
+        if (runner6.runProcess("dmg detach tmp image") != 0) {
+            throw new IOException("Error running hdiutil to detach dmg tmp image");
+        }
+
+        Logger.logDebug("Build final image");
+        ProcessRunner runner7 = new ProcessRunner(
+                hdiutil,
+                "convert",
+                genDMG.toString(),
+                "-format", "UDZO",
+                "-o", finalDmg.toString(),
+                verbose);
+        if (runner7.runProcess("dmg convert tmp image") != 0) {
+            throw new IOException("Error running hdiutil to convert dmg tmp image");
+        }
+
+        if (licenseContentPath != null) {
+            byte[] licenseContent = Files.readAllBytes(licenseContentPath);
+            String licenseContent64 = Base64.getEncoder().encodeToString(licenseContent);
+            Path licPlist = FileOps.copyResource("/native/macosx/assets/license.plist", config.resolve(appName + "-license.plist"));
+            try {
+                NSDictionaryEx dict = new NSDictionaryEx(licPlist);
+                NSDictionary textDict = (NSDictionary) dict.getArray("TEXT")[0];
+                textDict.put("Data", new NSData(licenseContent64));
+                dict.saveAsXML(licPlist);
+            } catch (Exception e) {
+                throw new IOException(("Error writing data to license: " + e.getMessage()));
+            }
+
+            Logger.logDebug("Add license to final image");
+            ProcessRunner runner8 = new ProcessRunner(
+                    hdiutil,
+                    "udifrez",
+                    finalDmg.toString(),
+                    "-xml",
+                    licPlist.toString()
+                );
+            if (runner8.runProcess("dmg add license") != 0) {
+                throw new IOException("Error running hdiutil to add license to dmg");
+            }
+        }
+
+        Files.deleteIfExists(genDMG);
+
+        if (sign) {
+            Logger.logDebug("Sign final image");
+            CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
+            if (!codeSigning.signDmg(finalDmg)) {
+                throw new RuntimeException("Error signing the dmg bundle");
+            }
+        }
+
+        Logger.logInfo("Dmg built successfully at " + finalDmg);
         return true;
     }
 

@@ -64,7 +64,7 @@ public class CodeSigning {
     // https://developer.apple.com/library/archive/technotes/tn2318/_index.html
     private static final String CODESIGN_OK_1 = "satisfies its Designated Requirement";
     private static final String CODESIGN_OK_2 = "valid on disk";
-    private static final String CODESING_OK_3 = "explicit requirement satisfied";
+    private static final String CODESIGN_OK_3 = "explicit requirement satisfied";
 
     private static final String ERRLINK = "Please check https://docs.gluonhq.com/ for more information.";
 
@@ -131,6 +131,48 @@ public class CodeSigning {
         return sign(entitlementsPath, appPath);
     }
 
+    public boolean signDmg(Path dmgPath) throws IOException, InterruptedException {
+        // - App can be signed with Developer ID Application certificate, and it can be notarized
+        // - App can be signed with Apple Distribution or 3rd Party Mac Developer Application certificate,
+        //   but it can't be notarized
+
+        assertValidIdentity();
+        if (identity == null) {
+            identity = identities.stream()
+                    .filter(id -> id.getCommonName().startsWith("Developer ID Application"))
+                    .findFirst()
+                    .orElse(null);
+            if (identity == null) {
+                identity = identities.stream()
+                        .findFirst()
+                        .orElseThrow(() -> new IOException("Error signing app: signing identity was null"));
+            }
+        }
+        Logger.logDebug("Signing dmg with identity: " + identity);
+
+        ProcessRunner dmgRunner = new ProcessRunner("codesign", "--timestamp", "--options", "runtime", "--force", "--sign", identity.getSha1());
+        Path entitlementsPath = getEntitlementsPath();
+        if (entitlementsPath != null) {
+            dmgRunner.addArgs("--entitlements", entitlementsPath.toString());
+        }
+        if (projectConfiguration.isVerbose()) {
+            dmgRunner.addArg("--verbose");
+        }
+        dmgRunner.addArg(dmgPath.toString());
+        if (!dmgRunner.runTimedProcess("codesign dmg", 30)) {
+            Logger.logSevere("Codesign process failed");
+            return false;
+        }
+
+        if (!verifyCodesign(dmgPath)) {
+            Logger.logSevere("Codesign validation failed");
+            return false;
+        }
+
+        Logger.logDebug("Signing dmg done successfully");
+        return true;
+    }
+
     private void assertValidIdentity() {
         identities = getIdentity();
         if (identities == null || identities.isEmpty()) {
@@ -146,7 +188,7 @@ public class CodeSigning {
                     .orElseThrow(() -> new IOException("Error signing app: signing identity was null"));
         }
         Logger.logDebug("Signing app with identity: " + identity);
-        ProcessRunner execRunner = new ProcessRunner("codesign", "--options", "runtime", "--force", "--sign", identity.getSha1());
+        ProcessRunner execRunner = new ProcessRunner("codesign", "--timestamp", "--options", "runtime", "--force", "--sign", identity.getSha1());
         if (entitlementsPath != null) {
             execRunner.addArgs("--entitlements", entitlementsPath.toString());
         }
@@ -169,7 +211,7 @@ public class CodeSigning {
             }
         }
 
-        ProcessRunner appRunner = new ProcessRunner("codesign", "--options", "runtime", "--force", "--sign", identity.getSha1());
+        ProcessRunner appRunner = new ProcessRunner("codesign", "--timestamp", "--options", "runtime", "--force", "--sign", identity.getSha1());
         if (entitlementsPath != null) {
             appRunner.addArgs("--entitlements", entitlementsPath.toString());
         }
@@ -231,7 +273,7 @@ public class CodeSigning {
         if (runner.runTimedProcess("verify", 5)) {
             return runner.getResponses().stream()
                     .anyMatch(line -> line.contains(CODESIGN_OK_1) ||
-                            line.contains(CODESIGN_OK_2) || line.contains(CODESING_OK_3));
+                            line.contains(CODESIGN_OK_2) || line.contains(CODESIGN_OK_3));
         }
         return false;
     }
@@ -298,7 +340,7 @@ public class CodeSigning {
                 .collect(Collectors.toList());
     }
 
-    public static List<Identity> retrieveAllIdentities() {
+    private static List<Identity> retrieveAllIdentities() {
         ProcessRunner runner = new ProcessRunner("security", "find-identity", "-p", "codesigning", "-v");
         try {
             if (runner.runProcess("security") == 0) {
