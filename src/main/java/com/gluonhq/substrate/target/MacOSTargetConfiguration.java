@@ -146,24 +146,22 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
         boolean sign = !projectConfiguration.getReleaseConfiguration().isSkipSigning();
         createAppBundle(sign);
 
-        String packageTypes = projectConfiguration.getReleaseConfiguration().getPackageTypes();
-        if (packageTypes == null || packageTypes.isEmpty()) {
+        String packageType = projectConfiguration.getReleaseConfiguration().getPackageType();
+        if (packageType == null || packageType.isEmpty()) {
             // if it is not set, do nothing
             return true;
-        } else if (!(packageTypes.contains("pkg") || packageTypes.contains("dmg"))) {
-            // if it is set but doesn't ask for pkg or dmg, do nothing
-            return true;
+        } else if (!("pkg".equals(packageType) || "dmg".equals(packageType))) {
+            // if it is set but doesn't ask for pkg or dmg, fail
+            Logger.logInfo("Error: packageType doesn't contain valid types for macOS");
+            return false;
         }
 
-        boolean result = true;
         Packager packager = new Packager(paths, projectConfiguration);
-        if (packageTypes.contains("pkg")) {
-            result = packager.createPackage(sign);
+        if ("pkg".equals(packageType)) {
+            return packager.createPackage(sign);
+        } else {
+            return packager.createDmg(sign);
         }
-        if (result && packageTypes.contains("dmg")) {
-            result = packager.createDmg(sign);
-        }
-        return result;
     }
 
     private void createAppBundle(boolean sign) throws IOException, InterruptedException {
