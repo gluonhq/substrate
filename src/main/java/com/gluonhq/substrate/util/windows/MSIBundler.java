@@ -102,6 +102,7 @@ public class MSIBundler {
                 WixTool.LIGHT.getPath(),
                 "-nologo",
                 "-spdb",
+                "-sw1076", // https://github.com/wixtoolset/issues/issues/5938
                 "-ext", "WixUtilExtension",
                 "-ext", "WixUIExtension",
                 "-out", msiPath.toString(),
@@ -127,8 +128,10 @@ public class MSIBundler {
         userInput.put("GSAppExecutable", executableName);
         userInput.put("GSAppVersion", version);
         userInput.put("GSAppVendor", vendor);
-        userInput.put("GSAppIconName", appName + "Icon.exe");
+        userInput.put("GSAppIconName", appName + ".ico");
         userInput.put("GSAppIcon", paths.getTmpPath().resolve("tmpMSI").resolve("config").resolve("icon.ico").toString());
+        userInput.put("GSStartMenuShortcutGUID", createUUID("StartMenuShortcutGUID", appName, vendor, version).toString());
+        userInput.put("GSDesktopShortcutGUID", createUUID("DesktopShortcutGUID", appName, vendor, version).toString());
         Path license = paths.getTmpPath().resolve("tmpMSI").resolve("config").resolve("license.rtf");
         if (Files.exists(license)) {
             ensureByMutationFileIsRTF(license);

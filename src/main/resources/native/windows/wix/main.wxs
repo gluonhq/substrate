@@ -24,7 +24,8 @@
     />
 
     <Media Id="1" Cabinet="Data.cab" EmbedCab="yes" />
-    <!-- <Icon Id="$(var.GSAppIconName)" SourceFile="$(var.GSAppIcon)" /> -->
+    <Icon Id="AppIconId" SourceFile="$(var.GSAppIcon)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIconId"/>
 
     <!-- Standard required root -->
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -32,32 +33,52 @@
         <Directory Id='Vendor' Name="$(var.GSAppVendor)">
           <Directory Id='INSTALLDIR' Name="$(var.GSAppName)">
             <Component Id='MainExecutable'>
-              <File Id="$(var.GSAppName)" Name="$(var.GSAppExecutable)" Source="$(var.GSApplicationPath)" >
-                <!--
-                <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuDir" Name="$(var.GSAppExecutable)" WorkingDirectory='INSTALLDIR' Icon="$(var.GSAppIconName)" IconIndex="0" Advertise="yes" />
-                <Shortcut Id="DesktopShortcut" Directory="DesktopFolder" Name="$(var.GSAppExecutable)" WorkingDirectory='INSTALLDIR' Icon="$(var.GSAppIconName)" IconIndex="0" Advertise="yes" />
-                -->
-              </File>
+              <File Id="$(var.GSAppName)" Source="$(var.GSApplicationPath)" />
+              <File Id="$(var.GSAppIconName)" Name="$(var.GSAppIconName)" Source="$(var.GSAppIcon)" />
             </Component>
           </Directory>
         </Directory>
       </Directory>
 
+      <!-- Start Menu -->
       <Directory Id="ProgramMenuFolder" Name="Programs">
-        <Directory Id="ProgramMenuDir" Name="$(var.GSAppName)">
-          <Component Id="ProgramMenuDir">
-            <RemoveFolder Id='ProgramMenuDir' On='uninstall' />
-            <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
-          </Component>
-        </Directory>
+        <Directory Id="ProgramMenuDir" Name="$(var.GSAppName)" />
       </Directory>
 
+      <!-- Desktop -->
       <Directory Id="DesktopFolder" Name="Desktop" />
     </Directory>
 
+    <!-- Add the shortcut to your installer package -->
+    <DirectoryRef Id="ProgramMenuDir">
+      <Component Id="ProgramMenuShortcut" Guid="$(var.GSStartMenuShortcutGUID)">
+        <Shortcut Id="ApplicationStartMenuShortcut" Name="$(var.GSAppName)" Description="$(var.GSAppDescription)" Target="[#$(var.GSAppName)]" Icon="AppIconId" WorkingDirectory="INSTALLDIR"/>
+        <RemoveFolder Id="RemoveApplicationShortcut" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <!-- Add the shortcut to desktop -->
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="$(var.GSDesktopShortcutGUID)">
+        <Shortcut Id="DesktopApplicationShortcut" Name="$(var.GSAppName)" Description="$(var.GSAppDescription)" Target="[#$(var.GSAppName)]" Icon="AppIconId" WorkingDirectory="INSTALLDIR"/>
+        <RemoveFolder Id="RemoveDesktopShortcut" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <ComponentGroup Id="Files">
+      <ComponentRef Id="MainExecutable" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="Shortcuts">
+      <ComponentRef Id="ProgramMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </ComponentGroup>
+
     <Feature Id="DefaultFeature" Title="Main Feature" Level="1">
-      <ComponentRef Id="MainExecutable"/>
-      <ComponentRef Id='ProgramMenuDir' />
+      <ComponentGroupRef Id="Files" />
+      <ComponentGroupRef Id='Shortcuts' />
     </Feature>
 
     <!-- UI Dialogs -->
