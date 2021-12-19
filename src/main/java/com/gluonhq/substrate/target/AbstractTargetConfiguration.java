@@ -828,6 +828,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * linker when creating images for the specific target.
      */
     String getLinkLibraryOption(String libname) {
+        if (libname.startsWith("/")) return libname;
         return "-l" + libname;
     }
 
