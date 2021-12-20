@@ -32,8 +32,8 @@
       <Directory Id='ProgramFiles64Folder' Name='PFiles'>
         <Directory Id='Vendor' Name="$(var.GSAppVendor)">
           <Directory Id='INSTALLDIR' Name="$(var.GSAppName)">
-            <Component Id='MainExecutable'>
-              <File Id="$(var.GSAppName)" Source="$(var.GSApplicationPath)" />
+            <Component Id='MainExecutable' Guid="$(var.GSMainExecutableGUID)">
+              <File Id="$(var.GSAppName)" Source="$(var.GSApplicationPath)" KeyPath="yes" />
               <File Id="$(var.GSAppIconName)" Name="$(var.GSAppIconName)" Source="$(var.GSAppIcon)" />
             </Component>
           </Directory>

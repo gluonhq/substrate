@@ -1,8 +1,36 @@
+/*
+ * Copyright (c) 2021, Gluon
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL GLUON BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.gluonhq.substrate.util.windows;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.model.ReleaseConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -38,6 +66,7 @@ public class MSIBundler {
 
     public boolean createPackage(boolean sign) throws IOException, InterruptedException {
         final String appName = projectConfiguration.getAppName();
+        final String version = Optional.ofNullable(projectConfiguration.getReleaseConfiguration().getVersionName()).orElse("1.0.0");
         Path localAppPath = paths.getAppPath().resolve(appName + ".exe");
         if (!Files.exists(localAppPath)) {
             throw new IOException("Error: " + appName + ".exe not found");
@@ -68,7 +97,7 @@ public class MSIBundler {
         Files.createDirectories(config);
         Path wixPath = config.resolve("main.wxs");
         Path wixObjPath = wixPath.getParent().resolve(wixPath.getFileName() + ".wixobj");
-        Path msiPath = paths.getGvmPath().getParent().resolve(appName + "-" +  projectConfiguration.getReleaseConfiguration().getVersionName()  + ".msi");
+        Path msiPath = paths.getGvmPath().getParent().resolve(appName + "-" +  version  + ".msi");
         FileOps.copyResource("/native/windows/wix/main.wxs", wixPath);
         FileOps.copyDirectory(windowsAssetPath, config);
 
@@ -118,11 +147,14 @@ public class MSIBundler {
     }
 
     private Map<String, String> createAppDetailMap() {
+
         Map<String, String> userInput = new HashMap<>();
-        String appName = projectConfiguration.getReleaseConfiguration().getAppLabel();
+        ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
+
+        String appName = projectConfiguration.getAppName();
         String executableName = appName + ".exe";
-        String vendor = projectConfiguration.getReleaseConfiguration().getVendor();
-        String version = projectConfiguration.getReleaseConfiguration().getVersionName();
+        String vendor = Optional.ofNullable(releaseConfiguration.getVendor()).orElse("Unknown");
+        String version = Optional.ofNullable(releaseConfiguration.getVersionName()).orElse("1.0.0");
         userInput.put("GSProductCode", createUUID("ProductCode", appName, vendor, version).toString());
         userInput.put("GSAppName", appName);
         userInput.put("GSAppExecutable", executableName);
@@ -130,6 +162,7 @@ public class MSIBundler {
         userInput.put("GSAppVendor", vendor);
         userInput.put("GSAppIconName", appName + ".ico");
         userInput.put("GSAppIcon", paths.getTmpPath().resolve("tmpMSI").resolve("config").resolve("icon.ico").toString());
+        userInput.put("GSMainExecutableGUID", createUUID("GSMainExecutableGUID", appName, vendor, version).toString());
         userInput.put("GSStartMenuShortcutGUID", createUUID("StartMenuShortcutGUID", appName, vendor, version).toString());
         userInput.put("GSDesktopShortcutGUID", createUUID("DesktopShortcutGUID", appName, vendor, version).toString());
         Path license = paths.getTmpPath().resolve("tmpMSI").resolve("config").resolve("license.rtf");
