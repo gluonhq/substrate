@@ -96,6 +96,7 @@
   {
     "name" : "java.lang.String",
     "methods" : [
+      {"name":"<init>","parameterTypes":["byte[]"] },
       {"name":"<init>","parameterTypes":["byte[]","java.lang.String"] },
       {"name":"concat","parameterTypes":["java.lang.String"] },
       {"name":"getBytes","parameterTypes":["java.lang.String"] },
