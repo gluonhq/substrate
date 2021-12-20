@@ -896,7 +896,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     private List<String> getTargetSpecificJavaLinkLibraries() {
         return Stream.concat(getStaticJavaLibs().stream(), getOtherStaticLibs().stream())
-                .filter(lib -> projectConfiguration.usesJDK11() || !"sunec".equals(lib))
+                .filter(lib -> projectConfiguration.usesJDK11() || !lib.contains("sunec"))
                 .map(this::getLinkLibraryOption)
                 .collect(Collectors.toList());
     }
