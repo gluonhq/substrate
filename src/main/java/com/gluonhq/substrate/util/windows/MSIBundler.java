@@ -67,6 +67,12 @@ public class MSIBundler {
     }
 
     public boolean createPackage(boolean sign) throws IOException, InterruptedException {
+
+        if (WixTool.CANDLE.getPath() == null || WixTool.LIGHT.getPath() == null) {
+            Logger.logSevere("Please make sure to install Wix Toolset (https://wixtoolset.org/) before proceeding.");
+            return false;
+        }
+
         final String appName = projectConfiguration.getAppName();
         final String version = Optional.ofNullable(projectConfiguration.getReleaseConfiguration().getVersionName()).orElse(DEFAULT_APP_VERSION);
         Path localAppPath = paths.getAppPath().resolve(appName + ".exe");
@@ -266,8 +272,8 @@ public class MSIBundler {
                     return path.toString();
                 }
             }
-            Logger.logSevere(name() + "not found. Please make sure to install Wix Toolset (https://wixtoolset.org/) before proceeding.");
-            throw new RuntimeException("Wix Toolset not found");
+            Logger.logSevere(name() + " not found.");
+            return null;
         }
 
         private List<Path> findWixInstallDirs() {
