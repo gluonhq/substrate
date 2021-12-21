@@ -36,6 +36,8 @@ public class ReleaseConfiguration {
     public static final String DEFAULT_CODE_VERSION = "1";
     public static final String DEFAULT_CODE_NAME = "1.0";
 
+    public static final String DEFAULT_APP_VERSION = "1.0.0";
+
     // macOS
 
     /**
@@ -127,13 +129,6 @@ public class ReleaseConfiguration {
     private String appLabel;
 
     /**
-     * A short description about the application
-     *
-     * Default: Empty string.
-     */
-    private String appDescription;
-
-    /**
      * A positive integer used as an internal version number
      *
      * Default: 1
@@ -147,12 +142,6 @@ public class ReleaseConfiguration {
      * Default: 1.0
      */
     private String versionName;
-
-    /**
-     * Vendor of the application.
-     * Idly name of the company or individual developing the application.
-     */
-    private String vendor;
 
     /**
      * A string with the path to a keystore file that can be used to sign
@@ -182,6 +171,21 @@ public class ReleaseConfiguration {
      * Default: null. If not set, Substrate creates and uses a debug keystore.
      */
     private String providedKeyAliasPassword;
+    
+    // Windows
+
+    /**
+     * A short description about the application
+     *
+     * Default: Empty string.
+     */
+    private String appDescription;
+
+    /**
+     * Vendor of the application.
+     * Idly name of the company or individual developing the application.
+     */
+    private String vendor;
 
     public boolean isMacAppStore() {
         return macAppStore;
@@ -355,6 +359,8 @@ public class ReleaseConfiguration {
                 ", providedKeyStorePassword='" + providedKeyStorePassword + '\'' +
                 ", providedKeyAlias='" + providedKeyAlias + '\'' +
                 ", providedKeyAliasPassword='" + providedKeyAliasPassword + '\'' +
+                ", appDescription='" + appDescription + '\'' +
+                ", vendor='" + vendor + '\'' +
                 '}';
     }
 }

@@ -195,8 +195,4 @@ public class Constants {
      */
     public static final String NATIVE_IMAGE_ARG_CLASSPATH = "-cp";
 
-    /**
-     * Package
-     */
-    public static final String DEFAULT_APP_VERSION = "1.0.0";
 }

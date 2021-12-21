@@ -50,7 +50,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.gluonhq.substrate.Constants.DEFAULT_APP_VERSION;
+import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_APP_VERSION;
 
 public class MSIBundler {
 
