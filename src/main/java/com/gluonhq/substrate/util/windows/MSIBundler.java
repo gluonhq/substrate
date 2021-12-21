@@ -50,6 +50,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.gluonhq.substrate.Constants.DEFAULT_APP_VERSION;
+
 public class MSIBundler {
 
     private final ProcessPaths paths;
@@ -66,7 +68,7 @@ public class MSIBundler {
 
     public boolean createPackage(boolean sign) throws IOException, InterruptedException {
         final String appName = projectConfiguration.getAppName();
-        final String version = Optional.ofNullable(projectConfiguration.getReleaseConfiguration().getVersionName()).orElse("1.0.0");
+        final String version = Optional.ofNullable(projectConfiguration.getReleaseConfiguration().getVersionName()).orElse(DEFAULT_APP_VERSION);
         Path localAppPath = paths.getAppPath().resolve(appName + ".exe");
         if (!Files.exists(localAppPath)) {
             throw new IOException("Error: " + appName + ".exe not found");
@@ -82,10 +84,10 @@ public class MSIBundler {
         }
         Files.createDirectories(tmpMSI);
 
-        Path userAssets = rootPath.resolve(Constants.MACOS_ASSETS_FOLDER);
+        Path userAssets = rootPath.resolve(Constants.WIN_ASSETS_FOLDER);
         // copy assets to gensrc/windows
         Path windowsGenSrcPath = paths.getGenPath().resolve(sourceOS);
-        Path windowsAssetPath = windowsGenSrcPath.resolve(Constants.MACOS_ASSETS_FOLDER);
+        Path windowsAssetPath = windowsGenSrcPath.resolve(Constants.WIN_ASSETS_FOLDER);
         Files.createDirectories(windowsAssetPath);
         // Copy system resources and over-write it with user provided resources
         FileOps.copyDirectoryFromResources("/native/windows/assets", windowsAssetPath);
@@ -154,7 +156,7 @@ public class MSIBundler {
         String appName = projectConfiguration.getAppName();
         String executableName = appName + ".exe";
         String vendor = Optional.ofNullable(releaseConfiguration.getVendor()).orElse("Unknown");
-        String version = Optional.ofNullable(releaseConfiguration.getVersionName()).orElse("1.0.0");
+        String version = Optional.ofNullable(releaseConfiguration.getVersionName()).orElse(DEFAULT_APP_VERSION);
         userInput.put("GSProductCode", createUUID("ProductCode", appName, vendor, version).toString());
         userInput.put("GSAppName", appName);
         userInput.put("GSAppExecutable", executableName);
@@ -257,12 +259,13 @@ public class MSIBundler {
 
         String getPath() {
             for (var dir : findWixInstallDirs()) {
-                Path path = dir.resolve(name().toLowerCase() + ".exe");
+                Path path = dir.resolve(name().toLowerCase(Locale.ROOT) + ".exe");
                 if (Files.exists(path)) {
                     return path.toString();
                 }
             }
-            throw new RuntimeException("Path not found");
+            Logger.logSevere(name() + "not found. Please make sure to install Wix Toolset (https://wixtoolset.org/) before proceeding.");
+            throw new RuntimeException("Wix Toolset not found");
         }
 
         private List<Path> findWixInstallDirs() {

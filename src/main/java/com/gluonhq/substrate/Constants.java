@@ -132,7 +132,6 @@ public class Constants {
     public static final String PATHING_JAR_DEPS_PATH = "deps";
 
 
-
     /**
      * Backend
      */
@@ -144,6 +143,7 @@ public class Constants {
      */
     public static final String MACOS_ASSETS_FOLDER = "assets";
     public static final String IOS_ASSETS_FOLDER = "assets";
+    public static final String WIN_ASSETS_FOLDER = "assets";
     public static final String MACOS_PLIST_FILE = "Info.plist";
     public static final String MACOS_PKGINFO_FILE = "PkgInfo";
     public static final String PLIST_FILE = "Default-Info.plist";
@@ -195,4 +195,8 @@ public class Constants {
      */
     public static final String NATIVE_IMAGE_ARG_CLASSPATH = "-cp";
 
+    /**
+     * Pacakge
+     */
+    public static final String DEFAULT_APP_VERSION = "1.0.0";
 }
