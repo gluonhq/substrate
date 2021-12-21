@@ -272,7 +272,7 @@ public class ReleaseConfiguration {
     }
 
     public String getAppDescription() {
-        return appDescription == null ? "" : appDescription;
+        return appDescription;
     }
 
     public void setAppDescription(String appDescription) {

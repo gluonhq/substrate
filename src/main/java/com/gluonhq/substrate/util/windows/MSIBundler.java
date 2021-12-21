@@ -174,7 +174,7 @@ public class MSIBundler {
         }
         userInput.put("GSApplicationPath", paths.getClientPath().resolve("x86_64-windows").resolve(executableName).toString());
         userInput.put("GSProductUpgradeCode", createUUID("UpgradeCode", appName, vendor, version).toString());
-        userInput.put("GSAppDescription", releaseConfiguration.getAppDescription());
+        userInput.put("GSAppDescription", Optional.ofNullable(releaseConfiguration.getAppDescription()).orElse("some-app-description"));
         return userInput;
     }
 
