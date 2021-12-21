@@ -62,7 +62,7 @@ public class CodeSigning {
     // https://developer.apple.com/library/archive/technotes/tn2318/_index.html
     private static final String CODESIGN_OK_1 = "satisfies its Designated Requirement";
     private static final String CODESIGN_OK_2 = "valid on disk";
-    private static final String CODESING_OK_3 = "explicit requirement satisfied";
+    private static final String CODESIGN_OK_3 = "explicit requirement satisfied";
 
     private static final String CODESIGN_ALLOCATE_ENV = "CODESIGN_ALLOCATE";
     private static final String EMBEDDED_PROVISIONING_PROFILE = "embedded.mobileprovision";
@@ -301,13 +301,13 @@ public class CodeSigning {
         return true;
     }
 
-    private boolean verifyCodesign(Path target) throws IOException, InterruptedException {
+    public static boolean verifyCodesign(Path target) throws IOException, InterruptedException {
         Logger.logDebug("Validating codesign...");
         ProcessRunner runner = new ProcessRunner("codesign", "--verify", "-vvvv", target.toAbsolutePath().toString());
         if (runner.runTimedProcess("verify", 5)) {
             return runner.getResponses().stream()
                     .anyMatch(line -> line.contains(CODESIGN_OK_1) ||
-                            line.contains(CODESIGN_OK_2) || line.contains(CODESING_OK_3));
+                            line.contains(CODESIGN_OK_2) || line.contains(CODESIGN_OK_3));
         }
         return false;
     }

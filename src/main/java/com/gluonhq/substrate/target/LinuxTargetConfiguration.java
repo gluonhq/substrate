@@ -223,8 +223,14 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getStaticJavaLibs() {
+        Path javaStaticLibPath;
+        try {
+            javaStaticLibPath = getStaticJDKLibPaths().get(0);
+        } catch (IOException ex) {
+            throw new RuntimeException ("No static java libs found, cannot continue");
+        }
         return staticJavaLibs.stream()
-                .map(lib -> ":lib" + lib + ".a")
+                .map(lib -> javaStaticLibPath.resolve("lib" + lib + ".a").toString())
                 .collect(Collectors.toList());
     }
 
@@ -237,11 +243,6 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     @Override
     protected List<Path> getLinkerLibraryPaths() throws IOException {
         List<Path> linkerLibraryPaths = new ArrayList<>();
-        try {
-            linkerLibraryPaths.add(getStaticJDKLibPaths().get(0));
-        } catch (Exception ex) {
-            throw new RuntimeException("Fatal error, we have no static Java libraries, so we can't link with them.");
-        }
         linkerLibraryPaths.add(getCLibPath());
         if (projectConfiguration.isUseJavaFX()) {
             linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());

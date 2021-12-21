@@ -143,13 +143,28 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     public boolean packageApp() throws IOException, InterruptedException {
-        createAppBundle();
+        boolean sign = !projectConfiguration.getReleaseConfiguration().isSkipSigning();
+        createAppBundle(sign);
+
+        String packageType = projectConfiguration.getReleaseConfiguration().getPackageType();
+        if (packageType == null || packageType.isEmpty()) {
+            // if it is not set, do nothing
+            return true;
+        } else if (!("pkg".equals(packageType) || "dmg".equals(packageType))) {
+            // if it is set but doesn't ask for pkg or dmg, fail
+            Logger.logInfo("Error: packageType doesn't contain valid types for macOS");
+            return false;
+        }
 
         Packager packager = new Packager(paths, projectConfiguration);
-        return packager.createPackage(!projectConfiguration.getReleaseConfiguration().isSkipSigning());
+        if ("pkg".equals(packageType)) {
+            return packager.createPackage(sign);
+        } else {
+            return packager.createDmg(sign);
+        }
     }
 
-    private void createAppBundle() throws IOException, InterruptedException {
+    private void createAppBundle(boolean sign) throws IOException, InterruptedException {
         String appName = projectConfiguration.getAppName();
         Path nativeImagePath = paths.getAppPath().resolve(appName);
         if (!Files.exists(nativeImagePath)) {
@@ -168,7 +183,7 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
         createInfoPlist(paths);
 
-        if (!projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+        if (sign) {
             CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
             if (!codeSigning.signApp()) {
                 throw new RuntimeException("Error signing the app");
