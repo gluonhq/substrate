@@ -234,7 +234,7 @@ public class CodeSigning {
             }
         }
         Logger.logDebug("Signing app with identity: " + identity);
-        ProcessRunner runner = new ProcessRunner("codesign", "--force", "--sign", identity.getSha1());
+        ProcessRunner runner = new ProcessRunner("codesign", "--generate-entitlement-der", "--force", "--sign", identity.getSha1());
         if (entitlementsPath != null) {
             runner.addArgs("--entitlements", entitlementsPath.toString());
         }
