@@ -105,6 +105,11 @@ public class InternalProjectConfiguration {
         boolean useJavaFX = new ClassPath(config.getClasspath()).contains(s -> s.contains("javafx"));
         setUseJavaFX(useJavaFX);
 
+        String graalvmBackend = System.getenv("GRAALVM_BACKEND");
+        if (graalvmBackend != null) {
+            setBackend(graalvmBackend);
+        }
+
         performHostChecks();
     }
 
@@ -474,11 +479,15 @@ public class InternalProjectConfiguration {
             // host doesn't use LLVM
             return;
         }
-        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && !Constants.BACKEND_LLVM.equals(getBackend())) {
+        if (new Triplet(Constants.Profile.IOS).equals(triplet) && !isUseLLVM()) {
+            // iOS can use other backends
+            return;
+        }
+        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && !isUseLLVM()) {
             // Android can use other backends
             return;
         }
-        if (new Triplet(Constants.Profile.LINUX_AARCH64).equals(triplet) && !Constants.BACKEND_LLVM.equals(getBackend())) {
+        if (new Triplet(Constants.Profile.LINUX_AARCH64).equals(triplet) && !isUseLLVM()) {
             // LINUX_AARCH64 can use other backends
             return;
         }
