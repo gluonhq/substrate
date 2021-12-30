@@ -105,7 +105,7 @@ public class InternalProjectConfiguration {
         boolean useJavaFX = new ClassPath(config.getClasspath()).contains(s -> s.contains("javafx"));
         setUseJavaFX(useJavaFX);
 
-        String graalvmBackend = System.getenv("GRAALVM_BACKEND");
+        String graalvmBackend = System.getenv("GRAALVM_COMPILER_BACKEND");
         if (graalvmBackend != null) {
             setBackend(graalvmBackend);
         }
