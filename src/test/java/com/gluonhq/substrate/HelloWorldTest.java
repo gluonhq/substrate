@@ -46,6 +46,7 @@ class HelloWorldTest {
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloWorld:clean", ":helloWorld:build", ":helloWorld:run",
                         "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
+                        "-Dskipsigning=" + (isCI() ? "true" : "false"),
                         ":helloWorld:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();

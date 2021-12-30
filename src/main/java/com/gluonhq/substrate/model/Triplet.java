@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,11 @@ import static com.gluonhq.substrate.Constants.*;
 public class Triplet {
 
     /**
+     * The system architecture of the host is evaluated at build-time
+     */
+    private static final String OS_ARCH  = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
+
+    /**
      * The operating system of the host is evaluated at build-time
      */
     private static final String OS_NAME  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
@@ -53,7 +58,11 @@ public class Triplet {
         if (isMacOSHost()) {
            return new Triplet(Constants.Profile.MACOS);
         } else if (isLinuxHost()) {
-            return new Triplet(Constants.Profile.LINUX);
+            if (isAarch64Arch()) {
+                return new Triplet(Constants.Profile.LINUX_AARCH64);
+            } else {
+                return new Triplet(Constants.Profile.LINUX);
+            }
         } else if (isWindowsHost()) {
             return new Triplet(Constants.Profile.WINDOWS);
         } else {
@@ -80,6 +89,13 @@ public class Triplet {
      */
     public static boolean isLinuxHost() {
         return OS_NAME.contains("nux");
+    }
+
+    /**
+     * @return true if host architecture is AArch64
+     */
+    public static boolean isAarch64Arch() {
+        return OS_ARCH.contains("aarch64");
     }
 
     public Triplet(String arch, String vendor, String os) {
@@ -124,6 +140,11 @@ public class Triplet {
                 this.arch = ARCH_AARCH64;
                 this.vendor = VENDOR_LINUX;
                 this.os = OS_ANDROID;
+                break;
+            case WEB:
+                this.arch = ARCH_AMD64;
+                this.vendor = VENDOR_WEB;
+                this.os = OS_WEB;
                 break;
             default:
                 throw new IllegalArgumentException("Triplet for profile "+profile+" is not supported yet");
@@ -186,6 +207,34 @@ public class Triplet {
             myarch = "amd64";
         }
         return this.os+"-"+myarch;
+    }
+
+    /**
+     *
+     * On iOS/iOS-sim, Android and Linux-AArch64, it returns a string
+     * with a valid version for clibs, for other OSes returns an empty string
+     * @return
+     */
+    public String getClibsVersion() {
+        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs()) ||
+                (OS_LINUX.equals(getOs()) && ARCH_AARCH64.equals(getArch()))) {
+            return "-ea+" + Constants.DEFAULT_CLIBS_VERSION;
+        }
+        return "";
+    }
+    /**
+     *
+     * On iOS/iOS-sim, Android and Linux-AArch64, it returns a string
+     * with a valid path for clibs, for other OSes returns an empty string
+     *
+     * @return
+     */
+    public String getClibsVersionPath() {
+        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs()) ||
+                (OS_LINUX.equals(getOs()) && ARCH_AARCH64.equals(getArch()))) {
+            return Constants.DEFAULT_CLIBS_VERSION;
+        }
+        return "";
     }
 
     @Override

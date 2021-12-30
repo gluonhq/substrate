@@ -58,6 +58,7 @@ public class GluonFeature implements Feature {
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("prism_sw");
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("prism_es2");
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glass");
+        NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glass_monocle");
         NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glassgtk3");
 
     }
@@ -71,6 +72,7 @@ public class GluonFeature implements Feature {
         pnls.addBuiltinPkgNativePrefix("com_sun_javafx_font_freetype");
         pnls.addBuiltinPkgNativePrefix("com_sun_prism");
         pnls.addBuiltinPkgNativePrefix("com_sun_glass");
+        pnls.addBuiltinPkgNativePrefix("com_sun_pisces");
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ public final class FileDeps {
 
     private static final String ANDROID_KEY = "24333f8a63b6825ea9c5514f83c2829b004d1fee";
     private static final String[] ANDROID_SDK_PACKAGES = {
-            "platforms;android-29", "build-tools;29.0.3", "platform-tools",
+            "platforms;android-30", "build-tools;30.0.2", "platform-tools",
             "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle" };
 
     private static final String ARCH_SYSROOT_URL = "https://download2.gluonhq.com/substrate/sysroot/${arch}sysroot-${version}.zip";

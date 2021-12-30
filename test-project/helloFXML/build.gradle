@@ -3,7 +3,6 @@ plugins {
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 
@@ -18,7 +17,7 @@ dependencies {
 }
 
 javafx {
-    version = "16"
+    version = "17.0.0.1"
     modules = [ "javafx.controls", "javafx.fxml" ]
 }
 
@@ -32,14 +31,15 @@ task runScript(type: Exec) {
     def javafxStaticSdk = validateJavafxStaticSdk()
 
     def expected = System.getProperty("expected")
+    def skipsigning = System.getProperty("skipsigning")
     def consoleProcessLog = System.getProperty("consoleProcessLog")
 
     def imageClasspath = ""
     if (javafxStaticSdk != null) {
-        imageClasspath = "${javafxStaticSdk}/lib/javafx.base.jar:" +
-                "${javafxStaticSdk}/lib/javafx.graphics.jar:" +
-                "${javafxStaticSdk}/lib/javafx.controls.jar:" +
-                "${javafxStaticSdk}/lib/javafx.fxml.jar:" +
+        imageClasspath = "${javafxStaticSdk}/lib/javafx.base.jar${File.pathSeparator}" +
+                "${javafxStaticSdk}/lib/javafx.graphics.jar${File.pathSeparator}" +
+                "${javafxStaticSdk}/lib/javafx.controls.jar${File.pathSeparator}" +
+                "${javafxStaticSdk}/lib/javafx.fxml.jar${File.pathSeparator}" +
                 project.sourceSets.main.runtimeClasspath.filter{!it.name.contains('javafx')}.asPath
     } else {
         imageClasspath = project.sourceSets.main.runtimeClasspath.asPath
@@ -60,6 +60,9 @@ task runScript(type: Exec) {
     }
     if (expected != null) {
         argsList += ["-Dexpected=$expected"]
+    }
+    if (skipsigning != null) {
+        argsList += ["-Dskipsigning=$skipsigning"]
     }
     if (consoleProcessLog != null) {
         argsList += ["-DconsoleProcessLog=$consoleProcessLog", "-Dverbose=true"]

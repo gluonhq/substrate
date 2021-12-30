@@ -64,6 +64,7 @@ public class InternalProjectConfiguration {
     private boolean useJavaFX = false;
     private boolean usePrismSW = false;
     private boolean enableCheckHash = true;
+    private boolean usesJDK11 = false;
 
     private String backend;
     private List<String> initBuildTimeList;
@@ -103,6 +104,11 @@ public class InternalProjectConfiguration {
 
         boolean useJavaFX = new ClassPath(config.getClasspath()).contains(s -> s.contains("javafx"));
         setUseJavaFX(useJavaFX);
+
+        String graalvmBackend = System.getenv("GRAALVM_COMPILER_BACKEND");
+        if (graalvmBackend != null) {
+            setBackend(graalvmBackend);
+        }
 
         performHostChecks();
     }
@@ -430,6 +436,10 @@ public class InternalProjectConfiguration {
         return Optional.ofNullable(publicConfig.getReleaseConfiguration()).orElse(new ReleaseConfiguration());
     }
 
+    public boolean usesJDK11() {
+        return usesJDK11;
+    }
+
     /**
      * Check if the GraalVM provided by the configuration is supported
      * @throws IOException if the GraalVM version is older than the minimum supported version
@@ -443,27 +453,18 @@ public class InternalProjectConfiguration {
     }
 
     /**
-     * check if the GraalVM provided by the configuration is capable of running native-image
-     * @throws NullPointerException when the configuration is null
-     * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
-     * @throws IOException when the path to bin/native-image doesn't exist
+     * Check if the GraalVM's java provided by the configuration is supported
+     * @throws IOException if the GraalVM's java version is older than the minimum supported version
      */
-    public void canRunNativeImage() throws IOException, InterruptedException {
-        Path javaCmd = getGraalVMBinPath().resolve("java");
-        ProcessRunner processRunner = new ProcessRunner(javaCmd.toString(), "-version");
-        if (processRunner.runProcess("check version") != 0) {
-            throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
+    public void checkGraalVMJavaVersion() throws IOException {
+        Version javaVersion = getGraalVMJavaVersion();
+        if (javaVersion.compareTo(new Version(Constants.GRAALVM_JAVA_MIN_VERSION)) < 0) {
+            throw new IOException("Current GraalVM's java version (" + javaVersion + ") not supported.\n" +
+                    "Please upgrade to " + Constants.GRAALVM_JAVA_MIN_VERSION + " or higher");
         }
-        for (String l : processRunner.getResponses()) {
-            if (l == null || l.isEmpty()) {
-                throw new IllegalArgumentException(javaCmd + " -version failed to return a valid value for GraalVM");
-            }
-            if (l.indexOf("1.8") > 0) {
-                throw new IllegalArgumentException("You are using an old version of GraalVM in " + javaCmd +
-                        " which uses Java version " + l + "\nUse GraalVM 19.3 or later");
-            }
-        }
+        usesJDK11 = javaVersion.getMajor() == 11;
     }
+
     /**
      * for Android and iOS profiles, verifies that the LLVM toolchain is installed,
      * or installs it otherwise.
@@ -478,11 +479,15 @@ public class InternalProjectConfiguration {
             // host doesn't use LLVM
             return;
         }
-        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && !Constants.BACKEND_LLVM.equals(getBackend())) {
+        if (new Triplet(Constants.Profile.IOS).equals(triplet) && !isUseLLVM()) {
+            // iOS can use other backends
+            return;
+        }
+        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && !isUseLLVM()) {
             // Android can use other backends
             return;
         }
-        if (new Triplet(Constants.Profile.LINUX_AARCH64).equals(triplet) && !Constants.BACKEND_LLVM.equals(getBackend())) {
+        if (new Triplet(Constants.Profile.LINUX_AARCH64).equals(triplet) && !isUseLLVM()) {
             // LINUX_AARCH64 can use other backends
             return;
         }
@@ -588,6 +593,36 @@ public class InternalProjectConfiguration {
         } catch (IOException | InterruptedException e) {
             Logger.logFatal(e,"Error checking execution permissions for " + graalvmRoot);
         }
+    }
+
+    /**
+     * Gets the Java version that GraalVM bundles
+     * @return the Java version of the GraalVM's build
+     * @throws NullPointerException when the configuration is null
+     * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
+     * @throws IOException if the Java version can't be found
+     */
+    public Version getGraalVMJavaVersion() throws IOException {
+        ProcessRunner graalJava = null;
+        try {
+            graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
+            if (graalJava.runProcess("check version") != 0) {
+                throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
+            }
+        } catch (InterruptedException e) {
+            throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
+        }
+        String pattern = "version \"(\\d{1,2}(\\.\\d+){0,2})\"";
+        Pattern r = Pattern.compile(pattern);
+        List<String> responses = graalJava.getResponses();
+        if (responses == null || responses.isEmpty()) {
+            throw new IOException("Couldn't determine GraalVM's Java version");
+        }
+        Matcher m = r.matcher(responses.get(0));
+        if (!m.find()) {
+            throw new IOException("Couldn't determine GraalVM's Java version for " + responses.get(0));
+        }
+        return new Version(m.group(1));
     }
 
     @Override

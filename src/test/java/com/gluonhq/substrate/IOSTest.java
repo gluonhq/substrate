@@ -39,6 +39,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,7 +60,7 @@ class IOSTest {
     private Deploy getDeploy() {
         if (deploy == null) {
             try {
-                deploy = new Deploy();
+                deploy = new Deploy(Files.createTempDirectory("substrate-tests").resolve("ios/check"));
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }

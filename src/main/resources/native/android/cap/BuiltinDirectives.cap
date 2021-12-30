@@ -13,6 +13,8 @@ NativeCodeInfo:BuiltinDirectives:PointerToInfo:long_long:PropertyInfo:signedness
 NativeCodeInfo:BuiltinDirectives:PointerToInfo:short:PropertyInfo:size=2
 NativeCodeInfo:BuiltinDirectives:PointerToInfo:short:PropertyInfo:signedness=$SIGNED$
 NativeCodeInfo:BuiltinDirectives:PointerToInfo:struct_JNIEnv__:PropertyInfo:size=8
+NativeCodeInfo:BuiltinDirectives:PointerToInfo:struct_JNIEnv__:PropertyInfo:size=8
+NativeCodeInfo:BuiltinDirectives:PointerToInfo:struct_JavaVM__:PropertyInfo:size=8
 NativeCodeInfo:BuiltinDirectives:PointerToInfo:struct_JavaVM__:PropertyInfo:size=8
 NativeCodeInfo:BuiltinDirectives:PointerToInfo:void:PropertyInfo:size=1
 NativeCodeInfo:BuiltinDirectives:PointerToInfo:void_:PropertyInfo:size=8

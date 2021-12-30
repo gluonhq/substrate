@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,9 +33,9 @@ import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.XcodeUtils;
+import com.gluonhq.substrate.util.plist.NSDictionaryEx;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,11 +62,11 @@ public class CodeSigning {
     // https://developer.apple.com/library/archive/technotes/tn2318/_index.html
     private static final String CODESIGN_OK_1 = "satisfies its Designated Requirement";
     private static final String CODESIGN_OK_2 = "valid on disk";
-    private static final String CODESING_OK_3 = "explicit requirement satisfied";
+    private static final String CODESIGN_OK_3 = "explicit requirement satisfied";
 
     private static final String CODESIGN_ALLOCATE_ENV = "CODESIGN_ALLOCATE";
     private static final String EMBEDDED_PROVISIONING_PROFILE = "embedded.mobileprovision";
-    private static String ERRLINK = "Please check https://docs.gluonhq.com/client/ for more information.";
+    private static final String ERRLINK = "Please check https://docs.gluonhq.com/ for more information.";
 
     private static final String KEYCHAIN_ERROR_MESSAGE = "errSecInternalComponent";
 
@@ -84,15 +84,17 @@ public class CodeSigning {
     private final String sourceOS;
 
     private final Path appPath;
+    private final Path rootPath;
     private final Path tmpPath;
 
     public CodeSigning(ProcessPaths paths, InternalProjectConfiguration projectConfiguration) {
         this.paths = paths;
         this.projectConfiguration = projectConfiguration;
         this.sourceOS = projectConfiguration.getTargetTriplet().getOs();
-        this.bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
+        this.bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
 
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        rootPath = paths.getSourcePath().resolve(sourceOS);
         tmpPath = paths.getTmpPath();
 
         providedIdentityName = projectConfiguration.getReleaseConfiguration().getProvidedSigningIdentity();
@@ -122,7 +124,7 @@ public class CodeSigning {
 
     private MobileProvision getProvisioningProfile() throws IOException {
         if (bundleId == null) {
-            bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), sourceOS);
+            bundleId = InfoPlist.getBundleId(InfoPlist.getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
         }
 
         if (mobileProvision == null) {
@@ -232,7 +234,7 @@ public class CodeSigning {
             }
         }
         Logger.logDebug("Signing app with identity: " + identity);
-        ProcessRunner runner = new ProcessRunner("codesign", "--force", "--sign", identity.getSha1());
+        ProcessRunner runner = new ProcessRunner("codesign", "--generate-entitlement-der", "--force", "--sign", identity.getSha1());
         if (entitlementsPath != null) {
             runner.addArgs("--entitlements", entitlementsPath.toString());
         }
@@ -299,13 +301,13 @@ public class CodeSigning {
         return true;
     }
 
-    private boolean verifyCodesign(Path target) throws IOException, InterruptedException {
+    public static boolean verifyCodesign(Path target) throws IOException, InterruptedException {
         Logger.logDebug("Validating codesign...");
         ProcessRunner runner = new ProcessRunner("codesign", "--verify", "-vvvv", target.toAbsolutePath().toString());
         if (runner.runTimedProcess("verify", 5)) {
             return runner.getResponses().stream()
                     .anyMatch(line -> line.contains(CODESIGN_OK_1) ||
-                            line.contains(CODESIGN_OK_2) || line.contains(CODESING_OK_3));
+                            line.contains(CODESIGN_OK_2) || line.contains(CODESIGN_OK_3));
         }
         return false;
     }
@@ -314,27 +316,31 @@ public class CodeSigning {
 
     private Path getEntitlementsPath(String bundleId, boolean taskAllow) throws IOException {
         getProvisioningProfile();
-        Path entitlementsPath = tmpPath.resolve("Entitlements.plist");
+        Path entitlements = rootPath.resolve("Entitlements.plist");
 
-        try (InputStream is = FileOps.resourceAsStream("/native/ios/Entitlements.plist")) {
-            dictionary = new NSDictionaryEx(is);
+        Path tmpEntitlements = tmpPath.resolve("Entitlements.plist");
+        if (!Files.exists(entitlements)) {
+            entitlements = FileOps.copyResource("/native/ios/Entitlements.plist", tmpEntitlements);
+        }
+        try {
+            dictionary = new NSDictionaryEx(entitlements);
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new IOException("Error reading default entitlements: ", ex);
+            throw new IOException("Error reading entitlements: ", ex);
         }
 
         if (mobileProvision != null) {
-            NSDictionaryEx entitlements = mobileProvision.getEntitlements();
-            Arrays.stream(entitlements.getAllKeys())
+            NSDictionaryEx provisionEntitlements = mobileProvision.getEntitlements();
+            Arrays.stream(provisionEntitlements.getAllKeys())
                     .filter(key -> dictionary.get(key) == null)
-                    .forEach(key -> dictionary.put(key, entitlements.get(key)));
+                    .forEach(key -> dictionary.put(key, provisionEntitlements.get(key)));
 
             dictionary.put("application-identifier", mobileProvision.getAppIdentifierPrefix() + "." + bundleId);
         }
         dictionary.put("get-task-allow", taskAllow);
         Logger.logDebug("Entitlements.plist = " + dictionary.getEntrySet());
-        dictionary.saveAsXML(entitlementsPath);
-        return entitlementsPath;
+        dictionary.saveAsXML(tmpEntitlements);
+        return tmpEntitlements;
     }
 
     private List<Identity> getIdentity() {

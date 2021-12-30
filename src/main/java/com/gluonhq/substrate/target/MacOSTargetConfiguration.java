@@ -29,7 +29,15 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.XcodeUtils;
+import com.gluonhq.substrate.util.macos.CodeSigning;
+import com.gluonhq.substrate.util.macos.InfoPlist;
+import com.gluonhq.substrate.util.macos.Packager;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -117,11 +125,13 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificJavaLinkLibraries() {
-        List<String> targetLibraries = new ArrayList<>();
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
-        return targetLibraries;
+    List<String> getStaticJavaLibs() {
+        return staticJavaLibs;
+    }
+
+    @Override
+    List<String> getOtherStaticLibs() {
+        return staticJvmLibs;
     }
 
     @Override
@@ -129,6 +139,65 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
         return libs.stream()
                 .map(s -> "-Wl,-force_load," + libPath.resolve(s))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean packageApp() throws IOException, InterruptedException {
+        boolean sign = !projectConfiguration.getReleaseConfiguration().isSkipSigning();
+        createAppBundle(sign);
+
+        String packageType = projectConfiguration.getReleaseConfiguration().getPackageType();
+        if (packageType == null || packageType.isEmpty()) {
+            // if it is not set, do nothing
+            return true;
+        } else if (!("pkg".equals(packageType) || "dmg".equals(packageType))) {
+            // if it is set but doesn't ask for pkg or dmg, fail
+            Logger.logInfo("Error: packageType doesn't contain valid types for macOS");
+            return false;
+        }
+
+        Packager packager = new Packager(paths, projectConfiguration);
+        if ("pkg".equals(packageType)) {
+            return packager.createPackage(sign);
+        } else {
+            return packager.createDmg(sign);
+        }
+    }
+
+    private void createAppBundle(boolean sign) throws IOException, InterruptedException {
+        String appName = projectConfiguration.getAppName();
+        Path nativeImagePath = paths.getAppPath().resolve(appName);
+        if (!Files.exists(nativeImagePath)) {
+            throw new IOException("Error: " + nativeImagePath + " not found, run link first.");
+        }
+        Path bundlePath = paths.getAppPath().resolve(appName + ".app");
+        Logger.logInfo("Building app bundle: " + bundlePath);
+
+        if (Files.exists(bundlePath)) {
+            FileOps.deleteDirectory(bundlePath);
+        }
+
+        Path appPath = bundlePath.resolve("Contents").resolve("MacOS");
+        Files.createDirectories(appPath);
+        FileOps.copyFile(nativeImagePath, appPath.resolve(appName));
+
+        createInfoPlist(paths);
+
+        if (sign) {
+            CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
+            if (!codeSigning.signApp()) {
+                throw new RuntimeException("Error signing the app");
+            }
+        }
+        Logger.logInfo("App bundle built successfully at: " + bundlePath);
+    }
+
+    private void createInfoPlist(ProcessPaths paths) throws IOException, InterruptedException {
+        InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, XcodeUtils.SDKS.MACOSX);
+        Path plist = infoPlist.processInfoPlist();
+        if (plist != null) {
+            Logger.logDebug("Plist at " + plist.toString());
+        }
     }
 
     private List<String> asListOfLibraryLinkFlags(List<String> libraries) {

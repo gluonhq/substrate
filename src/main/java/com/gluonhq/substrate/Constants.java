@@ -48,6 +48,7 @@ public class Constants {
     public static final String VENDOR_APPLE = "apple";
     public static final String VENDOR_LINUX = "linux";
     public static final String VENDOR_MICROSOFT = "microsoft";
+    public static final String VENDOR_WEB = "web";
 
     /**
      * Triplet OS
@@ -57,6 +58,7 @@ public class Constants {
     public static final String OS_LINUX = "linux";
     public static final String OS_WINDOWS = "windows";
     public static final String OS_ANDROID = "android";
+    public static final String OS_WEB = "web";
 
     /**
      * Predefined Profiles
@@ -68,7 +70,8 @@ public class Constants {
         WINDOWS, // (x86_64-windows-windows)
         IOS,   // (aarch64-apple-ios)
         IOS_SIM,   // (x86_64-apple-ios)
-        ANDROID // (aarch64-linux-android);
+        ANDROID, // (aarch64-linux-android);
+        WEB // (x86_64-web-web)
     };
 
     /**
@@ -100,15 +103,19 @@ public class Constants {
     public static final String PROFILE_IOS_SIM = "ios-sim";
     public static final String PROFILE_ANDROID = "android";
     public static final String PROFILE_LINUX_AARCH64 = "linux-aarch64";
+    public static final String PROFILE_WEB = "web";
 
     public static final String DEFAULT_JAVA_STATIC_SDK_VERSION  = "11-ea+10";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "17-ea+14";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "18-ea+8";
+    public static final String DEFAULT_JAVAFX_JS_SDK_VERSION  = "18-internal+0-2021-09-02-165800";
     public static final String DEFAULT_SYSROOT_VERSION  = "20210424";
+    public static final String DEFAULT_CLIBS_VERSION  = "26";
 
     /**
      * Supported GraalVM versions
      */
     public static final String GRAALVM_MIN_VERSION = "21.0";
+    public static final String GRAALVM_JAVA_MIN_VERSION = "11.0";
 
     /**
      * Paths
@@ -135,18 +142,29 @@ public class Constants {
     /**
      * Supported files
      */
+    public static final String MACOS_ASSETS_FOLDER = "assets";
+    public static final String MACOS_PLIST_FILE = "Info.plist";
+    public static final String MACOS_PKGINFO_FILE = "PkgInfo";
     public static final String PLIST_FILE = "Default-Info.plist";
+    public static final String PARTIAL_PLIST_FILE = "Partial-Info.plist";
     public static final String IOS_ASSETS_FOLDER = "assets";
     public static final String MANIFEST_FILE = "AndroidManifest.xml";
     public static final String ANDROID_RES_FOLDER = "res";
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
+    public static final String META_INF_SUBSTRATE_MACOS = "META-INF/substrate/macos/";
+    public static final String META_INF_SUBSTRATE_IOS = "META-INF/substrate/ios/";
     public static final String META_INF_SUBSTRATE_DALVIK = "META-INF/substrate/dalvik/";
     public static final String USER_ANDROID_PERMISSIONS_FILE = "android-permissions.txt";
     public static final String USER_ANDROID_DEPENDENCIES_FILE = "android-dependencies.txt";
     public static final String DALVIK_PRECOMPILED_CLASSES = "precompiled/classes/";
     public static final String ANDROID_NATIVE_FOLDER = "/native/android/";
     public static final String ANDROID_PROJECT_NAME = "android_project";
+
+    public static final String META_INF_SUBSTRATE_WEB = "META-INF/substrate/web/";
+    public static final String WEB_AOT_CLASSIFIER = "bck2brwsr";
+    public static final String WEB_AOT_VERSION = "0.53";
+    public static final String WEB_INDEX_HTML = "index.html";
 
     public static final String META_INF_SUBSTRATE_CONFIG = "META-INF/substrate/config/";
     public static final String USER_INIT_BUILD_TIME_FILE = "initbuildtime";
@@ -168,6 +186,7 @@ public class Constants {
     public static final String RESOURCE_ARCH_FILE = "resourceconfig-${archOs}.json";
 
     public static final String JNI_JAVA_FILE = "jniconfig-java.json";
+    public static final String JNI_JAVA_FILE11 = "jniconfig-java11.json";
     public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
     public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
 

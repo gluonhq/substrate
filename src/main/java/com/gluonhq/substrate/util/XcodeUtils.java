@@ -1,6 +1,6 @@
 package com.gluonhq.substrate.util;
 
-import com.gluonhq.substrate.util.ios.NSDictionaryEx;
+import com.gluonhq.substrate.util.plist.NSDictionaryEx;
 
 import java.io.IOException;
 import java.nio.file.Path;

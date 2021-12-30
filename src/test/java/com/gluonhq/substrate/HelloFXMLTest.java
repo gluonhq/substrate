@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,14 +30,22 @@ package com.gluonhq.substrate;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
 import static com.gluonhq.substrate.TestUtils.isCI;
+import static com.gluonhq.substrate.TestUtils.isCIWindows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class HelloFXMLTest {
+
+    @BeforeEach
+    void notForTravis() {
+        assumeTrue(!isCIWindows());
+    }
 
     @Test
     void helloFXTest() {
@@ -46,6 +54,7 @@ class HelloFXMLTest {
                 .withProjectDir(new File("test-project"))
                 .withArguments(":helloFXML:clean", ":helloFXML:build",
                         "-Dexpected=" + expected, "-DconsoleProcessLog=" + (isCI() ? "true" : "false"),
+                        "-Dskipsigning=" + (isCI() ? "true" : "false"),
                         ":helloFXML:run", ":helloFXML:runScript", "--stacktrace")
                 .forwardOutput()
                 .build();
