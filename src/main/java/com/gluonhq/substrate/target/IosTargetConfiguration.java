@@ -78,6 +78,11 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
+
+        // for now default to LLVM
+        if (projectConfiguration.getBackend() == null) {
+            projectConfiguration.setBackend(Constants.BACKEND_LLVM);
+        }
     }
 
     @Override
@@ -117,15 +122,18 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
                 "-isysroot", getSysroot());
     }
 
-    @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
-        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
-                "-H:-SpawnIsolates",
+        List<String> flags = new ArrayList<>(Arrays.asList(
                 "-H:PageSize=16384",
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getTargetArch(),
                 "-H:+UseCAPCache",
-                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString());
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
+                "-H:CompilerBackend=" + projectConfiguration.getBackend()));
+        if (projectConfiguration.isUseLLVM()) {
+            flags.add("-H:-SpawnIsolates");
+        }
+        return flags;
     }
 
     @Override
@@ -165,9 +173,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
-        return FileOps.findFile( paths.getGvmPath(), "llvm.o").map( objectFile ->
-           Collections.singletonList(objectFile.toAbsolutePath().toString())
-        ).orElseThrow();
+        if (!projectConfiguration.isUseLLVM()) {
+            return super.getTargetSpecificObjectFiles();
+        }
+        return FileOps.findFile(paths.getGvmPath(), "llvm.o")
+                .map(objectFile -> Collections.singletonList(objectFile.toAbsolutePath().toString()))
+                .orElseThrow();
     }
 
     @Override
