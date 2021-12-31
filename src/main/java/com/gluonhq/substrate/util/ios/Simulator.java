@@ -57,13 +57,12 @@ public class Simulator {
 
     /**
      * Finds a valid simulator device, that can be set from
-     * the user or a default one, installs the app, launches the Simulator application,
-     * and launches the app on it
+     * the user or a default one and installs the app
      *
      * @throws IOException
      * @throws InterruptedException
      */
-    public void launchSimulator() throws IOException, InterruptedException {
+    public boolean installApp() throws IOException, InterruptedException {
         Logger.logInfo("Preparing SimDevice...");
         String deviceName = projectConfiguration.getReleaseConfiguration().getSimulatorDevice();
         // get one valid booted device
@@ -74,11 +73,29 @@ public class Simulator {
         if (runner.runProcess("install") != 0) {
             throw new IOException("Error installing app in simulator");
         }
+        return true;
+    }
+
+    /**
+     * Finds a valid simulator device, that can be set from
+     * the user or a default one, launches the Simulator application,
+     * and launches the app on it
+     *
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public void launchSimulator() throws IOException, InterruptedException {
+        Logger.logInfo("Preparing SimDevice...");
+        String deviceName = projectConfiguration.getReleaseConfiguration().getSimulatorDevice();
+        // get one valid booted device
+        bootDevice(deviceName);
+        // check app is installed
+        validateBundleId(bundleId);
         // open Simulator
         openSimulator();
         // launch app, output goes to console
         Logger.logInfo("Launching app on SimDevice...");
-        runner = new ProcessRunner("xcrun", "simctl", "launch", "--console-pty", "booted", bundleId);
+        ProcessRunner runner = new ProcessRunner("xcrun", "simctl", "launch", "--console-pty", "booted", bundleId);
         runner.setInfo(true);
         if (runner.runProcess("launch") != 0) {
             throw new IOException("Error launching app in simulator");
@@ -155,6 +172,18 @@ public class Simulator {
                     devices.stream().map(SimDevice::toString).collect(Collectors.joining("\n")));
         }
         return devices;
+    }
+
+    private static void validateBundleId(String bundleId) throws IOException, InterruptedException {
+        ProcessRunner runner = new ProcessRunner("/bin/sh", "-c",
+                "xcrun simctl listapps booted | plutil -convert json - -o - | ruby -r json -e 'puts JSON.parse(STDIN.read).keys'");
+        if (runner.runProcess("get installed apps") != 0) {
+            throw new IOException("Error finding installed apps from booted simulator");
+        }
+        if (runner.getResponses().stream().noneMatch(bundleId::equals)) {
+            throw new IOException("Booted simulator doesn't have an app with bundle id: " + bundleId + "\n" +
+                    "Make sure you install it first.");
+        }
     }
 
     // remove small caps

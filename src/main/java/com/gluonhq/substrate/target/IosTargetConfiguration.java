@@ -217,9 +217,13 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             if (!codeSigning.signApp()) {
                 throw new RuntimeException("Error signing the app");
             }
-            Logger.logInfo("The .app bundle was created successfully at: " + appPath);
+        }
+        Logger.logInfo("The .app bundle was created successfully at: " + appPath);
+        if (isSimulator()) {
+            return true;
         }
 
+        // ipa bundle
         Logger.logInfo("Building .ipa for " + appPath);
 
         Path tmpAppWrapper = paths.getTmpPath().resolve("tmpApp");
@@ -245,7 +249,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     public boolean install() throws IOException, InterruptedException {
-        if (projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
             // Without signing app can't be installed on device
             // Simply exit and do nothing
             return true;
@@ -256,8 +260,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         Deploy deploy = new Deploy(paths.getTmpPath().resolve(iosCheck));
         deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
         if (isSimulator()) {
-            // TODO: installOnSimulator(appPath);
-            return false;
+            Simulator simulator = new Simulator(paths, projectConfiguration);
+            return simulator.installApp();
         }
 
         if (!deploy.install(app.toString())) {
@@ -270,7 +274,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
-        if (projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
             // Without signing app can't be installed or run on device
             // Simply exit and do nothing
             return true;
@@ -346,7 +350,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         if (!Files.exists(app.resolve(Constants.PLIST_FILE))) {
             throw new IOException("Plist not found at path " + app + ". Make sure you call link and package first.");
         }
-        if (!CodeSigning.verifyCodesign(app)) {
+        if (!isSimulator() && !CodeSigning.verifyCodesign(app)) {
             throw new IOException("Codesign failed verifying the app " + app + ". Make sure you call link and package first.");
         }
         return app;
