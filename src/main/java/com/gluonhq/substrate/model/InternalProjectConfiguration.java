@@ -233,10 +233,14 @@ public class InternalProjectConfiguration {
     }
 
     public Path getDefaultJavafxStaticPath() {
+        Triplet targetTriplet = getTargetTriplet();
+        if (new Triplet(Constants.Profile.IOS_SIM).equals(targetTriplet)) {
+            targetTriplet = new Triplet(Constants.Profile.IOS);
+        }
         return Constants.USER_SUBSTRATE_PATH
                 .resolve("javafxStaticSdk")
                 .resolve(getJavafxStaticSdkVersion())
-                .resolve(getTargetTriplet().getOsArch())
+                .resolve(targetTriplet.getOsArch())
                 .resolve("sdk");
     }
 
