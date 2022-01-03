@@ -84,6 +84,10 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         if (!isSimulator() && projectConfiguration.getBackend() == null) {
             projectConfiguration.setBackend(Constants.BACKEND_LLVM);
         }
+
+        if (isSimulator() && projectConfiguration.usesJDK11()) {
+            throw new RuntimeException("Error: the iOS simulator requires JDK 17");
+        }
     }
 
     @Override

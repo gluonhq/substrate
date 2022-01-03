@@ -273,7 +273,8 @@ public final class FileDeps {
                     downloadJavaFXStatic = true;
                 } else if (configuration.isEnableCheckHash()) {
                     Logger.logDebug("Checking javafx static sdk hashes");
-                    String md5File = getChecksumFileName(javafxStatic.getParent(), "javafxStaticSdk", target);
+                    String md5File = getChecksumFileName(javafxStatic.getParent(), "javafxStaticSdk",
+                            javafxStatic.getParent().getParent().getFileName().toString());
                     Map<String, String> hashes = FileOps.getHashMap(md5File);
                     if (hashes == null) {
                         Logger.logDebug(md5File + " md5 not found");
