@@ -277,6 +277,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (projectConfiguration.hasWeb()) {
             cFlags.add("-DJAVAFX_WEB");
         }
+        if (!projectConfiguration.usesJDK11()) {
+            cFlags.add("-DGVM_17");
+        }
         return cFlags;
     }
 

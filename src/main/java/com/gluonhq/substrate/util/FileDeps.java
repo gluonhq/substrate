@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 
 public final class FileDeps {
 
-    private static final String JAVA_STATIC_ZIP = "labs-staticjdk-${target}-gvm-${version}.zip";
+    private static final String JAVA_STATIC_ZIP = "${staticjdk}-${target}-gvm-${version}.zip";
     private static final String JAVA_STATIC_URL = "https://download2.gluonhq.com/substrate/staticjdk/";
     private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static${variant}.zip";
     private static final String JAVAFX_STATIC_URL = "https://download2.gluonhq.com/substrate/javafxstaticsdk/";
@@ -373,6 +373,7 @@ public final class FileDeps {
     private void downloadJavaZip(String target) throws IOException {
         Logger.logInfo("Downloading Java Static Libs...");
         String javaZip = Strings.substitute(JAVA_STATIC_ZIP, Map.of(
+            "staticjdk", configuration.usesJDK11() ? Constants.DEFAULT_JAVASDK_PATH11 : Constants.DEFAULT_JAVASDK_PATH,
             "version", configuration.getJavaStaticSdkVersion(),
             "target", target));
         FileOps.downloadAndUnzip(JAVA_STATIC_URL + javaZip,

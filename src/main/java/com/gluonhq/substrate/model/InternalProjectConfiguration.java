@@ -144,7 +144,9 @@ public class InternalProjectConfiguration {
      */
     public String getJavaStaticSdkVersion() {
         return Optional.ofNullable(publicConfig.getJavaStaticSdkVersion())
-                       .orElse(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
+                .orElse(usesJDK11() ?
+                        Constants.DEFAULT_JAVA_STATIC_SDK_VERSION11 :
+                        Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
     }
 
     /**
@@ -191,7 +193,7 @@ public class InternalProjectConfiguration {
                 .resolve("javaStaticSdk")
                 .resolve(getJavaStaticSdkVersion())
                 .resolve(getTargetTriplet().getOsArch())
-                .resolve("labs-staticjdk");
+                .resolve(usesJDK11() ? Constants.DEFAULT_JAVASDK_PATH11 : Constants.DEFAULT_JAVASDK_PATH);
     }
 
     private Path getDefaultJavaStaticLibsPath() {
