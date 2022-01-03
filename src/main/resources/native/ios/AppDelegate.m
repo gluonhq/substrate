@@ -219,3 +219,10 @@ void determineCPUFeatures(CPUFeatures* features)
     features->fFP = 1;
     features->fASIMD = 1;
 }
+
+#ifdef GVM_17
+// dummy symbols only for JDK17
+void Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_DatagramPacket_init() {}
+#endif

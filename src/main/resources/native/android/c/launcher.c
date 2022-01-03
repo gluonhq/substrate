@@ -46,9 +46,6 @@ jfloat density;
 
 int start_logger(const char *app_name);
 
-// TODO: remove once https://github.com/oracle/graal/issues/2713 is fixed
-int JNI_OnLoad_sunec(JavaVM *vm, void *reserved);
-
 extern int __svm_vm_is_static_binary __attribute__((weak)) = 1;
 
 // this array is filled during compile/link phases
@@ -150,9 +147,6 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
     free(graalArgs);
 
     LOGE(stderr, "called JavaMainWrapper_run\n");
-
-    // Invoke sunec
-    JNI_OnLoad_sunec(NULL, NULL);
 }
 
 // == expose window functionality to JavaFX native code == //
@@ -188,6 +182,13 @@ void getEnviron()
 int getdtablesize() {
     return sysconf(_SC_OPEN_MAX);
 }
+
+#ifdef GVM_17
+// dummy symbols only for JDK17
+void Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_DatagramPacket_init() {}
+#endif
 
 // AWT: GraalVM native-image explicitly adds (unresolved) references to libawt
 // so we need to make sure the JNI_OnLoad symbols are there.
