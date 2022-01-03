@@ -152,7 +152,7 @@ public class MSIBundler {
         if (light.runProcess("Wix Linker") != 0) {
             throw new IOException("Error running light to generate msi");
         }
-
+        Logger.logInfo("MSI created successfully at " + msiPath);
         return true;
     }
 
@@ -161,13 +161,12 @@ public class MSIBundler {
         Map<String, String> userInput = new HashMap<>();
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
 
-        String appName = projectConfiguration.getAppName();
-        String executableName = appName + ".exe";
+        String appName = projectConfiguration.getAppName().replaceAll("\\s", "");
+        Path localAppPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".exe");
         String vendor = Optional.ofNullable(releaseConfiguration.getVendor()).orElse("Unknown");
         String version = Optional.ofNullable(releaseConfiguration.getVersionName()).orElse(DEFAULT_APP_VERSION);
         userInput.put("GSProductCode", createUUID("ProductCode", appName, vendor, version).toString());
         userInput.put("GSAppName", appName);
-        userInput.put("GSAppExecutable", executableName);
         userInput.put("GSAppVersion", version);
         userInput.put("GSAppVendor", vendor);
         userInput.put("GSAppIconName", appName + ".ico");
@@ -180,7 +179,7 @@ public class MSIBundler {
             ensureByMutationFileIsRTF(license);
             userInput.put("GSLicenseRtf", license.toString());
         }
-        userInput.put("GSApplicationPath", paths.getClientPath().resolve("x86_64-windows").resolve(executableName).toString());
+        userInput.put("GSApplicationPath", localAppPath.toString());
         userInput.put("GSProductUpgradeCode", createUUID("UpgradeCode", appName, vendor, version).toString());
         userInput.put("GSAppDescription", Optional.ofNullable(releaseConfiguration.getAppDescription()).orElse("some-app-description"));
         return userInput;
