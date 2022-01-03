@@ -128,6 +128,9 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         if (isSimulator()) {
             flags.add("-DGVM_IOS_SIM");
         }
+        if (!projectConfiguration.usesJDK11()) {
+            flags.add("-DGVM_17");
+        }
         return flags;
     }
 
