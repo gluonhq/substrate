@@ -161,7 +161,7 @@ public class MSIBundler {
         Map<String, String> userInput = new HashMap<>();
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
 
-        String appName = projectConfiguration.getAppName().replaceAll("\\s", "");
+        String appName = getTrimmedAppName();
         Path localAppPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".exe");
         String vendor = Optional.ofNullable(releaseConfiguration.getVendor()).orElse("Unknown");
         String version = Optional.ofNullable(releaseConfiguration.getVersionName()).orElse(DEFAULT_APP_VERSION);
@@ -183,6 +183,10 @@ public class MSIBundler {
         userInput.put("GSProductUpgradeCode", createUUID("UpgradeCode", appName, vendor, version).toString());
         userInput.put("GSAppDescription", Optional.ofNullable(releaseConfiguration.getAppDescription()).orElse("some-app-description"));
         return userInput;
+    }
+
+    private String getTrimmedAppName() {
+        return projectConfiguration.getAppName().replaceAll("\\s", "");
     }
 
     private UUID createUUID(String prefix,String appName, String vendor, String version) {
