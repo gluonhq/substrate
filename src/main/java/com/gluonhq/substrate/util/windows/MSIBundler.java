@@ -127,7 +127,6 @@ public class MSIBundler {
         userInput.entrySet().stream()
                 .map(wixVar -> String.format("-d%s=%s", wixVar.getKey(), wixVar.getValue()))
                 .forEachOrdered(processArgs::add);
-        Logger.logInfo(String.join(" ", processArgs));
         ProcessRunner candle = new ProcessRunner(processArgs.toArray(new String[0]));
         if (candle.runProcess("Wix Compiler") != 0) {
             throw new IOException("Error running candle to generate wixobj");
