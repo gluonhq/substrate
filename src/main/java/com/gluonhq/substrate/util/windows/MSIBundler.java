@@ -99,12 +99,12 @@ public class MSIBundler {
         Files.createDirectories(config);
         // Copy system resources and over-write it with user provided resources
         FileOps.copyDirectoryFromResources("/native/windows/assets", windowsAssetPath);
-        Logger.logInfo("Default icon.ico image generated in " + windowsAssetPath + ".\n" +
-                "Consider copying it to " + rootPath + " before performing any modification");
         if (Files.exists(userAssets)) {
             FileOps.copyDirectory(userAssets, config);
         } else {
             FileOps.copyDirectory(windowsAssetPath, config);
+            Logger.logInfo("Default icon.ico image generated in " + windowsAssetPath + ".\n" +
+                    "Consider copying it to " + rootPath + " before performing any modification");
         }
 
         Path wixPath = config.resolve("main.wxs");
