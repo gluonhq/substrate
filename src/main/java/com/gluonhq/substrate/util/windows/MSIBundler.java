@@ -97,11 +97,7 @@ public class MSIBundler {
             FileOps.deleteDirectory(tmpMSI);
         }
         Files.createDirectories(tmpMSI);
-
-        Path windowsGenSrcPath = paths.getGenPath().resolve(sourceOS);
-        Path windowsAssetPath = windowsGenSrcPath.resolve(Constants.WIN_ASSETS_FOLDER);
         Path config = tmpMSI.resolve("config");
-        Files.createDirectories(windowsAssetPath);
         Files.createDirectories(config);
 
         Path userAssets = rootPath.resolve(Constants.WIN_ASSETS_FOLDER);
@@ -112,7 +108,10 @@ public class MSIBundler {
 
         // copy assets to gensrc/macos
         if (iconPath == null || !Files.exists(iconPath)) {
-            iconPath = FileOps.copyResource("/native/windows/assets/icon.ico", iconPath);
+            Path windowsGenSrcPath = paths.getGenPath().resolve(sourceOS);
+            Path windowsAssetPath = windowsGenSrcPath.resolve(Constants.WIN_ASSETS_FOLDER);
+            Files.createDirectories(windowsAssetPath);
+            iconPath = FileOps.copyResource("/native/windows/assets/icon.ico", windowsAssetPath.resolve("icon.ico"));
             Logger.logInfo("Default icon.ico image generated in " + windowsAssetPath + ".\n" +
                     "Consider copying it to " + rootPath + " before performing any modification");
         }
