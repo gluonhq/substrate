@@ -98,30 +98,34 @@ public class MSIBundler {
         }
         Files.createDirectories(tmpMSI);
 
-        Path userAssets = rootPath.resolve(Constants.WIN_ASSETS_FOLDER);
-        // copy assets to gensrc/windows
         Path windowsGenSrcPath = paths.getGenPath().resolve(sourceOS);
         Path windowsAssetPath = windowsGenSrcPath.resolve(Constants.WIN_ASSETS_FOLDER);
-        Files.createDirectories(windowsAssetPath);
         Path config = tmpMSI.resolve("config");
+        Files.createDirectories(windowsAssetPath);
         Files.createDirectories(config);
 
-        Path iconPath = config.resolve("icon.ico");
-        Path wixPath = config.resolve("main.wxs");
-        Path wixObjPath = wixPath.getParent().resolve(wixPath.getFileName() + ".wixobj");
-        Path msiPath = paths.getGvmPath().getParent().resolve(appName + "-" +  version  + ".msi");
-        FileOps.copyResource("/native/windows/assets/icon.ico", iconPath);
-        FileOps.copyResource("/native/windows/wix/main.wxs", wixPath);
+        Path userAssets = rootPath.resolve(Constants.WIN_ASSETS_FOLDER);
+        Path iconPath = null;
+        if (Files.exists(userAssets) && Files.isDirectory(userAssets)) {
+            iconPath = userAssets.resolve("icon.ico");
+        }
 
-        // Copy system or user provided resources
-        FileOps.copyDirectoryFromResources("/native/windows/assets", windowsAssetPath);
-        if (Files.exists(userAssets)) {
-            FileOps.copyDirectory(userAssets, config);
-        } else {
-            FileOps.copyDirectory(windowsAssetPath, config);
+        // copy assets to gensrc/macos
+        if (iconPath == null || !Files.exists(iconPath)) {
+            iconPath = FileOps.copyResource("/native/windows/assets/icon.ico", iconPath);
             Logger.logInfo("Default icon.ico image generated in " + windowsAssetPath + ".\n" +
                     "Consider copying it to " + rootPath + " before performing any modification");
         }
+
+        // copy to config
+        FileOps.copyFile(iconPath, config.resolve("icon.ico"));
+
+        // copy wix related files
+        Path wixPath = config.resolve("main.wxs");
+        FileOps.copyResource("/native/windows/wix/main.wxs", wixPath);
+
+        Path wixObjPath = config.resolve(wixPath.getFileName() + ".wixobj");
+        Path msiPath = paths.getGvmPath().getParent().resolve(appName + "-" +  version  + ".msi");
 
         /**
          * Wix Compile
