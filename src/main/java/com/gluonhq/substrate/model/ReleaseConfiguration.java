@@ -47,6 +47,19 @@ public class ReleaseConfiguration {
      */
     private String packageType;
 
+    /**
+     * A short description about the application
+     *
+     * Default: Empty string.
+     */
+    private String appDescription;
+
+    /**
+     * Vendor of the application.
+     * Idly name of the company or individual developing the application.
+     */
+    private String vendor;
+
     // macOS
 
     /**
@@ -181,21 +194,6 @@ public class ReleaseConfiguration {
      */
     private String providedKeyAliasPassword;
     
-    // Windows
-
-    /**
-     * A short description about the application
-     *
-     * Default: Empty string.
-     */
-    private String appDescription;
-
-    /**
-     * Vendor of the application.
-     * Idly name of the company or individual developing the application.
-     */
-    private String vendor;
-
     public void setPackageType(String packageType) {
         this.packageType = packageType;
     }
@@ -371,14 +369,14 @@ public class ReleaseConfiguration {
                 ", skipSigning=" + skipSigning +
                 ", simulatorDevice='" + simulatorDevice + '\'' +
                 ", appLabel='" + appLabel + '\'' +
+                ", appDescription='" + appDescription + '\'' +
+                ", vendor='" + vendor + '\'' +
                 ", versionCode='" + versionCode + '\'' +
                 ", versionName='" + versionName + '\'' +
                 ", providedKeyStorePath='" + providedKeyStorePath + '\'' +
                 ", providedKeyStorePassword='" + providedKeyStorePassword + '\'' +
                 ", providedKeyAlias='" + providedKeyAlias + '\'' +
                 ", providedKeyAliasPassword='" + providedKeyAliasPassword + '\'' +
-                ", appDescription='" + appDescription + '\'' +
-                ", vendor='" + vendor + '\'' +
                 '}';
     }
 }
