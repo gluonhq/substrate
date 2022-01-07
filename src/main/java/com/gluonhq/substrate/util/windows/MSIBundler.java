@@ -105,7 +105,15 @@ public class MSIBundler {
         Files.createDirectories(windowsAssetPath);
         Path config = tmpMSI.resolve("config");
         Files.createDirectories(config);
-        // Copy system resources and over-write it with user provided resources
+
+        Path iconPath = config.resolve("icon.ico");
+        Path wixPath = config.resolve("main.wxs");
+        Path wixObjPath = wixPath.getParent().resolve(wixPath.getFileName() + ".wixobj");
+        Path msiPath = paths.getGvmPath().getParent().resolve(appName + "-" +  version  + ".msi");
+        FileOps.copyResource("/native/windows/assets/icon.ico", iconPath);
+        FileOps.copyResource("/native/windows/wix/main.wxs", wixPath);
+
+        // Copy system or user provided resources
         FileOps.copyDirectoryFromResources("/native/windows/assets", windowsAssetPath);
         if (Files.exists(userAssets)) {
             FileOps.copyDirectory(userAssets, config);
@@ -114,11 +122,6 @@ public class MSIBundler {
             Logger.logInfo("Default icon.ico image generated in " + windowsAssetPath + ".\n" +
                     "Consider copying it to " + rootPath + " before performing any modification");
         }
-
-        Path wixPath = config.resolve("main.wxs");
-        Path wixObjPath = wixPath.getParent().resolve(wixPath.getFileName() + ".wixobj");
-        Path msiPath = paths.getGvmPath().getParent().resolve(appName + "-" +  version  + ".msi");
-        FileOps.copyResource("/native/windows/wix/main.wxs", wixPath);
 
         /**
          * Wix Compile
