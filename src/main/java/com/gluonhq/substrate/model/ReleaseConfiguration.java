@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -202,6 +202,22 @@ public class ReleaseConfiguration {
         return packageType;
     }
 
+    public String getAppDescription() {
+        return appDescription;
+    }
+
+    public void setAppDescription(String appDescription) {
+        this.appDescription = appDescription;
+    }
+
+    public String getVendor() {
+        return vendor;
+    }
+
+    public void setVendor(String vendor) {
+        this.vendor = vendor;
+    }
+
     public boolean isMacAppStore() {
         return macAppStore;
     }
@@ -290,22 +306,6 @@ public class ReleaseConfiguration {
         this.appLabel = appLabel;
     }
 
-    public String getAppDescription() {
-        return appDescription;
-    }
-
-    public void setAppDescription(String appDescription) {
-        this.appDescription = appDescription;
-    }
-
-    public String getVendor() {
-        return vendor;
-    }
-
-    public void setVendor(String vendor) {
-        this.vendor = vendor;
-    }
-
     public String getVersionCode() {
         return versionCode;
     }
@@ -358,6 +358,8 @@ public class ReleaseConfiguration {
     public String toString() {
         return "ReleaseConfiguration{" +
                 "packageType=" + packageType +
+                ", appDescription='" + appDescription + '\'' +
+                ", vendor='" + vendor + '\'' +
                 ", macAppStore=" + macAppStore +
                 ", macSigningUserName=" + macSigningUserName +
                 ", macAppCategory=" + macAppCategory +
@@ -369,8 +371,6 @@ public class ReleaseConfiguration {
                 ", skipSigning=" + skipSigning +
                 ", simulatorDevice='" + simulatorDevice + '\'' +
                 ", appLabel='" + appLabel + '\'' +
-                ", appDescription='" + appDescription + '\'' +
-                ", vendor='" + vendor + '\'' +
                 ", versionCode='" + versionCode + '\'' +
                 ", versionName='" + versionName + '\'' +
                 ", providedKeyStorePath='" + providedKeyStorePath + '\'' +
