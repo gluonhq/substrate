@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+  <?define GSProductLanguage=1033 ?>
+  <?define GSInstallerVersion=200 ?>
+  <?define GSCompressedMsi=yes ?>
+
+  <Product
+    Id="$(var.GSProductCode)"
+    Name="$(var.GSAppName)"
+    Language="$(var.GSProductLanguage)"
+    Version="$(var.GSAppVersion)"
+    Manufacturer="$(var.GSAppVendor)"
+    UpgradeCode="$(var.GSProductUpgradeCode)">
+
+    <Package
+      Description="$(var.GSAppDescription)"
+      Manufacturer="$(var.GSAppVendor)"
+      InstallerVersion="$(var.GSInstallerVersion)"
+      Compressed="$(var.GSCompressedMsi)"
+      Platform="x64"
+      InstallScope="perMachine"
+    />
+
+    <Media Id="1" Cabinet="Data.cab" EmbedCab="yes" />
+    <Icon Id="AppIconId" SourceFile="$(var.GSAppIcon)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIconId"/>
+
+    <!-- Standard required root -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id='ProgramFiles64Folder' Name='PFiles'>
+        <Directory Id='Vendor' Name="$(var.GSAppVendor)">
+          <Directory Id='INSTALLDIR' Name="$(var.GSAppName)">
+            <Component Id='MainExecutable' Guid="$(var.GSMainExecutableGUID)">
+              <File Id="$(var.GSAppName)" Source="$(var.GSApplicationPath)" KeyPath="yes" />
+              <File Id="$(var.GSAppIconName)" Name="$(var.GSAppIconName)" Source="$(var.GSAppIcon)" />
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+
+      <!-- Start Menu -->
+      <Directory Id="ProgramMenuFolder" Name="Programs">
+        <Directory Id="ProgramMenuDir" Name="$(var.GSAppName)" />
+      </Directory>
+
+      <!-- Desktop -->
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+
+    <!-- Add the shortcut to your installer package -->
+    <DirectoryRef Id="ProgramMenuDir">
+      <Component Id="ProgramMenuShortcut" Guid="$(var.GSStartMenuShortcutGUID)">
+        <Shortcut Id="ApplicationStartMenuShortcut" Name="$(var.GSAppName)" Description="$(var.GSAppDescription)" Target="[#$(var.GSAppName)]" Icon="AppIconId" WorkingDirectory="INSTALLDIR"/>
+        <RemoveFolder Id="RemoveApplicationShortcut" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <!-- Add the shortcut to desktop -->
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="$(var.GSDesktopShortcutGUID)">
+        <Shortcut Id="DesktopApplicationShortcut" Name="$(var.GSAppName)" Description="$(var.GSAppDescription)" Target="[#$(var.GSAppName)]" Icon="AppIconId" WorkingDirectory="INSTALLDIR"/>
+        <RemoveFolder Id="RemoveDesktopShortcut" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <ComponentGroup Id="Files">
+      <ComponentRef Id="MainExecutable" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="Shortcuts">
+      <ComponentRef Id="ProgramMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </ComponentGroup>
+
+    <Feature Id="DefaultFeature" Title="Main Feature" Level="1">
+      <ComponentGroupRef Id="Files" />
+      <ComponentGroupRef Id='Shortcuts' />
+    </Feature>
+
+    <!-- UI Dialogs -->
+    <UI>
+      <!--
+        Run WixUI_InstallDir dialog in the default install directory.
+      -->
+      <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>
+      <UIRef Id="WixUI_InstallDir" />
+
+      <?ifndef GSLicenseRtf ?>
+        <!--
+          No license file provided.
+          Override the dialog sequence in built-in dialog set "WixUI_InstallDir"
+          to exclude license dialog.
+        -->
+        <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2">1</Publish>
+        <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2">1</Publish>
+      <?endif?>
+    </UI>
+
+    <?ifdef GSLicenseRtf ?>
+      <WixVariable Id="WixUILicenseRtf" Value="$(var.GSLicenseRtf)"/>
+    <?endif?>
+  </Product>
+</Wix>
