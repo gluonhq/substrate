@@ -114,12 +114,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
-        List<String> flags = Arrays.asList("-xobjective-c",
+        List<String> flags = new ArrayList<>(Arrays.asList("-xobjective-c",
                 "-arch", getTargetArch(),
                 "-mios-version-min=11.0",
                 "-I" + projectConfiguration.getGraalPath().resolve("include").toString(),
                 "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
-                "-isysroot", getSysroot());
+                "-isysroot", getSysroot()));
         if (!projectConfiguration.usesJDK11()) {
             flags.add("-DGVM_17");
         }
