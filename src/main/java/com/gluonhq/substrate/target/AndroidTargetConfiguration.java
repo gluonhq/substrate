@@ -545,7 +545,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             FileOps.replaceInFile(targetManifest, "A HelloGraal", newAppLabel);
             String newVersionCode = releaseConfiguration.getVersionCode();
             FileOps.replaceInFile(targetManifest, ":versionCode='1'", ":versionCode='" + newVersionCode + "'");
-            String newVersionName = releaseConfiguration.getVersionName();
+            String newVersionName = releaseConfiguration.getVersion();
             FileOps.replaceInFile(targetManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
             FileOps.replaceInFile(targetManifest, "<!-- PERMISSIONS -->", String.join("\n    ", requiredPermissions()));
             FileOps.copyFile(targetManifest, generatedManifest);
@@ -560,7 +560,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
                         newVersionCode + "'");
             }
             String versionName = FileOps.getNodeValue(userManifest.toString(), "manifest", ":versionName");
-            String newVersionName = releaseConfiguration.getVersionName();
+            String newVersionName = releaseConfiguration.getVersion();
             if (versionName != null && newVersionName != null) {
                 FileOps.replaceInFile(userManifest, ":versionName='" + versionName + "'", ":versionName='" +
                         newVersionName + "'");

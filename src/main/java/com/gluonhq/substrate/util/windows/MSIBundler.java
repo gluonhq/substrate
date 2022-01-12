@@ -80,7 +80,7 @@ public class MSIBundler {
         }
 
         final String appName = projectConfiguration.getAppName();
-        final String version = projectConfiguration.getReleaseConfiguration().getVersionName();
+        final String version = projectConfiguration.getReleaseConfiguration().getVersion();
         Path localAppPath = paths.getAppPath().resolve(appName + ".exe");
         if (!Files.exists(localAppPath)) {
             throw new IOException("Error: " + appName + ".exe not found");
@@ -175,7 +175,7 @@ public class MSIBundler {
 
         String appName = getTrimmedAppName();
         String vendor = releaseConfiguration.getVendor();
-        String version = releaseConfiguration.getVersionName();
+        String version = releaseConfiguration.getVersion();
         Path localAppPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".exe");
         userInput.put("GSProductCode", createUUID("ProductCode", appName, vendor, version).toString());
         userInput.put("GSAppName", appName);

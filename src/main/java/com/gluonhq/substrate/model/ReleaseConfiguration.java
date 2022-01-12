@@ -34,12 +34,11 @@ public class ReleaseConfiguration {
     public static final String DEFAULT_BUNDLE_VERSION = "1.0";
     public static final String DEFAULT_MAC_APP_CATEGORY = "public.app-category.utilities";
 
-    public static final String DEFAULT_VERSION_NAME = "1.0";
-
-    private static final String DEFAULT_CODE_VERSION = "1";
-    private static final String DEFAULT_BUNDLE_SHORT_VERSION = "1.0";
-    private static final String DEFAULT_VENDOR = "Unknown";
     private static final String DEFAULT_APP_DESCRIPTION = "Default description";
+    private static final String DEFAULT_BUNDLE_SHORT_VERSION = "1.0";
+    private static final String DEFAULT_CODE_VERSION = "1";
+    private static final String DEFAULT_VENDOR = "Unknown";
+    private static final String DEFAULT_VERSION = "1.0";
 
     /**
      * Type of package bundle that can be generated.
@@ -64,6 +63,14 @@ public class ReleaseConfiguration {
      * Default: String 'Unknown'
      */
     private String vendor;
+
+    /**
+     * A string used as the version number shown to users, like
+     * <major>.<minor>.<point>
+     *
+     * Default: 1.0
+     */
+    private String version;
 
     // macOS
 
@@ -163,14 +170,6 @@ public class ReleaseConfiguration {
     private String versionCode;
 
     /**
-     * A string used as the version number shown to users, like
-     * <major>.<minor>.<point>
-     *
-     * Default: 1.0
-     */
-    private String versionName;
-
-    /**
      * A string with the path to a keystore file that can be used to sign
      * the Android apk.
      *
@@ -221,6 +220,14 @@ public class ReleaseConfiguration {
 
     public void setVendor(String vendor) {
         this.vendor = vendor;
+    }
+
+    public String getVersion() {
+        return Objects.requireNonNullElse(version, DEFAULT_VERSION);
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public boolean isMacAppStore() {
@@ -319,14 +326,6 @@ public class ReleaseConfiguration {
         this.versionCode = versionCode;
     }
 
-    public String getVersionName() {
-        return Objects.requireNonNullElse(versionName, DEFAULT_VERSION_NAME);
-    }
-
-    public void setVersionName(String versionName) {
-        this.versionName = versionName;
-    }
-
     public String getProvidedKeyStorePath() {
         return providedKeyStorePath;
     }
@@ -365,6 +364,7 @@ public class ReleaseConfiguration {
                 "packageType=" + packageType +
                 ", appDescription='" + appDescription + '\'' +
                 ", vendor='" + vendor + '\'' +
+                ", version='" + version + '\'' +
                 ", macAppStore=" + macAppStore +
                 ", macSigningUserName=" + macSigningUserName +
                 ", macAppCategory=" + macAppCategory +
@@ -377,7 +377,6 @@ public class ReleaseConfiguration {
                 ", simulatorDevice='" + simulatorDevice + '\'' +
                 ", appLabel='" + appLabel + '\'' +
                 ", versionCode='" + versionCode + '\'' +
-                ", versionName='" + versionName + '\'' +
                 ", providedKeyStorePath='" + providedKeyStorePath + '\'' +
                 ", providedKeyStorePassword='" + providedKeyStorePassword + '\'' +
                 ", providedKeyAlias='" + providedKeyAlias + '\'' +
