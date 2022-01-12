@@ -58,8 +58,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_APP_VERSION;
-
 public class MSIBundler {
 
     private final ProcessPaths paths;
@@ -82,7 +80,7 @@ public class MSIBundler {
         }
 
         final String appName = projectConfiguration.getAppName();
-        final String version = Optional.ofNullable(projectConfiguration.getReleaseConfiguration().getVersionName()).orElse(DEFAULT_APP_VERSION);
+        final String version = projectConfiguration.getReleaseConfiguration().getVersionName();
         Path localAppPath = paths.getAppPath().resolve(appName + ".exe");
         if (!Files.exists(localAppPath)) {
             throw new IOException("Error: " + appName + ".exe not found");
@@ -176,9 +174,9 @@ public class MSIBundler {
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
 
         String appName = getTrimmedAppName();
+        String vendor = releaseConfiguration.getVendor();
+        String version = releaseConfiguration.getVersionName();
         Path localAppPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".exe");
-        String vendor = Optional.ofNullable(releaseConfiguration.getVendor()).orElse("Unknown");
-        String version = Optional.ofNullable(releaseConfiguration.getVersionName()).orElse(DEFAULT_APP_VERSION);
         userInput.put("GSProductCode", createUUID("ProductCode", appName, vendor, version).toString());
         userInput.put("GSAppName", appName);
         userInput.put("GSAppVersion", version);
@@ -195,7 +193,7 @@ public class MSIBundler {
         }
         userInput.put("GSApplicationPath", localAppPath.toString());
         userInput.put("GSProductUpgradeCode", createUUID("UpgradeCode", appName, vendor, version).toString());
-        userInput.put("GSAppDescription", Optional.ofNullable(releaseConfiguration.getAppDescription()).orElse("some-app-description"));
+        userInput.put("GSAppDescription", releaseConfiguration.getAppDescription());
         return userInput;
     }
 

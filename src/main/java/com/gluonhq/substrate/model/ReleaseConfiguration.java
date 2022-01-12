@@ -27,16 +27,19 @@
  */
 package com.gluonhq.substrate.model;
 
+import java.util.Objects;
+
 public class ReleaseConfiguration {
 
     public static final String DEFAULT_BUNDLE_VERSION = "1.0";
-    public static final String DEFAULT_BUNDLE_SHORT_VERSION = "1.0";
     public static final String DEFAULT_MAC_APP_CATEGORY = "public.app-category.utilities";
 
-    public static final String DEFAULT_CODE_VERSION = "1";
-    public static final String DEFAULT_CODE_NAME = "1.0";
+    public static final String DEFAULT_VERSION_NAME = "1.0";
 
-    public static final String DEFAULT_APP_VERSION = "1.0.0";
+    private static final String DEFAULT_CODE_VERSION = "1";
+    private static final String DEFAULT_BUNDLE_SHORT_VERSION = "1.0";
+    private static final String DEFAULT_VENDOR = "Unknown";
+    private static final String DEFAULT_APP_DESCRIPTION = "Default description";
 
     /**
      * Type of package bundle that can be generated.
@@ -50,13 +53,15 @@ public class ReleaseConfiguration {
     /**
      * A short description about the application
      *
-     * Default: Empty string.
+     * Default: String 'Default description'
      */
     private String appDescription;
 
     /**
      * Vendor of the application.
-     * Idly name of the company or individual developing the application.
+     * Ideally, name of the company or individual developing the application.\
+     *
+     * Default: String 'Unknown'
      */
     private String vendor;
 
@@ -193,7 +198,7 @@ public class ReleaseConfiguration {
      * Default: null. If not set, Substrate creates and uses a debug keystore.
      */
     private String providedKeyAliasPassword;
-    
+
     public void setPackageType(String packageType) {
         this.packageType = packageType;
     }
@@ -203,7 +208,7 @@ public class ReleaseConfiguration {
     }
 
     public String getAppDescription() {
-        return appDescription;
+        return isNullOrBlank(appDescription) ? DEFAULT_APP_DESCRIPTION : appDescription;
     }
 
     public void setAppDescription(String appDescription) {
@@ -211,7 +216,7 @@ public class ReleaseConfiguration {
     }
 
     public String getVendor() {
-        return vendor;
+        return isNullOrBlank(vendor) ? DEFAULT_VENDOR : vendor;
     }
 
     public void setVendor(String vendor) {
@@ -239,7 +244,7 @@ public class ReleaseConfiguration {
     }
 
     public String getMacAppCategory() {
-        return macAppCategory;
+        return Objects.requireNonNullElse(macAppCategory, DEFAULT_MAC_APP_CATEGORY);
     }
 
     public String getBundleName() {
@@ -251,7 +256,7 @@ public class ReleaseConfiguration {
     }
 
     public String getBundleVersion() {
-        return bundleVersion;
+        return Objects.requireNonNullElse(bundleVersion, DEFAULT_BUNDLE_VERSION);
     }
 
     public void setBundleVersion(String bundleVersion) {
@@ -259,7 +264,7 @@ public class ReleaseConfiguration {
     }
 
     public String getBundleShortVersion() {
-        return bundleShortVersion;
+        return Objects.requireNonNullElse(bundleShortVersion, DEFAULT_BUNDLE_SHORT_VERSION);
     }
 
     public void setBundleShortVersion(String bundleShortVersion) {
@@ -307,7 +312,7 @@ public class ReleaseConfiguration {
     }
 
     public String getVersionCode() {
-        return versionCode;
+        return Objects.requireNonNullElse(versionCode, DEFAULT_CODE_VERSION);
     }
 
     public void setVersionCode(String versionCode) {
@@ -315,7 +320,7 @@ public class ReleaseConfiguration {
     }
 
     public String getVersionName() {
-        return versionName;
+        return Objects.requireNonNullElse(versionName, DEFAULT_VERSION_NAME);
     }
 
     public void setVersionName(String versionName) {
@@ -378,5 +383,9 @@ public class ReleaseConfiguration {
                 ", providedKeyAlias='" + providedKeyAlias + '\'' +
                 ", providedKeyAliasPassword='" + providedKeyAliasPassword + '\'' +
                 '}';
+    }
+
+    private boolean isNullOrBlank(String aString) {
+        return aString == null || aString.isBlank();
     }
 }

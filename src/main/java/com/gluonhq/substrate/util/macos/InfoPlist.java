@@ -57,7 +57,6 @@ import java.util.zip.ZipFile;
 
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_MACOS;
 import static com.gluonhq.substrate.Constants.PARTIAL_PLIST_FILE;
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_SHORT_VERSION;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_VERSION;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_MAC_APP_CATEGORY;
 
@@ -96,9 +95,9 @@ public class InfoPlist {
         String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
         String bundleName = Objects.requireNonNullElse(releaseConfiguration.getBundleName(), appName);
-        String bundleVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleVersion(), DEFAULT_BUNDLE_VERSION);
-        String bundleShortVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleShortVersion(), DEFAULT_BUNDLE_SHORT_VERSION);
-        String appCategory = Objects.requireNonNullElse(releaseConfiguration.getMacAppCategory(), DEFAULT_MAC_APP_CATEGORY);
+        String bundleVersion = releaseConfiguration.getBundleVersion();
+        String bundleShortVersion = releaseConfiguration.getBundleShortVersion();
+        String appCategory = releaseConfiguration.getMacAppCategory();
 
         Path userPlist = rootPath.resolve(Constants.MACOS_PLIST_FILE);
         boolean inited = true;
