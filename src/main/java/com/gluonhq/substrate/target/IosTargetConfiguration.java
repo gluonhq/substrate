@@ -140,10 +140,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getTargetArch(),
                 "-H:+UseCAPCache",
-                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
-                "-H:CompilerBackend=" + projectConfiguration.getBackend()));
-        if (projectConfiguration.isUseLLVM()) {
-            flags.add("-H:-SpawnIsolates");
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString()));
+        if (!isSimulator()) {
+            flags.add("-H:CompilerBackend=" + projectConfiguration.getBackend());
+            if (projectConfiguration.isUseLLVM()) {
+                flags.add("-H:-SpawnIsolates");
+            }
         }
         return flags;
     }
@@ -185,7 +187,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
-        if (!projectConfiguration.isUseLLVM()) {
+        if (isSimulator() || !projectConfiguration.isUseLLVM()) {
             return super.getTargetSpecificObjectFiles();
         }
         return FileOps.findFile(paths.getGvmPath(), "llvm.o")
