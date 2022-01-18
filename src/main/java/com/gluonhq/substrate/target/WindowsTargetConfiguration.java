@@ -220,29 +220,23 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     public boolean link() throws IOException, InterruptedException {
-        try {
-            createIconResource();
-            super.link();
+        createIconResource();
+        if (super.link()) {
             clearExplorerCache();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     // During development if user changes the application icon, the same is not reflected immediately in Explorer.
     // To fix this, a cache clearance of the Windows explorer is required.
     private void clearExplorerCache() throws IOException, InterruptedException {
-        ProcessRunner clearCache;
         String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        ProcessRunner clearCache = new ProcessRunner("ie4uinit");
+        // For Windows 10 and later, use `ie4uinit.exe -show`
         // For Windows version < 10, use `ie4uinit.exe -ClearIconCache`
-        if (osName.equals("windows 10") || osName.equals("windows 11")) {
-            clearCache = new ProcessRunner("ie4uinit", "-show");
-        } else {
-            clearCache = new ProcessRunner("ie4uinit", "-ClearIconCache");
-        }
-        clearCache.runProcess("Clear Explorer Cache");
+        clearCache.addArg(osName.equals("windows 10") || osName.equals("windows 11") ? "-show" : "-ClearIconCache");
+        clearCache.runProcess("Clear Explorer cache");
     }
 
     List<String> getTargetSpecificObjectFiles() {
@@ -255,23 +249,27 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         String sourceOS = projectConfiguration.getTargetTriplet().getOs();
         Path rootPath = paths.getSourcePath().resolve(sourceOS);
         Path userAssets = rootPath.resolve(Constants.WIN_ASSETS_FOLDER);
-        Path iconDir = paths.getTmpPath().resolve("icon");
+        Path tmpIconDir = paths.getTmpPath().resolve("icon");
         Path gvmAppPath = paths.getGvmPath().resolve(projectConfiguration.getAppName());
 
         // Copy icon.ico to gvm/tmp/icon
         if (Files.exists(userAssets) && Files.isDirectory(userAssets) && Files.exists(userAssets.resolve("icon.ico"))) {
-            FileOps.copyFile(userAssets.resolve("icon.ico"), iconDir.resolve("icon.ico")) ;
-            Logger.logInfo("User provided icon.ico image used as application icon.");
+            FileOps.copyFile(userAssets.resolve("icon.ico"), tmpIconDir.resolve("icon.ico")) ;
+            Logger.logDebug("User provided icon.ico image used as application icon.");
         } else {
-            FileOps.copyResource("/native/windows/assets/icon.ico", iconDir.resolve("icon.ico"));
+            Path windowsGenSrcPath = paths.getGenPath().resolve(sourceOS);
+            Path windowsAssetPath = windowsGenSrcPath.resolve(Constants.WIN_ASSETS_FOLDER);
+            Files.createDirectories(windowsAssetPath);
+            FileOps.copyResource("/native/windows/assets/icon.ico", windowsAssetPath.resolve("icon.ico"));
+            FileOps.copyFile(windowsAssetPath.resolve("icon.ico"), tmpIconDir.resolve("icon.ico"));
             Logger.logInfo("Default icon.ico image used. " +
-                    "Consider adding a custom icon to '/native/windows/assets'.");
+                    "Consider adding a custom icon to 'src/windows/assets'.");
         }
 
         // Create resource from icon
-        FileOps.copyResource("/native/windows/assets/IconGroup.rc", iconDir.resolve("IconGroup.rc"));
-        Path resPath = iconDir.resolve("IconGroup.res");
-        ProcessRunner rc = new ProcessRunner("rc", "-fo", resPath.toString(), iconDir.resolve("IconGroup.rc").toString());
+        FileOps.copyResource("/native/windows/assets/IconGroup.rc", tmpIconDir.resolve("IconGroup.rc"));
+        Path resPath = tmpIconDir.resolve("IconGroup.res");
+        ProcessRunner rc = new ProcessRunner("rc", "-fo", resPath.toString(), tmpIconDir.resolve("IconGroup.rc").toString());
         if (rc.runProcess("rc compile") == 0) {
             Path objPath = resPath.getParent().resolve("IconGroup.obj");
             ProcessRunner cvtres = new ProcessRunner("cvtres ", "/machine:x64", "-out:" + objPath, resPath.toString());
