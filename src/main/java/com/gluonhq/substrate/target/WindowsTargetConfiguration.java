@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -233,8 +234,14 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     // During development if user changes the application icon, the same is not reflected immediately in Explorer.
     // To fix this, a cache clearance of the Windows explorer is required.
     private void clearExplorerCache() throws IOException, InterruptedException {
-        // TODO: For Windows version < 10, use `ie4uinit.exe -ClearIconCache`
-        ProcessRunner clearCache = new ProcessRunner("ie4uinit", "-show");
+        ProcessRunner clearCache;
+        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        // For Windows version < 10, use `ie4uinit.exe -ClearIconCache`
+        if (osName.equals("windows 10") || osName.equals("windows 11")) {
+            clearCache = new ProcessRunner("ie4uinit", "-show");
+        } else {
+            clearCache = new ProcessRunner("ie4uinit", "-ClearIconCache");
+        }
         clearCache.runProcess("Clear Explorer Cache");
     }
 
