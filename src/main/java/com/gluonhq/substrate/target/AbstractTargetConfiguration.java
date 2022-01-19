@@ -372,6 +372,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 }
             case Constants.OS_IOS:
                 if (Constants.ARCH_AMD64.equals(arch)) {
+                    if (projectConfiguration.usesJDK11()) {
+                        throw new IllegalArgumentException("iOS Simulator requires JDK 17");
+                    }
                     return "IOS_AMD64";
                 }
                 return "IOS_AARCH64";
