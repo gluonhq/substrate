@@ -262,8 +262,8 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
             Files.createDirectories(windowsAssetPath);
             FileOps.copyResource("/native/windows/assets/icon.ico", windowsAssetPath.resolve("icon.ico"));
             FileOps.copyFile(windowsAssetPath.resolve("icon.ico"), tmpIconDir.resolve("icon.ico"));
-            Logger.logInfo("Default icon.ico image used. " +
-                    "Consider adding a custom icon to 'src/windows/assets'.");
+            Logger.logInfo("Default icon.ico image generated in " + windowsAssetPath + ".\n" +
+                    "Consider copying it to " + rootPath + " before performing any modification");
         }
 
         // Create resource from icon
