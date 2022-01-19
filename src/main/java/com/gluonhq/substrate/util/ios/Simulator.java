@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Gluon
+ * Copyright (c) 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,16 +63,17 @@ public class Simulator {
      * @throws InterruptedException
      */
     public boolean installApp() throws IOException, InterruptedException {
-        Logger.logInfo("Preparing SimDevice...");
         String deviceName = projectConfiguration.getReleaseConfiguration().getSimulatorDevice();
+        Logger.logDebug("Preparing SimDevice:  " + deviceName);
         // get one valid booted device
-        bootDevice(deviceName);
+        SimDevice simDevice = bootDevice(deviceName);
         // install app
-        ProcessRunner runner = new ProcessRunner("xcrun", "simctl", "install", "booted",
+        ProcessRunner runner = new ProcessRunner("xcrun", "simctl", "install", simDevice.getId(),
                 paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app").toString());
         if (runner.runProcess("install") != 0) {
             throw new IOException("Error installing app in simulator");
         }
+        Logger.logInfo("App successfully installed in simulator device: " + deviceName);
         return true;
     }
 
@@ -85,35 +86,37 @@ public class Simulator {
      * @throws InterruptedException
      */
     public void launchSimulator() throws IOException, InterruptedException {
-        Logger.logInfo("Preparing SimDevice...");
         String deviceName = projectConfiguration.getReleaseConfiguration().getSimulatorDevice();
+        Logger.logDebug("Preparing SimDevice:  " + deviceName);
         // get one valid booted device
-        bootDevice(deviceName);
+        SimDevice simDevice = bootDevice(deviceName);
         // check app is installed
         validateBundleId(bundleId);
         // open Simulator
-        openSimulator();
+        openSimulator(simDevice);
         // launch app, output goes to console
         Logger.logInfo("Launching app on SimDevice...");
-        ProcessRunner runner = new ProcessRunner("xcrun", "simctl", "launch", "--console-pty", "booted", bundleId);
+        ProcessRunner runner = new ProcessRunner("xcrun", "simctl", "launch", "--console-pty", simDevice.getId(), bundleId);
         runner.setInfo(true);
         if (runner.runProcess("launch") != 0) {
             throw new IOException("Error launching app in simulator");
         }
     }
 
-    private static void openSimulator() throws IOException, InterruptedException {
-        ProcessRunner runner = new ProcessRunner("open", SIM_APP_PATH);
+    private static void openSimulator(SimDevice simDevice) throws IOException, InterruptedException {
+        ProcessRunner runner = new ProcessRunner("open", SIM_APP_PATH, "--args",
+                "-CurrentDeviceUDID", simDevice.getId());
         if (runner.runProcess("open sim") != 0) {
             throw new IOException("Error opening simulator");
         }
     }
 
-    private static void bootDevice(String deviceName) throws IOException, InterruptedException {
+    private static SimDevice bootDevice(String deviceName) throws IOException, InterruptedException {
         SimDevice device = getBootedSimDevice(deviceName);
         if (device == null) {
             throw new IOException("Error: SimDevice was null");
         }
+        return device;
     }
 
     private static SimDevice getBootedSimDevice(String deviceName) throws IOException, InterruptedException {
@@ -134,19 +137,19 @@ public class Simulator {
                     .findFirst()
                     .orElse(null);
             if (device == null) {
-                // else default to iPhone 11
+                // else default to iPhone 13
                 device = devices.stream()
-                        .filter(d -> "iPhone 11".equals(d.getName()))
+                        .filter(d -> "iPhone 13".equals(d.getName()))
                         .findFirst()
                         .orElseThrow(() -> new IOException("No device found. " +
                                 "\nPossible devices are:\n " +
                                 devices.stream().map(SimDevice::getName).collect(Collectors.joining("\n"))));
             }
         }
-        Logger.logInfo("Found SimDevice: " + device);
+        Logger.logDebug("Found SimDevice: " + device);
         if (device != null && !device.getState().contains("Booted")) {
             // once we have a device, boot it if it isn't booted yet
-            Logger.logInfo("Booting SimDevice: " + device);
+            Logger.logDebug("Booting SimDevice: " + device);
             ProcessRunner runner = new ProcessRunner("xcrun", "simctl", "boot", device.getId());
             runner.setInfo(true);
             if (runner.runProcess("boot") != 0) {
