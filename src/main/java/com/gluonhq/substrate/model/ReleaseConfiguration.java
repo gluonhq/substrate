@@ -58,7 +58,7 @@ public class ReleaseConfiguration {
 
     /**
      * Vendor of the application.
-     * Ideally, name of the company or individual developing the application.\
+     * Ideally, name of the company or individual developing the application.
      *
      * Default: String 'Unknown'
      */
@@ -168,6 +168,14 @@ public class ReleaseConfiguration {
      * Default: 1
      */
     private String versionCode;
+
+    /**
+     * A string used as the version number shown to users, like
+     * <major>.<minor>.<point>
+     *
+     * Default: 1.0
+     */
+    private String versionName;
 
     /**
      * A string with the path to a keystore file that can be used to sign
@@ -326,6 +334,14 @@ public class ReleaseConfiguration {
         this.versionCode = versionCode;
     }
 
+    public String getVersionName() {
+        return Objects.requireNonNullElse(versionName, DEFAULT_VERSION);
+    }
+
+    public void setVersionName(String versionName) {
+        this.versionName = versionName;
+    }
+
     public String getProvidedKeyStorePath() {
         return providedKeyStorePath;
     }
@@ -377,6 +393,7 @@ public class ReleaseConfiguration {
                 ", simulatorDevice='" + simulatorDevice + '\'' +
                 ", appLabel='" + appLabel + '\'' +
                 ", versionCode='" + versionCode + '\'' +
+                ", versionName='" + versionName + '\'' +
                 ", providedKeyStorePath='" + providedKeyStorePath + '\'' +
                 ", providedKeyStorePassword='" + providedKeyStorePassword + '\'' +
                 ", providedKeyAlias='" + providedKeyAlias + '\'' +
