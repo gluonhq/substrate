@@ -85,7 +85,7 @@ public class MSIBundler {
         if (!Files.exists(localAppPath)) {
             throw new IOException("Error: " + appName + ".exe not found");
         }
-        Logger.logInfo("Building exe for " + localAppPath);
+        Logger.logInfo("Building msi for " + localAppPath);
 
         /**
          * Create directories and copy resources
