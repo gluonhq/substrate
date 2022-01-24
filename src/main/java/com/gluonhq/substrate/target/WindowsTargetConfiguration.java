@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,14 +30,19 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.windows.MSIBundler;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -66,11 +71,6 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     String getAdditionalSourceFileLocation() {
         return "/native/windows/";
-    }
-
-    @Override
-    List<String> getAdditionalSourceFiles() {
-        return Collections.singletonList("launcher.c");
     }
 
     @Override
@@ -216,5 +216,67 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
                 .collect(Collectors.toList()));
 
         return linkFlags;
+    }
+
+    @Override
+    public boolean link() throws IOException, InterruptedException {
+        createIconResource();
+        if (super.link()) {
+            clearExplorerCache();
+            return true;
+        }
+        return false;
+    }
+
+    // During development if user changes the application icon, the same is not reflected immediately in Explorer.
+    // To fix this, a cache clearance of the Windows explorer is required.
+    private void clearExplorerCache() throws IOException, InterruptedException {
+        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        ProcessRunner clearCache = new ProcessRunner("ie4uinit");
+        // For Windows 10 and later, use `ie4uinit.exe -show`
+        // For Windows version < 10, use `ie4uinit.exe -ClearIconCache`
+        clearCache.addArg(osName.equals("windows 10") || osName.equals("windows 11") ? "-show" : "-ClearIconCache");
+        clearCache.runProcess("Clear Explorer cache");
+    }
+
+    List<String> getTargetSpecificObjectFiles() {
+        Path gvmAppPath = paths.getGvmPath().resolve(projectConfiguration.getAppName());
+        return Collections.singletonList(gvmAppPath.resolve("IconGroup.obj").toString());
+    }
+
+    private void createIconResource() throws InterruptedException, IOException {
+        Logger.logDebug("Creating icon resource");
+        String sourceOS = projectConfiguration.getTargetTriplet().getOs();
+        Path rootPath = paths.getSourcePath().resolve(sourceOS);
+        Path userAssets = rootPath.resolve(Constants.WIN_ASSETS_FOLDER);
+        Path tmpIconDir = paths.getTmpPath().resolve("icon");
+        Path gvmAppPath = paths.getGvmPath().resolve(projectConfiguration.getAppName());
+
+        // Copy icon.ico to gvm/tmp/icon
+        if (Files.exists(userAssets) && Files.isDirectory(userAssets) && Files.exists(userAssets.resolve("icon.ico"))) {
+            FileOps.copyFile(userAssets.resolve("icon.ico"), tmpIconDir.resolve("icon.ico")) ;
+            Logger.logDebug("User provided icon.ico image used as application icon.");
+        } else {
+            Path windowsGenSrcPath = paths.getGenPath().resolve(sourceOS);
+            Path windowsAssetPath = windowsGenSrcPath.resolve(Constants.WIN_ASSETS_FOLDER);
+            Files.createDirectories(windowsAssetPath);
+            FileOps.copyResource("/native/windows/assets/icon.ico", windowsAssetPath.resolve("icon.ico"));
+            FileOps.copyFile(windowsAssetPath.resolve("icon.ico"), tmpIconDir.resolve("icon.ico"));
+            Logger.logInfo("Default icon.ico image generated in " + windowsAssetPath + ".\n" +
+                    "Consider copying it to " + rootPath + " before performing any modification");
+        }
+
+        // Create resource from icon
+        FileOps.copyResource("/native/windows/assets/IconGroup.rc", tmpIconDir.resolve("IconGroup.rc"));
+        Path resPath = tmpIconDir.resolve("IconGroup.res");
+        ProcessRunner rc = new ProcessRunner("rc", "-fo", resPath.toString(), tmpIconDir.resolve("IconGroup.rc").toString());
+        if (rc.runProcess("rc compile") == 0) {
+            Path objPath = resPath.getParent().resolve("IconGroup.obj");
+            ProcessRunner cvtres = new ProcessRunner("cvtres ", "/machine:x64", "-out:" + objPath, resPath.toString());
+            if (cvtres.runProcess("cvtres") == 0 ) {
+                Logger.logDebug("IconGroup.obj created successfully");
+                FileOps.copyFile(objPath, gvmAppPath.resolve("IconGroup.obj"));
+            }
+        }
     }
 }
