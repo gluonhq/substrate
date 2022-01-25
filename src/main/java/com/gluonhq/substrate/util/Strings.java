@@ -98,6 +98,15 @@ public final class Strings {
         return s == null || s.trim().isEmpty() ? Collections.emptyList() : Arrays.asList(s.split(delimiter));
     }
 
+    /**
+     * Checks if a string is null or blank
+     * @param aString String to check
+     * @return if string is null or blank
+     */
+    public static boolean isNullOrBlank(String aString) {
+        return aString == null || aString.isBlank();
+    }
+
     public static String randomString(int targetStringLength) {
         int leftLimit = 97; // letter 'a'
         int rightLimit = 122; // letter 'z'

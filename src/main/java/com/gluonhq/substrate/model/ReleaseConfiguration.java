@@ -29,16 +29,19 @@ package com.gluonhq.substrate.model;
 
 import java.util.Objects;
 
+import static com.gluonhq.substrate.util.Strings.isNullOrBlank;
+
 public class ReleaseConfiguration {
 
-    public static final String DEFAULT_BUNDLE_VERSION = "1.0";
-    public static final String DEFAULT_MAC_APP_CATEGORY = "public.app-category.utilities";
-
     private static final String DEFAULT_APP_DESCRIPTION = "Default description";
-    private static final String DEFAULT_BUNDLE_SHORT_VERSION = "1.0";
-    private static final String DEFAULT_CODE_VERSION = "1";
     private static final String DEFAULT_VENDOR = "Unknown";
     private static final String DEFAULT_VERSION = "1.0";
+
+    public static final String DEFAULT_MAC_APP_CATEGORY = "public.app-category.utilities";
+    public static final String DEFAULT_BUNDLE_VERSION = "1.0";
+    private static final String DEFAULT_BUNDLE_SHORT_VERSION = "1.0";
+
+    private static final String DEFAULT_VERSION_CODE = "1";
 
     /**
      * Type of package bundle that can be generated.
@@ -327,7 +330,7 @@ public class ReleaseConfiguration {
     }
 
     public String getVersionCode() {
-        return Objects.requireNonNullElse(versionCode, DEFAULT_CODE_VERSION);
+        return Objects.requireNonNullElse(versionCode, DEFAULT_VERSION_CODE);
     }
 
     public void setVersionCode(String versionCode) {
@@ -399,9 +402,5 @@ public class ReleaseConfiguration {
                 ", providedKeyAlias='" + providedKeyAlias + '\'' +
                 ", providedKeyAliasPassword='" + providedKeyAliasPassword + '\'' +
                 '}';
-    }
-
-    private boolean isNullOrBlank(String aString) {
-        return aString == null || aString.isBlank();
     }
 }
