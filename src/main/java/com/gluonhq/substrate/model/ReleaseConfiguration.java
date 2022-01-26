@@ -33,7 +33,7 @@ import static com.gluonhq.substrate.util.Strings.isNullOrBlank;
 
 public class ReleaseConfiguration {
 
-    private static final String DEFAULT_APP_DESCRIPTION = "Default description";
+    private static final String DEFAULT_DESCRIPTION = "Default description";
     private static final String DEFAULT_VENDOR = "Unknown";
     private static final String DEFAULT_VERSION = "1.0";
 
@@ -218,7 +218,7 @@ public class ReleaseConfiguration {
     }
 
     public String getDescription() {
-        return isNullOrBlank(description) ? DEFAULT_APP_DESCRIPTION : description;
+        return isNullOrBlank(description) ? DEFAULT_DESCRIPTION : description;
     }
 
     public void setDescription(String description) {
