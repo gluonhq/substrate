@@ -27,16 +27,21 @@
  */
 package com.gluonhq.substrate.model;
 
+import java.util.Objects;
+
+import static com.gluonhq.substrate.util.Strings.isNullOrBlank;
+
 public class ReleaseConfiguration {
 
-    public static final String DEFAULT_BUNDLE_VERSION = "1.0";
-    public static final String DEFAULT_BUNDLE_SHORT_VERSION = "1.0";
+    private static final String DEFAULT_DESCRIPTION = "Default description";
+    private static final String DEFAULT_VENDOR = "Unknown";
+    private static final String DEFAULT_VERSION = "1.0";
+
     public static final String DEFAULT_MAC_APP_CATEGORY = "public.app-category.utilities";
+    public static final String DEFAULT_BUNDLE_VERSION = "1.0";
+    private static final String DEFAULT_BUNDLE_SHORT_VERSION = "1.0";
 
-    public static final String DEFAULT_CODE_VERSION = "1";
-    public static final String DEFAULT_CODE_NAME = "1.0";
-
-    public static final String DEFAULT_APP_VERSION = "1.0.0";
+    private static final String DEFAULT_VERSION_CODE = "1";
 
     /**
      * Type of package bundle that can be generated.
@@ -50,15 +55,25 @@ public class ReleaseConfiguration {
     /**
      * A short description about the application
      *
-     * Default: Empty string.
+     * Default: String 'Default description'
      */
-    private String appDescription;
+    private String description;
 
     /**
      * Vendor of the application.
-     * Idly name of the company or individual developing the application.
+     * Ideally, name of the company or individual developing the application.
+     *
+     * Default: String 'Unknown'
      */
     private String vendor;
+
+    /**
+     * A string used as the version number shown to users, like
+     * <major>.<minor>.<point>
+     *
+     * Default: 1.0
+     */
+    private String version;
 
     // macOS
 
@@ -193,7 +208,7 @@ public class ReleaseConfiguration {
      * Default: null. If not set, Substrate creates and uses a debug keystore.
      */
     private String providedKeyAliasPassword;
-    
+
     public void setPackageType(String packageType) {
         this.packageType = packageType;
     }
@@ -202,20 +217,28 @@ public class ReleaseConfiguration {
         return packageType;
     }
 
-    public String getAppDescription() {
-        return appDescription;
+    public String getDescription() {
+        return isNullOrBlank(description) ? DEFAULT_DESCRIPTION : description;
     }
 
-    public void setAppDescription(String appDescription) {
-        this.appDescription = appDescription;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getVendor() {
-        return vendor;
+        return isNullOrBlank(vendor) ? DEFAULT_VENDOR : vendor;
     }
 
     public void setVendor(String vendor) {
         this.vendor = vendor;
+    }
+
+    public String getVersion() {
+        return Objects.requireNonNullElse(version, DEFAULT_VERSION);
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public boolean isMacAppStore() {
@@ -239,7 +262,7 @@ public class ReleaseConfiguration {
     }
 
     public String getMacAppCategory() {
-        return macAppCategory;
+        return Objects.requireNonNullElse(macAppCategory, DEFAULT_MAC_APP_CATEGORY);
     }
 
     public String getBundleName() {
@@ -251,7 +274,7 @@ public class ReleaseConfiguration {
     }
 
     public String getBundleVersion() {
-        return bundleVersion;
+        return Objects.requireNonNullElse(bundleVersion, DEFAULT_BUNDLE_VERSION);
     }
 
     public void setBundleVersion(String bundleVersion) {
@@ -259,7 +282,7 @@ public class ReleaseConfiguration {
     }
 
     public String getBundleShortVersion() {
-        return bundleShortVersion;
+        return Objects.requireNonNullElse(bundleShortVersion, DEFAULT_BUNDLE_SHORT_VERSION);
     }
 
     public void setBundleShortVersion(String bundleShortVersion) {
@@ -307,7 +330,7 @@ public class ReleaseConfiguration {
     }
 
     public String getVersionCode() {
-        return versionCode;
+        return Objects.requireNonNullElse(versionCode, DEFAULT_VERSION_CODE);
     }
 
     public void setVersionCode(String versionCode) {
@@ -315,7 +338,7 @@ public class ReleaseConfiguration {
     }
 
     public String getVersionName() {
-        return versionName;
+        return Objects.requireNonNullElse(versionName, DEFAULT_VERSION);
     }
 
     public void setVersionName(String versionName) {
@@ -358,8 +381,9 @@ public class ReleaseConfiguration {
     public String toString() {
         return "ReleaseConfiguration{" +
                 "packageType=" + packageType +
-                ", appDescription='" + appDescription + '\'' +
+                ", description='" + description + '\'' +
                 ", vendor='" + vendor + '\'' +
+                ", version='" + version + '\'' +
                 ", macAppStore=" + macAppStore +
                 ", macSigningUserName=" + macSigningUserName +
                 ", macAppCategory=" + macAppCategory +

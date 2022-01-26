@@ -58,7 +58,6 @@ import java.util.zip.ZipFile;
 
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_IOS;
 import static com.gluonhq.substrate.Constants.PARTIAL_PLIST_FILE;
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_SHORT_VERSION;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_VERSION;
 
 public class InfoPlist {
@@ -115,8 +114,8 @@ public class InfoPlist {
         String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
         String bundleName = Objects.requireNonNullElse(releaseConfiguration.getBundleName(), appName);
-        String bundleVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleVersion(), DEFAULT_BUNDLE_VERSION);
-        String bundleShortVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleShortVersion(), DEFAULT_BUNDLE_SHORT_VERSION);
+        String bundleVersion = releaseConfiguration.getBundleVersion();
+        String bundleShortVersion = releaseConfiguration.getBundleShortVersion();
 
         Path userPlist = rootPath.resolve(Constants.PLIST_FILE);
         boolean inited = true;

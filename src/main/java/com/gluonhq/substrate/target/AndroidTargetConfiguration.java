@@ -50,7 +50,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -61,8 +61,6 @@ import static com.gluonhq.substrate.Constants.ANDROID_NATIVE_FOLDER;
 import static com.gluonhq.substrate.Constants.ANDROID_PROJECT_NAME;
 import static com.gluonhq.substrate.Constants.DALVIK_PRECOMPILED_CLASSES;
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_DALVIK;
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_NAME;
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_VERSION;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
@@ -543,14 +541,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (!Files.exists(userManifest)) {
             // use default manifest
             FileOps.replaceInFile(targetManifest, "package='com.gluonhq.helloandroid'", "package='" + getAndroidPackageName() + "'");
-            String newAppLabel = Optional.ofNullable(releaseConfiguration.getAppLabel())
-                    .orElse(projectConfiguration.getAppName());
+            String newAppLabel = Objects.requireNonNullElse(releaseConfiguration.getAppLabel(), projectConfiguration.getAppName());
             FileOps.replaceInFile(targetManifest, "A HelloGraal", newAppLabel);
-            String newVersionCode = Optional.ofNullable(releaseConfiguration.getVersionCode())
-                    .orElse(DEFAULT_CODE_VERSION);
+            String newVersionCode = releaseConfiguration.getVersionCode();
             FileOps.replaceInFile(targetManifest, ":versionCode='1'", ":versionCode='" + newVersionCode + "'");
-            String newVersionName = Optional.ofNullable(releaseConfiguration.getVersionName())
-                    .orElse(DEFAULT_CODE_NAME);
+            String newVersionName = releaseConfiguration.getVersionName();
             FileOps.replaceInFile(targetManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
             FileOps.replaceInFile(targetManifest, "<!-- PERMISSIONS -->", String.join("\n    ", requiredPermissions()));
             FileOps.copyFile(targetManifest, generatedManifest);
