@@ -57,7 +57,7 @@ public class ReleaseConfiguration {
      *
      * Default: String 'Default description'
      */
-    private String appDescription;
+    private String description;
 
     /**
      * Vendor of the application.
@@ -217,12 +217,12 @@ public class ReleaseConfiguration {
         return packageType;
     }
 
-    public String getAppDescription() {
-        return isNullOrBlank(appDescription) ? DEFAULT_APP_DESCRIPTION : appDescription;
+    public String getDescription() {
+        return isNullOrBlank(description) ? DEFAULT_APP_DESCRIPTION : description;
     }
 
-    public void setAppDescription(String appDescription) {
-        this.appDescription = appDescription;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getVendor() {
@@ -381,7 +381,7 @@ public class ReleaseConfiguration {
     public String toString() {
         return "ReleaseConfiguration{" +
                 "packageType=" + packageType +
-                ", appDescription='" + appDescription + '\'' +
+                ", description='" + description + '\'' +
                 ", vendor='" + vendor + '\'' +
                 ", version='" + version + '\'' +
                 ", macAppStore=" + macAppStore +
