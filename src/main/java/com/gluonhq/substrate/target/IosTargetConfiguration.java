@@ -80,9 +80,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
 
-        // for now default to LLVM
         if (!isSimulator() && projectConfiguration.getBackend() == null) {
-            projectConfiguration.setBackend(Constants.BACKEND_LLVM);
+            projectConfiguration.setBackend(Constants.BACKEND_LIR);
         }
 
         if (isSimulator() && projectConfiguration.usesJDK11()) {
