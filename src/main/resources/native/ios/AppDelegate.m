@@ -127,7 +127,6 @@ int main(int argc, char * argv[]) {
     }
 
     startGVM(userHome, userTimeZone, userLaunchKey);
-
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -199,6 +198,43 @@ int startGVM(const char* userHome, const char* userTimeZone, const char* userLau
 }
 
 typedef struct {
+#ifdef GVM_IOS_SIM
+  char fCX8;
+  char fCMOV;
+  char fFXSR;
+  char fHT;
+  char fMMX;
+  char fAMD3DNOWPREFETCH;
+  char fSSE;
+  char fSSE2;
+  char fSSE3;
+  char fSSSE3;
+  char fSSE4A;
+  char fSSE41;
+  char fSSE42;
+  char fPOPCNT;
+  char fLZCNT;
+  char fTSC;
+  char fTSCINV;
+  char fAVX;
+  char fAVX2;
+  char fAES;
+  char fERMS;
+  char fCLMUL;
+  char fBMI1;
+  char fBMI2;
+  char fRTM;
+  char fADX;
+  char fAVX512F;
+  char fAVX512DQ;
+  char fAVX512PF;
+  char fAVX512ER;
+  char fAVX512CD;
+  char fAVX512BW;
+  char fAVX512VL;
+  char fSHA;
+  char fFMA;
+#else
   char fFP;
   char fASIMD;
   char fEVTSTRM;
@@ -211,13 +247,19 @@ typedef struct {
   char fSTXRPREFETCH;
   char fA53MAC;
   char fDMBATOMICS;
+#endif
 } CPUFeatures;
 
 void determineCPUFeatures(CPUFeatures* features)
 {
     fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
+#ifdef GVM_IOS_SIM
+    features->fSSE = 1;
+    features->fSSE2 = 1;
+#else
     features->fFP = 1;
     features->fASIMD = 1;
+#endif
 }
 
 #ifdef GVM_17

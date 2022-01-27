@@ -37,6 +37,7 @@ import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
+import com.gluonhq.substrate.util.ios.Simulator;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -80,8 +81,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         super(paths, configuration);
 
         // for now default to LLVM
-        if (projectConfiguration.getBackend() == null) {
+        if (!isSimulator() && projectConfiguration.getBackend() == null) {
             projectConfiguration.setBackend(Constants.BACKEND_LLVM);
+        }
+
+        if (isSimulator() && projectConfiguration.usesJDK11()) {
+            throw new RuntimeException("Error: the iOS simulator requires JDK 17");
         }
     }
 
@@ -120,6 +125,9 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
                 "-I" + projectConfiguration.getGraalPath().resolve("include").toString(),
                 "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
                 "-isysroot", getSysroot()));
+        if (isSimulator()) {
+            flags.add("-DGVM_IOS_SIM");
+        }
         if (!projectConfiguration.usesJDK11()) {
             flags.add("-DGVM_17");
         }
@@ -132,10 +140,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getTargetArch(),
                 "-H:+UseCAPCache",
-                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
-                "-H:CompilerBackend=" + projectConfiguration.getBackend()));
-        if (projectConfiguration.isUseLLVM()) {
-            flags.add("-H:-SpawnIsolates");
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString()));
+        if (!isSimulator()) {
+            flags.add("-H:CompilerBackend=" + projectConfiguration.getBackend());
+            if (projectConfiguration.isUseLLVM()) {
+                flags.add("-H:-SpawnIsolates");
+            }
         }
         return flags;
     }
@@ -177,7 +187,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
-        if (!projectConfiguration.isUseLLVM()) {
+        if (isSimulator() || !projectConfiguration.isUseLLVM()) {
             return super.getTargetSpecificObjectFiles();
         }
         return FileOps.findFile(paths.getGvmPath(), "llvm.o")
@@ -216,9 +226,13 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             if (!codeSigning.signApp()) {
                 throw new RuntimeException("Error signing the app");
             }
-            Logger.logInfo("The .app bundle was created successfully at: " + appPath);
+        }
+        Logger.logInfo("The .app bundle was created successfully at: " + appPath);
+        if (isSimulator()) {
+            return true;
         }
 
+        // ipa bundle
         Logger.logInfo("Building .ipa for " + appPath);
 
         Path tmpAppWrapper = paths.getTmpPath().resolve("tmpApp");
@@ -244,7 +258,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     public boolean install() throws IOException, InterruptedException {
-        if (projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
             // Without signing app can't be installed on device
             // Simply exit and do nothing
             return true;
@@ -255,8 +269,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         Deploy deploy = new Deploy(paths.getTmpPath().resolve(iosCheck));
         deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
         if (isSimulator()) {
-            // TODO: installOnSimulator(appPath);
-            return false;
+            Simulator simulator = new Simulator(paths, projectConfiguration);
+            return simulator.installApp();
         }
 
         if (!deploy.install(app.toString())) {
@@ -269,7 +283,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     public boolean runUntilEnd() throws IOException, InterruptedException {
-        if (projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
             // Without signing app can't be installed or run on device
             // Simply exit and do nothing
             return true;
@@ -279,8 +293,9 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
         Deploy deploy = new Deploy(paths.getTmpPath().resolve(iosCheck));
         if (isSimulator()) {
-            // TODO: launchOnSimulator(appPath);
-            return false;
+            Simulator simulator = new Simulator(paths, projectConfiguration);
+            simulator.launchSimulator();
+            return true;
         }
         String bundleId = InfoPlist.getBundleId(app.resolve(Constants.PLIST_FILE), projectConfiguration.getAppId());
         if (!deploy.run(app.toString(), bundleId)) {
@@ -344,7 +359,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         if (!Files.exists(app.resolve(Constants.PLIST_FILE))) {
             throw new IOException("Plist not found at path " + app + ". Make sure you call link and package first.");
         }
-        if (!CodeSigning.verifyCodesign(app)) {
+        if (!isSimulator() && !CodeSigning.verifyCodesign(app)) {
             throw new IOException("Codesign failed verifying the app " + app + ". Make sure you call link and package first.");
         }
         return app;
