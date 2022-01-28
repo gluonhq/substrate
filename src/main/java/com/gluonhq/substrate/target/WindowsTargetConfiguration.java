@@ -235,7 +235,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         ProcessRunner clearCache = new ProcessRunner("ie4uinit");
         // For Windows 10 and later, use `ie4uinit.exe -show`
         // For Windows version < 10, use `ie4uinit.exe -ClearIconCache`
-        clearCache.addArg(osName.equals("windows 10") || osName.equals("windows 11") ? "-show" : "-ClearIconCache");
+        clearCache.addArg(osName.equals("windows 10") || osName.equals("windows 11") || osName.equals("windows server 2019") ? "-show" : "-ClearIconCache");
         clearCache.runProcess("Clear Explorer cache");
     }
 
