@@ -58,6 +58,7 @@ public class ProjectConfiguration {
     private List<String> reflectionList = Collections.emptyList();
     private List<String> jniList = Collections.emptyList();
     private List<String> compilerArgs = Collections.emptyList();
+    private List<String> linkerArgs = Collections.emptyList();
     private List<String> runtimeArgs = Collections.emptyList();
 
     private String appId;
@@ -234,6 +235,19 @@ public class ProjectConfiguration {
      */
     public void setCompilerArgs(List<String> compilerArgs) {
         this.compilerArgs = compilerArgs;
+    }
+
+    public List<String> getLinkerArgs() {
+        return linkerArgs;
+    }
+
+    /**
+     * Sets an additional list of linker arguments that will be added to the linker command "as is",
+     * without any form of validation on these arguments.
+     * @param linkerArgs a list of additional linker arguments.
+     */
+    public void setLinkerArgs(List<String> linkerArgs) {
+        this.linkerArgs = linkerArgs;
     }
 
     /**
