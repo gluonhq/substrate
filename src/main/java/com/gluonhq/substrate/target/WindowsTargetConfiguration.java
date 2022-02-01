@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -228,17 +227,6 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         return false;
     }
 
-    // During development if user changes the application icon, the same is not reflected immediately in Explorer.
-    // To fix this, a cache clearance of the Windows explorer is required.
-    private void clearExplorerCache() throws IOException, InterruptedException {
-        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-        ProcessRunner clearCache = new ProcessRunner("ie4uinit");
-        // For Windows 10 and later, use `ie4uinit.exe -show`
-        // For Windows version < 10, use `ie4uinit.exe -ClearIconCache`
-        clearCache.addArg(osName.equals("windows 10") || osName.equals("windows 11") || osName.equals("windows server 2019") ? "-show" : "-ClearIconCache");
-        clearCache.runProcess("Clear Explorer cache");
-    }
-
     List<String> getTargetSpecificObjectFiles() {
         Path gvmAppPath = paths.getGvmPath().resolve(projectConfiguration.getAppName());
         return Collections.singletonList(gvmAppPath.resolve("IconGroup.obj").toString());
@@ -278,5 +266,23 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
                 FileOps.copyFile(objPath, gvmAppPath.resolve("IconGroup.obj"));
             }
         }
+    }
+
+    // During development if user changes the application icon, the same is not reflected immediately in Explorer.
+    // To fix this, a cache clearance of the Windows explorer is required.
+    private void clearExplorerCache() throws IOException, InterruptedException {
+        ProcessRunner clearCache = new ProcessRunner("ie4uinit");
+        clearCache.addArg(findCacheFlag());
+        clearCache.runProcess("Clear Explorer cache");
+    }
+
+    // For Windows build > 10000, use `ie4uinit.exe -show`
+    // For Windows build < 10000, use `ie4uinit.exe -ClearIconCache`
+    private String findCacheFlag() throws IOException, InterruptedException {
+        ProcessRunner buildNumberProcess = new ProcessRunner("powershell.exe", "(Get-ComputerInfo).OsBuildNumber");
+        buildNumberProcess.runProcess("find build number");
+        String buildNumber = buildNumberProcess.getResponse();
+        Logger.logDebug("Windows Build number: " + buildNumber);
+        return Integer.parseInt(buildNumber) > 10000 ? "-show" : "-ClearIconCache";
     }
 }
