@@ -217,7 +217,6 @@
     "name":"java.net.Inet6Address",
     "methods":[{"name":"<init>","parameterTypes":[] }],
     "fields":[
-      {"name":"cached_scope_id"},
       {"name":"holder6"}
     ]
   }

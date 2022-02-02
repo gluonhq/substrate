@@ -117,7 +117,7 @@ public class Constants {
     /**
      * Supported GraalVM versions
      */
-    public static final String GRAALVM_MIN_VERSION = "21.0";
+    public static final String GRAALVM_MIN_VERSION = "22.0";
     public static final String GRAALVM_JAVA_MIN_VERSION = "11.0";
 
     /**
