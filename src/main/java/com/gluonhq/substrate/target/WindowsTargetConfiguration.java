@@ -291,7 +291,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
             Logger.logDebug("Windows Build number: " + buildNumber);
             flag = Integer.parseInt(buildNumber) > 10000 ? "-show" : "-ClearIconCache";
         } catch (Exception e) {
-            // do nothing
+            Logger.logInfo("Unable to find Windows build version. Defaulting cache flag to '-show'.");
         }
         return flag;
     }
