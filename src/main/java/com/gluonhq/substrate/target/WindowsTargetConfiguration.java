@@ -288,6 +288,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
             String[] splitString = windowsVersion.split("\\s+");
             String version = splitString[splitString.length - 1];
             String buildNumber = version.split("\\.")[2].trim();
+            buildNumber = buildNumber.replace("]", "");
             Logger.logDebug("Windows Build number: " + buildNumber);
             flag = Integer.parseInt(buildNumber) > 10000 ? "-show" : "-ClearIconCache";
         } catch (Exception e) {
