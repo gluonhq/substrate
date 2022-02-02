@@ -485,8 +485,7 @@ public class InternalProjectConfiguration {
             throw new IOException("Path provided for GraalVM/release doesn't exist: " + release);
         }
         if (Files.readAllLines(release).stream().noneMatch(line -> "VENDOR=Gluon".equals(line.trim()))) {
-            Logger.logInfo("Substrate requires the Gluon's GraalVM build." +
-                    "\nYou can find it at https://github.com/gluonhq/graal/releases" +
+            Logger.logInfo("Substrate is tested with the Gluon's GraalVM build which you can find at https://github.com/gluonhq/graal/releases." +
                     "\nWhile you can still use other GraalVM builds, there is no guarantee that these will work properly with Substrate");
         }
     }
