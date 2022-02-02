@@ -279,10 +279,20 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     // For Windows build > 10000, use `ie4uinit.exe -show`
     // For Windows build < 10000, use `ie4uinit.exe -ClearIconCache`
     private String findCacheFlag() throws IOException, InterruptedException {
-        ProcessRunner buildNumberProcess = new ProcessRunner("powershell.exe", "(Get-ComputerInfo).OsBuildNumber");
-        buildNumberProcess.runProcess("find build number");
-        String buildNumber = buildNumberProcess.getResponse();
-        Logger.logDebug("Windows Build number: " + buildNumber);
-        return Integer.parseInt(buildNumber) > 10000 ? "-show" : "-ClearIconCache";
+        String flag = "-show";
+        try {
+            ProcessRunner windowsVersionProcess = new ProcessRunner("cmd.exe", "/c", "ver");
+            windowsVersionProcess.runProcess("find windows version");
+            String windowsVersion = windowsVersionProcess.getResponse();
+            Logger.logDebug("Windows version: " + windowsVersion);
+            String[] splitString = windowsVersion.split("\\s+");
+            String version = splitString[splitString.length - 1];
+            String buildNumber = version.split("\\.")[2].trim();
+            Logger.logDebug("Windows Build number: " + buildNumber);
+            flag = Integer.parseInt(buildNumber) > 10000 ? "-show" : "-ClearIconCache";
+        } catch (Exception e) {
+            // do nothing
+        }
+        return flag;
     }
 }
