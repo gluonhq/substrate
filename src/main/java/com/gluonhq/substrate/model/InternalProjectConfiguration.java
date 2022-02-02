@@ -472,6 +472,26 @@ public class InternalProjectConfiguration {
     }
 
     /**
+     * Check if Gluon is the vendor of the GraalVM build, or else logs a message.
+     * @throws IOException if the GraalVM path or the GraalVM/release file don't exist
+     */
+    public void checkGraalVMVendor() throws IOException {
+        Path graalPath = getGraalPath();
+        if (!Files.exists(graalPath)) {
+            throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
+        }
+        Path release = graalPath.resolve("release");
+        if (!Files.exists(graalPath)) {
+            throw new IOException("Path provided for GraalVM/release doesn't exist: " + release);
+        }
+        if (Files.readAllLines(release).stream().noneMatch(line -> "VENDOR=Gluon".equals(line.trim()))) {
+            Logger.logInfo("Substrate requires the Gluon's GraalVM build." +
+                    "\nYou can find it at https://github.com/gluonhq/graal/releases" +
+                    "\nWhile you can still use other GraalVM builds, there is no guarantee that these will work properly with Substrate");
+        }
+    }
+
+    /**
      * for Android and iOS profiles, verifies that the LLVM toolchain is installed,
      * or installs it otherwise.
      *

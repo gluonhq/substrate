@@ -380,6 +380,7 @@ public class SubstrateDispatcher {
 
         this.config.checkGraalVMVersion();
         this.config.checkGraalVMJavaVersion();
+        this.config.checkGraalVMVendor();
 
         Triplet targetTriplet = config.getTargetTriplet();
 
