@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -223,6 +223,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         linkRunner.addArgs(getLinkerLibraryPathFlags());
         linkRunner.addArgs(getNativeLibsLinkFlags());
+        linkRunner.addArgs(projectConfiguration.getLinkerArgs());
         linkRunner.setInfo(true);
         linkRunner.setLogToFile(true);
         int result = linkRunner.runProcess("link");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -377,6 +377,11 @@ public class InternalProjectConfiguration {
 
     public List<String> getCompilerArgs() {
         return Optional.ofNullable(publicConfig.getCompilerArgs())
+                .orElse(Collections.emptyList());
+    }
+
+    public List<String> getLinkerArgs() {
+        return Optional.ofNullable(publicConfig.getLinkerArgs())
                 .orElse(Collections.emptyList());
     }
 
