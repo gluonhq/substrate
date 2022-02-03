@@ -188,6 +188,8 @@ int getdtablesize() {
 void Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0() {}
 void Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0() {}
 void Java_java_net_DatagramPacket_init() {}
+#else
+void Java_java_net_PlainDatagramSocketImpl_send0() {}
 #endif
 
 // AWT: GraalVM native-image explicitly adds (unresolved) references to libawt
