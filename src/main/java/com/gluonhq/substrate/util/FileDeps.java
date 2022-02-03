@@ -71,12 +71,12 @@ public final class FileDeps {
 
     private static final String[] ANDROID_DEPS = {
             "https://repo1.maven.org/maven2/javax/activation/activation/1.1.1/activation-1.1.1.jar",
-            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-xjc/2.3.2/jaxb-xjc-2.3.2.jar",
-            "https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.3.0.1/jaxb-impl-2.3.0.1.jar",
-            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-core/2.3.0.1/jaxb-core-2.3.0.1.jar",
-            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-jxc/2.3.2/jaxb-jxc-2.3.2.jar",
+            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-xjc/2.3.3/jaxb-xjc-2.3.3.jar",
+            "https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.3.6/jaxb-impl-2.3.6.jar",
+            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-core/2.3.6/jaxb-core-2.3.6.jar",
+            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-jxc/2.3.3/jaxb-jxc-2.3.3.jar",
             "https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar",
-            "https://repo1.maven.org/maven2/com/sun/istack/istack-commons-runtime/3.0.10/istack-commons-runtime-3.0.10.jar" };
+            "https://repo1.maven.org/maven2/com/sun/istack/istack-commons-runtime/3.0.11/istack-commons-runtime-3.0.11.jar" };
 
     private static final String ANDROID_KEY = "24333f8a63b6825ea9c5514f83c2829b004d1fee";
     private static final String[] ANDROID_SDK_PACKAGES = {
@@ -456,6 +456,7 @@ public final class FileDeps {
         String[] cliArgs = new String[] {
                 Paths.get(configuration.getGraalPath().toString(), "bin", "java").toString(),
                 "-Dcom.android.sdklib.toolsdir=" + tools,
+                "--illegal-access=permit",
                 "-classpath", libs + "/*:" + additionalLibs + "/*",
                 "com.android.sdklib.tool.sdkmanager.SdkManagerCli"
         };
