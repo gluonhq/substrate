@@ -189,6 +189,7 @@ void Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0() {}
 void Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0() {}
 void Java_java_net_DatagramPacket_init() {}
 #else
+// dummy symbols only for JDK11
 void Java_java_net_PlainDatagramSocketImpl_send0() {}
 #endif
 
