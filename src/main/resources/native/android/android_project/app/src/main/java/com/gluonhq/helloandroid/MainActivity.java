@@ -294,6 +294,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             Log.d(TAG, "onCreateInputConnection");
             // Allows predictive text
             outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
+            // Remove top textfield editor on landscape
+            outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
 
             return new BaseInputConnection(this, true) {
 
