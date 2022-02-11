@@ -80,25 +80,62 @@ public class ClassPath {
      */
     public String mapToString(Function<String, String> mapper) {
         Objects.requireNonNull(mapper);
-        return asStream().map(mapper).collect(Collectors.joining(File.pathSeparator));
+        return asStream().map(mapper).distinct().collect(Collectors.joining(File.pathSeparator));
     }
 
     /**
-     * Returns a String classpath consisting existing class. Tries to find libraries by name
+     * Returns a String classpath consisting of existing classes. Tries to find libraries by name
      * and replace them with full path to this library within the given library path
      * @param libsPath library path
      * @param libNames library names to look for
      * @return the string classpath
      */
     public String mapWithLibs(Path libsPath, String... libNames) {
+        return mapWithLibs(libsPath, null, null, libNames);
+    }
+
+    /**
+     * Returns a String classpath consisting of existing classes. Tries to find libraries by name
+     * and replace them with full path to this library within the given library path.
+     *
+     * A function can be used to map the library names, if the files in the library path follow
+     * a different pattern than those on the classpath
+     *
+     * A predicate can be used to verify certain conditions to the found libraries, for
+     * instance checking that the files actually exist. If the test fails, the original string will
+     * be returned unmapped
+     *
+     * @param libsPath library path
+     * @param libMap a function that maps the library name, can be null
+     * @param pathPredicate test to apply to the replaced libraries, can be null
+     * @param libNames library names to look for
+     * @return the string classpath
+     */
+    public String mapWithLibs(Path libsPath, Function<String, String> libMap, Predicate<Path> pathPredicate,
+                              String... libNames) {
         Objects.requireNonNull(libsPath);
         return mapToString(s -> Arrays.stream(libNames)
                 .filter(s::contains)
                 .findFirst()
-                .map( d -> libsPath.resolve(d + ".jar").toString())
+                .map(d -> {
+                    String libName = libMap != null ? libMap.apply(d) : d;
+                    Path libPath = libsPath.resolve(libName + ".jar");
+                    return pathPredicate == null || pathPredicate.test(libPath) ?
+                            libPath.toString() : null;
+                })
                 .orElse(s));
     }
 
+    /**
+     * Returns a list with all the jar files that are found in the classpath.
+     *
+     * @param includeClasses if true, a jar will be created and added to the list,
+     *                       containing the compiled classes and resources of the
+     *                       current project
+     * @return a list of jar files
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public List<File> getJars(boolean includeClasses) throws IOException, InterruptedException {
         List<File> jars = filter(s -> s.endsWith(".jar")).stream()
                 .map(File::new)
@@ -107,23 +144,40 @@ public class ClassPath {
 
         if (includeClasses) {
             // Add project's classes as a jar to the list so it can be scanned as well
-            String classes = filter(s -> s.endsWith("classes") || s.endsWith("classes/java/main")).stream()
+            String classes = filter(s -> s.endsWith("classes") ||
+                            s.endsWith("classes" + File.separator + "java" + File.separator + "main")).stream()
                     .findFirst()
                     .orElse(null);
             if (classes != null) {
                 Path classesPath = Files.createTempDirectory("classes");
                 FileOps.copyDirectory(Path.of(classes), classesPath);
-                Path resourcesPath = filter(s -> s.endsWith("resources/main")).stream()
+                Path resourcesPath = filter(s -> s.endsWith("resources" + File.separator + "main")).stream()
                         .findFirst()
                         .map(Path::of)
                         .orElse(null);
                 if (resourcesPath != null && Files.exists(resourcesPath)) {
                     FileOps.copyDirectory(resourcesPath, classesPath);
                 }
-                Path jar = classesPath.resolve("classes.jar");
-                ProcessRunner runner = new ProcessRunner("jar", "cf", jar.toString(), "-C", classesPath.toString(), ".");
-                if (runner.runProcess("jar") == 0 && Files.exists(jar)) {
-                    jars.add(jar.toFile());
+
+                String javaPath = System.getenv("JAVA_HOME");
+                if (javaPath == null || javaPath.isEmpty()) {
+                    javaPath = System.getenv("GRAALVM_HOME");
+                    if (javaPath == null || javaPath.isEmpty()) {
+                        throw new IOException("Error: $JAVA_HOME and $GRAALVM_HOME are undefined");
+                    }
+                }
+                Path jarPath = Path.of(javaPath, "bin", Triplet.isWindowsHost() ? "jar.exe" : "jar");
+                if (!Files.exists(jarPath)) {
+                    throw new IOException("Error: " + jarPath + " doesn't exist");
+                }
+
+                Path classesJar = classesPath.resolve("classes.jar");
+
+                ProcessRunner runner = new ProcessRunner(jarPath.toString(),
+                        "cf", classesJar.toString(), "-C", classesPath.toString(), ".");
+
+                if (runner.runProcess("jar") == 0 && Files.exists(classesJar)) {
+                    jars.add(classesJar.toFile());
                 } else {
                     throw new IOException("Error creating classes.jar");
                 }

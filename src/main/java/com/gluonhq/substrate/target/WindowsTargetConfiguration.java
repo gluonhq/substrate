@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,22 +30,29 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
+import com.gluonhq.substrate.util.windows.MSIBundler;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> javaWindowsLibs = Arrays.asList(
-            "advapi32", "iphlpapi", "secur32", "userenv", "ws2_32");
+            "advapi32", "iphlpapi", "secur32", "userenv", "version", "ws2_32", "winhttp", "ncrypt", "crypt32");
     private static final List<String> staticJavaLibs = Arrays.asList(
-            "j2pkcs11", "java", "net", "nio", "prefs", "fdlibm", "sunec", "zip");
+            "j2pkcs11", "java", "net", "nio", "prefs", "fdlibm", "sunec", "zip", "sunmscapi");
     private static final List<String> staticJvmLibs = Arrays.asList(
-            "ffi", "jvm", "libchelper");
+            "jvm", "libchelper");
 
     private static final List<String> javaFxWindowsLibs = List.of(
             "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",
@@ -63,11 +70,6 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     String getAdditionalSourceFileLocation() {
         return "/native/windows/";
-    }
-
-    @Override
-    List<String> getAdditionalSourceFiles() {
-        return Collections.singletonList("launcher.c");
     }
 
     @Override
@@ -135,14 +137,14 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
-        List<String> targetLibraries = new ArrayList<>();
+    List<String> getStaticJavaLibs() {
+        return staticJavaLibs;
+    }
 
-        targetLibraries.addAll(asListOfLibraryLinkFlags(javaWindowsLibs));
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJavaLibs));
-        targetLibraries.addAll(asListOfLibraryLinkFlags(staticJvmLibs));
-
-        return targetLibraries;
+    @Override
+    List<String> getOtherStaticLibs() {
+        return Stream.concat(staticJvmLibs.stream(), javaWindowsLibs.stream())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -180,9 +182,20 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         return "/LIBPATH:";
     }
 
+    @Override
+    String getLinkLibraryOption(String libname) {
+        return libname + "." + getStaticLibraryFileExtension();
+    }
+
+    @Override
+    public boolean packageApp() throws IOException, InterruptedException {
+        MSIBundler msiBundler = new MSIBundler(paths, projectConfiguration);
+        return msiBundler.createPackage(false);
+    }
+
     private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
         return libraries.stream()
-                .map(library -> library + "." + getStaticLibraryFileExtension())
+                .map(this::getLinkLibraryOption)
                 .collect(Collectors.toList());
     }
 
@@ -202,5 +215,85 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
                 .collect(Collectors.toList()));
 
         return linkFlags;
+    }
+
+    @Override
+    public boolean link() throws IOException, InterruptedException {
+        createIconResource();
+        if (super.link()) {
+            clearExplorerCache();
+            return true;
+        }
+        return false;
+    }
+
+    List<String> getTargetSpecificObjectFiles() {
+        Path gvmAppPath = paths.getGvmPath().resolve(projectConfiguration.getAppName());
+        return Collections.singletonList(gvmAppPath.resolve("IconGroup.obj").toString());
+    }
+
+    private void createIconResource() throws InterruptedException, IOException {
+        Logger.logDebug("Creating icon resource");
+        String sourceOS = projectConfiguration.getTargetTriplet().getOs();
+        Path rootPath = paths.getSourcePath().resolve(sourceOS);
+        Path userAssets = rootPath.resolve(Constants.WIN_ASSETS_FOLDER);
+        Path tmpIconDir = paths.getTmpPath().resolve("icon");
+        Path gvmAppPath = paths.getGvmPath().resolve(projectConfiguration.getAppName());
+
+        // Copy icon.ico to gvm/tmp/icon
+        if (Files.exists(userAssets) && Files.isDirectory(userAssets) && Files.exists(userAssets.resolve("icon.ico"))) {
+            FileOps.copyFile(userAssets.resolve("icon.ico"), tmpIconDir.resolve("icon.ico")) ;
+            Logger.logDebug("User provided icon.ico image used as application icon.");
+        } else {
+            Path windowsGenSrcPath = paths.getGenPath().resolve(sourceOS);
+            Path windowsAssetPath = windowsGenSrcPath.resolve(Constants.WIN_ASSETS_FOLDER);
+            Files.createDirectories(windowsAssetPath);
+            FileOps.copyResource("/native/windows/assets/icon.ico", windowsAssetPath.resolve("icon.ico"));
+            FileOps.copyFile(windowsAssetPath.resolve("icon.ico"), tmpIconDir.resolve("icon.ico"));
+            Logger.logInfo("Default icon.ico image generated in " + windowsAssetPath + ".\n" +
+                    "Consider copying it to " + rootPath + " before performing any modification");
+        }
+
+        // Create resource from icon
+        FileOps.copyResource("/native/windows/assets/IconGroup.rc", tmpIconDir.resolve("IconGroup.rc"));
+        Path resPath = tmpIconDir.resolve("IconGroup.res");
+        ProcessRunner rc = new ProcessRunner("rc", "-fo", resPath.toString(), tmpIconDir.resolve("IconGroup.rc").toString());
+        if (rc.runProcess("rc compile") == 0) {
+            Path objPath = resPath.getParent().resolve("IconGroup.obj");
+            ProcessRunner cvtres = new ProcessRunner("cvtres ", "/machine:x64", "-out:" + objPath, resPath.toString());
+            if (cvtres.runProcess("cvtres") == 0 ) {
+                Logger.logDebug("IconGroup.obj created successfully");
+                FileOps.copyFile(objPath, gvmAppPath.resolve("IconGroup.obj"));
+            }
+        }
+    }
+
+    // During development if user changes the application icon, the same is not reflected immediately in Explorer.
+    // To fix this, a cache clearance of the Windows explorer is required.
+    private void clearExplorerCache() throws IOException, InterruptedException {
+        ProcessRunner clearCache = new ProcessRunner("ie4uinit");
+        clearCache.addArg(findCacheFlag());
+        clearCache.runProcess("Clear Explorer cache");
+    }
+
+    // For Windows build > 10000, use `ie4uinit.exe -show`
+    // For Windows build < 10000, use `ie4uinit.exe -ClearIconCache`
+    private String findCacheFlag() throws IOException, InterruptedException {
+        String flag = "-show";
+        try {
+            ProcessRunner windowsVersionProcess = new ProcessRunner("cmd.exe", "/c", "ver");
+            windowsVersionProcess.runProcess("find windows version");
+            String windowsVersion = windowsVersionProcess.getResponse();
+            Logger.logDebug("Windows version: " + windowsVersion);
+            String[] splitString = windowsVersion.split("\\s+");
+            String version = splitString[splitString.length - 1];
+            String buildNumber = version.split("\\.")[2].trim();
+            buildNumber = buildNumber.replace("]", "");
+            Logger.logDebug("Windows Build number: " + buildNumber);
+            flag = Integer.parseInt(buildNumber) > 10000 ? "-show" : "-ClearIconCache";
+        } catch (Exception e) {
+            Logger.logInfo("Unable to find Windows build version. Defaulting cache flag to '-show'.");
+        }
+        return flag;
     }
 }

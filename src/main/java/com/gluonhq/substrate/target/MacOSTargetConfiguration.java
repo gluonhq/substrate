@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,15 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.XcodeUtils;
+import com.gluonhq.substrate.util.macos.CodeSigning;
+import com.gluonhq.substrate.util.macos.InfoPlist;
+import com.gluonhq.substrate.util.macos.Packager;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,22 +46,30 @@ import java.util.stream.Collectors;
 
 public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
+    private static final String MIN_MACOS_VERSION = "10.12";
+
     private static final List<String> javaDarwinLibs = Arrays.asList("pthread", "z", "dl", "stdc++");
     private static final List<String> javaDarwinFrameworks = Arrays.asList("Foundation", "AppKit");
 
     private static final List<String> javaFxDarwinLibs = Arrays.asList("objc");
     private static final List<String> javaFxDarwinFrameworks = Arrays.asList(
-            "ApplicationServices", "OpenGL", "QuartzCore", "Security"
+            "ApplicationServices", "OpenGL", "QuartzCore", "Security", "Accelerate"
     );
 
     private static final List<String> staticJavaLibs = Arrays.asList(
             "java", "nio", "zip", "net", "prefs", "j2pkcs11", "fdlibm", "sunec", "extnet"
     );
     private static final List<String> staticJvmLibs = Arrays.asList(
-            "ffi", "jvm", "libchelper", "darwin"
+            "jvm", "libchelper", "darwin"
     );
     private static final List<String> staticJavaFxLibs = Arrays.asList(
             "glass", "javafx_font", "javafx_iio", "prism_es2"
+    );
+    private static final String staticWebKitLib = "jfxwebkit";
+    private static final List<String> webKitDarwinLibs = List.of(
+            "WebCore", "XMLJava", "JavaScriptCore", "bmalloc",
+            "icui18n", "SqliteJava", "XSLTJava", "PAL", "WebCoreTestSupport",
+            "WTF", "icuuc", "icudata"
     );
 
     public MacOSTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
@@ -71,23 +87,34 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
-        List<String> linkFlags = new ArrayList<>();
+    List<String> getTargetSpecificCCompileFlags() {
+        return Arrays.asList("-mmacosx-version-min=" + MIN_MACOS_VERSION);
+    }
 
-        linkFlags.addAll(asListOfLibraryLinkFlags(javaDarwinLibs));
+    @Override
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
+        List<String> linkFlags = new ArrayList<>(asListOfLibraryLinkFlags(javaDarwinLibs));
+
+        linkFlags.add("-mmacosx-version-min=" + MIN_MACOS_VERSION);
+
         if (useJavaFX) {
             linkFlags.addAll(asListOfLibraryLinkFlags(javaFxDarwinLibs));
+            if (projectConfiguration.hasWeb()) {
+                linkFlags.addAll(asListOfLibraryLinkFlags(webKitDarwinLibs));
+            }
         }
 
         linkFlags.addAll(asListOfFrameworkLinkFlags(javaDarwinFrameworks));
-        if (useJavaFX) {
-            linkFlags.addAll(asListOfFrameworkLinkFlags(javaFxDarwinFrameworks));
-        }
 
         if (useJavaFX) {
+            linkFlags.addAll(asListOfFrameworkLinkFlags(javaFxDarwinFrameworks));
+
             List<String> javafxLibs = new ArrayList<>(staticJavaFxLibs);
             if (usePrismSW) {
                 javafxLibs.add("prism_sw");
+            }
+            if (projectConfiguration.hasWeb()) {
+                javafxLibs.add(staticWebKitLib);
             }
 
             String staticLibPath = "-Wl,-force_load," + projectConfiguration.getJavafxStaticLibsPath() + "/";
@@ -98,14 +125,13 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
-        String staticJavaLibPath = projectConfiguration.getGraalPath().resolve("lib") + "/";
-        String staticJvmLibPath = getCLibPath() + "/";
+    List<String> getStaticJavaLibs() {
+        return staticJavaLibs;
+    }
 
-        List<String> targetLibraries = new ArrayList<>();
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJavaLibPath, staticJavaLibs));
-        targetLibraries.addAll(asListOfStaticLibraryLinkFlags(staticJvmLibPath, staticJvmLibs));
-        return targetLibraries;
+    @Override
+    List<String> getOtherStaticLibs() {
+        return staticJvmLibs;
     }
 
     @Override
@@ -115,15 +141,74 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public boolean packageApp() throws IOException, InterruptedException {
+        boolean sign = !projectConfiguration.getReleaseConfiguration().isSkipSigning();
+        createAppBundle(sign);
+
+        String packageType = projectConfiguration.getReleaseConfiguration().getPackageType();
+        if (packageType == null || packageType.isEmpty()) {
+            // if it is not set, do nothing
+            return true;
+        } else if (!("pkg".equals(packageType) || "dmg".equals(packageType))) {
+            // if it is set but doesn't ask for pkg or dmg, fail
+            Logger.logInfo("Error: packageType doesn't contain valid types for macOS");
+            return false;
+        }
+
+        Packager packager = new Packager(paths, projectConfiguration);
+        if ("pkg".equals(packageType)) {
+            return packager.createPackage(sign);
+        } else {
+            return packager.createDmg(sign);
+        }
+    }
+
+    private void createAppBundle(boolean sign) throws IOException, InterruptedException {
+        String appName = projectConfiguration.getAppName();
+        Path nativeImagePath = paths.getAppPath().resolve(appName);
+        if (!Files.exists(nativeImagePath)) {
+            throw new IOException("Error: " + nativeImagePath + " not found, run link first.");
+        }
+        Path bundlePath = paths.getAppPath().resolve(appName + ".app");
+        Logger.logInfo("Building app bundle: " + bundlePath);
+
+        if (Files.exists(bundlePath)) {
+            FileOps.deleteDirectory(bundlePath);
+        }
+
+        Path appPath = bundlePath.resolve("Contents").resolve("MacOS");
+        Files.createDirectories(appPath);
+        FileOps.copyFile(nativeImagePath, appPath.resolve(appName));
+
+        createInfoPlist(paths);
+
+        if (sign) {
+            CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
+            if (!codeSigning.signApp()) {
+                throw new RuntimeException("Error signing the app");
+            }
+        }
+        Logger.logInfo("App bundle built successfully at: " + bundlePath);
+    }
+
+    private void createInfoPlist(ProcessPaths paths) throws IOException, InterruptedException {
+        InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, XcodeUtils.SDKS.MACOSX);
+        Path plist = infoPlist.processInfoPlist();
+        if (plist != null) {
+            Logger.logDebug("Plist at " + plist.toString());
+        }
+    }
+
     private List<String> asListOfLibraryLinkFlags(List<String> libraries) {
         return libraries.stream()
                 .map(library -> "-l" + library)
                 .collect(Collectors.toList());
     }
 
-    private List<String> asListOfStaticLibraryLinkFlags(String staticLibPath, List<String> libraries) {
+    private List<String> asListOfStaticLibraryLinkFlags(String prefix, List<String> libraries) {
         return libraries.stream()
-                .map(library -> staticLibPath + "lib" + library + ".a")
+                .map(library -> prefix + "lib" + library + ".a")
                 .collect(Collectors.toList());
     }
 

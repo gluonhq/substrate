@@ -28,7 +28,11 @@
     "name" : "java.lang.Class",
     "methods" : [
       {"name":"forName","parameterTypes":["java.lang.String", "boolean", "java.lang.ClassLoader"] },
-      {"name":"getCanonicalName","parameterTypes":[] }
+      {"name":"getCanonicalName","parameterTypes":[] },
+      {"name":"getFields","parameterTypes":[] },
+      {"name":"getMethods","parameterTypes":[] },
+      {"name":"getName","parameterTypes":[] },
+      {"name":"isArray","parameterTypes":[] }
     ]
   }
 ,
@@ -64,9 +68,21 @@
   }
 ,
   {
-    "name" : "java.lang.Object",
-    "methods" : [
-      {"name":"<init>","parameterTypes":[] }
+    "name":"java.lang.Number"
+  }
+,
+  {
+    "name":"java.lang.Object",
+    "methods":[{"name":"getClass","parameterTypes":[] }]
+  }
+,
+  {
+    "name":"java.lang.reflect.Method",
+    "methods":[
+      {"name":"getModifiers","parameterTypes":[] },
+      {"name":"getName","parameterTypes":[] },
+      {"name":"getParameterTypes","parameterTypes":[] },
+      {"name":"getReturnType","parameterTypes":[] }
     ]
   }
 ,
@@ -80,6 +96,7 @@
   {
     "name" : "java.lang.String",
     "methods" : [
+      {"name":"<init>","parameterTypes":["byte[]"] },
       {"name":"<init>","parameterTypes":["byte[]","java.lang.String"] },
       {"name":"concat","parameterTypes":["java.lang.String"] },
       {"name":"getBytes","parameterTypes":["java.lang.String"] },
@@ -200,7 +217,6 @@
     "name":"java.net.Inet6Address",
     "methods":[{"name":"<init>","parameterTypes":[] }],
     "fields":[
-      {"name":"cached_scope_id"},
       {"name":"holder6"}
     ]
   }
@@ -269,8 +285,7 @@
       {"name":"address"},
       {"name":"fd"},
       {"name":"localport"},
-      {"name":"port"},
-      {"name":"serverSocket"}
+      {"name":"port"}
     ]
   }
 ,

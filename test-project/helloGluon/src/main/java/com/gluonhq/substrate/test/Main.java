@@ -17,7 +17,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
-import java.util.Locale;
 
 public class Main extends MobileApplication {
 
@@ -62,18 +61,15 @@ public class Main extends MobileApplication {
             scene.getWindow().setHeight(dimension2D.getHeight());
         }
 
-        PauseTransition pause = new PauseTransition(Duration.seconds(5));
-        pause.setOnFinished(f -> System.exit(0));
-        pause.play();
+        if (System.getProperty("javafx.platform") == null) {
+            PauseTransition pause = new PauseTransition(Duration.seconds(5));
+            pause.setOnFinished(f -> System.exit(0));
+            pause.play();
+        }
     }
 
     public static void main(String[] args) {
-        String osName  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-
         System.setProperty("prism.verbose", "true");
-        if (osName.contains("mac") || osName.contains("nux")) {
-            System.setProperty("prism.order", "sw");
-        }
         launch(args);
     }
 

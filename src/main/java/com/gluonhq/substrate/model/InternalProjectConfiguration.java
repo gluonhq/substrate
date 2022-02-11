@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,10 +64,10 @@ public class InternalProjectConfiguration {
     private boolean useJavaFX = false;
     private boolean usePrismSW = false;
     private boolean enableCheckHash = true;
+    private boolean usesJDK11 = false;
 
     private String backend;
     private List<String> initBuildTimeList;
-    private List<String> runtimeArgsList;
     private List<String> releaseSymbolsList;
 
     private final ProjectConfiguration publicConfig;
@@ -86,20 +86,38 @@ public class InternalProjectConfiguration {
             getReleaseConfiguration().setSkipSigning(true);
         }
         setJavaStaticLibs(System.getProperty("javalibspath")); // this can be safely set even if null. Default will be used in that case
-        setJavaFXStaticSDK(System.getProperty("javafxsdk"));  // this can be safely set even if null. Default will be used in that case
+        String javafxStaticSdkPath = System.getenv("JAVAFX_STATIC_SDK_PATH");
+        if (javafxStaticSdkPath != null) {
+            Path lib = Path.of(javafxStaticSdkPath, "lib");
+            if (!Files.exists(lib) || !Files.isDirectory(lib)) {
+                throw new IllegalArgumentException("Error: " + lib + " is not a valid SDK path.\n" +
+                        "Make sure you provide a valid JAVAFX_STATIC_SDK_PATH or unset it");
+            }
+            if (!Files.exists(lib.resolve("javafx.base.jar")) ||
+                    !Files.exists(lib.resolve("javafx.graphics.jar"))) {
+                throw new IllegalArgumentException("Error: " + lib + " doesn't contain required JavaFX jars.\n" +
+                        "Make sure you provide a valid JAVAFX_STATIC_SDK_PATH or unset it");
+            }
+        }
+        setJavaFXStaticSDK(javafxStaticSdkPath);  // this can be safely set even if null. Default will be used in that case
         setInitBuildTimeList(Strings.split(System.getProperty("initbuildtimelist")));
 
         boolean useJavaFX = new ClassPath(config.getClasspath()).contains(s -> s.contains("javafx"));
         setUseJavaFX(useJavaFX);
 
+        String graalvmBackend = System.getenv("GRAALVM_COMPILER_BACKEND");
+        if (graalvmBackend != null) {
+            setBackend(graalvmBackend);
+        }
+
         performHostChecks();
     }
 
     public Path getGraalPath() {
-        return Objects.requireNonNull( this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
+        return Objects.requireNonNull(this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
     }
 
-    public Version getGraalVersion() throws IOException {
+    private Version getGraalVersion() throws IOException {
         String pattern = "GraalVM .*?(\\d\\d.\\d.\\d)";
         ProcessRunner graalJava;
         try {
@@ -126,7 +144,9 @@ public class InternalProjectConfiguration {
      */
     public String getJavaStaticSdkVersion() {
         return Optional.ofNullable(publicConfig.getJavaStaticSdkVersion())
-                       .orElse(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
+                .orElse(usesJDK11() ?
+                        Constants.DEFAULT_JAVA_STATIC_SDK_VERSION11 :
+                        Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
     }
 
     /**
@@ -173,7 +193,7 @@ public class InternalProjectConfiguration {
                 .resolve("javaStaticSdk")
                 .resolve(getJavaStaticSdkVersion())
                 .resolve(getTargetTriplet().getOsArch())
-                .resolve("labs-staticjdk");
+                .resolve(usesJDK11() ? Constants.DEFAULT_JAVASDK_PATH11 : Constants.DEFAULT_JAVASDK_PATH);
     }
 
     private Path getDefaultJavaStaticLibsPath() {
@@ -215,10 +235,14 @@ public class InternalProjectConfiguration {
     }
 
     public Path getDefaultJavafxStaticPath() {
+        Triplet targetTriplet = getTargetTriplet();
+        if (new Triplet(Constants.Profile.IOS_SIM).equals(targetTriplet)) {
+            targetTriplet = new Triplet(Constants.Profile.IOS);
+        }
         return Constants.USER_SUBSTRATE_PATH
                 .resolve("javafxStaticSdk")
                 .resolve(getJavafxStaticSdkVersion())
-                .resolve(getTargetTriplet().getOsArch())
+                .resolve(targetTriplet.getOsArch())
                 .resolve("sdk");
     }
 
@@ -247,6 +271,15 @@ public class InternalProjectConfiguration {
         String ndkEnv = System.getenv("ANDROID_NDK");
         return (ndkEnv != null) ? Paths.get(ndkEnv)
                 : getAndroidSdkPath().resolve("ndk-bundle");
+    }
+
+    /**
+     * Gets sysroot path for the current arch
+     */
+    public Path getSysrootPath() {
+        String sysrootEnv = System.getenv("SYSROOT");
+        return (sysrootEnv != null) ? Paths.get(sysrootEnv)
+                : Constants.USER_SUBSTRATE_PATH.resolve("sysroot").resolve(getTargetTriplet().getArch());
     }
 
     public boolean isUseJNI() {
@@ -347,6 +380,11 @@ public class InternalProjectConfiguration {
                 .orElse(Collections.emptyList());
     }
 
+    public List<String> getLinkerArgs() {
+        return Optional.ofNullable(publicConfig.getLinkerArgs())
+                .orElse(Collections.emptyList());
+    }
+
     public List<String> getInitBuildTimeList() {
         return initBuildTimeList;
     }
@@ -361,7 +399,7 @@ public class InternalProjectConfiguration {
     }
 
     public List<String> getRuntimeArgsList() {
-        return runtimeArgsList;
+        return publicConfig.getRuntimeArgs();
     }
 
     /**
@@ -374,14 +412,6 @@ public class InternalProjectConfiguration {
 
     public List<String> getReleaseSymbolsList() {
         return releaseSymbolsList;
-    }
-
-    /**
-     * Sets additional lists
-     * @param runtimeArgsList a list of classes that will be added to the default runtime args list
-     */
-    public void setRuntimeArgsList(List<String> runtimeArgsList) {
-        this.runtimeArgsList = runtimeArgsList;
     }
 
     /**
@@ -405,32 +435,66 @@ public class InternalProjectConfiguration {
         return publicConfig.getClasspath();
     }
 
+    public boolean hasWeb() {
+        return getClasspath().contains("javafx-web") || getClasspath().contains("javafx.web");
+    }
+
+    public String getRemoteHostName() { return publicConfig.getRemoteHostName(); }
+
+    public String getRemoteDir() { return publicConfig.getRemoteDir(); }
+
     public ReleaseConfiguration getReleaseConfiguration() {
         return Optional.ofNullable(publicConfig.getReleaseConfiguration()).orElse(new ReleaseConfiguration());
     }
 
+    public boolean usesJDK11() {
+        return usesJDK11;
+    }
+
     /**
-     * check if the GraalVM provided by the configuration is capable of running native-image
-     * @throws NullPointerException when the configuration is null
-     * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
-     * @throws IOException when the path to bin/native-image doesn't exist
+     * Check if the GraalVM provided by the configuration is supported
+     * @throws IOException if the GraalVM version is older than the minimum supported version
      */
-    public void canRunNativeImage() throws IOException, InterruptedException {
-        Path javaCmd = getGraalVMBinPath().resolve("java");
-        ProcessRunner processRunner = new ProcessRunner(javaCmd.toString(), "-version");
-        if (processRunner.runProcess("check version") != 0) {
-            throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
-        }
-        for (String l : processRunner.getResponses()) {
-            if (l == null || l.isEmpty()) {
-                throw new IllegalArgumentException(javaCmd + " -version failed to return a valid value for GraalVM");
-            }
-            if (l.indexOf("1.8") > 0) {
-                throw new IllegalArgumentException("You are using an old version of GraalVM in " + javaCmd +
-                        " which uses Java version " + l + "\nUse GraalVM 19.3 or later");
-            }
+    public void checkGraalVMVersion() throws IOException {
+        Version graalVersion = getGraalVersion();
+        if (graalVersion.compareTo(new Version(Constants.GRAALVM_MIN_VERSION)) < 0) {
+            throw new IOException("Current GraalVM version (" + graalVersion + ") not supported.\n" +
+                    "Please upgrade to " + Constants.GRAALVM_MIN_VERSION + " or higher");
         }
     }
+
+    /**
+     * Check if the GraalVM's java provided by the configuration is supported
+     * @throws IOException if the GraalVM's java version is older than the minimum supported version
+     */
+    public void checkGraalVMJavaVersion() throws IOException {
+        Version javaVersion = getGraalVMJavaVersion();
+        if (javaVersion.compareTo(new Version(Constants.GRAALVM_JAVA_MIN_VERSION)) < 0) {
+            throw new IOException("Current GraalVM's java version (" + javaVersion + ") not supported.\n" +
+                    "Please upgrade to " + Constants.GRAALVM_JAVA_MIN_VERSION + " or higher");
+        }
+        usesJDK11 = javaVersion.getMajor() == 11;
+    }
+
+    /**
+     * Check if Gluon is the vendor of the GraalVM build, or else logs a message.
+     * @throws IOException if the GraalVM path or the GraalVM/release file don't exist
+     */
+    public void checkGraalVMVendor() throws IOException {
+        Path graalPath = getGraalPath();
+        if (!Files.exists(graalPath)) {
+            throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
+        }
+        Path release = graalPath.resolve("release");
+        if (!Files.exists(graalPath)) {
+            throw new IOException("Path provided for GraalVM/release doesn't exist: " + release);
+        }
+        if (Files.readAllLines(release).stream().noneMatch(line -> "VENDOR=Gluon".equals(line.trim()))) {
+            Logger.logInfo("Substrate is tested with the Gluon's GraalVM build which you can find at https://github.com/gluonhq/graal/releases." +
+                    "\nWhile you can still use other GraalVM builds, there is no guarantee that these will work properly with Substrate");
+        }
+    }
+
     /**
      * for Android and iOS profiles, verifies that the LLVM toolchain is installed,
      * or installs it otherwise.
@@ -445,11 +509,15 @@ public class InternalProjectConfiguration {
             // host doesn't use LLVM
             return;
         }
-        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && !Constants.BACKEND_LLVM.equals(getBackend())) {
+        if (new Triplet(Constants.Profile.IOS).equals(triplet) && !isUseLLVM()) {
+            // iOS can use other backends
+            return;
+        }
+        if (new Triplet(Constants.Profile.ANDROID).equals(triplet) && !isUseLLVM()) {
             // Android can use other backends
             return;
         }
-        if (new Triplet(Constants.Profile.LINUX_AARCH64).equals(triplet) && !Constants.BACKEND_LLVM.equals(getBackend())) {
+        if (new Triplet(Constants.Profile.LINUX_AARCH64).equals(triplet) && !isUseLLVM()) {
             // LINUX_AARCH64 can use other backends
             return;
         }
@@ -460,12 +528,12 @@ public class InternalProjectConfiguration {
         Path llvmPath = graalPath.resolve("lib").resolve("llvm");
         if (!Files.exists(llvmPath) || !Files.exists(llvmPath.resolve("bin"))
                 || !Files.exists(llvmPath.resolve("bin").resolve("llvm-config"))) {
-            ProcessRunner runner = new ProcessRunner(graalPath.resolve("bin").resolve("gu").toString(), "install", "llvm-toolchain");
+            ProcessRunner runner = new ProcessRunner(graalPath.resolve("bin").resolve("gu").toString(), "--jvm", "install", "llvm-toolchain");
             int result = runner.runProcess("install llvm-toolchain");
             if (result != 0) {
                 throw new IOException("Error installing llvm-toolchain at: " + graalPath + "\n" +
                         "Please, use gu to install llvm running the following command: \n" +
-                        "$GRAALVM_HOME/bin/gu install llvm-toolchain");
+                        "$GRAALVM_HOME/bin/gu --jvm install llvm-toolchain");
             }
         }
     }
@@ -477,7 +545,7 @@ public class InternalProjectConfiguration {
         if (publicConfig.getGraalPath() == null) {
             return;
         }
-        if (new Triplet(Constants.Profile.MACOS).equals(Triplet.fromCurrentOS())) {
+        if (Triplet.isMacOSHost()) {
             checkGraalVMPermissions(getGraalPath().toString());
         }
     }
@@ -504,13 +572,13 @@ public class InternalProjectConfiguration {
         Path niPath = isWindows ? binPath.resolve("native-image.cmd") : binPath.resolve("native-image");
         if (!Files.exists(niPath)) {
             Path guPath = isWindows ? binPath.resolve("gu.cmd") : binPath.resolve("gu");
-            ProcessRunner runner = new ProcessRunner(guPath.toString(), "install", "native-image");
+            ProcessRunner runner = new ProcessRunner(guPath.toString(), "--jvm", "install", "native-image");
             int result = runner.runProcess("install native-image");
             if (result != 0) {
                 throw new IOException("Error installing native-image at: " + graalPath + "\n" +
                         "Please, use gu to install native-image running the following command: \n" +
                         (isWindows ? "%GRAALVM_HOME%\\bin\\gu.cmd install native-image" :
-                                "$GRAALVM_HOME/bin/gu install native-image"));
+                                "$GRAALVM_HOME/bin/gu --jvm install native-image"));
             }
         }
         return binPath;
@@ -557,6 +625,36 @@ public class InternalProjectConfiguration {
         }
     }
 
+    /**
+     * Gets the Java version that GraalVM bundles
+     * @return the Java version of the GraalVM's build
+     * @throws NullPointerException when the configuration is null
+     * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
+     * @throws IOException if the Java version can't be found
+     */
+    public Version getGraalVMJavaVersion() throws IOException {
+        ProcessRunner graalJava = null;
+        try {
+            graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
+            if (graalJava.runProcess("check version") != 0) {
+                throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
+            }
+        } catch (InterruptedException e) {
+            throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
+        }
+        String pattern = "version \"(\\d{1,2}(\\.\\d+){0,2})\"";
+        Pattern r = Pattern.compile(pattern);
+        List<String> responses = graalJava.getResponses();
+        if (responses == null || responses.isEmpty()) {
+            throw new IOException("Couldn't determine GraalVM's Java version");
+        }
+        Matcher m = r.matcher(responses.get(0));
+        if (!m.find()) {
+            throw new IOException("Couldn't determine GraalVM's Java version for " + responses.get(0));
+        }
+        return new Version(m.group(1));
+    }
+
     @Override
     public String toString() {
         return "ProjectConfiguration{" +
@@ -575,7 +673,7 @@ public class InternalProjectConfiguration {
                 ", reflectionList=" + getReflectionList() +
                 ", jniList=" + getJniList() +
                 ", initBuildTimeList=" + getInitBuildTimeList() +
-                ", runtimeArgsList=" + runtimeArgsList +
+                ", runtimeArgsList=" + getRuntimeArgsList() +
                 ", releaseSymbolsList=" + releaseSymbolsList +
                 ", appName='" + getAppName() + '\'' +
                 ", releaseConfiguration='" + getReleaseConfiguration() + '\'' +

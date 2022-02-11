@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.util.ios;
 
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.plist.NSDictionaryEx;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

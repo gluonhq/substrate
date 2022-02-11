@@ -4,3 +4,5 @@ include 'helloWorld'
 include 'helloFX'
 include 'helloGluon'
 include 'helloFXML'
+
+includeBuild '../'

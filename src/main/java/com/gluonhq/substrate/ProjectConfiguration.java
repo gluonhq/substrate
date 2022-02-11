@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,11 +58,16 @@ public class ProjectConfiguration {
     private List<String> reflectionList = Collections.emptyList();
     private List<String> jniList = Collections.emptyList();
     private List<String> compilerArgs = Collections.emptyList();
+    private List<String> linkerArgs = Collections.emptyList();
+    private List<String> runtimeArgs = Collections.emptyList();
 
     private String appId;
     private String appName;
     private final String mainClassName;
     private final String classpath;
+
+    private String remoteHostName;
+    private String remoteDir;
 
     private ReleaseConfiguration releaseConfiguration = new ReleaseConfiguration();
 
@@ -232,6 +237,31 @@ public class ProjectConfiguration {
         this.compilerArgs = compilerArgs;
     }
 
+    public List<String> getLinkerArgs() {
+        return linkerArgs;
+    }
+
+    /**
+     * Sets an additional list of linker arguments that will be added to the linker command "as is",
+     * without any form of validation on these arguments.
+     * @param linkerArgs a list of additional linker arguments.
+     */
+    public void setLinkerArgs(List<String> linkerArgs) {
+        this.linkerArgs = linkerArgs;
+    }
+
+    /**
+     * Sets additional lists
+     * @param runtimeArgs a list of optional runtime arguments
+     */
+    public void setRuntimeArgs(List<String> runtimeArgs) {
+        this.runtimeArgs = runtimeArgs;
+    }
+
+    public List<String> getRuntimeArgs() {
+        return runtimeArgs;
+    }
+
     public String getAppId() {
         return appId;
     }
@@ -268,6 +298,36 @@ public class ProjectConfiguration {
         return classpath;
     }
 
+    /**
+     * Set the host name for remote deploying, typically to an
+     * embedded system, providing it is reachable and SSH is
+     * enabled.
+     *
+     * @param remoteHostName the name of the remote host name
+     */
+    public void setRemoteHostName(String remoteHostName) {
+        this.remoteHostName = remoteHostName;
+    }
+
+    public String getRemoteHostName() {
+        return remoteHostName;
+    }
+
+    /**
+     * Sets the directory where the native image will be deployed
+     * on the remote system, providing the remote host is reachable
+     * and SSH is enabled.
+     *
+     * @param remoteDir a directory
+     */
+    public void setRemoteDir(String remoteDir) {
+        this.remoteDir = remoteDir;
+    }
+
+    public String getRemoteDir() {
+        return remoteDir;
+    }
+
     public ReleaseConfiguration getReleaseConfiguration() {
         return releaseConfiguration;
     }
@@ -296,11 +356,14 @@ public class ProjectConfiguration {
                 ", reflectionList=" + reflectionList +
                 ", jniList=" + jniList +
                 ", compilerArgs=" + compilerArgs +
+                ", runtimeArgs=" + runtimeArgs +
                 ", appId='" + appId + '\'' +
                 ", appName='" + appName + '\'' +
                 ", releaseConfiguration='" + releaseConfiguration + '\'' +
                 ", mainClassName='" + mainClassName + '\'' +
                 ", classpath='" + classpath + '\'' +
+                ", remoteHostName='" + remoteHostName + '\'' +
+                ", remoteDir='" + remoteDir + '\'' +
                 '}';
     }
 }

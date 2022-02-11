@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Gluon
+ * Copyright (c) 2020, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include "grandroid.h"
 
 extern int *run_main(int argc, char *argv[]);
+extern void registerJavaFXMethodHandles(JNIEnv* aenv);
 
 jclass activityClass;
 jclass permissionActivityClass;
@@ -42,63 +43,33 @@ JavaVM *androidVM;
 JNIEnv *androidEnv;
 ANativeWindow *window;
 jfloat density;
-char *appDataDir;
-char *timeZone;
 
 int start_logger(const char *app_name);
 
-const char *origargs[] = {
+extern int __svm_vm_is_static_binary __attribute__((weak)) = 1;
+
+// this array is filled during compile/link phases
+const char *userArgs[] = {
+// USER_RUNTIME_ARGS
+};
+
+const char *origArgs[] = {
     "myapp",
     "-Djavafx.platform=android",
     "-Dmonocle.platform=Android", // used in com.sun.glass.ui.monocle.NativePlatformFactory
     "-Dembedded=monocle",
     "-Dglass.platform=Monocle",
+    "-Duse.egl=true",
     "-Dcom.sun.javafx.isEmbedded=true",
     "-Dcom.sun.javafx.touch=true",
     "-Dcom.sun.javafx.gestures.zoom=true",
     "-Dcom.sun.javafx.gestures.rotate=true",
     "-Dcom.sun.javafx.gestures.scroll=true",
     "-Djavafx.verbose=true",
+    "-Dmonocle.input.touchRadius=1",
     "-Dmonocle.input.traceEvents.verbose=true",
     "-Dprism.verbose=true",
     "-Xmx4g"};
-
-int argsize;
-
-char **createArgs()
-{
-    LOGE(stderr, "createArgs for run_main");
-    argsize = sizeof(origargs) / sizeof(char *);
-    char **result = (char **)malloc((argsize + 2) * sizeof(char *));
-    for (int i = 0; i < argsize; i++)
-    {
-        result[i] = (char *)origargs[i];
-    }
-
-    // user time zone
-    int timeArgSize = 17 + strnlen(timeZone, 512);
-    char *timeArgs = (char *)calloc(sizeof(char), timeArgSize);
-    strcpy(timeArgs, "-Duser.timezone=");
-    strcat(timeArgs, timeZone);
-    result[argsize++] = timeArgs;
-
-    // tmp dir
-    int tmpArgSize = 18 + strnlen(appDataDir, 512);
-    char *tmpArgs = (char *)calloc(sizeof(char), tmpArgSize);
-    strcpy(tmpArgs, "-Djava.io.tmpdir=");
-    strcat(tmpArgs, appDataDir);
-    result[argsize++] = tmpArgs;
-
-    // user home
-    int userArgSize = 13 + strnlen(appDataDir, 512);
-    char *userArgs = (char *)calloc(sizeof(char), userArgSize);
-    strcpy(userArgs, "-Duser.home=");
-    strcat(userArgs, appDataDir);
-    result[argsize++] = userArgs;
-
-    LOGE(stderr, "CREATE ARGS done");
-    return result;
-}
 
 void registerMethodHandles(JNIEnv *aenv)
 {
@@ -106,6 +77,7 @@ void registerMethodHandles(JNIEnv *aenv)
     permissionActivityClass = (*aenv)->NewGlobalRef(aenv, (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/PermissionRequestActivity"));
     activity_showIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "showIME", "()V");
     activity_hideIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "hideIME", "()V");
+    registerJavaFXMethodHandles(aenv);
 }
 
 int JNI_OnLoad(JavaVM *vm, void *reserved)
@@ -141,18 +113,38 @@ jobject substrateGetActivity() {
 
 // === called from DALVIK. Minimize work/dependencies here === //
 
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp(JNIEnv *env, jobject activityObj)
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_startGraalApp
+        (JNIEnv *env, jobject activityObj, jobjectArray launchArgsArray)
 {
     activity = (*env)->NewGlobalRef(env, activityObj);
     LOGE(stderr, "Start GraalApp, DALVIK env at %p\n", env);
     LOGE(stderr, "PAGESIZE = %ld\n", sysconf(_SC_PAGE_SIZE));
     LOGE(stderr, "EnvVersion = %d\n", (*env)->GetVersion(env));
 
-    char **graalArgs = createArgs();
-    
-    LOGE(stderr, "calling JavaMainWrapper_run with %d argsize\n", argsize);
-    
-    (*run_main)(argsize, graalArgs);
+    int userArgsSize = sizeof(userArgs) / sizeof(char *);
+    int origArgsSize = sizeof(origArgs) / sizeof(char *);
+    int launchArgsSize = (*env)->GetArrayLength(env, launchArgsArray);
+    int argsSize = userArgsSize + origArgsSize + launchArgsSize;
+    char **graalArgs = (char **)malloc(argsSize * sizeof(char *));
+    for (int i = 0; i < origArgsSize; i++)
+    {
+         graalArgs[i] = (char *)origArgs[i];
+    }
+    for (int i = 0; i < launchArgsSize; i++)
+    {
+        jstring jlaunchItem = (jstring) ((*env)->GetObjectArrayElement(env, launchArgsArray, i));
+        const char *launchString = (*env)->GetStringUTFChars(env, jlaunchItem, NULL);
+        graalArgs[origArgsSize + i] = (char *)launchString;
+    }
+    for (int i = 0; i < userArgsSize; i++)
+    {
+        graalArgs[origArgsSize + launchArgsSize + i] = (char *)userArgs[i];
+    }
+
+    LOGE(stderr, "calling JavaMainWrapper_run with argsize: %d\n", argsSize);
+
+    (*run_main)(argsSize, graalArgs);
+    free(graalArgs);
 
     LOGE(stderr, "called JavaMainWrapper_run\n");
 }
@@ -187,7 +179,35 @@ void getEnviron()
     LOGE(stderr, "\n\ngetEnviron NYI\n\n");
 }
 
-void determineCPUFeatures()
-{
-    LOGE(stderr,  "\n\n\ndetermineCpuFeaures\n");
+int getdtablesize() {
+    return sysconf(_SC_OPEN_MAX);
+}
+
+#ifdef GVM_17
+// dummy symbols only for JDK17
+void Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_DatagramPacket_init() {}
+#else
+// dummy symbols only for JDK11
+void Java_java_net_PlainDatagramSocketImpl_send0() {}
+#endif
+
+// AWT: GraalVM native-image explicitly adds (unresolved) references to libawt
+// so we need to make sure the JNI_OnLoad symbols are there.
+
+void Java_java_awt_Font_initIDs() {
+    fprintf(stderr, "We should never reach here (Java_java_awt_Font_initIDs)\n");
+}
+
+void Java_java_awt_Toolkit_initIDs() {
+    fprintf(stderr, "We should never reach here (Java_java_awt_Toolkit_initIDs)\n");
+}
+
+void JNI_OnLoad_awt() {
+    fprintf(stderr, "We should never reach here (JNI_OnLoad_awt)\n");
+}
+
+void JNI_OnLoad_awt_headless() {
+    fprintf(stderr, "We should never reach here (JNI_OnLoad_awt_headless)\n");
 }

@@ -14,6 +14,10 @@
         <string>AppIcon</string>
         <key>CFBundleName</key>
         <string>$bundleName</string>
+        <key>UILaunchStoryboardName</key>
+        <string>LaunchScreen</string>
+        <key>UIMainStoryboardFile</key>
+        <string>MainScreen</string>
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>LSRequiresIPhoneOS</key>

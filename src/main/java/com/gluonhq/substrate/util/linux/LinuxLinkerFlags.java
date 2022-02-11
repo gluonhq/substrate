@@ -64,9 +64,6 @@ public class LinuxLinkerFlags {
                  fedora("freetype2", "freetype-devel")),
         activeOf(debian("pangoft2", "libpango1.0-dev"),
                  fedora("pangoft2", "pango-devel")),
-
-        hardwired("-lgstreamer-lite"),
-
         activeOf(debian("gthread-2.0", "libglib2.0-dev"),
                  fedora("gthread-2.0", "glib2-devel")),
 
@@ -78,6 +75,15 @@ public class LinuxLinkerFlags {
         activeOf(debian("xtst", "libxtst-dev"),
                  fedora("xtst", "libXtst-devel")),
 
+        hardwired("-lm"),
+
+        activeOf(debian("gmodule-no-export-2.0", "libglib2.0-dev"),
+                 fedora("gmodule-no-export-2.0", "glib2-devel"))
+    );
+
+    private static final List<PkgInfo> MEDIA_LINK_DEPENDENCIES = List.of(
+        hardwired("-lgstreamer-lite"),
+
         // On fedora these require https://rpmfusion.org/
         activeOf(debian("libavcodec", "libavcodec-dev"),
                  fedora("libavcodec", "ffmpeg-devel")),
@@ -87,12 +93,7 @@ public class LinuxLinkerFlags {
                  fedora("libavutil", "ffmpeg-devel")),
 
         activeOf(debian("alsa", "libasound2-dev"),
-                 fedora("alsa", "alsa-lib-devel")),
-
-        hardwired("-lm"),
-
-        activeOf(debian("gmodule-no-export-2.0", "libglib2.0-dev"),
-                 fedora("gmodule-no-export-2.0", "glib2-devel"))
+                 fedora("alsa", "alsa-lib-devel"))
     );
 
     /**
@@ -117,12 +118,16 @@ public class LinuxLinkerFlags {
      * @throws IOException 
      */
     public static List<String> getLinkerFlags() throws IOException, InterruptedException {
-        return new LinuxLinkerFlags().doGetLinkerFlags();
+        return new LinuxLinkerFlags().doGetLinkerFlags(LINK_DEPENDENCIES);
+    }
+
+    public static List<String> getMediaLinkerFlags() throws IOException, InterruptedException {
+        return new LinuxLinkerFlags().doGetLinkerFlags(MEDIA_LINK_DEPENDENCIES);
     }
     
-    private List<String> doGetLinkerFlags() throws IOException, InterruptedException {
+    private List<String> doGetLinkerFlags(List<PkgInfo> deps) throws IOException, InterruptedException {
         List<String> pkgFlags = new ArrayList<>();
-        for (PkgInfo pkg : LINK_DEPENDENCIES) {
+        for (PkgInfo pkg :deps ) {
             pkgFlags.addAll(lookupPackageFlags(pkg));
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,13 +32,15 @@ import com.dd.plist.NSDictionary;
 import com.dd.plist.NSString;
 import com.dd.plist.PropertyListParser;
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ReleaseConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.XcodeUtils;
+import com.gluonhq.substrate.util.plist.NSDictionaryEx;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,12 +48,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_SHORT_VERSION;
+import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_IOS;
+import static com.gluonhq.substrate.Constants.PARTIAL_PLIST_FILE;
 import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_BUNDLE_VERSION;
 
 public class InfoPlist {
@@ -84,8 +90,9 @@ public class InfoPlist {
     private final Path appPath;
     private final Path rootPath;
     private final Path tmpPath;
+    private final Path partialPListDir;
 
-    private Path partialPListDir;
+    private Path tmpStoryboardsDir;
     private String bundleId;
     private String minOSVersion = "11.0";
 
@@ -98,16 +105,17 @@ public class InfoPlist {
         appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
         rootPath = paths.getSourcePath().resolve(sourceOS);
         tmpPath = paths.getTmpPath();
+        partialPListDir = tmpPath.resolve("partial-plists");
     }
 
-    public Path processInfoPlist() throws IOException {
+    public Path processInfoPlist() throws IOException, InterruptedException {
         String appName = projectConfiguration.getAppName();
         String executableName = getExecutableName(appName, sourceOS);
-        String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getMainClassName());
+        String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
         String bundleName = Objects.requireNonNullElse(releaseConfiguration.getBundleName(), appName);
-        String bundleVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleVersion(), DEFAULT_BUNDLE_VERSION);
-        String bundleShortVersion = Objects.requireNonNullElse(releaseConfiguration.getBundleShortVersion(), DEFAULT_BUNDLE_SHORT_VERSION);
+        String bundleVersion = releaseConfiguration.getBundleVersion();
+        String bundleShortVersion = releaseConfiguration.getBundleShortVersion();
 
         Path userPlist = rootPath.resolve(Constants.PLIST_FILE);
         boolean inited = true;
@@ -141,12 +149,19 @@ public class InfoPlist {
                     Logger.logFatal(e, "Error copying resource " + a + ": " + e.getMessage());
                 }
             });
+            FileOps.copyResource("/native/ios/assets/Base.lproj/LaunchScreen.storyboard",
+                    iosAssets.resolve("Base.lproj").resolve("LaunchScreen.storyboard"));
+            FileOps.copyResource("/native/ios/assets/Base.lproj/MainScreen.storyboard",
+                    iosAssets.resolve("Base.lproj").resolve("MainScreen.storyboard"));
+            copyVerifyBase(iosAssets.resolve("Base.lproj"));
+
             FileOps.copyResource("/native/ios/assets/Assets.xcassets/Contents.json",
                     iosAssets.resolve("Assets.xcassets").resolve("Contents.json"));
             copyVerifyAssets(iosAssets);
             Logger.logInfo("Default iOS resources generated in " + iosPath.toString() + ".\n" +
                     "Consider copying them to " + rootPath.toString() + " before performing any modification");
         } else {
+            copyVerifyBase(userAssets.resolve("Base.lproj"));
             copyVerifyAssets(userAssets);
             copyOtherAssets(userAssets);
         }
@@ -167,6 +182,8 @@ public class InfoPlist {
         if (!Files.isExecutable(executable)) {
             throw new IOException("The file " + executable + " is not executable.");
         }
+
+        copyPartialPlistFiles();
 
         try {
             NSDictionaryEx dict = new NSDictionaryEx(plist.toFile());
@@ -199,7 +216,7 @@ public class InfoPlist {
             dict.put("DTPlatformName", xcodeUtil.getPlatformName());
             dict.put("DTSDKName", xcodeUtil.getSDKName());
             dict.put("MinimumOSVersion", "11.0");
-            dict.put("CFBundleSupportedPlatforms", new NSArray(new NSString("iPhoneOS")));
+            dict.put("CFBundleSupportedPlatforms", new NSArray(new NSString(sdk.getSdkName())));
             dict.put("DTPlatformVersion", xcodeUtil.getPlatformVersion());
             dict.put("DTPlatformBuild", xcodeUtil.getPlatformBuild());
             dict.put("DTSDKBuild", xcodeUtil.getPlatformBuild());
@@ -212,14 +229,23 @@ public class InfoPlist {
             dict.getKeySet().forEach(k -> orderedDict.put(k, dict.get(k)));
 
             if (partialPListDir != null) {
-                Files.walk(partialPListDir)
-                        .filter(f -> f.toString().endsWith(".plist"))
-                        .forEach(f -> {
+                Files.walk(partialPListDir, 1)
+                        .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".plist"))
+                        .sorted((p1, p2) -> {
+                            // classes.plist should be the last one, to override previous plist files
+                            if (p1.toString().endsWith("classes_" + PARTIAL_PLIST_FILE)) {
+                                return 1;
+                            } else if (p2.toString().endsWith("classes_" + PARTIAL_PLIST_FILE)) {
+                                return -1;
+                            }
+                            return p1.compareTo(p2);
+                        })
+                        .forEach(path -> {
                             try {
-                                NSDictionary d = (NSDictionary) PropertyListParser.parse(f.toFile());
+                                NSDictionary d = (NSDictionary) PropertyListParser.parse(path.toFile());
                                 d.keySet().forEach(k -> orderedDict.put(k, d.get(k)));
                             } catch (Exception e) {
-                                Logger.logFatal(e, "Error reading plist");
+                                Logger.logFatal(e, "Error parsing plist file: " + path);
                             }
                         });
             }
@@ -281,13 +307,10 @@ public class InfoPlist {
                 "Please check the src/ios/Default-info.plist file and make sure CFBundleExecutable key exists");
     }
 
-    static String getBundleId(Path plist, String mainClassName) {
+    public static String getBundleId(Path plist, String appId) {
         if (plist == null) {
-            String className = mainClassName;
-            if (className.contains("/")) {
-                className = className.substring(className.indexOf("/") + 1);
-            }
-            return className;
+            Objects.requireNonNull(appId, "AppId can't be null if plist is not provided");
+            return appId;
         }
 
         try {
@@ -307,6 +330,41 @@ public class InfoPlist {
         Logger.logSevere("Error: no bundleId was found");
         throw new RuntimeException("No bundleId was found.\n " +
                 "Please check the src/ios/Default-info.plist file and make sure CFBundleIdentifier key exists");
+    }
+
+    /**
+     * Walks through the classes jar and other dependency jars files in the classpath,
+     * and looks for META-INF/substrate/ios/Partial-Info.plist files.
+     *
+     * The method will copy all the plist files found into the partial plist folder
+     *
+     * @throws IOException
+     */
+    private void copyPartialPlistFiles() throws IOException, InterruptedException {
+        if (!Files.exists(partialPListDir)) {
+            Files.createDirectories(partialPListDir);
+        }
+
+        Logger.logDebug("Scanning for plist files");
+        final List<File> jars = new ClassPath(projectConfiguration.getClasspath()).getJars(true);
+        String prefix = META_INF_SUBSTRATE_IOS + PARTIAL_PLIST_FILE;
+        for (File jar : jars) {
+            try (ZipFile zip = new ZipFile(jar)) {
+                Logger.logDebug("Scanning " + jar);
+                for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements(); ) {
+                    ZipEntry zipEntry = e.nextElement();
+                    String name = zipEntry.getName();
+                    if (!zipEntry.isDirectory() && name.equals(prefix)) {
+                        String jarName = jar.getName().substring(0, jar.getName().lastIndexOf(".jar"));
+                        Path classPath = partialPListDir.resolve(jarName + "_" + PARTIAL_PLIST_FILE);
+                        Logger.logDebug("Adding plist from " + zip.getName() + " :: " + name + " into " + classPath);
+                        FileOps.copyStream(zip.getInputStream(zipEntry), classPath);
+                    }
+                }
+            } catch (IOException e) {
+                throw new IOException("Error processing partial plist files from jar: " + jar + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
+            }
+        }
     }
 
     private void copyVerifyAssets(Path resourcePath) throws IOException {
@@ -360,7 +418,6 @@ public class InfoPlist {
             }
         });
 
-        partialPListDir = tmpPath.resolve("partial-plists");
         if (Files.exists(partialPListDir)) {
             try {
                 Files.walk(partialPListDir).forEach(f -> f.toFile().delete());
@@ -401,8 +458,9 @@ public class InfoPlist {
 
     /**
      * Scans the src/ios/assets folder for possible folders other than
-     * Assets.cassets (which is compressed with actool),
-     * and copy them directly to the app folder
+     * Assets.cassets (which is compressed with actool) or Base.lproj
+     * (which is compiled with ibtool) and copy them directly to the
+     * app folder
      * @param resourcePath the path for ios assets
      * @throws IOException
      */
@@ -412,7 +470,8 @@ public class InfoPlist {
         }
         List<Path> otherAssets = Files.list(resourcePath)
                 .filter(r -> Files.isDirectory(r))
-                .filter(r -> !r.toString().endsWith("Assets.xcassets"))
+                .filter(r -> !r.toString().endsWith("Assets.xcassets") &&
+                        !r.toString().endsWith("Base.lproj"))
                 .collect(Collectors.toList());
         for (Path assetPath : otherAssets) {
             Path targetPath = appPath.resolve(resourcePath.relativize(assetPath));
@@ -424,4 +483,115 @@ public class InfoPlist {
         }
     }
 
+    private void copyVerifyBase(Path resourcePath) throws IOException {
+        Objects.requireNonNull(resourcePath, "Error: invalid path for Base.lproj");
+        if (!Files.exists(resourcePath)) {
+            Logger.logInfo("Screen storyboards not found. Adding default ones at path: " + resourcePath.toString());
+            Path userPath = Files.createDirectories(resourcePath);
+            FileOps.copyResource("/native/ios/assets/Base.lproj/LaunchScreen.storyboard",
+                    userPath.resolve("LaunchScreen.storyboard"));
+            FileOps.copyResource("/native/ios/assets/Base.lproj/MainScreen.storyboard",
+                    userPath.resolve("MainScreen.storyboard"));
+        }
+        if (minOSVersion == null) {
+            minOSVersion = "11.0";
+        }
+        tmpStoryboardsDir = tmpPath.resolve("storyboards");
+        if (Files.exists(tmpStoryboardsDir)) {
+            try {
+                Files.walk(tmpStoryboardsDir).forEach(f -> f.toFile().delete());
+            } catch (IOException ex) {
+                Logger.logSevere("Error removing files from " + tmpStoryboardsDir.toString() + ": " + ex);
+            }
+        }
+        try {
+            Files.createDirectories(tmpStoryboardsDir);
+        } catch (IOException ex) {
+            Logger.logSevere("Error creating " + tmpStoryboardsDir.toString() + ": " + ex);
+        }
+
+        Files.walk(resourcePath, 1).forEach(p -> {
+            if (!Files.isDirectory(p) && p.toString().endsWith(".storyboard")) {
+                try {
+                    Logger.logDebug("Calling verifyStoryBoard for " + p.toString());
+                    verifyStoryBoard(p, sdk.name().toLowerCase(Locale.ROOT),
+                            minOSVersion,
+                            Arrays.asList("iphone", "ipad"), "Base.lproj");
+                } catch (Exception ex) {
+                    Logger.logFatal(ex, "Failed creating directory " + p);
+                }
+            }
+        });
+        try {
+            linkStoryBoards(resourcePath, sdk.name().toLowerCase(Locale.ROOT),
+                    minOSVersion,
+                    Arrays.asList("iphone", "ipad"), "");
+        } catch (Exception ex) {
+            Logger.logFatal(ex, "Failed linking storyboards " + ex.getMessage());
+        }
+    }
+
+    private void verifyStoryBoard(Path resourcePath, String platform, String minOSVersion, List<String> devices, String output) throws Exception {
+        List<String> commandsList = new ArrayList<>();
+        commandsList.add("--output-format");
+        commandsList.add("human-readable-text");
+
+        File inputDir = resourcePath.toFile();
+        File outputDir = new File(tmpStoryboardsDir.toFile(), output);
+        Files.createDirectories(outputDir.toPath());
+
+        File partialInfoPlist = File.createTempFile(resourcePath.getFileName().toString() + "_", ".plist", tmpStoryboardsDir.toFile());
+
+        commandsList.add("--output-partial-info-plist");
+        commandsList.add(partialInfoPlist.toString());
+
+        String ibtoolForSdk = XcodeUtils.getCommandForSdk("ibtool", platform);
+        commandsList.add("--minimum-deployment-target");
+        commandsList.add(minOSVersion);
+        devices.forEach(device -> {
+            commandsList.add("--target-device");
+            commandsList.add(device);
+        });
+
+        ProcessRunner args = new ProcessRunner(ibtoolForSdk);
+        args.addArgs(commandsList);
+        args.addArgs("--compilation-directory", outputDir.toString(), inputDir.toString());
+        int result = args.runProcess("ibtool");
+        if (result != 0) {
+            throw new RuntimeException("Error verifyStoryBoard");
+        }
+    }
+
+    private void linkStoryBoards(Path resourcePath, String platform, String minOSVersion, List<String> devices, String output) throws Exception {
+        List<String> commandsList = new ArrayList<>();
+        commandsList.add("--output-format");
+        commandsList.add("human-readable-text");
+
+        File outputDir = new File(appPath.toFile(), output);
+
+        String ibtoolForSdk = XcodeUtils.getCommandForSdk("ibtool", platform);
+        commandsList.add("--minimum-deployment-target");
+        commandsList.add(minOSVersion);
+        devices.forEach(device -> {
+            commandsList.add("--target-device");
+            commandsList.add(device);
+        });
+
+        ProcessRunner args = new ProcessRunner(ibtoolForSdk);
+        args.addArgs(commandsList);
+        args.addArgs("--link", outputDir.toString());
+        try {
+            Files.walk(tmpStoryboardsDir.resolve("Base.lproj"), 1).forEach(p -> {
+                if (Files.isDirectory(p) && p.toString().endsWith(".storyboardc")) {
+                    args.addArg(p.toString());
+                }
+            });
+        } catch (IOException ex) {
+            Logger.logSevere("Error linking files from " + appPath.resolve("Base.lproj").toString() + ": " + ex);
+        }
+        int result = args.runProcess("ibtool");
+        if (result != 0) {
+            throw new RuntimeException("Error linkStoryBoards");
+        }
+    }
 }

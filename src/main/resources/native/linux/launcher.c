@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <stdio.h>
+#include <math.h>
+
+double pow_old(double x, double y) {
+#ifdef __amd64__
+    __asm__(".symver pow_old,pow@GLIBC_2.2.5");
+#elif defined(__aarch64__)
+    __asm__(".symver pow_old,pow@GLIBC_2.17");
+#endif
+}
+
+double __wrap_pow(double x, double y) {
+    return pow_old(x, y);
+}
 
 extern int *run_main(int argc, const char* argv[]);
 
@@ -49,16 +62,60 @@ void Java_java_io_ObjectOutputStream_doublesToBytes() {
 }
 
 #ifdef AARCH64
-void Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0() {
-    fprintf(stderr, "Java_jdk_net_LinuxSocketOptions_keepAliveOptionsSupported0 asked, not supported\n");
+
+typedef struct {
+  char fFP;
+  char fASIMD;
+  char fEVTSTRM;
+  char fAES;
+  char fPMULL;
+  char fSHA1;
+  char fSHA2;
+  char fCRC32;
+  char fLSE;
+  char fSTXRPREFETCH;
+  char fA53MAC;
+  char fDMBATOMICS;
+} CPUFeatures;
+
+void determineCPUFeatures(CPUFeatures* features) {
+    fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
+    features->fFP = 1;
+    features->fASIMD = 1;
 }
 
-void Java_jdk_net_LinuxSocketOptions_quickAckSupported0() {
-    fprintf(stderr, "Java_jdk_net_LinuxSocketOptions_quickAckSupported0 asked, not supported\n");
+void JVM_NativePath() {
+    fprintf(stderr, "We should never reach here (JVM_nativePath)\n");
 }
 
-void determineCPUFeatures() {
-    fprintf(stderr, "determineCPUFeatures asked, not supported\n");
+void JVM_RawMonitorCreate() {
+    fprintf(stderr, "We should never reach here (JVM_RawMonitorCreate)\n");
 }
+
+void JVM_RawMonitorDestroy() {
+    fprintf(stderr, "We should never reach here (JVM_RawMonitorDestroy)\n");
+}
+
+void JVM_RawMonitorEnter() {
+    fprintf(stderr, "We should never reach here (JVM_RawMonitorEnter)\n");
+}
+
+void JVM_RawMonitorExit() {
+    fprintf(stderr, "We should never reach here (JVM_RawMonitorExit)\n");
+}
+
+// Thise functions come from unused glass-monocle code that should be removed from OpenJFX
+void getNativeWindowType() {
+fprintf(stderr, "NOT IMPLEMENTED\n");
+}
+
+void getNativeDisplayType() {
+fprintf(stderr, "NOT IMPLEMENTED\n");
+}
+
+void getLibGLEShandle() {
+fprintf(stderr, "NOT IMPLEMENTED\n");
+}
+
 #endif
 

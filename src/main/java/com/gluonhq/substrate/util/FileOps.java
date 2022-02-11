@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate.util;
 
+import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.SubstrateDispatcher;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -80,6 +81,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -316,6 +320,18 @@ public class FileOps {
     }
 
     /**
+     * Checks and returns true if a Path is a directory and is empty
+     * @param path Path of the directory
+     */
+    public static boolean isDirectoryEmpty(Path path) {
+        try {
+            return !(Files.exists(path) && Files.isDirectory(path) && Files.list(path).findAny().isPresent());
+        } catch (IOException e) {
+        }
+        return false;
+    }
+
+    /**
      * Recursively list files with spectified extension from directory
      * @param directory directory to be searched
      * @param extension extension by which to filter files
@@ -495,6 +511,21 @@ public class FileOps {
      * @throws IOException
      */
     public static void extractFilesFromJar(String extension, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
+        extractFilesFromJar(List.of(extension), sourceJar, target, filter);
+    }
+
+    /**
+     * Extracts the files that match any of the possible extensions from a given list
+     * that are found in a jar to a target patch, providing that the file passes a given filter,
+     * and it doesn't exist yet in the target path
+     *
+     * @param extensions a list with possible extensions of the files in the jar that will be extracted
+     * @param sourceJar the path to the jar that will be inspected
+     * @param target the path of the folder where the files will be extracted
+     * @param filter a predicate that the files in the jar should match.
+     * @throws IOException
+     */
+    public static void extractFilesFromJar(List<String> extensions, Path sourceJar, Path target, Predicate<Path> filter) throws IOException {
         if (!Files.exists(sourceJar)) {
             return;
         }
@@ -503,7 +534,7 @@ public class FileOps {
         }
         ZipFile zf = new ZipFile(sourceJar.toFile());
         List<? extends ZipEntry> entries = zf.stream()
-                .filter(ze -> ze.getName().endsWith(extension))
+                .filter(ze -> extensions.stream().anyMatch(ext -> ze.getName().endsWith(ext)))
                 .collect(Collectors.toList());
         if (entries.isEmpty()) {
             return;
@@ -642,6 +673,66 @@ public class FileOps {
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(hashes);
         }
+    }
+
+    /**
+     * Shorten the Java classpath with a pathing jar. This works by creating a temporary
+     * empty jar file where the full classpath is defined in its Class-Path entry in
+     * the manifest. All files on the classpath will be copied to the same temporary
+     * folder, while all directories will be resolved relatively against that temporary
+     * folder. The Class-Path entry will ultimately contain all classpath elements as a
+     * reference that is relative to the pathing jar.
+     *
+     * @param classpath A string with the classpath of files that will be added to the
+     *                 pathing jar Class-Path attribute
+     * @return a String with the path to the created pathing jar
+     * @throws IOException
+     */
+    public static String createPathingJar(Path tmpPath, String classpath) throws IOException {
+        Objects.requireNonNull(classpath);
+
+        Files.createDirectories(tmpPath);
+
+        String manifestClasspath = generateClasspathFromTemporaryFolder(tmpPath, classpath);
+        Logger.logDebug("Class-Path manifest entry for pathing jar: " + manifestClasspath);
+
+        Manifest manifest = new Manifest();
+        Attributes attributes = manifest.getMainAttributes();
+        attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attributes.put(Attributes.Name.CLASS_PATH, manifestClasspath);
+
+        File jarFile = tmpPath.resolve("classpathJar.jar").toFile();
+        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFile), manifest)) {
+            jos.putNextEntry(new ZipEntry("META-INF/"));
+        }
+        Logger.logDebug("Pathing jar created at " + jarFile);
+        return jarFile.getAbsolutePath();
+    }
+
+    /**
+     * Copies all files in the classpath to a subfolder under the provided temporary path. The
+     * name of the subfolder is defined by {@link Constants#PATHING_JAR_DEPS_PATH}. It then
+     * returns a space separated string containing each classpath entry as relative to the
+     * provided temporary path.
+     */
+    private static String generateClasspathFromTemporaryFolder(Path tmpPath, String classpath) {
+        Path depsPath = tmpPath.resolve(Constants.PATHING_JAR_DEPS_PATH);
+
+        String[] classpathEntries = classpath.split(File.pathSeparator);
+
+        Stream<String> convertedDirectories = Arrays.stream(classpathEntries)
+                .map(Path::of)
+                .filter(Files::isDirectory)
+                .map(sourceDir -> tmpPath.toAbsolutePath().relativize(sourceDir).toString());
+
+        Stream<String> convertedFiles = Arrays.stream(classpathEntries)
+                .map(Path::of)
+                .filter(Files::isRegularFile)
+                .map(sourceFile -> copyFile(sourceFile, depsPath.resolve(sourceFile.getFileName())))
+                .map(destFile -> Constants.PATHING_JAR_DEPS_PATH + File.separator + destFile.getFileName());
+
+        return Stream.concat(convertedDirectories, convertedFiles)
+                .collect(Collectors.joining(" "));
     }
 
     /**

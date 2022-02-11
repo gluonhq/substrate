@@ -110,8 +110,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         Log.v(TAG, "loading substrate library");
         System.loadLibrary("substrate");
         Log.v(TAG, "loaded substrate library");
-        nativeSetDataDir(getApplicationInfo().dataDir);
-        nativeSetTimezone(TimeZone.getDefault().getID());
         nativeSetSurface(holder.getSurface());
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -126,9 +124,17 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             Log.v(TAG, "GraalApp is already started.");
         } else {
             Log.v(TAG, "We will now launch Graal in a separate thread");
+            final String[] launchArgs = {
+                    "-Duser.home=" + getApplicationInfo().dataDir,
+                    "-Djava.io.tmpdir=" + getApplicationInfo().dataDir,
+                    "-Duser.timezone=" + TimeZone.getDefault().getID(),
+                    "-DLaunch.URL=" + System.getProperty("Launch.URL", ""),
+                    "-DLaunch.LocalNotification=" + System.getProperty("Launch.LocalNotification", ""),
+                    "-DLaunch.PushNotification=" + System.getProperty("Launch.PushNotification", "")
+            };
             Thread t = new Thread() {
                 @Override public void run() {
-                    startGraalApp();
+                    startGraalApp(launchArgs);
                 }
             };
             t.start();
@@ -181,6 +187,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         nativeDispatchActivityResult(requestCode, resultCode, intent);
     }
 
+    static MainActivity getInstance() {
+        return instance;
+    }
+
+    static ViewGroup getViewGroup() {
+        return mViewGroup;
+    }
+
     private static void showIME() {
         Log.v(TAG, "Called notify_showIME for imm = "+imm+", mv = "+mView);
         instance.runOnUiThread(new Runnable() {
@@ -206,11 +220,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     }
 
 
-    private native void startGraalApp();
+    private native void startGraalApp(String[] launchArgs);
     private native long surfaceReady(Surface surface, float density);
     private native void nativeSetSurface(Surface surface);
-    private native void nativeSetDataDir(String datadir);
-    private native void nativeSetTimezone(String timeZone);
     private native void nativeSurfaceRedrawNeeded();
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
     private native void nativeGotKeyEvent(int action, int keycode);
@@ -229,6 +241,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         public InternalSurfaceView(Context context) {
             super(context);
             setFocusableInTouchMode(true);
+            setFocusable(true);
         }
 
         @Override
@@ -267,6 +280,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 ids[0] = event.getPointerId(0);
                 touchXs[0] = (int) (event.getX()/density);
                 touchYs[0] = (int) (event.getY()/density);
+            }
+            if (!isFocused()) {
+                Log.v(TAG, "View wasn't focused, requesting focus");
+                requestFocus();
             }
             nativeGotTouchEvent(pcount, actions, ids, touchXs, touchYs);
             return true;

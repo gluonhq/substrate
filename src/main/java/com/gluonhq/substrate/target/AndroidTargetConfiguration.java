@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,15 +28,15 @@
 package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.Constants;
-import com.gluonhq.substrate.config.ConfigResolver;
+import com.gluonhq.substrate.config.AndroidResolver;
 import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ReleaseConfiguration;
+import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
-import com.gluonhq.substrate.util.Version;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,8 +50,9 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -60,52 +61,67 @@ import static com.gluonhq.substrate.Constants.ANDROID_NATIVE_FOLDER;
 import static com.gluonhq.substrate.Constants.ANDROID_PROJECT_NAME;
 import static com.gluonhq.substrate.Constants.DALVIK_PRECOMPILED_CLASSES;
 import static com.gluonhq.substrate.Constants.META_INF_SUBSTRATE_DALVIK;
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_NAME;
-import static com.gluonhq.substrate.model.ReleaseConfiguration.DEFAULT_CODE_VERSION;
 
 public class AndroidTargetConfiguration extends PosixTargetConfiguration {
+
+    private static final String ANDROID_TRIPLET = new Triplet(Constants.Profile.ANDROID).toString();
+    private static final String ANDROID_MIN_SDK_VERSION = "21";
+    private static final List<String> ANDROID_KEYSTORE_EXTENSIONS = List.of(".keystore", ".jks");
+    private static final String WL_WHOLE_ARCHIVE = "-Wl,--whole-archive";
+    private static final String WL_NO_WHOLE_ARCHIVE = "-Wl,--no-whole-archive";
 
     private final String ndk;
     private final String sdk;
     private final Path ldlld;
     private final Path clang;
+    private final Path clangpp;
+    private final Path objdump;
     private final String hostPlatformFolder;
 
-    private List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c",
+    private final List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c",
             "touch_events.c", "glibc_shim.c", "attach_adapter.c", "logger.c");
-    private List<String> androidAdditionalHeaderFiles = Arrays.asList("grandroid.h", "grandroid_ext.h");
-    private List<String> cFlags = Arrays.asList("-target", "aarch64-linux-android", "-I.");
-    private List<String> linkFlags = Arrays.asList("-target", "aarch64-linux-android21", "-fPIC", "-fuse-ld=gold",
+    private final List<String> androidAdditionalWebSourceFiles = Collections.singletonList("bridge_webview.c");
+    private final List<String> androidAdditionalHeaderFiles = Arrays.asList("grandroid.h", "grandroid_ext.h");
+    private final List<String> androidAdditionalWebHeaderFiles = Collections.singletonList("bridge_webview.h");
+    private final List<String> cFlags = new ArrayList<>(Arrays.asList("-target", ANDROID_TRIPLET, "-I."));
+    private final List<String> linkFlags = Arrays.asList("-target",
+            ANDROID_TRIPLET + ANDROID_MIN_SDK_VERSION, "-fPIC", "-fuse-ld=gold",
             "-Wl,--rosegment,--gc-sections,-z,noexecstack", "-shared",
-            "-landroid", "-llog", "-lffi", "-llibchelper");
-    private List<String> javafxLinkFlags = Arrays.asList("-Wl,--whole-archive",
-            "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", "-Wl,--no-whole-archive",
-            "-lGLESv2", "-lEGL", "-lfreetype");
+            "-landroid", "-llog", "-lffi", "-llibchelper", "-static-libstdc++");
+    private final List<String> javafxLinkFlags = new ArrayList<>(Arrays.asList(WL_WHOLE_ARCHIVE,
+            "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", WL_NO_WHOLE_ARCHIVE,
+            "-lGLESv2", "-lEGL", "-lfreetype"));
+    private static final String javafxWebLib = "-lwebview";
     private final String capLocation = ANDROID_NATIVE_FOLDER + "cap/";
 
-    public AndroidTargetConfiguration( ProcessPaths paths, InternalProjectConfiguration configuration ) throws IOException {
+    public AndroidTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
         super(paths,configuration);
 
         this.sdk = fileDeps.getAndroidSDKPath().toString();
         this.ndk = fileDeps.getAndroidNDKPath().toString();
-        this.hostPlatformFolder = configuration.getHostTriplet().getOs() + "-x86_64";
+        this.hostPlatformFolder = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", configuration.getHostTriplet().getOsArch()).toString();
 
-        Path ldguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "ld.lld");
+        Path ldguess = Paths.get(hostPlatformFolder, "bin", "ld.lld");
         this.ldlld = Files.exists(ldguess) ? ldguess : null;
 
-        Path clangguess = Paths.get(this.ndk, "toolchains", "llvm", "prebuilt", hostPlatformFolder, "bin", "clang");
+        Path clangguess = Paths.get(hostPlatformFolder, "bin", "clang");
         this.clang = Files.exists(clangguess) ? clangguess : null;
-        if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
-            projectConfiguration.setBackend(Constants.BACKEND_LIR);
-        }
+        Path clangppguess = Paths.get(hostPlatformFolder, "bin", "clang++");
+        this.clangpp = Files.exists(clangppguess) ? clangppguess : null;
+
+        projectConfiguration.setBackend(Constants.BACKEND_LIR);
+
+        Path objdumpguess = Paths.get(hostPlatformFolder, ANDROID_TRIPLET, "bin", "objdump");
+        this.objdump = Files.exists(objdumpguess) ? objdumpguess : null;
     }
 
     @Override
     public boolean compile() throws IOException, InterruptedException {
         // we override compile as we need to do some checks first. If we have no ld.lld in android_ndk, we should not start compiling
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (ldlld == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/ld.lld");
-        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
+        if (ldlld == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/ld.lld");
+        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang");
+        if (objdump == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/"+ ANDROID_TRIPLET +"/bin/objdump");
 
         return super.compile();
     }
@@ -114,7 +130,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean link() throws IOException, InterruptedException {
         // we override link as we need to do some checks first. If we have no clang in android_ndk, we should not start linking
         if (ndk == null) throw new IOException ("Can't find an Android NDK on your system. Set the environment property ANDROID_NDK");
-        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+ndk+"/toolchains/llvm/prebuilt/"+hostPlatformFolder+"/bin/clang");
+        if (clang == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang");
+        if (clangpp == null) throw new IOException ("You specified an android NDK, but it doesn't contain "+hostPlatformFolder+"/bin/clang++");
         if (sdk == null) throw new IOException ("Can't find an Android SDK on your system. Set the environment property ANDROID_SDK");
 
         return super.link();
@@ -130,13 +147,15 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         copySubstrateLibraries();
         String configuration = generateSigningConfiguration();
 
-        ProcessRunner assembleDebug = new ProcessRunner(
+        fileDeps.checkAndroidPackages(sdk);
+        // create apk for installing on device
+        ProcessRunner assembleRunner = new ProcessRunner(
                             getAndroidProjectPath().resolve("gradlew").toString(),
                             "-p", getAndroidProjectPath().toString(),
                             "assemble" + configuration);
-        assembleDebug.addToEnv("ANDROID_HOME", sdk);
-        assembleDebug.addToEnv("JAVA_HOME", projectConfiguration.getGraalPath().toString());
-        if (assembleDebug.runProcess("package-task") != 0) {
+        assembleRunner.addToEnv("ANDROID_HOME", sdk);
+        assembleRunner.addToEnv("JAVA_HOME", projectConfiguration.getGraalPath().toString());
+        if (assembleRunner.runProcess("package-task") != 0) {
             return false;
         }
         Path generatedApk = getAndroidProjectPath().resolve("app").resolve("build")
@@ -145,6 +164,23 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path targetApk = paths.getGvmPath().resolve(projectConfiguration.getAppName()+".apk");
         if (Files.exists(generatedApk)) {
             FileOps.copyFile(generatedApk, targetApk);
+        }
+        // create aab for google play
+        ProcessRunner bundleRunner = new ProcessRunner(
+                getAndroidProjectPath().resolve("gradlew").toString(),
+                "-p", getAndroidProjectPath().toString(),
+                "bundle" + configuration);
+        bundleRunner.addToEnv("ANDROID_HOME", sdk);
+        bundleRunner.addToEnv("JAVA_HOME", projectConfiguration.getGraalPath().toString());
+        if (bundleRunner.runProcess("bundle-task") != 0) {
+            return false;
+        }
+        Path generatedAAB = getAndroidProjectPath().resolve("app").resolve("build")
+                .resolve("outputs").resolve("bundle").resolve(configuration.toLowerCase(Locale.ROOT))
+                .resolve("app-"+configuration.toLowerCase(Locale.ROOT)+".aab");
+        Path targetAAB = paths.getGvmPath().resolve(projectConfiguration.getAppName()+".aab");
+        if (Files.exists(generatedAAB)) {
+            FileOps.copyFile(generatedAAB, targetAAB);
         }
         return true;
     }
@@ -201,15 +237,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         ArrayList<String> flags = new ArrayList<String>(Arrays.asList(
                 "-H:-SpawnIsolates",
                 "-Dsvm.targetArch=" + projectConfiguration.getTargetTriplet().getArch(),
-                "-H:+UseOnlyWritableBootImageHeap",
+                "-H:+ForceNoROSectionRelocations",
+                "--libc=bionic",
                 "-H:+UseCAPCache",
                 "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString(),
                 "-H:CompilerBackend=" + projectConfiguration.getBackend()));
         if (projectConfiguration.isUseLLVM()) {
             flags.add("-H:CustomLD=" + ldlld.toAbsolutePath().toString());
-        }
-        if (projectConfiguration.getGraalVersion().compareTo(new Version("20.1.0")) > 0) {
-            flags.add("-H:+UseBionicC");
         }
         return flags;
     }
@@ -233,11 +267,17 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     String getLinker() {
-        return clang.toAbsolutePath().toString();
+        return clangpp.toAbsolutePath().toString();
     }
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
+        if (projectConfiguration.hasWeb()) {
+            cFlags.add("-DJAVAFX_WEB");
+        }
+        if (!projectConfiguration.usesJDK11()) {
+            cFlags.add("-DGVM_17");
+        }
         return cFlags;
     }
 
@@ -246,6 +286,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (!useJavaFX) return linkFlags;
         List<String> answer = new ArrayList<>();
         answer.addAll(linkFlags);
+        if (projectConfiguration.hasWeb()) {
+            javafxLinkFlags.addAll(Arrays.asList(WL_WHOLE_ARCHIVE, javafxWebLib, WL_NO_WHOLE_ARCHIVE));
+        }
         answer.addAll(javafxLinkFlags);
         return answer;
     }
@@ -254,6 +297,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     String getLinkOutputName() {
         String appName = projectConfiguration.getAppName();
         return "lib" + appName + ".so";
+    }
+
+    @Override
+    protected List<Path> getStaticJDKLibPaths() throws IOException {
+        return Arrays.asList(fileDeps.getJavaSDKLibsPath());
     }
 
     @Override
@@ -268,27 +316,70 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return this::checkFileArchitecture;
+    }
+
+    private boolean checkFileArchitecture(Path path) {
+        try {
+            ProcessRunner pr = new ProcessRunner(objdump.toString(), "-f", path.toString());
+            pr.showSevereMessage(false);
+            int op = pr.runProcess("objdump");
+            if (op == 0) {
+                return pr.getResponses().stream().anyMatch(line -> line.contains("architecture: " + projectConfiguration.getTargetTriplet().getArch()));
+            }
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Unrecoverable error checking file " + path + ": " + e);
+        }
+        Logger.logDebug("Ignore file " + path + " since objdump failed on it");
+        return false;
+    }
+
+    @Override
     public String getAdditionalSourceFileLocation() {
         return ANDROID_NATIVE_FOLDER + "c/";
     }
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        return androidAdditionalSourceFiles;
+        List<String> answer = new ArrayList<>(androidAdditionalSourceFiles);
+        if (projectConfiguration.hasWeb()) {
+            answer.addAll(androidAdditionalWebSourceFiles);
+        }
+        return answer;
+    }
+
+    @Override
+    List<String> copyAdditionalSourceFiles(Path workDir) throws IOException {
+        String runtimeArgs = "";
+        List<String> runtimeArgsList = projectConfiguration.getRuntimeArgsList();
+        if (runtimeArgsList != null) {
+            runtimeArgs = runtimeArgsList.stream()
+                    .map((s -> "\"" + s + "\""))
+                    .collect(Collectors.joining(",\n "));
+        }
+        List<String> files = new ArrayList<>();
+        for (String fileName : getAdditionalSourceFiles()) {
+            Path resource = FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
+            if ("launcher.c".equals(fileName)) {
+                FileOps.replaceInFile(resource, "// USER_RUNTIME_ARGS", runtimeArgs);
+            }
+            files.add(fileName);
+        }
+        return files;
     }
 
     @Override
     List<String> getAdditionalHeaderFiles() {
-        return androidAdditionalHeaderFiles;
-    }
-
-    @Override
-    boolean useGraalVMJavaStaticLibraries() {
-        return false;
+        List<String> answer = new ArrayList<>(androidAdditionalHeaderFiles);
+        if (projectConfiguration.hasWeb()) {
+            answer.addAll(androidAdditionalWebHeaderFiles);
+        }
+        return answer;
     }
 
     private Path getAndroidProjectPath() {
-        return paths.getGvmPath().resolve("android_project");
+        return paths.getGvmPath().resolve(ANDROID_PROJECT_NAME);
     }
 
     private Path getAndroidProjectMainPath() {
@@ -337,8 +428,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         FileOps.deleteDirectory(targetFolder);
     }
 
-    /*
+    /**
      * Copies native libraries to android project
+     *
+     * @throws IOException
      */
     private void copySubstrateLibraries() throws IOException {
         Path projectLibsLocation = getAndroidProjectMainPath().resolve("jniLibs").resolve("arm64-v8a");
@@ -357,11 +450,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Files.copy(libsubstrate, projectLibsLocation.resolve("libsubstrate.so"), StandardCopyOption.REPLACE_EXISTING);
     }
 
-    /*
+    /**
      * Generates release signing configuration if
      * keystore is provided, else use debug configuration
      *
      * @return chosen configuration name
+     * @throws IOException
      */
     private String generateSigningConfiguration() throws IOException {
         Path settingsFile = getAndroidProjectPath().resolve("app").resolve("keystore.properties");
@@ -372,10 +466,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         String keyAlias = releaseConfiguration.getProvidedKeyAlias();
         String keyPass = releaseConfiguration.getProvidedKeyAliasPassword();
         if (keyStorePath == null ||
-                !keyStorePath.endsWith(".keystore") || !Files.exists(Path.of(keyStorePath)) ||
+                ANDROID_KEYSTORE_EXTENSIONS.stream().noneMatch(keyStorePath::endsWith) ||
+                !Files.exists(Path.of(keyStorePath)) ||
                 keyAlias == null || keyStorePass == null || keyPass == null) {
             if (keyStorePath != null) {
-                Logger.logSevere("The key store path " + keyStorePath + " is not valid.");
+                Logger.logSevere("The key store path " + keyStorePath +
+                        " is not valid. Using Debug signing configuration");
             }
             return "Debug";
         }
@@ -386,9 +482,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return "Release";
     }
 
-    /*
+    /**
      * Copies the .cap files from the jar resource and store them in
      * a directory. Return that directory
+     *
+     * @throws IOException
      */
     private Path getCapCacheDir() throws IOException {
         Path capPath = paths.getGvmPath().resolve("capcache");
@@ -398,9 +496,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return capPath;
     }
 
-    /*
+    /**
      * Copies the Android project from the jar resource and stores it in
      * a directory. Return that directory
+     *
+     * @return Path of the Android project
+     * @throws IOException
      */
     private Path prepareAndroidProject() throws IOException {
         Path androidProject = getAndroidProjectPath();
@@ -408,7 +509,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             FileOps.deleteDirectory(androidProject);
         }
         FileOps.copyDirectoryFromResources(ANDROID_NATIVE_FOLDER + ANDROID_PROJECT_NAME, androidProject);
-        getAndroidProjectPath().resolve("gradlew").toFile().setExecutable(true);
+        if (!projectConfiguration.hasWeb()) {
+            Files.deleteIfExists(Path.of(androidProject.toString(), "app", "src", "main", "java", "com", "gluonhq", "helloandroid", "NativeWebView.java"));
+        }
+        androidProject.resolve("gradlew").toFile().setExecutable(true);
+        FileOps.replaceInFile(androidProject.resolve("app").resolve("build.gradle"),
+                "// OTHER_ANDROID_DEPENDENCIES", String.join("\n        ", requiredDependencies()));
         return androidProject;
     }
 
@@ -435,14 +541,11 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (!Files.exists(userManifest)) {
             // use default manifest
             FileOps.replaceInFile(targetManifest, "package='com.gluonhq.helloandroid'", "package='" + getAndroidPackageName() + "'");
-            String newAppLabel = Optional.ofNullable(releaseConfiguration.getAppLabel())
-                    .orElse(projectConfiguration.getAppName());
+            String newAppLabel = Objects.requireNonNullElse(releaseConfiguration.getAppLabel(), projectConfiguration.getAppName());
             FileOps.replaceInFile(targetManifest, "A HelloGraal", newAppLabel);
-            String newVersionCode = Optional.ofNullable(releaseConfiguration.getVersionCode())
-                    .orElse(DEFAULT_CODE_VERSION);
+            String newVersionCode = releaseConfiguration.getVersionCode();
             FileOps.replaceInFile(targetManifest, ":versionCode='1'", ":versionCode='" + newVersionCode + "'");
-            String newVersionName = Optional.ofNullable(releaseConfiguration.getVersionName())
-                    .orElse(DEFAULT_CODE_NAME);
+            String newVersionName = releaseConfiguration.getVersionName();
             FileOps.replaceInFile(targetManifest, ":versionName='1.0'", ":versionName='" + newVersionName + "'");
             FileOps.replaceInFile(targetManifest, "<!-- PERMISSIONS -->", String.join("\n    ", requiredPermissions()));
             FileOps.copyFile(targetManifest, generatedManifest);
@@ -521,12 +624,30 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
      * and returns a list of permissions in XML tags
      */
     private List<String> requiredPermissions() {
-        final ConfigResolver configResolver;
+        final AndroidResolver androidResolver;
         try {
-            configResolver = new ConfigResolver(projectConfiguration.getClasspath());
-            final Set<String> androidPermissions = configResolver.getAndroidPermissions();
+            androidResolver = new AndroidResolver(projectConfiguration.getClasspath());
+            final Set<String> androidPermissions = androidResolver.getAndroidPermissions();
             return androidPermissions.stream()
                     .map(permission -> "<uses-permission android:name=\"" + permission + "\"/>")
+                    .sorted()
+                    .collect(Collectors.toList());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Scans the classpath for Attach Services
+     * and returns a list of dependencies
+     */
+    private List<String> requiredDependencies() {
+        final AndroidResolver androidResolver;
+        try {
+            androidResolver = new AndroidResolver(projectConfiguration.getClasspath());
+            final Set<String> androidDependencies = androidResolver.getAndroidDependencies();
+            return androidDependencies.stream()
                     .sorted()
                     .collect(Collectors.toList());
         } catch (IOException | InterruptedException e) {

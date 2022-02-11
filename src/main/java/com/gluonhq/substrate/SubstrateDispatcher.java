@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,8 +35,10 @@ import com.gluonhq.substrate.target.MacOSTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
+import com.gluonhq.substrate.target.WebTargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.Logger;
+import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
 
 import java.io.BufferedReader;
@@ -50,6 +52,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -155,7 +158,7 @@ public class SubstrateDispatcher {
 
         boolean usePrismSW = Boolean.parseBoolean(System.getProperty("prism.sw", "false"));
         boolean usePrecompiledCode = Boolean.parseBoolean(System.getProperty("usePrecompiledCode", "true"));
-
+        List<String> nativeImageArgs = Arrays.asList(System.getProperty("nativeImageArgs", "").split(","));
         String targetProfile = System.getProperty("targetProfile");
         Triplet targetTriplet = targetProfile != null ?
                 new Triplet(Constants.Profile.valueOf(targetProfile.toUpperCase())) :
@@ -172,6 +175,9 @@ public class SubstrateDispatcher {
         config.setVerbose(verbose);
         config.setUsePrismSW(usePrismSW);
         config.setUsePrecompiledCode(usePrecompiledCode);
+        if (!nativeImageArgs.isEmpty()) {
+            config.setCompilerArgs(nativeImageArgs);
+        }
         return config;
     }
 
@@ -319,8 +325,7 @@ public class SubstrateDispatcher {
             if (expected != null) {
                 Logger.logInfo(logTitle("RUN TASK (with expected)"));
 
-                String response = dispatcher.targetConfiguration.run(dispatcher.paths.getAppPath(),
-                        dispatcher.config.getAppName());
+                String response = dispatcher.targetConfiguration.run();
                 if (expected.equals(response)) {
                     Logger.logInfo("Run ended successfully, the output: " + expected + " matched the expected result.");
                 } else {
@@ -363,14 +368,22 @@ public class SubstrateDispatcher {
      * @param config the ProjectConfiguration, including the target triplet
      */
     public SubstrateDispatcher(Path buildRoot, ProjectConfiguration config) throws IOException {
+        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot),
+                Objects.requireNonNull(config).getTargetTriplet().getArchOs());
+        ProcessRunner.setProcessLogPath(paths.getClientPath().resolve(Constants.LOG_PATH));
+        ProcessRunner.setConsoleProcessLog(Boolean.getBoolean("consoleProcessLog"));
+
         this.config = new InternalProjectConfiguration(config);
         if (this.config.isVerbose()) {
             System.out.println("Configuration: " + this.config);
         }
 
+        this.config.checkGraalVMVersion();
+        this.config.checkGraalVMJavaVersion();
+        this.config.checkGraalVMVendor();
+
         Triplet targetTriplet = config.getTargetTriplet();
 
-        this.paths = new ProcessPaths(Objects.requireNonNull(buildRoot), targetTriplet.getArchOs());
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
                 "Error: Target Configuration was not found for " + targetTriplet);
 
@@ -378,12 +391,16 @@ public class SubstrateDispatcher {
     }
 
     private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) throws IOException {
+        if (!Constants.OS_WEB.equals(targetTriplet.getOs()) && !config.getHostTriplet().canCompileTo(targetTriplet)) {
+            throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
+        }
         switch (targetTriplet.getOs()) {
             case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
             case Constants.OS_DARWIN : return new MacOSTargetConfiguration(paths, config);
             case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config);
             case Constants.OS_IOS    : return new IosTargetConfiguration(paths, config);
             case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config);
+            case Constants.OS_WEB    : return new WebTargetConfiguration(paths, config);
             default                  : return null;
         }
     }
@@ -401,13 +418,7 @@ public class SubstrateDispatcher {
         Logger.logInfo(logTitle("COMPILE TASK"));
         printMessage("compile");
 
-        config.canRunNativeImage();
-
         Triplet targetTriplet  = config.getTargetTriplet();
-        if (!config.getHostTriplet().canCompileTo(targetTriplet)) {
-            throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
-        }
-
         config.canRunLLVM(targetTriplet);
 
         Logger.logInfo("We will now compile your code for " + targetTriplet + ". This may take some time.");

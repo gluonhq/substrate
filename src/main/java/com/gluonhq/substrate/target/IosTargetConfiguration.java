@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
 import com.gluonhq.substrate.util.ios.InfoPlist;
+import com.gluonhq.substrate.util.ios.Simulator;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -51,37 +52,46 @@ import java.util.stream.Collectors;
 
 public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
-    private List<String> iosAdditionalSourceFiles = Collections.singletonList("AppDelegate.m");
+    private static final List<String> iosAdditionalSourceFiles = Arrays.asList(
+            "AppDelegate.m", "JvmFuncsFallbacks.c");
 
     private static final List<String> ioslibs = Arrays.asList(
             "-lpthread", "-llibchelper", "-lffi", "-ldarwin");
 
     private static final List<String> javafxLibs = Arrays.asList(
             "prism_es2", "glass", "javafx_font", "prism_common", "javafx_iio");
+    private static final String javafxWebLib = "webview";
 
     private static final List<String> iosFrameworks = Arrays.asList(
             "Foundation", "UIKit", "CoreGraphics", "MobileCoreServices",
             "OpenGLES", "CoreText", "QuartzCore", "ImageIO",
             "CoreBluetooth", "CoreImage", "CoreLocation", "CoreMedia", "CoreMotion", "CoreVideo",
             "Accelerate", "AVFoundation", "AudioToolbox", "MediaPlayer", "UserNotifications",
-            "ARKit", "AVKit", "SceneKit", "StoreKit"
+            "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit"
     );
 
-    private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
+    private static final String[] capFiles = {"AArch64LibCHelperDirectives.cap",
             "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
             "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
             "LLVMDirectives.cap", "PosixDirectives.cap"};
-    private final String capLocation= "/native/ios/cap/";
+    private static final String capLocation= "/native/ios/cap/";
+    private static final String iosCheck = "ios/check";
 
     public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
+
+        if (!isSimulator() && projectConfiguration.getBackend() == null) {
+            projectConfiguration.setBackend(Constants.BACKEND_LIR);
+        }
+
+        if (isSimulator() && projectConfiguration.usesJDK11()) {
+            throw new RuntimeException("Error: the iOS simulator requires JDK 17");
+        }
     }
 
     @Override
-    List<String> getTargetSpecificLinkLibraries() {
-        List<String> defaultLinkFlags = new ArrayList<>(super.getTargetSpecificLinkLibraries());
-        defaultLinkFlags.add("-lstdc++");
-        return defaultLinkFlags;
+    List<String> getOtherStaticLibs() {
+        return List.of("stdc++");
     }
 
     @Override
@@ -92,7 +102,11 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
                 "-isysroot", getSysroot()));
         if (useJavaFX) {
             String javafxSDK = projectConfiguration.getJavafxStaticLibsPath().toString();
-            javafxLibs.forEach(name ->
+            List<String> libs = new ArrayList<>(javafxLibs);
+            if (projectConfiguration.hasWeb()) {
+                libs.add(javafxWebLib);
+            }
+            libs.forEach(name ->
                     linkFlags.add("-Wl,-force_load," + javafxSDK + "/lib" + name + ".a"));
         }
         linkFlags.addAll(ioslibs);
@@ -104,22 +118,35 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
-        return Arrays.asList("-xobjective-c",
+        List<String> flags = new ArrayList<>(Arrays.asList("-xobjective-c",
                 "-arch", getTargetArch(),
                 "-mios-version-min=11.0",
-                "-I"+projectConfiguration.getGraalPath().resolve("include").toString(),
-                "-I"+projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
-                "-isysroot", getSysroot());
+                "-I" + projectConfiguration.getGraalPath().resolve("include").toString(),
+                "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
+                "-isysroot", getSysroot()));
+        if (isSimulator()) {
+            flags.add("-DGVM_IOS_SIM");
+        }
+        if (!projectConfiguration.usesJDK11()) {
+            flags.add("-DGVM_17");
+        }
+        return flags;
     }
 
-    @Override
     List<String> getTargetSpecificAOTCompileFlags() throws IOException {
-        return Arrays.asList("-H:CompilerBackend=" + Constants.BACKEND_LLVM,
-                "-H:-SpawnIsolates",
+        List<String> flags = new ArrayList<>(Arrays.asList(
+                "-H:PageSize=16384",
                 "-Dsvm.targetName=iOS",
                 "-Dsvm.targetArch=" + getTargetArch(),
                 "-H:+UseCAPCache",
-                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString());
+                "-H:CAPCacheDir=" + getCapCacheDir().toAbsolutePath().toString()));
+        if (!isSimulator()) {
+            flags.add("-H:CompilerBackend=" + projectConfiguration.getBackend());
+            if (projectConfiguration.isUseLLVM()) {
+                flags.add("-H:-SpawnIsolates");
+            }
+        }
+        return flags;
     }
 
     @Override
@@ -138,10 +165,33 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
+    List<String> copyAdditionalSourceFiles(Path workDir) throws IOException {
+        String runtimeArgs = "";
+        List<String> runtimeArgsList = projectConfiguration.getRuntimeArgsList();
+        if (runtimeArgsList != null) {
+            runtimeArgs = runtimeArgsList.stream()
+                    .map((s -> "\"" + s + "\""))
+                    .collect(Collectors.joining(",\n "));
+        }
+        List<String> files = new ArrayList<>();
+        for (String fileName : getAdditionalSourceFiles()) {
+            Path resource = FileOps.copyResource(getAdditionalSourceFileLocation() + fileName, workDir.resolve(fileName));
+            if ("AppDelegate.m".equals(fileName)) {
+                FileOps.replaceInFile(resource, "// USER_RUNTIME_ARGS", runtimeArgs);
+            }
+            files.add(fileName);
+        }
+        return files;
+    }
+
+    @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
-        return FileOps.findFile( paths.getGvmPath(), "llvm.o").map( objectFile ->
-           Collections.singletonList(objectFile.toAbsolutePath().toString())
-        ).orElseThrow();
+        if (isSimulator() || !projectConfiguration.isUseLLVM()) {
+            return super.getTargetSpecificObjectFiles();
+        }
+        return FileOps.findFile(paths.getGvmPath(), "llvm.o")
+                .map(objectFile -> Collections.singletonList(objectFile.toAbsolutePath().toString()))
+                .orElseThrow();
     }
 
     @Override
@@ -150,20 +200,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    public boolean link() throws IOException, InterruptedException {
-        boolean result = super.link();
-
-        if (result) {
-            createInfoPlist(paths);
-
-            if (!isSimulator() && !projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
-                CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
-                if (!codeSigning.signApp()) {
-                    throw new RuntimeException("Error signing the app");
-                }
-            }
-        }
-        return result;
+    protected List<Path> getStaticJDKLibPaths() throws IOException {
+        return Arrays.asList(fileDeps.getJavaSDKLibsPath());
     }
 
     @Override
@@ -174,49 +212,97 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    public boolean runUntilEnd() throws IOException, InterruptedException {
-        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
-            // without signing, app can't be deployed
+    public boolean packageApp() throws IOException, InterruptedException {
+        Path appPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        if (!Files.exists(appPath)) {
+            throw new IOException("Error: " + appPath + " not found. Make sure you call link first.");
+        }
+        Logger.logInfo("Building .app bundle at: " + appPath);
+        createInfoPlist(paths);
+
+        if (!isSimulator() && !projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+            CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
+            if (!codeSigning.signApp()) {
+                throw new RuntimeException("Error signing the app");
+            }
+        }
+        Logger.logInfo("The .app bundle was created successfully at: " + appPath);
+        if (isSimulator()) {
             return true;
         }
 
-        Path app = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
-        if (!Files.exists(app)) {
-            throw new IOException("Application not found at path " + app);
-        }
-
-        Deploy deploy = new Deploy();
-        deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
-        if (isSimulator()) {
-            // TODO: launchOnSimulator(appPath);
-            return false;
-        } else {
-            return deploy.install(app.toString());
-        }
-    }
-
-    @Override
-    public boolean packageApp() throws IOException, InterruptedException {
-        Path localAppPath = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
-        if (!Files.exists(localAppPath)) {
-            throw new IOException("Error: " + projectConfiguration.getAppName() + ".app not found");
-        }
-        Logger.logDebug("Building IPA for " + localAppPath);
+        // ipa bundle
+        Logger.logInfo("Building .ipa for " + appPath);
 
         Path tmpAppWrapper = paths.getTmpPath().resolve("tmpApp");
         Path tmpAppPayload = tmpAppWrapper.resolve("Payload");
         Files.createDirectories(tmpAppPayload);
 
-        ProcessRunner runner = new ProcessRunner("cp", "-Rp", localAppPath.toString(), tmpAppPayload.toString());
+        ProcessRunner runner = new ProcessRunner("cp", "-Rp", appPath.toString(), tmpAppPayload.toString());
         if (runner.runProcess("cp") != 0) {
+            Logger.logInfo("Error copying app to " + tmpAppPayload);
             return false;
         }
 
         String target = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".ipa").toString();
-        Logger.logDebug("Creating IPA at " + target);
 
         runner = new ProcessRunner("zip", "--symlinks", "--recurse-paths", target, ".");
-        return runner.runProcess("zip", tmpAppWrapper.toFile()) == 0;
+        if (runner.runProcess("zip", tmpAppWrapper.toFile()) != 0) {
+            Logger.logInfo("Error zipping " + tmpAppWrapper);
+            return false;
+        }
+        Logger.logInfo("The .ipa bundle was created successfully at: " + target);
+        return true;
+    }
+
+    @Override
+    public boolean install() throws IOException, InterruptedException {
+        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+            // Without signing app can't be installed on device
+            // Simply exit and do nothing
+            return true;
+        }
+
+        Path app = getAndValidateAppPath();
+
+        Deploy deploy = new Deploy(paths.getTmpPath().resolve(iosCheck));
+        deploy.addDebugSymbolInfo(paths.getAppPath(), projectConfiguration.getAppName());
+        if (isSimulator()) {
+            Simulator simulator = new Simulator(paths, projectConfiguration);
+            return simulator.installApp();
+        }
+
+        if (!deploy.install(app.toString())) {
+            Logger.logInfo("Installing app " + app + " failed!");
+            return false;
+        }
+        Logger.logInfo("App was installed successfully");
+        return true;
+    }
+
+    @Override
+    public boolean runUntilEnd() throws IOException, InterruptedException {
+        if (!isSimulator() && projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
+            // Without signing app can't be installed or run on device
+            // Simply exit and do nothing
+            return true;
+        }
+
+        Path app = getAndValidateAppPath();
+
+        Deploy deploy = new Deploy(paths.getTmpPath().resolve(iosCheck));
+        if (isSimulator()) {
+            Simulator simulator = new Simulator(paths, projectConfiguration);
+            simulator.launchSimulator();
+            return true;
+        }
+        String bundleId = InfoPlist.getBundleId(app.resolve(Constants.PLIST_FILE), projectConfiguration.getAppId());
+        if (!deploy.run(app.toString(), bundleId)) {
+            Logger.logInfo("Running " + bundleId + " failed!");
+            return false;
+        }
+        Logger.logInfo("App was launched successfully");
+        return true;
     }
 
     @Override
@@ -237,11 +323,6 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         return appPath.toString() + "/" + appName;
     }
 
-    @Override
-    boolean useGraalVMJavaStaticLibraries() {
-        return false;
-    }
-
     private String getTargetArch() {
         return projectConfiguration.getTargetTriplet().getArch();
     }
@@ -255,7 +336,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         return Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch());
     }
 
-    private void createInfoPlist(ProcessPaths paths) throws IOException {
+    private void createInfoPlist(ProcessPaths paths) throws IOException, InterruptedException {
         InfoPlist infoPlist = new InfoPlist(paths, projectConfiguration, isSimulator() ?
                 XcodeUtils.SDKS.IPHONESIMULATOR : XcodeUtils.SDKS.IPHONEOS);
         Path plist = infoPlist.processInfoPlist();
@@ -266,9 +347,28 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         }
     }
 
+    private Path getAndValidateAppPath() throws IOException, InterruptedException {
+        Path app = paths.getAppPath().resolve(projectConfiguration.getAppName() + ".app");
+        if (!Files.exists(app)) {
+            throw new IOException("Application not found at path " + app + ". Make sure you call link first.");
+        }
+        if (!Files.exists(app.resolve(projectConfiguration.getAppName()))) {
+            throw new IOException("Native image not found at path " + app + ". Make sure you call link first.");
+        }
+        if (!Files.exists(app.resolve(Constants.PLIST_FILE))) {
+            throw new IOException("Plist not found at path " + app + ". Make sure you call link and package first.");
+        }
+        if (!isSimulator() && !CodeSigning.verifyCodesign(app)) {
+            throw new IOException("Codesign failed verifying the app " + app + ". Make sure you call link and package first.");
+        }
+        return app;
+    }
+
     private boolean lipoMatch(Path path) {
         try {
-            return lipoInfo(path).indexOf(getTargetArch()) > 0;
+            String lp = lipoInfo(path);
+            if (lp == null) return false;
+            return lp.indexOf(getTargetArch()) > 0;
         } catch (IOException | InterruptedException e) {
             Logger.logSevere("Error processing lipo for " + path);
         }

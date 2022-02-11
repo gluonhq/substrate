@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,24 +29,29 @@ package com.gluonhq.substrate.util;
 
 import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
+import com.gluonhq.substrate.model.Triplet;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class FileDeps {
 
-    private static final String JAVA_STATIC_ZIP = "labs-staticjdk-${target}-gvm-${version}.zip";
+    private static final String JAVA_STATIC_ZIP = "${staticjdk}-${target}-gvm-${version}.zip";
     private static final String JAVA_STATIC_URL = "https://download2.gluonhq.com/substrate/staticjdk/";
-    private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static.zip";
+    private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static${variant}.zip";
     private static final String JAVAFX_STATIC_URL = "https://download2.gluonhq.com/substrate/javafxstaticsdk/";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
@@ -66,17 +71,19 @@ public final class FileDeps {
 
     private static final String[] ANDROID_DEPS = {
             "https://repo1.maven.org/maven2/javax/activation/activation/1.1.1/activation-1.1.1.jar",
-            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-xjc/2.3.2/jaxb-xjc-2.3.2.jar",
-            "https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.3.0.1/jaxb-impl-2.3.0.1.jar",
-            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-core/2.3.0.1/jaxb-core-2.3.0.1.jar",
-            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-jxc/2.3.2/jaxb-jxc-2.3.2.jar",
+            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-xjc/2.3.3/jaxb-xjc-2.3.3.jar",
+            "https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.3.6/jaxb-impl-2.3.6.jar",
+            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-core/2.3.6/jaxb-core-2.3.6.jar",
+            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-jxc/2.3.3/jaxb-jxc-2.3.3.jar",
             "https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar",
-            "https://repo1.maven.org/maven2/com/sun/istack/istack-commons-runtime/3.0.10/istack-commons-runtime-3.0.10.jar" };
+            "https://repo1.maven.org/maven2/com/sun/istack/istack-commons-runtime/3.0.11/istack-commons-runtime-3.0.11.jar" };
 
     private static final String ANDROID_KEY = "24333f8a63b6825ea9c5514f83c2829b004d1fee";
     private static final String[] ANDROID_SDK_PACKAGES = {
-            "platforms;android-28", "build-tools;29.0.2", "platform-tools",
+            "platforms;android-30", "build-tools;30.0.2", "platform-tools",
             "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle" };
+
+    private static final String ARCH_SYSROOT_URL = "https://download2.gluonhq.com/substrate/sysroot/${arch}sysroot-${version}.zip";
 
     private final InternalProjectConfiguration configuration;
 
@@ -86,19 +93,14 @@ public final class FileDeps {
 
     /**
      * Returns the path to the Java SDK static libraries for this configuration. The path is cached on the provided
-     * configuration. If no custom directory has been set in the project configuration and <code>useGraalPath</code>
-     * is set to <code>true</code>, it will use the <code>lib</code> directory inside the configured Graal path. If
-     * <code>useGraalPath</code> is set to <code>false</code>, a custom Java SDK will be retrieved.
+     * configuration. If no custom directory has been set in the project configuration, a custom Java SDK will be
+     * downloaded.
      *
-     * @param useGraalPath specifies if the default Java SDK path should resolve to the Graal installation dir
      * @return the location of the static libraries of the Java SDK for the arch-os for this configuration
      * @throws IOException in case anything goes wrong.
      */
-    public Path getJavaSDKLibsPath(boolean useGraalPath) throws IOException {
-        if (!configuration.useCustomJavaStaticLibs() && useGraalPath) {
-            return configuration.getGraalPath().resolve("lib");
-        }
-        return resolvePath(configuration.getJavaStaticLibsPath(),"Fatal error, could not install Java SDK ");
+    public Path getJavaSDKLibsPath() throws IOException {
+        return resolvePath(configuration.getJavaStaticLibsPath(), "Fatal error, could not install Java SDK");
     }
 
     /**
@@ -132,6 +134,36 @@ public final class FileDeps {
      */
     public Path getAndroidNDKPath() throws IOException {
         return resolvePath(configuration.getAndroidNdkPath(),"Fatal error, could not install Android NDK ");
+    }
+
+    /**
+     * Return the path to the sysroot for this configuration.
+     * The path is cached on the environment variable.
+     * If it is not there yet, all dependencies are retrieved.
+     * @return the location of the sysroot for the arch of this configuration
+     * @throws IOException in case anything goes wrong.
+     */
+    public Path getSysrootPath() throws IOException {
+        return resolvePath(configuration.getSysrootPath(),"Fatal error, could not install sysroot zip");
+    }
+
+    /**
+     * Checks that the required Android packages are present, else proceeds to
+     * install them
+     *
+     * @param androidSdk The path to the Android SDK
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public void checkAndroidPackages(String androidSdk) throws IOException, InterruptedException {
+        List<String> missingPackages = Stream.of(ANDROID_SDK_PACKAGES)
+                .limit(ANDROID_SDK_PACKAGES.length - 1)
+                .filter(s -> !Files.exists(Path.of(androidSdk, s.split(";"))))
+                .collect(Collectors.toList());
+        if (!missingPackages.isEmpty()) {
+            Logger.logInfo("Required Android packages not found: " + missingPackages);
+            fetchFromSdkManager();
+        }
     }
 
     /**
@@ -170,6 +202,7 @@ public final class FileDeps {
      */
     private boolean setupDependencies() throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
+        boolean isLinuxAarch64 = new Triplet(Constants.Profile.LINUX_AARCH64).equals(configuration.getTargetTriplet());
 
         if (!Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
             Files.createDirectories(Constants.USER_SUBSTRATE_PATH);
@@ -184,13 +217,13 @@ public final class FileDeps {
         boolean downloadAndroidSdk = false;
         boolean downloadAndroidNdk = false;
         boolean downloadAndroidAdditionalLibs = false;
+        boolean downloadSysroot = false;
 
         // Java Static
         Logger.logDebug("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
 
         if ((configuration.isUseJNI()) && (!configuration.getHostTriplet().equals(configuration.getTargetTriplet()))) {
             if (!Files.isDirectory(javaStaticLibs)) {
-                System.err.println("Not a dir");
                 if (customJavaLocation) {
                     throw new IOException ("A location for the static sdk libs was supplied, but it doesn't exist: "+javaStaticLibs);
                 }
@@ -230,17 +263,18 @@ public final class FileDeps {
             Logger.logDebug("Processing JavaFXStatic dependencies at " + javafxStatic.toString());
 
             if (!Files.isDirectory(javafxStatic)) {
-         //       Logger.logDebug("javafxStaticSdk/" + configuration.getJavafxStaticSdkVersion() + "/" + target + "-sdk/lib folder not found");
                 downloadJavaFXStatic = true;
             } else {
                 String path = javafxStatic.toString();
                 if (JAVAFX_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists()) ||
-                        JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).noneMatch(File::exists)) {
+                        (isLinuxAarch64 && JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists())) ||
+                        (!isLinuxAarch64 && JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).noneMatch(File::exists))) {
                     Logger.logDebug("JavaFX file not found");
                     downloadJavaFXStatic = true;
                 } else if (configuration.isEnableCheckHash()) {
                     Logger.logDebug("Checking javafx static sdk hashes");
-                    String md5File = getChecksumFileName(javafxStatic.getParent(), "javafxStaticSdk", target);
+                    String md5File = getChecksumFileName(javafxStatic.getParent(), "javafxStaticSdk",
+                            javafxStatic.getParent().getParent().getFileName().toString());
                     Map<String, String> hashes = FileOps.getHashMap(md5File);
                     if (hashes == null) {
                         Logger.logDebug(md5File + " md5 not found");
@@ -254,6 +288,7 @@ public final class FileDeps {
                 }
             }
         }
+
         // Android
         if (Constants.OS_ANDROID.equals(configuration.getTargetTriplet().getOs())) {
             Path androidSdk = configuration.getAndroidSdkPath();
@@ -275,13 +310,22 @@ public final class FileDeps {
                 downloadAndroidNdk = true;
             }
         }
+
+        // sysroot
+        if (Constants.ARCH_AARCH64.equals(configuration.getTargetTriplet().getArch())) {
+            if (!Files.exists(configuration.getSysrootPath())) {
+                Logger.logInfo("sysroot path not found and will be downloaded.");
+                downloadSysroot = true;
+            }
+        }
+
         try {
             if (downloadJavaStatic) {
                 downloadJavaZip(target);
             }
 
             if (downloadJavaFXStatic) {
-                downloadJavaFXZip(target);
+                downloadJavaFXZip(target, isLinuxAarch64 ? "-monocle" : "");
             }
 
             if (downloadAndroidSdk) { // First we get SDK
@@ -294,6 +338,10 @@ public final class FileDeps {
 
             if (downloadAndroidNdk) { // And then NDK
                 fetchFromSdkManager();
+            }
+
+            if (downloadSysroot) {
+                downloadSysrootZip(configuration.getTargetTriplet().getArch());
             }
 
         } catch (IOException | InterruptedException e) {
@@ -326,6 +374,7 @@ public final class FileDeps {
     private void downloadJavaZip(String target) throws IOException {
         Logger.logInfo("Downloading Java Static Libs...");
         String javaZip = Strings.substitute(JAVA_STATIC_ZIP, Map.of(
+            "staticjdk", configuration.usesJDK11() ? Constants.DEFAULT_JAVASDK_PATH11 : Constants.DEFAULT_JAVASDK_PATH,
             "version", configuration.getJavaStaticSdkVersion(),
             "target", target));
         FileOps.downloadAndUnzip(JAVA_STATIC_URL + javaZip,
@@ -337,11 +386,12 @@ public final class FileDeps {
         Logger.logInfo("Java static libs downloaded successfully");
     }
 
-    private void downloadJavaFXZip(String osarch) throws IOException {
+    private void downloadJavaFXZip(String osarch, String variant) throws IOException {
         Logger.logInfo("Downloading JavaFX static libs...");
         String javafxZip = Strings.substitute(JAVAFX_STATIC_ZIP, Map.of(
             "version", configuration.getJavafxStaticSdkVersion(),
-            "target", osarch));
+            "target", osarch,
+            "variant", variant));
         FileOps.downloadAndUnzip(JAVAFX_STATIC_URL + javafxZip,
                 Constants.USER_SUBSTRATE_PATH,
                 javafxZip,
@@ -398,11 +448,15 @@ public final class FileDeps {
             Logger.logDebug("Adding Android key");
             Files.createDirectories(license.getParent());
             Files.write(license, ANDROID_KEY.getBytes());
+        } else if (Files.readAllLines(license).stream().noneMatch(ANDROID_KEY::equalsIgnoreCase)) {
+            Files.write(license, Collections.singletonList(ANDROID_KEY),
+                    StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         }
 
         String[] cliArgs = new String[] {
                 Paths.get(configuration.getGraalPath().toString(), "bin", "java").toString(),
                 "-Dcom.android.sdklib.toolsdir=" + tools,
+                "--illegal-access=permit",
                 "-classpath", libs + "/*:" + additionalLibs + "/*",
                 "com.android.sdklib.tool.sdkmanager.SdkManagerCli"
         };
@@ -423,8 +477,18 @@ public final class FileDeps {
      * @throws InterruptedException in case anything goes wrong.
      */
     private void fetchFromSdkManager() throws IOException, InterruptedException {
-        Logger.logInfo("Downloading Android NDK and toolchain. It may take several minutes depending on your bandwidth.");
+        Logger.logInfo("Downloading Android toolchain. It may take several minutes depending on your bandwidth.");
         androidSdkManager(ANDROID_SDK_PACKAGES);
-        Logger.logInfo("Android NDK and toolchain downloaded successfully");
+        Logger.logInfo("Android toolchain downloaded successfully");
+    }
+
+    private void downloadSysrootZip(String arch) throws IOException {
+        Logger.logInfo("Downloading sysroot zip...");
+        String sysrootZip = Strings.substitute(ARCH_SYSROOT_URL, Map.of("arch", arch, "version", Constants.DEFAULT_SYSROOT_VERSION));
+        FileOps.downloadAndUnzip(sysrootZip,
+                Constants.USER_SUBSTRATE_PATH,
+                arch+"sysroot.zip",
+                "sysroot", "");
+        Logger.logInfo("Sysroot zip downloaded successfully");
     }
 }

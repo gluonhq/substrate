@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,16 @@ import static com.gluonhq.substrate.Constants.*;
 
 public class Triplet {
 
+    /**
+     * The system architecture of the host is evaluated at build-time
+     */
+    private static final String OS_ARCH  = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
+
+    /**
+     * The operating system of the host is evaluated at build-time
+     */
+    private static final String OS_NAME  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+
     private String arch;
     private String vendor;
     private String os;
@@ -45,17 +55,47 @@ public class Triplet {
      * @throws IllegalArgumentException in case the current operating system is not supported
      */
     public static Triplet fromCurrentOS() throws IllegalArgumentException {
-        String osName  = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-
-        if (osName.contains("mac")) {
+        if (isMacOSHost()) {
            return new Triplet(Constants.Profile.MACOS);
-        } else if (osName.contains("nux")) {
-            return new Triplet(Constants.Profile.LINUX);
-        } else if (osName.contains("windows")) {
+        } else if (isLinuxHost()) {
+            if (isAarch64Arch()) {
+                return new Triplet(Constants.Profile.LINUX_AARCH64);
+            } else {
+                return new Triplet(Constants.Profile.LINUX);
+            }
+        } else if (isWindowsHost()) {
             return new Triplet(Constants.Profile.WINDOWS);
         } else {
-           throw new IllegalArgumentException("OS " + osName + " not supported");
+           throw new IllegalArgumentException("OS " + OS_NAME + " not supported");
         }
+    }
+
+    /**
+     * @return true if host is Windows
+     */
+    public static boolean isWindowsHost() {
+        return OS_NAME.contains("windows");
+    }
+
+    /**
+     * @return true if host is MacOS
+     */
+    public static boolean isMacOSHost() {
+        return OS_NAME.contains("mac");
+    }
+
+    /**
+     * @return true if host is Linux
+     */
+    public static boolean isLinuxHost() {
+        return OS_NAME.contains("nux");
+    }
+
+    /**
+     * @return true if host architecture is AArch64
+     */
+    public static boolean isAarch64Arch() {
+        return OS_ARCH.contains("aarch64");
     }
 
     public Triplet(String arch, String vendor, String os) {
@@ -101,6 +141,11 @@ public class Triplet {
                 this.vendor = VENDOR_LINUX;
                 this.os = OS_ANDROID;
                 break;
+            case WEB:
+                this.arch = ARCH_AMD64;
+                this.vendor = VENDOR_WEB;
+                this.os = OS_WEB;
+                break;
             default:
                 throw new IllegalArgumentException("Triplet for profile "+profile+" is not supported yet");
         }
@@ -114,9 +159,9 @@ public class Triplet {
         // if the host os and target os are the same, always return true
         if (getOs().equals(target.getOs())) return true;
 
-        // if host is linux and target is ios, fail
-        return (!Constants.OS_LINUX.equals(getOs()) && !Constants.OS_WINDOWS.equals(getOs())) ||
-                !Constants.OS_IOS.equals(target.getOs());
+        // so far, iOS can be built from Mac, Android can be built from Linux
+        return (OS_DARWIN.equals(getOs()) && OS_IOS.equals(target.getOs())) ||
+                (OS_LINUX.equals(getOs()) && OS_ANDROID.equals(target.getOs()));
     }
 
     public String getArch() {
@@ -162,6 +207,34 @@ public class Triplet {
             myarch = "amd64";
         }
         return this.os+"-"+myarch;
+    }
+
+    /**
+     *
+     * On iOS/iOS-sim, Android and Linux-AArch64, it returns a string
+     * with a valid version for clibs, for other OSes returns an empty string
+     * @return
+     */
+    public String getClibsVersion() {
+        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs()) ||
+                (OS_LINUX.equals(getOs()) && ARCH_AARCH64.equals(getArch()))) {
+            return "-ea+" + Constants.DEFAULT_CLIBS_VERSION;
+        }
+        return "";
+    }
+    /**
+     *
+     * On iOS/iOS-sim, Android and Linux-AArch64, it returns a string
+     * with a valid path for clibs, for other OSes returns an empty string
+     *
+     * @return
+     */
+    public String getClibsVersionPath() {
+        if (OS_IOS.equals(getOs()) || OS_ANDROID.equals(getOs()) ||
+                (OS_LINUX.equals(getOs()) && ARCH_AARCH64.equals(getArch()))) {
+            return Constants.DEFAULT_CLIBS_VERSION;
+        }
+        return "";
     }
 
     @Override

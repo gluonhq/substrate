@@ -1,6 +1,6 @@
 package com.gluonhq.substrate.util;
 
-import com.gluonhq.substrate.util.ios.NSDictionaryEx;
+import com.gluonhq.substrate.util.plist.NSDictionaryEx;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -16,18 +16,22 @@ public class XcodeUtils {
         IPHONEOS ("iPhoneOS"),
         IPHONESIMULATOR ("iPhoneSimulator");
 
-        private final String name;
+        private final String sdkName;
         private String absolutePath;
 
-        SDKS(String name) {
-            this.name = name;
+        SDKS(String sdkName) {
+            this.sdkName = sdkName;
         }
 
         public String getSDKPath() {
             if (absolutePath == null) {
-                absolutePath = getSdkDir(name.toLowerCase(Locale.ROOT));
+                absolutePath = getSdkDir(sdkName.toLowerCase(Locale.ROOT));
             }
             return absolutePath;
+        }
+
+        public String getSdkName() {
+            return sdkName;
         }
 
         private String getSdkDir(String name) {

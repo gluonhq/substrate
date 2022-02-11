@@ -71,16 +71,15 @@ class SubstrateTest {
         config.setTarget(iosTriplet);
         config.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
 
-        var dispatcher = new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config);
         // when on linux, nativeCompile should throw an illegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> dispatcher.nativeCompile());
+        assertThrows(IllegalArgumentException.class, () -> new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config));
     }
 
     @Test
     void testAssertGraal() {
         ProjectConfiguration publicConfig = new ProjectConfiguration("", "");
         InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
-        assertThrows(NullPointerException.class, config::canRunNativeImage);
+        assertThrows(NullPointerException.class, config::getGraalVMJavaVersion);
     }
 
     @Test

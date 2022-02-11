@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.util.ios;
+package com.gluonhq.substrate.util.plist;
 
 import com.dd.plist.NSArray;
 import com.dd.plist.NSData;
@@ -67,7 +67,7 @@ import java.util.stream.Stream;
 
 public class NSDictionaryEx {
 
-    private NSDictionary dictionary;
+    private final NSDictionary dictionary;
 
     public NSDictionaryEx() {
         this(new NSDictionary());
