@@ -365,8 +365,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             Version graalVersion = projectConfiguration.getGraalVersion();
             graalVM221 = ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() >0));
         } catch (IOException ex) {
-            ex.printStackTrace();
-            Logger.logSevere("Could not detect GraalVM version, assuming lower than 22.1");
+            Logger.logFatal(ex, "Could not detect GraalVM version, assuming lower than 22.1");
         }
         String os = target.getOs();
         String arch = target.getArch();
