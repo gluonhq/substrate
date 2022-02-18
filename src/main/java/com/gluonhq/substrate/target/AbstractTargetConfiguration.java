@@ -38,6 +38,7 @@ import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
+import com.gluonhq.substrate.util.Version;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -359,6 +360,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private String getJniPlatform() {
         Triplet target = projectConfiguration.getTargetTriplet();
+        boolean graalVM221 = false;
+        try {
+            Version graalVersion = projectConfiguration.getGraalVersion();
+            if ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() >0)) graalVM221 = true;
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            Logger.logSevere("Could not detect GraalVM version, assuming lower than 22.1");
+        }
         String os = target.getOs();
         String arch = target.getArch();
         switch (os) {
@@ -380,7 +389,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 }
                 return "IOS_AARCH64";
             case Constants.OS_DARWIN:
-                return "DARWIN_AMD64";
+                return graalVM221 ? "MACOS_AMD64" : "DARWIN_AMD64";
             case Constants.OS_WINDOWS:
                 return "WINDOWS_AMD64";
             case Constants.OS_ANDROID:
