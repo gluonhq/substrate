@@ -363,7 +363,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         boolean graalVM221 = false;
         try {
             Version graalVersion = projectConfiguration.getGraalVersion();
-            if ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() >0)) graalVM221 = true;
+            graalVM221 = ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() >0));
         } catch (IOException ex) {
             ex.printStackTrace();
             Logger.logSevere("Could not detect GraalVM version, assuming lower than 22.1");
