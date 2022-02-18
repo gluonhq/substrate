@@ -117,7 +117,7 @@ public class InternalProjectConfiguration {
         return Objects.requireNonNull(this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
     }
 
-    private Version getGraalVersion() throws IOException {
+    public Version getGraalVersion() throws IOException {
         String pattern = "GraalVM .*?(\\d\\d.\\d.\\d)";
         ProcessRunner graalJava;
         try {
