@@ -36,6 +36,10 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.Selection;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -51,6 +55,9 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
+import android.view.inputmethod.BaseInputConnection;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
@@ -225,6 +232,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     class InternalSurfaceView extends SurfaceView {
         private static final int ACTION_POINTER_STILL = -1;
+        private final KeyEvent BACK_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
+        private final KeyEvent BACK_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL);
+        private final String ENTER_STRING = new String(new byte[] {10});
+        private final KeyEvent ENTER_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER);
+        private final KeyEvent ENTER_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER);
 
         public InternalSurfaceView(Context context) {
             super(context);
@@ -278,8 +290,92 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         }
 
         @Override
+        public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+            Log.d(TAG, "onCreateInputConnection");
+            // Allows predictive text
+            outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
+            // Remove top textfield editor on landscape
+            outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
+
+            return new BaseInputConnection(this, true) {
+
+                @Override
+                public boolean setComposingText(CharSequence text, int newCursorPosition) {
+                    // remove old text
+                    replaceText();
+                    boolean result = super.setComposingText(text, newCursorPosition);
+                    processText(text.toString());
+                    return result;
+                }
+
+                @Override
+                public boolean commitText(CharSequence text, int newCursorPosition) {
+                    // remove old text
+                    replaceText();
+                    boolean result = super.commitText(text, newCursorPosition);
+                    processText(text.toString());
+                    return result;
+                }
+
+                @Override
+                public boolean deleteSurroundingText(int beforeLength, int afterLength) {
+                    boolean result = super.deleteSurroundingText(beforeLength, afterLength);
+                    resetText(beforeLength - afterLength);
+                    return result;
+                }
+
+                private void processText(String text) {
+                    if (ENTER_STRING.equals(text)) {
+                        // send enter
+                        processAndroidKeyEvent(ENTER_DOWN_EVENT);
+                        processAndroidKeyEvent(ENTER_UP_EVENT);
+                    } else {
+                        // send action_multiple with new text
+                        processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), text, -1, 0));
+                    }
+                }
+
+                private void replaceText() {
+                    Editable content = getEditable();
+                    if (content == null) {
+                        return;
+                    }
+
+                    int a = getComposingSpanStart(content);
+                    int b = getComposingSpanEnd(content);
+                    if (b < a) {
+                        int tmp = a;
+                        a = b;
+                        b = tmp;
+                    }
+
+                    if (a == -1 || b == -1) {
+                        a = Selection.getSelectionStart(content);
+                        b = Selection.getSelectionEnd(content);
+                        if (a < 0) a = 0;
+                        if (b < 0) b = 0;
+                        if (b < a) {
+                            int tmp = a;
+                            a = b;
+                            b = tmp;
+                        }
+                    }
+                    resetText(b - a);
+                }
+
+                private void resetText(int length) {
+                    // clear the old text
+                    for (int i = 0; i < length; i++) {
+                        processAndroidKeyEvent(BACK_DOWN_EVENT);
+                        processAndroidKeyEvent(BACK_UP_EVENT);
+                    }
+                }
+            };
+        }
+
+        @Override
         public boolean dispatchKeyEvent(final KeyEvent event) {
-            Log.v(TAG, "Activity, process get key event, action = "+event.getAction());
+            Log.v(TAG, "Activity, process get key event, action = "+event);
             processAndroidKeyEvent (event);
             // nativeGotKeyEvent(event.getAction(), event.getKeyCode());
             return true;
