@@ -70,7 +70,7 @@ void registerJavaFXMethodHandles(JNIEnv *aenv) {}
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurface(JNIEnv *env, jobject activity, jobject surface)
 {
     LOGE(stderr, "nativeSetSurface called, env at %p and size %ld, surface at %p\n", env, sizeof(JNIEnv), surface);
-    if (surface == NULL) {
+    if (surface != NULL) {
         window = ANativeWindow_fromSurface(env, surface);
         androidJfx_setNativeWindow(window);
         LOGE(stderr, "native setSurface Ready, native window at %p\n", window);
