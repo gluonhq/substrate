@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -110,7 +110,7 @@ public class Constants {
     public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "18-ea+11";
     public static final String DEFAULT_JAVAFX_JS_SDK_VERSION  = "18-internal+0-2021-09-02-165800";
     public static final String DEFAULT_SYSROOT_VERSION  = "20210424";
-    public static final String DEFAULT_CLIBS_VERSION  = "26";
+    public static final String DEFAULT_CLIBS_VERSION  = "27";
     public static final String DEFAULT_JAVASDK_PATH = "staticjdk";
     public static final String DEFAULT_JAVASDK_PATH11 = "labs-staticjdk";
 
