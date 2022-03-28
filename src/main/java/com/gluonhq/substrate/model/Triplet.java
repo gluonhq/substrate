@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,11 @@ public class Triplet {
      */
     public static Triplet fromCurrentOS() throws IllegalArgumentException {
         if (isMacOSHost()) {
-           return new Triplet(Constants.Profile.MACOS);
+            if (isAarch64Arch()) {
+                return new Triplet(Constants.Profile.MACOS_AARCH64);
+            } else {
+                return new Triplet(Constants.Profile.MACOS);
+            }
         } else if (isLinuxHost()) {
             if (isAarch64Arch()) {
                 return new Triplet(Constants.Profile.LINUX_AARCH64);
@@ -118,6 +122,11 @@ public class Triplet {
                 break;
             case MACOS:
                 this.arch = ARCH_AMD64;
+                this.vendor = VENDOR_APPLE;
+                this.os = OS_DARWIN;
+                break;
+            case MACOS_AARCH64:
+                this.arch = ARCH_AARCH64;
                 this.vendor = VENDOR_APPLE;
                 this.os = OS_DARWIN;
                 break;
