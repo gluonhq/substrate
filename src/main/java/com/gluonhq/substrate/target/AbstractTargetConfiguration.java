@@ -388,7 +388,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 }
                 return "IOS_AARCH64";
             case Constants.OS_DARWIN:
-                return graalVM221 ? "MACOS_AMD64" : "DARWIN_AMD64";
+                switch (arch) {
+                    case Constants.ARCH_AMD64:
+                        return graalVM221 ? "MACOS_AMD64" : "DARWIN_AMD64";
+                    case Constants.ARCH_AARCH64:
+                        return "MACOS_AARCH64";
+                    default:
+                        throw new IllegalArgumentException("No support yet for " + os + ":" + arch);
+                }
             case Constants.OS_WINDOWS:
                 return "WINDOWS_AMD64";
             case Constants.OS_ANDROID:
