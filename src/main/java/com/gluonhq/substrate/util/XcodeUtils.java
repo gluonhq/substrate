@@ -36,7 +36,10 @@ public class XcodeUtils {
 
         private String getSdkDir(String name) {
             try {
-                return ProcessRunner.runProcessForSingleOutput("sdk", "xcrun", "--sdk", name, "--show-sdk-path");
+                ProcessRunner runner = new ProcessRunner("xcrun", "--sdk", name, "--show-sdk-path");
+                if (runner.runProcess("sdk") == 0) {
+                    return runner.getLastResponse();
+                }
             } catch (IOException | InterruptedException e) {
                 Logger.logFatal(e, "Error retrieving sdk for " + name + ":" + e.getMessage());
             }
