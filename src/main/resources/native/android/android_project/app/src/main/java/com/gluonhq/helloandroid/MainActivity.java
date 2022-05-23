@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.InputType;
@@ -149,7 +150,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width,
                     int height) {
-        Log.v(TAG, "surfaceChanged start");
         Log.v(TAG, "[MainActivity] surfaceChanged, format = "+format+", width = "+width+", height = "+height);
         nativeSetSurface(holder.getSurface());
         DisplayMetrics metrics = new DisplayMetrics();
@@ -160,25 +160,22 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        System.err.println("[MainGraalActivity] surfaceDestroyed, ignore for now");
-            // _surfaceChanged(null);
+        System.err.println("[MainGraalActivity] surfaceDestroyed");
+        nativeSetSurface(null);
     }
 
     @Override
     public void surfaceRedrawNeeded(SurfaceHolder holder) {
-        Log.v(TAG, "SurfaceRedraw needed start");
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        Log.v(TAG, "ask native graallayer to redraw surface");
+        Log.v(TAG, "SurfaceRedraw needed: ask native graal layer to redraw surface");
         nativeSurfaceRedrawNeeded();
-        try {
-            Thread.sleep(500);
-            Log.v(TAG, "surfaceredraw needed part 1 done");
-            nativeSurfaceRedrawNeeded();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Log.v(TAG, "surfaceredraw needed (and wait) done");
+        Log.v(TAG, "surfaceredraw needed part 1 done");
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                nativeSurfaceRedrawNeeded();
+                Log.v(TAG, "surfaceredraw needed (and wait) done");
+            }
+        }, 100);
     }
 
     @Override
