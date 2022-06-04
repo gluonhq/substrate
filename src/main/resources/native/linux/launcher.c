@@ -117,9 +117,7 @@ void getLibGLEShandle() {
 fprintf(stderr, "NOT IMPLEMENTED\n");
 }
 
-#ifdef GVM_17
-// dummy symbols only for JDK17
-#else
+#ifndef GVM_17
 // dummy symbols only for JDK11
 void Java_java_net_PlainDatagramSocketImpl_send0() {}
 #endif
