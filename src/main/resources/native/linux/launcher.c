@@ -104,7 +104,7 @@ void JVM_RawMonitorExit() {
     fprintf(stderr, "We should never reach here (JVM_RawMonitorExit)\n");
 }
 
-// Thise functions come from unused glass-monocle code that should be removed from OpenJFX
+// These functions come from unused glass-monocle code that should be removed from OpenJFX
 void getNativeWindowType() {
 fprintf(stderr, "NOT IMPLEMENTED\n");
 }
@@ -117,5 +117,12 @@ void getLibGLEShandle() {
 fprintf(stderr, "NOT IMPLEMENTED\n");
 }
 
+#ifdef GVM_17
+// dummy symbols only for JDK17
+#else
+// dummy symbols only for JDK11
+void Java_java_net_PlainDatagramSocketImpl_send0() {}
 #endif
+
+#endif // AARCH64
 

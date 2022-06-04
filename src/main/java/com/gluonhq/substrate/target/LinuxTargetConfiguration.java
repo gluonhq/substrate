@@ -331,6 +331,9 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             flags.add("--sysroot");
             flags.add(sysroot);
         }
+        if (!projectConfiguration.usesJDK11()) {
+            flags.add("-DGVM_17");
+        }
         return flags;
     }
 
