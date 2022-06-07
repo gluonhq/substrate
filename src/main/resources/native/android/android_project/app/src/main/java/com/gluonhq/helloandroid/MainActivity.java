@@ -127,6 +127,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             Log.v(TAG, "We will now launch Graal in a separate thread");
             final String[] launchArgs = {
                     "-Duser.home=" + getApplicationInfo().dataDir,
+                    "-Dandroid.tmpdir=" + getApplicationInfo().dataDir,
                     "-Djava.io.tmpdir=" + getApplicationInfo().dataDir,
                     "-Duser.timezone=" + TimeZone.getDefault().getID(),
                     "-DLaunch.URL=" + System.getProperty("Launch.URL", ""),
