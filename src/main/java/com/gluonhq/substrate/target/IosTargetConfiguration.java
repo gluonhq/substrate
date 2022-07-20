@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 
 public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
+    private static final List<String> iosAdditionalDummySourceFiles = List.of("dummy.c");
     private static final List<String> iosAdditionalSourceFiles = Arrays.asList(
             "AppDelegate.m", "JvmFuncsFallbacks.c");
 
@@ -167,10 +168,11 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        if (projectConfiguration.isSharedLibrary()) {
-            return List.of();
+        List<String> answer = new ArrayList<>(iosAdditionalDummySourceFiles);
+        if (!projectConfiguration.isSharedLibrary()) {
+            answer.addAll(iosAdditionalSourceFiles);
         }
-        return iosAdditionalSourceFiles;
+        return answer;
     }
 
     @Override
