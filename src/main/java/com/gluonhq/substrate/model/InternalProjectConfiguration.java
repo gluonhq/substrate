@@ -65,6 +65,7 @@ public class InternalProjectConfiguration {
     private boolean usePrismSW = false;
     private boolean enableCheckHash = true;
     private boolean usesJDK11 = false;
+    private boolean sharedLibrary = false;
 
     private String backend;
     private List<String> initBuildTimeList;
@@ -324,6 +325,14 @@ public class InternalProjectConfiguration {
      */
     public void setEnableCheckHash(boolean enableCheckHash) {
         this.enableCheckHash = enableCheckHash;
+    }
+
+    public boolean isSharedLibrary() {
+        return sharedLibrary;
+    }
+
+    public void setSharedLibrary(boolean sharedLibrary) {
+        this.sharedLibrary = sharedLibrary;
     }
 
     public Triplet getTargetTriplet() {

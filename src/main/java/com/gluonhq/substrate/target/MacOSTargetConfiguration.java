@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,7 +83,18 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
+        if (projectConfiguration.isSharedLibrary()) {
+            return List.of();
+        }
         return Arrays.asList("AppDelegate.m", "launcher.c");
+    }
+
+    @Override
+    List<String> getTargetSpecificLinkOutputFlags() {
+        if (projectConfiguration.isSharedLibrary()) {
+            return Arrays.asList("-o", getSharedLibPath().toString());
+        }
+        return super.getTargetSpecificLinkOutputFlags();
     }
 
     @Override
@@ -96,7 +107,12 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
         List<String> linkFlags = new ArrayList<>(asListOfLibraryLinkFlags(javaDarwinLibs));
 
         linkFlags.add("-mmacosx-version-min=" + MIN_MACOS_VERSION);
-
+        if (projectConfiguration.isSharedLibrary()) {
+            linkFlags.addAll(Arrays.asList(
+                    "-shared",
+                    "-undefined",
+                    "dynamic_lookup"));
+        }
         if (useJavaFX) {
             linkFlags.addAll(asListOfLibraryLinkFlags(javaFxDarwinLibs));
             if (projectConfiguration.hasWeb()) {
@@ -216,5 +232,10 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
         return frameworks.stream()
                 .map(framework -> "-Wl,-framework," + framework)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    Path getSharedLibPath() {
+        return paths.getAppPath().resolve(getLinkOutputName() + ".dylib");
     }
 }

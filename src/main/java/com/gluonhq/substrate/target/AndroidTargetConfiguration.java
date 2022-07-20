@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,6 +78,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final Path objdump;
     private final String hostPlatformFolder;
 
+    private final List<String> androidAdditionalDummySourceFiles = List.of("dummy.c");
     private final List<String> androidAdditionalSourceFiles = Arrays.asList("launcher.c", "javafx_adapter.c",
             "touch_events.c", "glibc_shim.c", "attach_adapter.c", "logger.c");
     private final List<String> androidAdditionalWebSourceFiles = Collections.singletonList("bridge_webview.c");
@@ -342,9 +343,12 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        List<String> answer = new ArrayList<>(androidAdditionalSourceFiles);
-        if (projectConfiguration.hasWeb()) {
-            answer.addAll(androidAdditionalWebSourceFiles);
+        List<String> answer = new ArrayList<>(androidAdditionalDummySourceFiles);
+        if (!projectConfiguration.isSharedLibrary()) {
+            answer.addAll(androidAdditionalSourceFiles);
+            if (projectConfiguration.hasWeb()) {
+                answer.addAll(androidAdditionalWebSourceFiles);
+            }
         }
         return answer;
     }
@@ -666,5 +670,10 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         for (File jar : jars) {
             FileOps.extractFilesFromJar(".aar", jar.toPath(), libPath, null);
         }
+    }
+
+    @Override
+    Path getSharedLibPath() {
+        return paths.getAppPath().resolve(getLinkOutputName());
     }
 }

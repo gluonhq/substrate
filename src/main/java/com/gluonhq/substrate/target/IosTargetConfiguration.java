@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,6 +100,12 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
                 "-arch", getTargetArch(),
                 "-mios-version-min=11.0",
                 "-isysroot", getSysroot()));
+        if (projectConfiguration.isSharedLibrary()) {
+            linkFlags.addAll(Arrays.asList(
+                    "-shared",
+                    "-undefined",
+                    "dynamic_lookup"));
+        }
         if (useJavaFX) {
             String javafxSDK = projectConfiguration.getJavafxStaticLibsPath().toString();
             List<String> libs = new ArrayList<>(javafxLibs);
@@ -161,7 +167,18 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
+        if (projectConfiguration.isSharedLibrary()) {
+            return List.of();
+        }
         return iosAdditionalSourceFiles;
+    }
+
+    @Override
+    List<String> getTargetSpecificLinkOutputFlags() {
+        if (projectConfiguration.isSharedLibrary()) {
+            return Arrays.asList("-o", getSharedLibPath().toString());
+        }
+        return super.getTargetSpecificLinkOutputFlags();
     }
 
     @Override
@@ -392,6 +409,11 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             FileOps.copyResource(capLocation+cap, capPath.resolve(cap));
         }
         return capPath;
+    }
+
+    @Override
+    Path getSharedLibPath() {
+        return paths.getAppPath().resolve(getLinkOutputName() + ".dylib");
     }
 
 }
