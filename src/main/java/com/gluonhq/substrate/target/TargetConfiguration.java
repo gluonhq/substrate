@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,4 +84,11 @@ public interface TargetConfiguration {
      */
     boolean runUntilEnd() throws IOException, InterruptedException;
 
+    /**
+     * Creates a native image that can be used as shared library
+     * @return true if the process succeeded or false if the process failed
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    boolean createSharedLib() throws IOException, InterruptedException;
 }

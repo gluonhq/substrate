@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,9 +31,9 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.target.AndroidTargetConfiguration;
-import com.gluonhq.substrate.target.MacOSTargetConfiguration;
 import com.gluonhq.substrate.target.IosTargetConfiguration;
 import com.gluonhq.substrate.target.LinuxTargetConfiguration;
+import com.gluonhq.substrate.target.MacOSTargetConfiguration;
 import com.gluonhq.substrate.target.TargetConfiguration;
 import com.gluonhq.substrate.target.WebTargetConfiguration;
 import com.gluonhq.substrate.target.WindowsTargetConfiguration;
@@ -494,5 +494,20 @@ public class SubstrateDispatcher {
         Logger.logInfo(logTitle("RUN TASK"));
         targetConfiguration.runUntilEnd();
         printMessage("run");
+    }
+
+    /**
+     * This method builds a native image that can be used as shared library by third
+     * party projects, considering it contains one or more entry points.
+     *
+     * Static entry points, callable from C, can be created with the {@code @CEntryPoint}
+     * annotation.
+     *
+     * @throws Exception
+     */
+    public boolean nativeSharedLibrary() throws Exception {
+        Logger.logInfo(logTitle("SHARED LIBRARY TASK"));
+        config.setSharedLibrary(true);
+        return targetConfiguration.createSharedLib();
     }
 }

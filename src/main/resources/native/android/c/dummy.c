@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Gluon
+ * Copyright (c) 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,29 +25,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.target;
+#include <stdlib.h>
 
-import com.gluonhq.substrate.model.InternalProjectConfiguration;
-import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.util.ProcessRunner;
-
-import java.io.IOException;
-import java.nio.file.Path;
-
-abstract class DarwinTargetConfiguration extends PosixTargetConfiguration {
-
-    DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
-        super(paths, configuration);
-    }
-
-    @Override
-    public boolean createSharedLib() throws IOException, InterruptedException {
-        if (!super.createSharedLib()) {
-            return false;
-        }
-        Path lib = getSharedLibPath();
-        String libName = lib.getName(lib.getNameCount() - 1).toString();
-        ProcessRunner process = new ProcessRunner("install_name_tool", "-id", "@rpath/" + libName, libName);
-        return process.runProcess("install name", lib.getParent().toFile()) == 0;
-    }
-}
+#ifdef GVM_17
+// dummy symbols only for JDK17
+void Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_DatagramPacket_init() {}
+#else
+// dummy symbols only for JDK11
+void Java_java_net_PlainDatagramSocketImpl_send0() {}
+#endif

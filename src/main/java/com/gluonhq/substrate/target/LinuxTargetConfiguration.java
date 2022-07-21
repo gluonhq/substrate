@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -241,6 +241,14 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
+    List<String> getAdditionalSourceFiles() {
+        if (projectConfiguration.isSharedLibrary()) {
+            return List.of();
+        }
+        return super.getAdditionalSourceFiles();
+    }
+
+    @Override
     protected List<Path> getLinkerLibraryPaths() throws IOException {
         List<Path> linkerLibraryPaths = new ArrayList<>();
         linkerLibraryPaths.add(getCLibPath());
@@ -255,6 +263,10 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         List<String> answer = new LinkedList<>();
         answer.add("-Wl,--wrap=pow");
         answer.add("-rdynamic");
+        if (projectConfiguration.isSharedLibrary()) {
+            answer.add("-shared");
+            answer.add("-undefined");
+        }
         if (crossCompile) {
             answer.add("-fuse-ld=gold");
             answer.add("--sysroot");
@@ -335,6 +347,14 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             flags.add("-DGVM_17");
         }
         return flags;
+    }
+
+    @Override
+    List<String> getTargetSpecificLinkOutputFlags() {
+        if (projectConfiguration.isSharedLibrary()) {
+            return Arrays.asList("-o", getSharedLibPath().toString());
+        }
+        return super.getTargetSpecificLinkOutputFlags();
     }
 
     /*
@@ -429,5 +449,10 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         }
         Logger.logDebug("Ignore file " + path + " since objdump failed on it");
         return false;
+    }
+
+    @Override
+    Path getSharedLibPath() {
+        return paths.getAppPath().resolve(getLinkOutputName() + ".so");
     }
 }

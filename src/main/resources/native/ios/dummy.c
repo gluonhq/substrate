@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Gluon
+ * Copyright (c) 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,29 +25,80 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gluonhq.substrate.target;
+#include <stdlib.h>
+#include <stdio.h>
 
-import com.gluonhq.substrate.model.InternalProjectConfiguration;
-import com.gluonhq.substrate.model.ProcessPaths;
-import com.gluonhq.substrate.util.ProcessRunner;
+typedef struct {
+#ifdef GVM_IOS_SIM
+  char fCX8;
+  char fCMOV;
+  char fFXSR;
+  char fHT;
+  char fMMX;
+  char fAMD3DNOWPREFETCH;
+  char fSSE;
+  char fSSE2;
+  char fSSE3;
+  char fSSSE3;
+  char fSSE4A;
+  char fSSE41;
+  char fSSE42;
+  char fPOPCNT;
+  char fLZCNT;
+  char fTSC;
+  char fTSCINV;
+  char fAVX;
+  char fAVX2;
+  char fAES;
+  char fERMS;
+  char fCLMUL;
+  char fBMI1;
+  char fBMI2;
+  char fRTM;
+  char fADX;
+  char fAVX512F;
+  char fAVX512DQ;
+  char fAVX512PF;
+  char fAVX512ER;
+  char fAVX512CD;
+  char fAVX512BW;
+  char fAVX512VL;
+  char fSHA;
+  char fFMA;
+#else
+  char fFP;
+  char fASIMD;
+  char fEVTSTRM;
+  char fAES;
+  char fPMULL;
+  char fSHA1;
+  char fSHA2;
+  char fCRC32;
+  char fLSE;
+  char fSTXRPREFETCH;
+  char fA53MAC;
+  char fDMBATOMICS;
+#endif
+} CPUFeatures;
 
-import java.io.IOException;
-import java.nio.file.Path;
-
-abstract class DarwinTargetConfiguration extends PosixTargetConfiguration {
-
-    DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
-        super(paths, configuration);
-    }
-
-    @Override
-    public boolean createSharedLib() throws IOException, InterruptedException {
-        if (!super.createSharedLib()) {
-            return false;
-        }
-        Path lib = getSharedLibPath();
-        String libName = lib.getName(lib.getNameCount() - 1).toString();
-        ProcessRunner process = new ProcessRunner("install_name_tool", "-id", "@rpath/" + libName, libName);
-        return process.runProcess("install name", lib.getParent().toFile()) == 0;
-    }
+void determineCPUFeatures(CPUFeatures* features)
+{
+    fprintf(stderr, "\n\n\ndetermineCpuFeaures\n");
+#ifdef GVM_IOS_SIM
+    features->fSSE = 1;
+    features->fSSE2 = 1;
+#else
+    features->fFP = 1;
+    features->fASIMD = 1;
+#endif
 }
+
+#ifdef GVM_17
+// dummy symbols only for JDK17
+void Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0() {}
+void Java_java_net_DatagramPacket_init() {}
+#else
+// dummy symbols only for JDK11
+void Java_java_net_PlainDatagramSocketImpl_send0() {}
+#endif

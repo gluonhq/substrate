@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,5 +46,20 @@ abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
         Path libjvmPath = clibPath.resolve("libjvm.a");
         if (!Files.exists(libjvmPath)) throw new IOException("Missing library libjvm.a not in linkpath "+clibPath);
     }
+
+    @Override
+    public boolean createSharedLib() throws IOException, InterruptedException {
+        if (!compile()) {
+            Logger.logSevere("Error building a shared image: error compiling the native image");
+            return false;
+        }
+        if (!link()) {
+            Logger.logSevere("Error building a shared image: error linking the native image");
+            return false;
+        }
+        return Files.exists(getSharedLibPath());
+    }
+
+    abstract Path getSharedLibPath();
 
 }
