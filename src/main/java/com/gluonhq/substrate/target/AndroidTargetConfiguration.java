@@ -84,9 +84,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final List<String> androidAdditionalWebSourceFiles = Collections.singletonList("bridge_webview.c");
     private final List<String> androidAdditionalHeaderFiles = Arrays.asList("grandroid.h", "grandroid_ext.h");
     private final List<String> androidAdditionalWebHeaderFiles = Collections.singletonList("bridge_webview.h");
-    private final List<String> cFlags = new ArrayList<>(Arrays.asList("-target", ANDROID_TRIPLET, "-I."));
+    private final List<String> cFlags = new ArrayList<>(Arrays.asList("-target", ANDROID_TRIPLET, "-I.", "-fPIC"));
     private final List<String> linkFlags = Arrays.asList("-target",
-            ANDROID_TRIPLET + ANDROID_MIN_SDK_VERSION, "-fPIC", "-fuse-ld=gold",
+            ANDROID_TRIPLET + ANDROID_MIN_SDK_VERSION, "-fPIC",
             "-Wl,--rosegment,--gc-sections,-z,noexecstack", "-shared",
             "-landroid", "-llog", "-lffi", "-llibchelper", "-static-libstdc++");
     private final List<String> javafxLinkFlags = new ArrayList<>(Arrays.asList(WL_WHOLE_ARCHIVE,
@@ -112,7 +112,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         projectConfiguration.setBackend(Constants.BACKEND_LIR);
 
-        Path objdumpguess = Paths.get(hostPlatformFolder, ANDROID_TRIPLET, "bin", "objdump");
+        Path objdumpguess = Paths.get(hostPlatformFolder, "bin", "llvm-objdump");
         this.objdump = Files.exists(objdumpguess) ? objdumpguess : null;
     }
 
