@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -325,7 +325,9 @@ public final class FileDeps {
             }
 
             if (downloadJavaFXStatic) {
-                downloadJavaFXZip(target, isLinuxAarch64 ? "-monocle" : "");
+                String osarch = new Triplet(Constants.Profile.IOS_SIM).equals(configuration.getTargetTriplet()) ?
+                        new Triplet(Constants.Profile.IOS).getOsArch() : target;
+                downloadJavaFXZip(osarch, isLinuxAarch64 ? "-monocle" : "");
             }
 
             if (downloadAndroidSdk) { // First we get SDK
@@ -397,7 +399,7 @@ public final class FileDeps {
                 javafxZip,
                 "javafxStaticSdk",
                 configuration.getJavafxStaticSdkVersion(),
-                configuration.getTargetTriplet().getOsArch());
+                osarch);
         Logger.logInfo("JavaFX static libs downloaded successfully");
     }
 
