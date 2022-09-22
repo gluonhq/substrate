@@ -137,12 +137,12 @@ public class Simulator {
                     .findFirst()
                     .orElse(null);
             if (device == null) {
-                // else default to iPhone 13
+                // else default to iPhone 14
                 device = devices.stream()
-                        .filter(d -> "iPhone 13".equals(d.getName()))
+                        .filter(d -> "iPhone 14".equals(d.getName()))
                         .findFirst()
                         .orElseThrow(() -> new IOException("No device found. " +
-                                "\nPossible devices are:\n " +
+                                "\nPossible devices are:\n" +
                                 devices.stream().map(SimDevice::getName).collect(Collectors.joining("\n"))));
             }
         }
