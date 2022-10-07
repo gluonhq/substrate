@@ -52,6 +52,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
@@ -251,7 +252,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             final int[] ids = new int[pcount];
             final int[] touchXs = new int[pcount];
             final int[] touchYs = new int[pcount];
-            Log.v(TAG, "Activity, get touch event, pcount = "+pcount);
             if (pcount > 1) {
                 //multitouch
                 if (actionCode == MotionEvent.ACTION_POINTER_DOWN
@@ -278,6 +278,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 ids[0] = event.getPointerId(0);
                 touchXs[0] = (int) (event.getX()/density);
                 touchYs[0] = (int) (event.getY()/density);
+
+                if (action == MotionEvent.ACTION_DOWN) {
+                    longPress.setX(touchXs[0]);
+                    longPress.setY(touchYs[0]);
+                    handler.postDelayed(longPress, ViewConfiguration.getLongPressTimeout());
+                }
+
+                if (action == MotionEvent.ACTION_UP) {
+                    handler.removeCallbacks(longPress);
+                }
             }
             if (!isFocused()) {
                 Log.v(TAG, "View wasn't focused, requesting focus");
@@ -380,6 +390,31 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         }
     }
 
+    private final Handler handler = new Handler();
+    private final LongPress longPress = new LongPress();
+
+    private class LongPress implements Runnable {
+
+        int x, y;
+
+        void setX(int x) {
+            this.x = x;
+        }
+
+        void setY(int y) {
+            this.y = y;
+        }
+
+        @Override
+        public void run() {
+            Log.d(TAG, "Long press!");
+            nativeNotifyMenu(x, y, x, y, false);
+        }
+
+    }
+
+    private native void nativeNotifyMenu(int x, int y, int xAbs, int yAbs, boolean isKeyboardTrigger);
+
     @Override
     protected void onDestroy() {
         Log.v(TAG, "onDestroy");
@@ -438,12 +473,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private int deadKey = 0;
 
     void processAndroidKeyEvent (KeyEvent event) {
-        System.out.println("KeyEvent: " + event+" with action = "+event.getAction());
         int jfxModifiers = mapAndroidModifierToJfx(event.getMetaState());
         switch (event.getAction()) {
             case KeyEvent.ACTION_DOWN:
                 KeyCode jfxKeyCode = mapAndroidKeyCodeToJfx(event.getKeyCode());
-System.out.println ("[JVDBG] eventkeycode = "+event.getKeyCode()+" and jfxkc = "+jfxKeyCode+" with code "+ jfxKeyCode.impl_getCode());
                 nativedispatchKeyEvent(PRESS, jfxKeyCode.impl_getCode(), jfxKeyCode.impl_getChar().toCharArray(), jfxKeyCode.impl_getChar().toCharArray().length, jfxModifiers);
                 break;
 
