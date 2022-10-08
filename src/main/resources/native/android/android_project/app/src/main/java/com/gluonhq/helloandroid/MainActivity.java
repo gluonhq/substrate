@@ -30,9 +30,6 @@ package com.gluonhq.helloandroid;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -52,13 +49,12 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.WindowManager.LayoutParams;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
@@ -85,7 +81,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         super.onCreate(savedInstanceState);
         Log.v(TAG, "onCreate start, using Android Logging v1");
         System.err.println("onCreate called, writing this to System.err");
-        super.onCreate(savedInstanceState);
 
         getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         getWindow().setSoftInputMode(
@@ -223,10 +218,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeSetSurface(Surface surface);
     private native void nativeSurfaceRedrawNeeded();
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
-    private native void nativeGotKeyEvent(int action, int keycode);
-    private native void nativedispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
+    private native void nativeDispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
     private native void nativeDispatchLifecycleEvent(String event);
     private native void nativeDispatchActivityResult(int requestCode, int resultCode, Intent intent);
+    private native void nativeNotifyMenu(int x, int y, int xAbs, int yAbs, boolean isKeyboardTrigger);
 
     class InternalSurfaceView extends SurfaceView {
         private static final int ACTION_POINTER_STILL = -1;
@@ -251,7 +246,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             final int[] ids = new int[pcount];
             final int[] touchXs = new int[pcount];
             final int[] touchYs = new int[pcount];
-            Log.v(TAG, "Activity, get touch event, pcount = "+pcount);
             if (pcount > 1) {
                 //multitouch
                 if (actionCode == MotionEvent.ACTION_POINTER_DOWN
@@ -278,6 +272,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 ids[0] = event.getPointerId(0);
                 touchXs[0] = (int) (event.getX()/density);
                 touchYs[0] = (int) (event.getY()/density);
+
+                if (action == MotionEvent.ACTION_DOWN) {
+                    longPress.setX(touchXs[0]);
+                    longPress.setY(touchYs[0]);
+                    handler.postDelayed(longPress, ViewConfiguration.getLongPressTimeout());
+                }
+
+                if (action == MotionEvent.ACTION_UP) {
+                    handler.removeCallbacks(longPress);
+                }
             }
             if (!isFocused()) {
                 Log.v(TAG, "View wasn't focused, requesting focus");
@@ -375,9 +379,31 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         public boolean dispatchKeyEvent(final KeyEvent event) {
             Log.v(TAG, "Activity, process get key event, action = "+event);
             processAndroidKeyEvent (event);
-            // nativeGotKeyEvent(event.getAction(), event.getKeyCode());
             return true;
         }
+
+        private final Handler handler = new Handler();
+        private final LongPress longPress = new LongPress();
+
+        private class LongPress implements Runnable {
+
+            int x, y;
+
+            void setX(int x) {
+                this.x = x;
+            }
+
+            void setY(int y) {
+                this.y = y;
+            }
+
+            @Override
+            public void run() {
+                Log.d(TAG, "Long press!");
+                nativeNotifyMenu(x, y, x, y, false);
+            }
+        }
+
     }
 
     @Override
@@ -438,18 +464,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private int deadKey = 0;
 
     void processAndroidKeyEvent (KeyEvent event) {
-        System.out.println("KeyEvent: " + event+" with action = "+event.getAction());
         int jfxModifiers = mapAndroidModifierToJfx(event.getMetaState());
         switch (event.getAction()) {
             case KeyEvent.ACTION_DOWN:
                 KeyCode jfxKeyCode = mapAndroidKeyCodeToJfx(event.getKeyCode());
-System.out.println ("[JVDBG] eventkeycode = "+event.getKeyCode()+" and jfxkc = "+jfxKeyCode+" with code "+ jfxKeyCode.impl_getCode());
-                nativedispatchKeyEvent(PRESS, jfxKeyCode.impl_getCode(), jfxKeyCode.impl_getChar().toCharArray(), jfxKeyCode.impl_getChar().toCharArray().length, jfxModifiers);
+                nativeDispatchKeyEvent(PRESS, jfxKeyCode.impl_getCode(), jfxKeyCode.impl_getChar().toCharArray(), jfxKeyCode.impl_getChar().toCharArray().length, jfxModifiers);
                 break;
 
             case KeyEvent.ACTION_UP:
                 jfxKeyCode = mapAndroidKeyCodeToJfx(event.getKeyCode());
-                nativedispatchKeyEvent(RELEASE, jfxKeyCode.impl_getCode(), jfxKeyCode.impl_getChar().toCharArray(), jfxKeyCode.impl_getChar().toCharArray().length, jfxModifiers);
+                nativeDispatchKeyEvent(RELEASE, jfxKeyCode.impl_getCode(), jfxKeyCode.impl_getChar().toCharArray(), jfxKeyCode.impl_getChar().toCharArray().length, jfxModifiers);
                 int unicodeChar = event.getUnicodeChar();
                 if ((unicodeChar & KeyCharacterMap.COMBINING_ACCENT) != 0) {
                     deadKey = unicodeChar & KeyCharacterMap.COMBINING_ACCENT_MASK;
@@ -462,20 +486,20 @@ System.out.println ("[JVDBG] eventkeycode = "+event.getKeyCode()+" and jfxkc = "
                 }
 
                 if (unicodeChar != 0) {
-                    nativedispatchKeyEvent(TYPED, KeyCode.UNDEFINED.impl_getCode(), Character.toChars(unicodeChar), 1, jfxModifiers);
+                    nativeDispatchKeyEvent(TYPED, KeyCode.UNDEFINED.impl_getCode(), Character.toChars(unicodeChar), 1, jfxModifiers);
                 }
 
                 break;
 
             case KeyEvent.ACTION_MULTIPLE:
                 if (event.getKeyCode() == KeyEvent.KEYCODE_UNKNOWN) {
-                    nativedispatchKeyEvent(TYPED, KeyCode.UNDEFINED.impl_getCode(), event.getCharacters().toCharArray(), event.getCharacters().toCharArray().length,    jfxModifiers);
+                    nativeDispatchKeyEvent(TYPED, KeyCode.UNDEFINED.impl_getCode(), event.getCharacters().toCharArray(), event.getCharacters().toCharArray().length,    jfxModifiers);
                 } else {
                     jfxKeyCode = mapAndroidKeyCodeToJfx(event.getKeyCode());
                     for (int i = 0; i < event.getRepeatCount(); i++) {
-                        nativedispatchKeyEvent(PRESS, jfxKeyCode.impl_getCode(), null, 0, jfxModifiers);
-                        nativedispatchKeyEvent(RELEASE, jfxKeyCode.impl_getCode(), null, 0, jfxModifiers);
-                        nativedispatchKeyEvent(TYPED, jfxKeyCode.impl_getCode(), null, 0, jfxModifiers);
+                        nativeDispatchKeyEvent(PRESS, jfxKeyCode.impl_getCode(), null, 0, jfxModifiers);
+                        nativeDispatchKeyEvent(RELEASE, jfxKeyCode.impl_getCode(), null, 0, jfxModifiers);
+                        nativeDispatchKeyEvent(TYPED, jfxKeyCode.impl_getCode(), null, 0, jfxModifiers);
                     }
                 }
 
