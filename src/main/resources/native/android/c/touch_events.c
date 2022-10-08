@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Gluon
+ * Copyright (c) 2020, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,21 +60,14 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotTouch
 //    LOGE(stderr, "Native Dalvik layer got touch event, passed to native Graal layer...");
 }
 
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativedispatchKeyEvent(JNIEnv *env, jobject activity, jint action, jint keyCode, jcharArray jchars, jint cc, jint modifiers)
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchKeyEvent(JNIEnv *env, jobject activity, jint action, jint keyCode, jcharArray jchars, jint cc, jint modifiers)
 {
 //    LOGE(stderr, "Native Dalvik layer has to dispatch key event, pass to native Graal layer with %d chars...", cc);
     jchar *kars = (*env)->GetCharArrayElements(env, jchars, 0);
     androidJfx_gotKeyEvent(action, keyCode, kars, cc, modifiers);
 }
 
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeGotKeyEvent(JNIEnv *env, jobject activity, jint action, jint keyCode)
-{
-//    LOGE(stderr, "Native Dalvik layer got key event, pass to native Graal layer...");
-    // androidJfx_gotKeyEvent(action, keyCode);
-    // Java_com_sun_glass_ui_android_DalvikInput_onKeyEventNative(NULL, NULL, action, keyCode);
-}
-
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_00024InternalSurfaceView_nativeNotifyMenu(JNIEnv *env, jobject activity, jint x, jint y, jint xAbs, jint yAbs, jboolean isKeyboardTrigger)
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeNotifyMenu(JNIEnv *env, jobject activity, jint x, jint y, jint xAbs, jint yAbs, jboolean isKeyboardTrigger)
 {
 //    LOGE(stderr, "Native Dalvik layer got notify menu, pass to native Graal layer...");
     androidJfx_gotMenuEvent(x, y, xAbs, yAbs, isKeyboardTrigger);
