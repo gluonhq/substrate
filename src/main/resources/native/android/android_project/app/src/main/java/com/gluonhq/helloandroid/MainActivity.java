@@ -388,32 +388,32 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             // nativeGotKeyEvent(event.getAction(), event.getKeyCode());
             return true;
         }
+
+        private final Handler handler = new Handler();
+        private final LongPress longPress = new LongPress();
+
+        private class LongPress implements Runnable {
+
+            int x, y;
+
+            void setX(int x) {
+                this.x = x;
+            }
+
+            void setY(int y) {
+                this.y = y;
+            }
+
+            @Override
+            public void run() {
+                Log.d(TAG, "Long press!");
+                nativeNotifyMenu(x, y, x, y, false);
+            }
+
+        }
+
+        private native void nativeNotifyMenu(int x, int y, int xAbs, int yAbs, boolean isKeyboardTrigger);
     }
-
-    private final Handler handler = new Handler();
-    private final LongPress longPress = new LongPress();
-
-    private class LongPress implements Runnable {
-
-        int x, y;
-
-        void setX(int x) {
-            this.x = x;
-        }
-
-        void setY(int y) {
-            this.y = y;
-        }
-
-        @Override
-        public void run() {
-            Log.d(TAG, "Long press!");
-            nativeNotifyMenu(x, y, x, y, false);
-        }
-
-    }
-
-    private native void nativeNotifyMenu(int x, int y, int xAbs, int yAbs, boolean isKeyboardTrigger);
 
     @Override
     protected void onDestroy() {
