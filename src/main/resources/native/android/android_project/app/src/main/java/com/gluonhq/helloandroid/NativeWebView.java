@@ -279,6 +279,7 @@ public class NativeWebView {
                 MainActivity.getViewGroup().removeView(webView);
                 // TODO: destroy webView ?
                 layoutStarted = false;
+                inlayout = false;
             }
         });
     }
