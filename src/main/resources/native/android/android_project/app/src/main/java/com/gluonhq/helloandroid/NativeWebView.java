@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Gluon
+ * Copyright (c) 2020, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -279,6 +279,7 @@ public class NativeWebView {
                 MainActivity.getViewGroup().removeView(webView);
                 // TODO: destroy webView ?
                 layoutStarted = false;
+                inlayout = false;
             }
         });
     }
