@@ -236,7 +236,7 @@ public class WebTargetConfiguration extends AbstractTargetConfiguration {
                     Path path = a.toPath();
                     int m2Index = 0;
                     while (!".m2".equals(path.getName(m2Index++).toString())) { }
-                    String groupId = path.subpath(m2Index + 1, path.getNameCount() - 3).toString().replaceAll(File.separator, ".");
+                    String groupId = path.subpath(m2Index + 1, path.getNameCount() - 3).toString().replace(File.separator, ".");
                     String artifactId = path.getName(path.getNameCount() - 3).toString();
                     String version = path.getName(path.getNameCount() - 2).toString();
                     String artifact = groupId + ":" + artifactId + ":" + version;
