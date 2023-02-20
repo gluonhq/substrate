@@ -1,6 +1,9 @@
 NativeCodeInfo:PosixDirectives:ConstantInfo:CLOCK_MONOTONIC:PropertyInfo:size=4
 NativeCodeInfo:PosixDirectives:ConstantInfo:CLOCK_MONOTONIC:PropertyInfo:signedness=$UNSIGNED$
 NativeCodeInfo:PosixDirectives:ConstantInfo:CLOCK_MONOTONIC:PropertyInfo:value=1
+NativeCodeInfo:PosixDirectives:ConstantInfo:CLOCK_THREAD_CPUTIME_ID:PropertyInfo:size=4
+NativeCodeInfo:PosixDirectives:ConstantInfo:CLOCK_THREAD_CPUTIME_ID:PropertyInfo:signedness=$UNSIGNED$
+NativeCodeInfo:PosixDirectives:ConstantInfo:CLOCK_THREAD_CPUTIME_ID:PropertyInfo:value=3
 NativeCodeInfo:PosixDirectives:ConstantInfo:EAGAIN:PropertyInfo:size=4
 NativeCodeInfo:PosixDirectives:ConstantInfo:EAGAIN:PropertyInfo:signedness=$UNSIGNED$
 NativeCodeInfo:PosixDirectives:ConstantInfo:EAGAIN:PropertyInfo:value=B
@@ -314,6 +317,7 @@ NativeCodeInfo:PosixDirectives:StructInfo:pthread_attr_t:PropertyInfo:size=56
 NativeCodeInfo:PosixDirectives:StructInfo:pthread_cond_t:PropertyInfo:size=48
 NativeCodeInfo:PosixDirectives:StructInfo:pthread_condattr_t:PropertyInfo:size=8
 NativeCodeInfo:PosixDirectives:StructInfo:pthread_mutex_t:PropertyInfo:size=40
+NativeCodeInfo:PosixDirectives:StructInfo:sem_t:PropertyInfo:size=16
 NativeCodeInfo:PosixDirectives:StructInfo:siginfo_t:PropertyInfo:size=128
 NativeCodeInfo:PosixDirectives:StructInfo:siginfo_t:StructFieldInfo:si_addr:PropertyInfo:size=8
 NativeCodeInfo:PosixDirectives:StructInfo:siginfo_t:StructFieldInfo:si_addr:PropertyInfo:offset=16
