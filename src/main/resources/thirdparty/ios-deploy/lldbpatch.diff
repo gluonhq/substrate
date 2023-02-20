@@ -1,13 +1,14 @@
 diff --git a/src/scripts/lldb.py b/src/scripts/lldb.py
-index 89feffb..9b3382a 100644
+index 26d9a88..93e0262 100644
 --- a/src/scripts/lldb.py
 +++ b/src/scripts/lldb.py
-@@ -103,7 +103,7 @@ def autoexit_command(debugger, command, result, internal_dict):
-     printBacktraceTime = time.time() + detectDeadlockTimeout if detectDeadlockTimeout > 0 else None
-     
-     # This line prevents internal lldb listener from processing STDOUT/STDERR messages. Without it, an order of log writes is incorrect sometimes
--    debugger.GetListener().StopListeningForEvents(process.GetBroadcaster(), lldb.SBProcess.eBroadcastBitSTDOUT | lldb.SBProcess.eBroadcastBitSTDERR )
-+    # debugger.GetListener().StopListeningForEvents(process.GetBroadcaster(), lldb.SBProcess.eBroadcastBitSTDOUT | lldb.SBProcess.eBroadcastBitSTDERR )
+@@ -116,7 +116,8 @@ def autoexit_command(debugger, command, result, internal_dict):
+     # This line prevents internal lldb listener from processing STDOUT/STDERR/StateChanged messages.
+     # Without it, an order of log writes is incorrect sometimes
+     debugger.GetListener().StopListeningForEvents(process.GetBroadcaster(),
+-                                                  lldb.SBProcess.eBroadcastBitSTDOUT | lldb.SBProcess.eBroadcastBitSTDERR | lldb.SBProcess.eBroadcastBitStateChanged )
++#                                                   lldb.SBProcess.eBroadcastBitSTDOUT | lldb.SBProcess.eBroadcastBitSTDERR | lldb.SBProcess.eBroadcastBitStateChanged )
++                                                  lldb.SBProcess.eBroadcastBitStateChanged )
  
      event = lldb.SBEvent()
      
