@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -232,10 +232,10 @@ public class Deploy {
                 checkPrerequisites(checksPath);
             }
         } else {
-            // Check for ios-deploy version installed (it should be 1.11+)
+            // Check for ios-deploy version installed (it should be 1.12+)
             String version = ProcessRunner.runProcessForSingleOutput("ios-deploy version","ios-deploy", "-V");
             if (version != null && !version.isEmpty() &&
-                    (version.startsWith("1.8") || version.startsWith("1.9") || version.startsWith("1.10"))) {
+                    (version.startsWith("1.8") || version.startsWith("1.9") || version.startsWith("1.10") || version.startsWith("1.11"))) {
                 Logger.logDebug("ios-deploy was outdated (version " + version + "), replacing with the latest version...");
                 uninstallIOSDeploy();
                 if (installIOSDeploy()) {
