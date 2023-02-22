@@ -201,7 +201,9 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             new IllegalArgumentException(
                     "Linking failed, since there is no objectfile named " + objectFilename + " under " + gvmPath.toString())
         );
-
+        if (projectConfiguration.isStaticLibrary()) {
+            return createStaticLib();
+        }
         ProcessRunner linkRunner = new ProcessRunner(getLinker());
 
         Path gvmAppPath = gvmPath.resolve(appName);
@@ -314,6 +316,17 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     @Override
     public boolean createSharedLib() throws IOException, InterruptedException {
+        return true;
+    }
+
+    /**
+     * Creates a static library
+     * @return true if the process succeeded or false if the process failed
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Override
+    public boolean createStaticLib() throws IOException, InterruptedException {
         return true;
     }
 

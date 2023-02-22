@@ -91,4 +91,13 @@ public interface TargetConfiguration {
      * @throws InterruptedException
      */
     boolean createSharedLib() throws IOException, InterruptedException;
+
+    /**
+     * Creates a static library
+     * @return true if the process succeeded or false if the process failed
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    boolean createStaticLib() throws IOException, InterruptedException;
+
 }
