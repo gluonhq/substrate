@@ -39,6 +39,11 @@ public interface TargetConfiguration {
      */
     boolean compile() throws Exception;
 
+    /**
+    * Links a previously created objectfile with the required
+    * dependencies into a native executable or library
+    * @return true if linking succeeded, false otherwise
+    */
     boolean link() throws IOException, InterruptedException;
 
     /**

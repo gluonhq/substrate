@@ -184,11 +184,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return validateCompileResult(result);
     }
 
-    /**
-    * Links a previously created objectfile with the required
-    * dependencies into a native executable.
-    * @return true if linking succeeded, false otherwise
-    */
     @Override
     public boolean link() throws IOException, InterruptedException {
         compileAdditionalSources();
