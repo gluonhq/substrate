@@ -249,6 +249,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         return flags;
     }
 
+    @Deprecated
     @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
         if (projectConfiguration.isUseLLVM()) {
