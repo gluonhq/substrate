@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -378,8 +378,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         @Override
         public boolean dispatchKeyEvent(final KeyEvent event) {
             Log.v(TAG, "Activity, process get key event, action = "+event);
+            boolean consume = true;
+            if (event.getAction() == KeyEvent.ACTION_DOWN &&
+                    (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP ||
+                            event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN ||
+                            event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_MUTE)) {
+                // let Android OS handle volume events
+                consume = false;
+            }
             processAndroidKeyEvent (event);
-            return true;
+            return consume;
         }
 
         private final Handler handler = new Handler();
