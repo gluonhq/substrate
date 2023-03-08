@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Gluon
+ * Copyright (c) 2020, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,7 +81,8 @@ public class NativeWebView {
                     @Override
                     public void onPageFinished(WebView view, final String url) {
                         Log.v(TAG, "Page finished: " + url);
-                        NativeWebView.this.webView.evaluateJavascript("document.documentElement.innerHTML", new ValueCallback<String>() {
+                        // convert HTML into XML before it can be parsed into DOM
+                        NativeWebView.this.webView.evaluateJavascript("new XMLSerializer().serializeToString(document)", new ValueCallback<String>() {
                             @Override
                             public void onReceiveValue(String s) {
                                 Properties p = new Properties();
