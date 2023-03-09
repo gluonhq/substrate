@@ -369,6 +369,7 @@ public class InternalProjectConfiguration {
         this.backend = backend;
     }
 
+    @Deprecated
     public boolean isUseLLVM() {
         return Constants.BACKEND_LLVM.equals(backend);
     }
@@ -520,6 +521,7 @@ public class InternalProjectConfiguration {
      * @throws IOException
      * @throws InterruptedException
      */
+    @Deprecated
     public void canRunLLVM(Triplet triplet) throws IOException, InterruptedException {
         if (!new Triplet(Constants.Profile.IOS).equals(triplet) &&
                 !new Triplet(Constants.Profile.ANDROID).equals(triplet) &&

@@ -2,11 +2,9 @@ name: Substrate Build
 on:
   push:
     branches:
-      - entropy
       - master
   pull_request:
     branches:
-      - entropy
       - master
 
 jobs:
