@@ -510,4 +510,20 @@ public class SubstrateDispatcher {
         config.setSharedLibrary(true);
         return targetConfiguration.createSharedLib();
     }
+
+    /**
+     * This method builds a static library that can be used by third
+     * party projects, considering it contains one or more entry points.
+     *
+     * Static entry points, callable from C, can be created with the {@code @CEntryPoint}
+     * annotation.
+     *
+     * @throws Exception
+     */
+    public boolean nativeStaticLibrary() throws Exception {
+        Logger.logInfo(logTitle("STATIC LIBRARY TASK"));
+        config.setStaticLibrary(true);
+        return targetConfiguration.createStaticLib();
+    }
+
 }

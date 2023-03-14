@@ -66,6 +66,7 @@ public class InternalProjectConfiguration {
     private boolean enableCheckHash = true;
     private boolean usesJDK11 = false;
     private boolean sharedLibrary = false;
+    private boolean staticLibrary = false;
 
     private String backend;
     private List<String> initBuildTimeList;
@@ -335,6 +336,14 @@ public class InternalProjectConfiguration {
         this.sharedLibrary = sharedLibrary;
     }
 
+    public boolean isStaticLibrary() {
+        return staticLibrary;
+    }
+
+    public void setStaticLibrary(boolean staticLibrary) {
+        this.staticLibrary = staticLibrary;
+    }
+
     public Triplet getTargetTriplet() {
         return Objects.requireNonNull( publicConfig.getTargetTriplet(), "Target triplet is required");
     }
@@ -360,6 +369,7 @@ public class InternalProjectConfiguration {
         this.backend = backend;
     }
 
+    @Deprecated
     public boolean isUseLLVM() {
         return Constants.BACKEND_LLVM.equals(backend);
     }
@@ -511,6 +521,7 @@ public class InternalProjectConfiguration {
      * @throws IOException
      * @throws InterruptedException
      */
+    @Deprecated
     public void canRunLLVM(Triplet triplet) throws IOException, InterruptedException {
         if (!new Triplet(Constants.Profile.IOS).equals(triplet) &&
                 !new Triplet(Constants.Profile.ANDROID).equals(triplet) &&
