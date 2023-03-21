@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -601,6 +601,9 @@ public class FileOps {
                         Files.createDirectories(destPath);
                     }
                 } else {
+                    if (!Files.exists(destPath.getParent())) {
+                        Files.createDirectories(destPath.getParent());
+                    }
                     byte[] buffer = new byte[1024];
                     try (FileOutputStream fos = new FileOutputStream(destPath.toFile())) {
                         int len;
@@ -613,7 +616,7 @@ public class FileOps {
                 zis.closeEntry();
             }
         } catch (IOException e) {
-            throw new IOException("Error unzipping from " + sourceZip + "into " + targetDir + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
+            throw new IOException("Error unzipping from " + sourceZip + " into " + targetDir + ": " + e.getMessage() + ", " + Arrays.toString(e.getSuppressed()));
         }
         return hashes;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,11 +33,9 @@ import com.gluonhq.substrate.model.Triplet;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
@@ -67,21 +65,14 @@ public final class FileDeps {
             "libglass.a", "libglass_monocle.a"
     );
 
-    private static final String ANDROID_SDK_URL = "https://dl.google.com/android/repository/sdk-tools-${host}-4333796.zip";
-
-    private static final String[] ANDROID_DEPS = {
-            "https://repo1.maven.org/maven2/javax/activation/activation/1.1.1/activation-1.1.1.jar",
-            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-xjc/2.3.3/jaxb-xjc-2.3.3.jar",
-            "https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.3.6/jaxb-impl-2.3.6.jar",
-            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-core/2.3.6/jaxb-core-2.3.6.jar",
-            "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-jxc/2.3.3/jaxb-jxc-2.3.3.jar",
-            "https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar",
-            "https://repo1.maven.org/maven2/com/sun/istack/istack-commons-runtime/3.0.11/istack-commons-runtime-3.0.11.jar" };
+    // https://developer.android.com/studio/index.html#command-line-tools-only
+    private static final String ANDROID_SDK_MANAGER_URL = "https://dl.google.com/android/repository/commandlinetools-${host}-9477386_latest.zip";
 
     private static final String ANDROID_KEY = "24333f8a63b6825ea9c5514f83c2829b004d1fee";
     private static final String[] ANDROID_SDK_PACKAGES = {
             "platforms;android-31", "build-tools;31.0.0", "platform-tools",
-            "extras;android;m2repository", "extras;google;m2repository", "ndk-bundle" };
+            "extras;android;m2repository", "extras;google;m2repository", "ndk;25.2.9519653"
+    };
 
     private static final String ARCH_SYSROOT_URL = "https://download2.gluonhq.com/substrate/sysroot/${arch}sysroot-${version}.zip";
 
@@ -159,6 +150,7 @@ public final class FileDeps {
         List<String> missingPackages = Stream.of(ANDROID_SDK_PACKAGES)
                 .limit(ANDROID_SDK_PACKAGES.length - 1)
                 .filter(s -> !Files.exists(Path.of(androidSdk, s.split(";"))))
+                .map(s -> "\"" + s + "\"")
                 .collect(Collectors.toList());
         if (!missingPackages.isEmpty()) {
             Logger.logInfo("Required Android packages not found: " + missingPackages);
@@ -216,7 +208,6 @@ public final class FileDeps {
         boolean downloadJavaFXStatic = false;
         boolean downloadAndroidSdk = false;
         boolean downloadAndroidNdk = false;
-        boolean downloadAndroidAdditionalLibs = false;
         boolean downloadSysroot = false;
 
         // Java Static
@@ -294,15 +285,9 @@ public final class FileDeps {
             Path androidSdk = configuration.getAndroidSdkPath();
             Path androidNdk = configuration.getAndroidNdkPath();
 
-            Path libsLocation = androidSdk.resolve("tools").resolve("lib").resolve("java11");
-
             if (!Files.exists(androidSdk)) {
                 Logger.logInfo("ANDROID_SDK not found and will be downloaded.");
                 downloadAndroidSdk = true;
-            }
-
-            if (!Files.exists(libsLocation)) {
-                downloadAndroidAdditionalLibs = true;
             }
 
             if (!Files.exists(androidNdk)) {
@@ -331,11 +316,7 @@ public final class FileDeps {
             }
 
             if (downloadAndroidSdk) { // First we get SDK
-                downloadAndroidSdkZip();
-            }
-
-            if (downloadAndroidAdditionalLibs) { // Then we get additional libs
-                downloadAdditionalAndroidLibs();
+                downloadAndroidSdkManagerZip();
             }
 
             if (downloadAndroidNdk) { // And then NDK
@@ -404,46 +385,39 @@ public final class FileDeps {
     }
 
     /**
-     * Crafts Android SDK url and then downloads it
+     * Crafts Android SDK manager url and then downloads it
      * @throws IOException in case anything goes wrong.
      */
-    private void downloadAndroidSdkZip() throws IOException {
-        Logger.logInfo("Downloading Android SDK...");
+    private void downloadAndroidSdkManagerZip() throws IOException, InterruptedException {
+        Logger.logInfo("Downloading Android SDK manager...");
         Path sdk = configuration.getAndroidSdkPath();
-        String hostOs = configuration.getHostTriplet().getOs();
-        String androidSdkUrl = Strings.substitute(ANDROID_SDK_URL, Map.of("host", hostOs));
-        FileOps.downloadAndUnzip(androidSdkUrl, sdk.getParent(), "android-sdk.zip", sdk.getFileName().toString(), "");
-        Logger.logInfo("Android SDK downloaded successfully");
-    }
-    /**
-     * Downloads libraries needed for Android SDK's sdkmanager
-     * @throws IOException in case anything goes wrong.
-     */
-    private void downloadAdditionalAndroidLibs() throws IOException {
-        Logger.logInfo("Downloading additional libs for Android ...");
-        Path sdk = configuration.getAndroidSdkPath();
-        Path libsLocation = sdk.resolve("tools").resolve("lib").resolve("java11");
-
-        Files.createDirectories(libsLocation);
-        for (String url : ANDROID_DEPS) {
-            URL link = new URL(url);
-            String filename = url.substring(url.lastIndexOf('/') + 1);
-            FileOps.downloadFile(link, libsLocation.resolve(filename));
+        String hostOs;
+        switch (configuration.getHostTriplet().getOs()) {
+            case Constants.OS_LINUX: hostOs = "linux";
+                break;
+            case Constants.OS_WINDOWS: hostOs = "win";
+                break;
+            case Constants.OS_DARWIN: hostOs = "mac";
+                break;
+            default: throw new RuntimeException("Error: triplet " + configuration.getHostTriplet() + " not supported");
         }
-        Logger.logInfo("Additional libs for Android downloaded successfully");
+        String androidSdkUrl = Strings.substitute(ANDROID_SDK_MANAGER_URL, Map.of("host", hostOs));
+        FileOps.downloadAndUnzip(androidSdkUrl, sdk.getParent(), "android-sdk.zip", sdk.getFileName().toString(), "tmp");
+        Files.move(sdk.resolve("tmp").resolve("cmdline-tools"), sdk.resolve("tmp").resolve("latest"));
+        Files.move(sdk.resolve("tmp"), sdk.resolve("cmdline-tools"));
+        ProcessRunner.runProcessForSingleOutput("permissions", "chmod", "+x", sdk.resolve("cmdline-tools").resolve("latest").resolve("bin").resolve("sdkmanager").toString());
+        Logger.logInfo("Android SDK manager downloaded successfully");
     }
 
     /**
-     * Runs Android SDK's sdkmanager with specified arguments
+     * Runs Android SDK's SDK manager with specified arguments
+     * See https://developer.android.com/studio/command-line/sdkmanager
      * @param args array of arguments to be passed to process
      * @throws IOException in case anything goes wrong.
      * @throws InterruptedException in case anything goes wrong.
      */
     private void androidSdkManager(String[] args) throws IOException, InterruptedException {
         Path sdk = configuration.getAndroidSdkPath();
-        Path tools = sdk.resolve("tools");
-        Path libs = tools.resolve("lib");
-        Path additionalLibs = libs.resolve("java11");
 
         Path license = sdk.resolve("licenses").resolve("android-sdk-license");
         if (!Files.exists(license)) {
@@ -455,21 +429,19 @@ public final class FileDeps {
                     StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         }
 
-        String[] cliArgs = new String[] {
-                Paths.get(configuration.getGraalPath().toString(), "bin", "java").toString(),
-                "-Dcom.android.sdklib.toolsdir=" + tools,
-                "--illegal-access=permit",
-                "-classpath", libs + "/*:" + additionalLibs + "/*",
-                "com.android.sdklib.tool.sdkmanager.SdkManagerCli"
-        };
+        Path manager = sdk.resolve("cmdline-tools").resolve("latest").resolve("bin").resolve("sdkmanager");
+        if (!Files.exists(manager)) {
+            throw new RuntimeException("Error: sdkmanager not found at " + manager);
+        }
+        String[] cliArgs = new String[] { manager.toString() };
         String[] sdkmanagerArgs = Stream.of(cliArgs, args)
                 .flatMap(Stream::of)
                 .toArray(String[]::new);
 
-        Logger.logDebug("Running sdkmanager with: " + String.join(" ", sdkmanagerArgs));
+        Logger.logDebug("Running SDK manager with: " + String.join(" ", sdkmanagerArgs));
         int result = ProcessRunner.executeWithFeedback("sdkmanager", sdkmanagerArgs);
         if (result != 0) {
-            throw new IOException("Could not run the Android sdk manager");
+            throw new IOException("Could not run the Android SDK manager");
         }
     }
 
