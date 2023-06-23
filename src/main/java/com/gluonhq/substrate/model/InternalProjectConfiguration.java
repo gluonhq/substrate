@@ -474,25 +474,39 @@ public class InternalProjectConfiguration {
      * Check if the GraalVM provided by the configuration is supported
      * @throws IOException if the GraalVM version is older than the minimum supported version
      */
-    public void checkGraalVMVersion() throws IOException {
-        Version graalVersion = getGraalVersion();
-        if (graalVersion.compareTo(new Version(Constants.GRAALVM_MIN_VERSION)) < 0) {
-            throw new IOException("Current GraalVM version (" + graalVersion + ") not supported.\n" +
-                    "Please upgrade to " + Constants.GRAALVM_MIN_VERSION + " or higher");
+    public void checkGraalVMVersion(Version javaVersion) throws IOException {
+        System.out.println("hello world");
+        if (isOldGraalVMVersioningScheme(javaVersion)) {
+            Version graalVersion = getGraalVersion();
+            if (graalVersion.compareTo(new Version(Constants.GRAALVM_MIN_VERSION)) < 0) {
+                throw new IOException("Current GraalVM version (" + graalVersion + ") not supported.\n" +
+                        "Please upgrade to " + Constants.GRAALVM_MIN_VERSION + " or higher");
+            }
         }
+    }
+
+    public boolean isOldGraalVMVersioningScheme(Version javaVersion) {
+        if (javaVersion.getMajor() == 17) {
+            // JDK 17 versions before 17.0.7 used the old versioning scheme
+            return javaVersion.compareTo(new Version(17, 0, 7)) < 0;
+        }
+        // all other releases before JDK 20 use the old versioning
+        // staring from JDK 20, all releases follow the new versioning
+        return javaVersion.getMajor() < 20;
     }
 
     /**
      * Check if the GraalVM's java provided by the configuration is supported
      * @throws IOException if the GraalVM's java version is older than the minimum supported version
      */
-    public void checkGraalVMJavaVersion() throws IOException {
+    public Version checkGraalVMJavaVersion() throws IOException {
         Version javaVersion = getGraalVMJavaVersion();
         if (javaVersion.compareTo(new Version(Constants.GRAALVM_JAVA_MIN_VERSION)) < 0) {
             throw new IOException("Current GraalVM's java version (" + javaVersion + ") not supported.\n" +
                     "Please upgrade to " + Constants.GRAALVM_JAVA_MIN_VERSION + " or higher");
         }
         usesJDK11 = javaVersion.getMajor() == 11;
+        return javaVersion;
     }
 
     /**
