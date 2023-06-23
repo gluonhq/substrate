@@ -475,7 +475,6 @@ public class InternalProjectConfiguration {
      * @throws IOException if the GraalVM version is older than the minimum supported version
      */
     public void checkGraalVMVersion(Version javaVersion) throws IOException {
-        System.out.println("hello world");
         if (isOldGraalVMVersioningScheme(javaVersion)) {
             Version graalVersion = getGraalVersion();
             if (graalVersion.compareTo(new Version(Constants.GRAALVM_MIN_VERSION)) < 0) {
