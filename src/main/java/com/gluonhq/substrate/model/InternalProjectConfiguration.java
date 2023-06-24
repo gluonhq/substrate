@@ -480,6 +480,8 @@ public class InternalProjectConfiguration {
             if (graalVersion.compareTo(new Version(Constants.GRAALVM_MIN_VERSION)) < 0) {
                 throw new IOException("Current GraalVM version (" + graalVersion + ") not supported.\n" +
                         "Please upgrade to " + Constants.GRAALVM_MIN_VERSION + " or higher");
+            } else {
+                // TODO: check the GraalVM version whenever Constants.GRAALVM_MIN_VERSION is bumped and uses the new versioning system
             }
         }
     }
