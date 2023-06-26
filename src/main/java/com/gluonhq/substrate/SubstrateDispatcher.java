@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ import com.gluonhq.substrate.target.WindowsTargetConfiguration;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
+import com.gluonhq.substrate.util.Version;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -378,8 +379,8 @@ public class SubstrateDispatcher {
             System.out.println("Configuration: " + this.config);
         }
 
-        this.config.checkGraalVMVersion();
-        this.config.checkGraalVMJavaVersion();
+        Version javaVersion = this.config.checkGraalVMJavaVersion();
+        this.config.checkGraalVMVersion(javaVersion);
         this.config.checkGraalVMVendor();
 
         Triplet targetTriplet = config.getTargetTriplet();
