@@ -45,6 +45,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.gluonhq.substrate.target.AndroidTargetConfiguration.ANDROID_NDK_VERSION;
+
 public final class FileDeps {
 
     private static final String JAVA_STATIC_ZIP = "${staticjdk}-${target}-gvm-${version}.zip";
@@ -71,7 +73,7 @@ public final class FileDeps {
     private static final String ANDROID_KEY = "24333f8a63b6825ea9c5514f83c2829b004d1fee";
     private static final String[] ANDROID_SDK_PACKAGES = {
             "platforms;android-31", "build-tools;31.0.0", "platform-tools",
-            "extras;android;m2repository", "extras;google;m2repository", "ndk;25.2.9519653"
+            "extras;android;m2repository", "extras;google;m2repository", "ndk;" + ANDROID_NDK_VERSION
     };
 
     private static final String ARCH_SYSROOT_URL = "https://download2.gluonhq.com/substrate/sysroot/${arch}sysroot-${version}.zip";
