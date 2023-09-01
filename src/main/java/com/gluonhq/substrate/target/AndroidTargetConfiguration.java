@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,6 +66,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private static final String ANDROID_TRIPLET = new Triplet(Constants.Profile.ANDROID).toString();
     private static final String ANDROID_MIN_SDK_VERSION = "21";
+    public static final String ANDROID_NDK_VERSION = "25.2.9519653";
     private static final List<String> ANDROID_KEYSTORE_EXTENSIONS = List.of(".keystore", ".jks");
     private static final String WL_WHOLE_ARCHIVE = "-Wl,--whole-archive";
     private static final String WL_NO_WHOLE_ARCHIVE = "-Wl,--no-whole-archive";

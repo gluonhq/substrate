@@ -45,6 +45,8 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.gluonhq.substrate.target.AndroidTargetConfiguration.ANDROID_NDK_VERSION;
+
 /**
  * This class contains all configuration info about the current project (not about the current OS/Arch/vendor etc)
  *
@@ -272,7 +274,7 @@ public class InternalProjectConfiguration {
     public Path getAndroidNdkPath() {
         String ndkEnv = System.getenv("ANDROID_NDK");
         return (ndkEnv != null) ? Paths.get(ndkEnv)
-                : getAndroidSdkPath().resolve("ndk-bundle");
+                : getAndroidSdkPath().resolve("ndk").resolve(ANDROID_NDK_VERSION);
     }
 
     /**
