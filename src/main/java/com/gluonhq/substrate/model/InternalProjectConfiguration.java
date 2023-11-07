@@ -122,21 +122,22 @@ public class InternalProjectConfiguration {
     }
 
     public Version getGraalVersion() throws IOException {
-        String pattern = "GraalVM .*?(\\d\\d.\\d.\\d)";
         ProcessRunner graalJava;
         try {
-            graalJava = new ProcessRunner(
-                            getGraalVMBinPath().resolve("java").toString(),
-                            "--version");
+            graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
             graalJava.runProcess("java-version");
         } catch (InterruptedException e) {
             throw new IOException("Couldn't determine GraalVM version, " + e.toString());
         }
-        String output = graalJava.getResponse();
+        return parseGraalVersion(graalJava.getResponse());
+    }
+
+    static Version parseGraalVersion(String versionString) {
+        String pattern = "GraalVM (\\d{1,2}(\\.\\d+){0,2})";
         Pattern r = Pattern.compile(pattern);
-        Matcher m = r.matcher(output);
+        Matcher m = r.matcher(versionString);
         if (!m.find())
-            throw new IOException("Couldn't determine GraalVM version");
+            throw new IllegalArgumentException("Couldn't determine GraalVM version from: " + versionString);
         return new Version(m.group(1));
     }
 
@@ -679,16 +680,20 @@ public class InternalProjectConfiguration {
         } catch (InterruptedException e) {
             throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
         }
-        String pattern = "version \"(\\d{1,2}(\\.\\d+){0,2})\"";
-        Pattern r = Pattern.compile(pattern);
         List<String> responses = graalJava.getResponses();
         if (responses == null || responses.isEmpty()) {
             throw new IOException("Couldn't determine GraalVM's Java version");
         }
-        String realVersion = responses.get(0).replaceAll("-internal", "");
+        return parseGraalVMJavaVersion(responses.get(0));
+    }
+
+    static Version parseGraalVMJavaVersion(String versionString) {
+        String realVersion = versionString.replaceAll("-internal", "");
+        String pattern = "version \"(\\d{1,2}(\\.\\d+){0,2})\"";
+        Pattern r = Pattern.compile(pattern);
         Matcher m = r.matcher(realVersion);
         if (!m.find()) {
-            throw new IOException("Couldn't determine GraalVM's Java version for " + responses.get(0));
+            throw new IllegalArgumentException("Couldn't determine GraalVM's Java version from: " + realVersion);
         }
         return new Version(m.group(1));
     }
