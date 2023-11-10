@@ -129,7 +129,15 @@ class InternalProjectConfigurationTest {
                 // graalvm-jdk-21.0.1+12.1
                 Arguments.of(new Version("21.0.1"), new Version("21.0.1"), "java version \"21.0.1\" 2023-10-17\n" +
                         "Java(TM) SE Runtime Environment Oracle GraalVM 21.0.1+12.1 (build 21.0.1+12-jvmci-23.1-b19)\n" +
-                        "Java HotSpot(TM) 64-Bit Server VM Oracle GraalVM 21.0.1+12.1 (build 21.0.1+12-jvmci-23.1-b19, mixed mode, sharing)")
+                        "Java HotSpot(TM) 64-Bit Server VM Oracle GraalVM 21.0.1+12.1 (build 21.0.1+12-jvmci-23.1-b19, mixed mode, sharing)"),
+
+                Arguments.of(new Version("17.0.7"), new Version("17.0.7"), "openjdk version \"17.0.7\" 2023-04-18\n" +
+                        "OpenJDK Runtime Environment GraalVM CE 17.0.7+7.1 (build 17.0.7+7-jvmci-23.0-b12)\n" +
+                        "OpenJDK 64-Bit Server VM GraalVM CE 17.0.7+7.1 (build 17.0.7+7-jvmci-23.0-b12, mixed mode, sharing)"),
+
+                Arguments.of(new Version("21"), new Version("21"), "openjdk version \"21\" 2023-09-19\n" +
+                        "OpenJDK Runtime Environment GraalVM CE 21+35.1 (build 21+35-jvmci-23.1-b15)\n" +
+                        "OpenJDK 64-Bit Server VM GraalVM CE 21+35.1 (build 21+35-jvmci-23.1-b15, mixed mode, sharing)")
 
         );
     }

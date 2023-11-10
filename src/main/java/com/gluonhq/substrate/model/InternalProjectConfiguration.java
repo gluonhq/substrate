@@ -133,7 +133,7 @@ public class InternalProjectConfiguration {
     }
 
     static Version parseGraalVersion(String versionString) {
-        String pattern = "GraalVM (\\d{1,2}(\\.\\d+){0,2})";
+        String pattern = "GraalVM .*?(\\d{1,2}(\\.\\d+){0,2})";
         Pattern r = Pattern.compile(pattern);
         Matcher m = r.matcher(versionString);
         if (!m.find())
