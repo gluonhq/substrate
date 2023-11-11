@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,6 +89,10 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "-lWTF", "-licuuc", "-licudata"
     );
 
+    private static final List<String> enabledFeatures = List.of(
+            "com.gluonhq.substrate.feature.GluonFeature"
+    );
+
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
         "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
         "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
@@ -105,10 +109,9 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private final boolean isAarch64;
 
-    public LinuxTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
-        super(paths, configuration);
+    public LinuxTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) throws IOException {
+        super(paths, configuration, javaVersion);
         this.isAarch64 = projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64);
-        ENABLED_FEATURES.add("com.gluonhq.substrate.feature.GluonFeature");
         sysroot = fileDeps.getSysrootPath().toString();
     }
 
@@ -256,6 +259,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());
         }
         return linkerLibraryPaths;
+    }
+
+    @Override
+    public List<String> getEnabledFeatures() {
+        return enabledFeatures;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,8 +74,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json", "dat",
             "license", "frag", "vert", "obj", "mtl", "js");
-    protected static final List<String> ENABLED_FEATURES = 
-            new ArrayList<>(Arrays.asList("org.graalvm.home.HomeFinderFeature"));
 
     private static final List<String> baseNativeImageArguments = Arrays.asList(
             "-Djdk.internal.lambda.eagerlyInitialize=false",
@@ -95,16 +93,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     final FileDeps fileDeps;
     final InternalProjectConfiguration projectConfiguration;
     final ProcessPaths paths;
+    final Version javaVersion;
     protected final boolean crossCompile;
 
     private final List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private final List<String> defaultStaticJavaLibs = List.of("java", "nio", "zip", "net", "prefs", "jvm",
             "fdlibm", "z", "dl", "j2pkcs11", "sunec", "jaas", "extnet");
 
-    AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+    AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) {
         this.projectConfiguration = configuration;
         this.fileDeps = new FileDeps(configuration);
         this.paths = paths;
+        this.javaVersion = javaVersion;
         this.crossCompile = !configuration.getHostTriplet().equals(configuration.getTargetTriplet());
     }
 
@@ -122,10 +122,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     public boolean compile() throws IOException, InterruptedException {
         String substrateClasspath = "";
         try {
-            substrateClasspath =  new File(AbstractTargetConfiguration.class.getProtectionDomain()
+            substrateClasspath = new File(AbstractTargetConfiguration.class.getProtectionDomain()
                     .getCodeSource().getLocation().toURI()).getPath();
         } catch (URISyntaxException ex) {
-            throw new IOException ("Can't locate Substrate.jar", ex);
+            throw new IOException("Can't locate Substrate.jar", ex);
         }
         String processedClasspath = validateCompileRequirements();
 
@@ -144,7 +144,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             compileRunner.addArg("-H:+ExitAfterRelocatableImageWrite");
         }
 
-        compileRunner.addArgs(getEnabledFeatures());
+        compileRunner.addArgs(getEnabledFeaturesArgs());
 
         compileRunner.addArg(createTempDirectoryArg());
 
@@ -383,7 +383,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         boolean graalVM221 = false;
         try {
             Version graalVersion = projectConfiguration.getGraalVersion();
-            graalVM221 = ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() >0));
+            graalVM221 = ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() > 0));
         } catch (IOException ex) {
             Logger.logFatal(ex, "Could not detect GraalVM version, stopping now.");
         }
@@ -445,7 +445,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     target.getOsArch2());
         }
         if (FileOps.isDirectoryEmpty(clibPath)) {
-            throw new IOException("No clibraries found for the required architecture in "+clibPath);
+            throw new IOException("No clibraries found for the required architecture in " + clibPath);
         }
         checkPlatformSpecificClibs(clibPath);
     }
@@ -492,14 +492,23 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .toString();
     }
 
-    private List<String> getEnabledFeatures() {
-        return ENABLED_FEATURES.stream()
-                .map(feature -> "--features=" + feature)
-                .collect(Collectors.toList());
+    protected List<String> getEnabledFeatures() {
+        return List.of();
+    }
+
+    private List<String> getEnabledFeaturesArgs() {
+        List<String> args = new ArrayList<>();
+        if (javaVersion.getMajor() < 21) {
+            args.add("--features=org.graalvm.home.HomeFinderFeature");
+        }
+        for (String feature : getEnabledFeatures()) {
+            args.add("--features=" + feature);
+        }
+        return args;
     }
 
     private String createTempDirectoryArg() throws IOException {
-        Path  tmpPath = paths.getTmpPath();
+        Path tmpPath = paths.getTmpPath();
         FileOps.rmdir(tmpPath);
         String tmpDir = tmpPath.toFile().getAbsolutePath();
         return "-H:TempDirectory=" + tmpDir;
@@ -564,7 +573,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private Path createReflectionConfig(String suffix, ConfigResolver configResolver) throws IOException {
         Path gvmPath = paths.getGvmPath();
         Path reflectionPath = gvmPath.resolve(
-                Strings.substitute( Constants.REFLECTION_ARCH_FILE, Map.of("archOs", suffix)));
+                Strings.substitute(Constants.REFLECTION_ARCH_FILE, Map.of("archOs", suffix)));
         Files.deleteIfExists(reflectionPath);
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(reflectionPath.toFile())))) {
             bw.write("[\n");
@@ -677,10 +686,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         writeSingleEntry(bw, javaClass, exclude);
     }
 
-    private static void writeSingleEntry (BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
+    private static void writeSingleEntry(BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
         bw.write("  {\n");
         bw.write("    \"name\" : \"" + javaClass + "\"");
-        if (! exclude) {
+        if (!exclude) {
             bw.write(",\n");
             bw.write("    \"allDeclaredConstructors\" : true,\n");
             bw.write("    \"allPublicConstructors\" : true,\n");

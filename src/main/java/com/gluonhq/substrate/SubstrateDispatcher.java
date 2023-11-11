@@ -385,23 +385,23 @@ public class SubstrateDispatcher {
 
         Triplet targetTriplet = config.getTargetTriplet();
 
-        this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),
+        this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet, javaVersion),
                 "Error: Target Configuration was not found for " + targetTriplet);
 
         Logger.logInit(paths.getLogPath().toString(), this.config.isVerbose());
     }
 
-    private TargetConfiguration getTargetConfiguration(Triplet targetTriplet) throws IOException {
+    private TargetConfiguration getTargetConfiguration(Triplet targetTriplet, Version javaVersion) throws IOException {
         if (!Constants.OS_WEB.equals(targetTriplet.getOs()) && !config.getHostTriplet().canCompileTo(targetTriplet)) {
             throw new IllegalArgumentException("We currently can't compile to " + targetTriplet + " when running on " + config.getHostTriplet());
         }
         switch (targetTriplet.getOs()) {
-            case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config);
-            case Constants.OS_DARWIN : return new MacOSTargetConfiguration(paths, config);
-            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config);
-            case Constants.OS_IOS    : return new IosTargetConfiguration(paths, config);
-            case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config);
-            case Constants.OS_WEB    : return new WebTargetConfiguration(paths, config);
+            case Constants.OS_LINUX  : return new LinuxTargetConfiguration(paths, config, javaVersion);
+            case Constants.OS_DARWIN : return new MacOSTargetConfiguration(paths, config, javaVersion);
+            case Constants.OS_WINDOWS: return new WindowsTargetConfiguration(paths, config, javaVersion);
+            case Constants.OS_IOS    : return new IosTargetConfiguration(paths, config, javaVersion);
+            case Constants.OS_ANDROID: return new AndroidTargetConfiguration(paths, config, javaVersion);
+            case Constants.OS_WEB    : return new WebTargetConfiguration(paths, config, javaVersion);
             default                  : return null;
         }
     }

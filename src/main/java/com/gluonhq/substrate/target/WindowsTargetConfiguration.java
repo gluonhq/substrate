@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
+import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.windows.MSIBundler;
 
 import java.io.IOException;
@@ -43,14 +44,26 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     private static final List<String> javaWindowsLibs = Arrays.asList(
             "advapi32", "iphlpapi", "secur32", "userenv", "version", "ws2_32", "winhttp", "ncrypt", "crypt32");
+    /**
+     * mswsock required as of jdk 20
+     */
+    private static final List<String> javaWindowsLibsJdk20 = Arrays.asList(
+            "advapi32", "iphlpapi", "secur32", "userenv", "version", "ws2_32", "winhttp", "ncrypt", "crypt32", "mswsock");
+
     private static final List<String> staticJavaLibs = Arrays.asList(
             "j2pkcs11", "java", "net", "nio", "prefs", "fdlibm", "sunec", "zip", "sunmscapi");
+    /**
+     * extnet required since jdk 19
+     * fdlibm no longer required, unsure since when
+     */
+    private static final List<String> staticJavaLibs21 = Arrays.asList(
+            "j2pkcs11", "java", "net", "nio", "prefs", "sunec", "extnet", "zip", "sunmscapi");
+
     private static final List<String> staticJvmLibs = Arrays.asList(
             "jvm", "libchelper");
 
@@ -63,8 +76,8 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     private static final List<String> staticJavaFxSwLibs = List.of(
             "prism_sw");
 
-    public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
-        super(paths, configuration);
+    public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) {
+        super(paths, configuration, javaVersion);
     }
 
     @Override
@@ -138,13 +151,21 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getStaticJavaLibs() {
+        if (javaVersion.getMajor() >= 21) {
+            return staticJavaLibs21;
+        }
         return staticJavaLibs;
     }
 
     @Override
     List<String> getOtherStaticLibs() {
-        return Stream.concat(staticJvmLibs.stream(), javaWindowsLibs.stream())
-                .collect(Collectors.toList());
+        List<String> libs = new ArrayList<>(staticJvmLibs);
+        if (javaVersion.getMajor() >= 20) {
+            libs.addAll(javaWindowsLibsJdk20);
+        } else {
+            libs.addAll(javaWindowsLibs);
+        }
+        return libs;
     }
 
     @Override
@@ -242,7 +263,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
         // Copy icon.ico to gvm/tmp/icon
         if (Files.exists(userAssets) && Files.isDirectory(userAssets) && Files.exists(userAssets.resolve("icon.ico"))) {
-            FileOps.copyFile(userAssets.resolve("icon.ico"), tmpIconDir.resolve("icon.ico")) ;
+            FileOps.copyFile(userAssets.resolve("icon.ico"), tmpIconDir.resolve("icon.ico"));
             Logger.logDebug("User provided icon.ico image used as application icon.");
         } else {
             Path windowsGenSrcPath = paths.getGenPath().resolve(sourceOS);
@@ -261,7 +282,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         if (rc.runProcess("rc compile") == 0) {
             Path objPath = resPath.getParent().resolve("IconGroup.obj");
             ProcessRunner cvtres = new ProcessRunner("cvtres ", "/machine:x64", "-out:" + objPath, resPath.toString());
-            if (cvtres.runProcess("cvtres") == 0 ) {
+            if (cvtres.runProcess("cvtres") == 0) {
                 Logger.logDebug("IconGroup.obj created successfully");
                 FileOps.copyFile(objPath, gvmAppPath.resolve("IconGroup.obj"));
             }

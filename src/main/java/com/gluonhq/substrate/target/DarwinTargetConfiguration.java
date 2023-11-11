@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Gluon
+ * Copyright (c) 2020, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,14 +30,15 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.ProcessRunner;
+import com.gluonhq.substrate.util.Version;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 abstract class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
-    DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
-        super(paths, configuration);
+    DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) {
+        super(paths, configuration, javaVersion);
     }
 
     @Override
