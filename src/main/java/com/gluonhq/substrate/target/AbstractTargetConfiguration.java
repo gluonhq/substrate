@@ -83,7 +83,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "-H:+ReportExceptionStackTraces",
             "-H:-DeadlockWatchdogExitOnTimeout",
             "-H:DeadlockWatchdogInterval=0",
-            "-H:+RemoveSaturatedTypeFlows"
+            "-H:+RemoveSaturatedTypeFlows",
+            "--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jdk=ALL-UNNAMED" // Required for GluonFeature
     );
     private static final List<String> verboseNativeImageArguments = Arrays.asList(
             "-H:+PrintAnalysisCallTree",

@@ -63,6 +63,13 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet", "fdlibm",
             "fontmanager", "javajpeg", "lcms", "awt_headless", "awt"
     );
+    /**
+     * fdlibm no longer required, unsure since when
+     */
+    private static final List<String> staticJavaLibs21 = Arrays.asList(
+            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet",
+            "fontmanager", "javajpeg", "lcms", "awt_headless", "awt"
+    );
 
     private static final List<String> staticJvmLibs = Arrays.asList(
             "jvm", "libchelper"
@@ -232,7 +239,13 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         } catch (IOException ex) {
             throw new RuntimeException ("No static java libs found, cannot continue");
         }
-        return staticJavaLibs.stream()
+        List<String> libs;
+        if (javaVersion.getMajor() >= 21) {
+            libs = staticJavaLibs21;
+        } else {
+            libs = staticJavaLibs;
+        }
+        return libs.stream()
                 .map(lib -> javaStaticLibPath.resolve("lib" + lib + ".a").toString())
                 .collect(Collectors.toList());
     }
