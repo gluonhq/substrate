@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -322,10 +322,10 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
             Logger.logSevere("Error building a shared image: error linking the native image");
             return false;
         }
-        return Files.exists(getLinkOutputFile());
+        return Files.exists(getSharedLibPath());
     }
 
-    Path getLinkOutputFile() {
+    private Path getSharedLibPath() {
         return paths.getAppPath().resolve(getLinkOutputName());
     }
 
