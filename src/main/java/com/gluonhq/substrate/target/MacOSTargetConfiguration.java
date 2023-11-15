@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
             "WTF", "icuuc", "icudata"
     );
 
-    public MacOSTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+    public MacOSTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
     }
 

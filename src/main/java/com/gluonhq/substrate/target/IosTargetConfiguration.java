@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     private static final String capLocation= "/native/ios/cap/";
     private static final String iosCheck = "ios/check";
 
-    public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+    public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
 
         if (!isSimulator() && projectConfiguration.getBackend() == null) {
