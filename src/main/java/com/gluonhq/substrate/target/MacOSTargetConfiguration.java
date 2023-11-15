@@ -31,7 +31,6 @@ import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
-import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.macos.CodeSigning;
 import com.gluonhq.substrate.util.macos.InfoPlist;
@@ -73,8 +72,8 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
             "WTF", "icuuc", "icudata"
     );
 
-    public MacOSTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) {
-        super(paths, configuration, javaVersion);
+    public MacOSTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+        super(paths, configuration);
     }
 
     @Override

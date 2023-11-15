@@ -30,15 +30,14 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.ProcessRunner;
-import com.gluonhq.substrate.util.Version;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 abstract class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
-    DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) {
-        super(paths, configuration, javaVersion);
+    DarwinTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+        super(paths, configuration);
     }
 
     @Override

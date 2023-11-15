@@ -96,6 +96,9 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "-lWTF", "-licuuc", "-licudata"
     );
 
+    private static final List<String> nativeImageArguments = List.of(
+            "--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jdk=ALL-UNNAMED" // required for the GluonFeature
+    );
     private static final List<String> enabledFeatures = List.of(
             "com.gluonhq.substrate.feature.GluonFeature"
     );
@@ -116,8 +119,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private final boolean isAarch64;
 
-    public LinuxTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) throws IOException {
-        super(paths, configuration, javaVersion);
+    public LinuxTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
+        super(paths, configuration);
         this.isAarch64 = projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64);
         sysroot = fileDeps.getSysrootPath().toString();
     }
@@ -240,7 +243,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             throw new RuntimeException ("No static java libs found, cannot continue");
         }
         List<String> libs;
-        if (javaVersion.getMajor() >= 21) {
+        if (projectConfiguration.getJavaVersion().getMajor() >= 21) {
             libs = staticJavaLibs21;
         } else {
             libs = staticJavaLibs;
@@ -272,6 +275,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());
         }
         return linkerLibraryPaths;
+    }
+
+    @Override
+    protected List<String> getNativeImageArguments() {
+        return nativeImageArguments;
     }
 
     @Override

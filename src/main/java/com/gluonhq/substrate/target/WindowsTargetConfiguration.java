@@ -33,7 +33,6 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
-import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.windows.MSIBundler;
 
 import java.io.IOException;
@@ -76,8 +75,8 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     private static final List<String> staticJavaFxSwLibs = List.of(
             "prism_sw");
 
-    public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) {
-        super(paths, configuration, javaVersion);
+    public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+        super(paths, configuration);
     }
 
     @Override
@@ -151,7 +150,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getStaticJavaLibs() {
-        if (javaVersion.getMajor() >= 21) {
+        if (projectConfiguration.getJavaVersion().getMajor() >= 21) {
             return staticJavaLibs21;
         }
         return staticJavaLibs;
@@ -160,7 +159,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     List<String> getOtherStaticLibs() {
         List<String> libs = new ArrayList<>(staticJvmLibs);
-        if (javaVersion.getMajor() >= 20) {
+        if (projectConfiguration.getJavaVersion().getMajor() >= 20) {
             libs.addAll(javaWindowsLibsJdk20);
         } else {
             libs.addAll(javaWindowsLibs);

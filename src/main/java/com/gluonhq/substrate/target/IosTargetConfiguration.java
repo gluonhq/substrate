@@ -33,7 +33,6 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
-import com.gluonhq.substrate.util.Version;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
@@ -79,8 +78,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     private static final String capLocation= "/native/ios/cap/";
     private static final String iosCheck = "ios/check";
 
-    public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) {
-        super(paths, configuration, javaVersion);
+    public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+        super(paths, configuration);
 
         if (!isSimulator() && projectConfiguration.getBackend() == null) {
             projectConfiguration.setBackend(Constants.BACKEND_LIR);

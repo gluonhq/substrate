@@ -33,6 +33,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 
 import static org.gradle.internal.impldep.org.junit.Assert.assertEquals;
@@ -41,9 +43,11 @@ class InternalProjectConfigurationTest {
 
     @ParameterizedTest
     @MethodSource("versioningSchemeParameters")
-    void testIsOldGraalVMVersioningScheme(String version, boolean usesOldScheme) {
+    void testIsOldGraalVMVersioningScheme(String version, boolean usesOldScheme) throws IOException {
         Version javaVersion = new Version(version);
-        InternalProjectConfiguration config = new InternalProjectConfiguration(new ProjectConfiguration("", ""));
+        ProjectConfiguration publicConfig = new ProjectConfiguration("", "");
+        publicConfig.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
+        InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
         assertEquals(usesOldScheme, config.isOldGraalVMVersioningScheme(javaVersion));
     }
 

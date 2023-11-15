@@ -74,6 +74,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json", "dat",
             "license", "frag", "vert", "obj", "mtl", "js");
+    /**
+     * Manual registration of the HomeFinderFeature required until GraalVM for JDK 21.
+     */
+    private static final String HOME_FINDER_FEATURE = "org.graalvm.home.HomeFinderFeature";
 
     private static final List<String> baseNativeImageArguments = Arrays.asList(
             "-Djdk.internal.lambda.eagerlyInitialize=false",
@@ -83,8 +87,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "-H:+ReportExceptionStackTraces",
             "-H:-DeadlockWatchdogExitOnTimeout",
             "-H:DeadlockWatchdogInterval=0",
-            "-H:+RemoveSaturatedTypeFlows",
-            "--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jdk=ALL-UNNAMED" // Required for GluonFeature
+            "-H:+RemoveSaturatedTypeFlows"
     );
     private static final List<String> verboseNativeImageArguments = Arrays.asList(
             "-H:+PrintAnalysisCallTree",
@@ -94,18 +97,16 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     final FileDeps fileDeps;
     final InternalProjectConfiguration projectConfiguration;
     final ProcessPaths paths;
-    final Version javaVersion;
     protected final boolean crossCompile;
 
     private final List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
     private final List<String> defaultStaticJavaLibs = List.of("java", "nio", "zip", "net", "prefs", "jvm",
             "fdlibm", "z", "dl", "j2pkcs11", "sunec", "jaas", "extnet");
 
-    AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) {
+    AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         this.projectConfiguration = configuration;
         this.fileDeps = new FileDeps(configuration);
         this.paths = paths;
-        this.javaVersion = javaVersion;
         this.crossCompile = !configuration.getHostTriplet().equals(configuration.getTargetTriplet());
     }
 
@@ -139,6 +140,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         ProcessRunner compileRunner = new ProcessRunner(getNativeImagePath());
 
         baseNativeImageArguments.forEach(compileRunner::addArg);
+
+        compileRunner.addArgs(getNativeImageArguments());
 
         if (!projectConfiguration.isSharedLibrary() ||
                 !projectConfiguration.getTargetTriplet().equals(Triplet.fromCurrentOS())) {
@@ -381,13 +384,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private String getJniPlatform() {
         Triplet target = projectConfiguration.getTargetTriplet();
-        boolean graalVM221 = false;
-        try {
-            Version graalVersion = projectConfiguration.getGraalVersion();
-            graalVM221 = ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() > 0));
-        } catch (IOException ex) {
-            Logger.logFatal(ex, "Could not detect GraalVM version, stopping now.");
-        }
+        Version graalVersion = projectConfiguration.getGraalVersion();
+        boolean graalVM221 = ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() > 0));
         String os = target.getOs();
         String arch = target.getArch();
         switch (os) {
@@ -493,14 +491,18 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .toString();
     }
 
+    protected List<String> getNativeImageArguments() {
+        return List.of();
+    }
+
     protected List<String> getEnabledFeatures() {
         return List.of();
     }
 
     private List<String> getEnabledFeaturesArgs() {
         List<String> args = new ArrayList<>();
-        if (javaVersion.getMajor() < 21) {
-            args.add("--features=org.graalvm.home.HomeFinderFeature");
+        if (projectConfiguration.getJavaVersion().getMajor() < 21) {
+            args.add("--features=" + HOME_FINDER_FEATURE);
         }
         for (String feature : getEnabledFeatures()) {
             args.add("--features=" + feature);

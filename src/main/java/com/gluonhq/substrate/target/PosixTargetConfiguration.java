@@ -38,8 +38,8 @@ import java.nio.file.Path;
 
 abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
 
-    PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) {
-        super(paths, configuration, javaVersion);
+    PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
+        super(paths, configuration);
     }
 
     @Override

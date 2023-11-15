@@ -37,7 +37,6 @@ import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
-import com.gluonhq.substrate.util.Version;
 
 import java.io.File;
 import java.io.IOException;
@@ -97,8 +96,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private static final String javafxWebLib = "-lwebview";
     private final String capLocation = ANDROID_NATIVE_FOLDER + "cap/";
 
-    public AndroidTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration, Version javaVersion) throws IOException {
-        super(paths,configuration, javaVersion);
+    public AndroidTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
+        super(paths,configuration);
 
         this.sdk = fileDeps.getAndroidSDKPath().toString();
         this.ndk = fileDeps.getAndroidNDKPath().toString();
