@@ -147,6 +147,19 @@ public class InternalProjectConfiguration {
         return new Version(m.group(1));
     }
 
+    /**
+     * Returns the Java version that GraalVM bundles
+     * @return the Java version of the GraalVM build
+     */
+    public Version getJavaVersion() {
+        return javaVersion;
+    }
+
+    /**
+     * Returns the GraalVM internal version.
+     * This version corresponds with the version used for the GraalVM maven artifacts.
+     * @return The GraalVM internal version.
+     */
     public Version getGraalVersion() {
         return graalVersion;
     }
@@ -670,7 +683,7 @@ public class InternalProjectConfiguration {
     }
 
     /**
-     * try to find the Java version that GraalVM bundles
+     * Try to find the Java version that GraalVM bundles
      * @return the Java version of the GraalVM's build
      * @throws NullPointerException when the configuration is null
      * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
@@ -700,20 +713,14 @@ public class InternalProjectConfiguration {
         return new Version(m.group(1));
     }
 
-    /**
-     * Gets the Java version that GraalVM bundles
-     * @return the Java version of the GraalVM build
-     */
-    public Version getJavaVersion() {
-        return javaVersion;
-    }
-
     @Override
     public String toString() {
         return "ProjectConfiguration{" +
                 "graalPath='" + publicConfig.getGraalPath() + '\'' +
                 ", javaStaticSdkVersion='" + getJavaStaticSdkVersion() + '\'' +
                 ", javafxStaticSdkVersion='" + getJavafxStaticSdkVersion() + '\'' +
+                ", javaVersion=" + javaVersion +
+                ", graalVersion=" + graalVersion +
                 ", useJNI=" + useJNI +
                 ", useJavaFX=" + useJavaFX +
                 ", usePrismSW=" + usePrismSW +
