@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -133,7 +133,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     @Override
     String getLinkOutputName() {
         String appName = projectConfiguration.getAppName();
-        return appName + ".exe";
+        return appName + (projectConfiguration.isSharedLibrary() ? ".dll" : ".exe");
     }
 
     @Override
@@ -160,9 +160,16 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         List<String> flags = new ArrayList<>();
         flags.add("/NODEFAULTLIB:libcmt.lib");
 
+        if (projectConfiguration.isSharedLibrary()) {
+            flags.add("/DLL");
+        }
+
         if (useJavaFX) {
-            flags.add("/SUBSYSTEM:WINDOWS");
-            flags.add("/ENTRY:mainCRTStartup");
+
+            if (!projectConfiguration.isSharedLibrary()) {
+                flags.add("/SUBSYSTEM:WINDOWS");
+                flags.add("/ENTRY:mainCRTStartup");
+            }
 
             flags.addAll(asListOfLibraryLinkFlags(javaFxWindowsLibs));
             flags.addAll(asListOfLibraryLinkFlags(staticJavaFxLibs));
@@ -296,4 +303,30 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         }
         return flag;
     }
+
+    @Override
+    List<String> getAdditionalSourceFiles() {
+        if (projectConfiguration.isSharedLibrary()) {
+            return List.of();
+        }
+        return super.getAdditionalSourceFiles();
+    }
+
+    @Override
+    public boolean createSharedLib() throws IOException, InterruptedException {
+        if (!compile()) {
+            Logger.logSevere("Error building a shared image: error compiling the native image");
+            return false;
+        }
+        if (!link()) {
+            Logger.logSevere("Error building a shared image: error linking the native image");
+            return false;
+        }
+        return Files.exists(getSharedLibPath());
+    }
+
+    private Path getSharedLibPath() {
+        return paths.getAppPath().resolve(getLinkOutputName());
+    }
+
 }
