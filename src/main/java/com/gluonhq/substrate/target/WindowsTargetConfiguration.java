@@ -46,22 +46,33 @@ import java.util.stream.Collectors;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
-    private static final List<String> javaWindowsLibs = Arrays.asList(
+    /**
+     * Static Windows libs required for all JDK major versions
+     */
+    private static final List<String> javaWindowsLibsBase = List.of(
             "advapi32", "iphlpapi", "secur32", "userenv", "version", "ws2_32", "winhttp", "ncrypt", "crypt32");
     /**
-     * mswsock required as of jdk 20
+     * Static Windows libs required for JDK major >= 20
      */
-    private static final List<String> javaWindowsLibsJdk20 = Arrays.asList(
-            "advapi32", "iphlpapi", "secur32", "userenv", "version", "ws2_32", "winhttp", "ncrypt", "crypt32", "mswsock");
+    private static final List<String> javaWindowsLibs20 = List.of("mswsock");
 
-    private static final List<String> staticJavaLibs = Arrays.asList(
-            "j2pkcs11", "java", "net", "nio", "prefs", "fdlibm", "sunec", "zip", "sunmscapi");
     /**
-     * extnet required since jdk 19
-     * fdlibm no longer required, unsure since when
+     * Static Java libs required for all JDK major versions
      */
-    private static final List<String> staticJavaLibs21 = Arrays.asList(
-            "j2pkcs11", "java", "net", "nio", "prefs", "sunec", "extnet", "zip", "sunmscapi");
+    private static final List<String> staticJavaLibsBase = List.of(
+            "j2pkcs11", "java", "net", "nio", "prefs", "zip", "sunmscapi");
+    /**
+     * Static Java libs required for JDK major == 11
+     */
+    private static final List<String> staticJavaLibs11 = List.of("sunec");
+    /**
+     * Static Java libs required for JDK major < 21
+     */
+    private static final List<String> staticJavaLibs20 = List.of("fdlibm");
+    /**
+     * Static Java libs required for JDK major >= 21
+     */
+    private static final List<String> staticJavaLibs21 = List.of("extnet");
 
     private static final List<String> staticJvmLibs = Arrays.asList(
             "jvm", "libchelper");
@@ -150,19 +161,27 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getStaticJavaLibs() {
-        if (projectConfiguration.getJavaVersion().getMajor() >= 21) {
-            return staticJavaLibs21;
+        int major = projectConfiguration.getJavaVersion().getMajor();
+        List<String> libs = new ArrayList<>(staticJavaLibsBase);
+        if (major == 11) {
+            libs.addAll(staticJavaLibs11);
         }
-        return staticJavaLibs;
+        if (major < 21) {
+            libs.addAll(staticJavaLibs20);
+        }
+        if (major >= 21) {
+            libs.addAll(staticJavaLibs21);
+        }
+        return libs;
     }
 
     @Override
     List<String> getOtherStaticLibs() {
+        int major = projectConfiguration.getJavaVersion().getMajor();
         List<String> libs = new ArrayList<>(staticJvmLibs);
-        if (projectConfiguration.getJavaVersion().getMajor() >= 20) {
-            libs.addAll(javaWindowsLibsJdk20);
-        } else {
-            libs.addAll(javaWindowsLibs);
+        libs.addAll(javaWindowsLibsBase);
+        if (major >= 20) {
+            libs.addAll(javaWindowsLibs20);
         }
         return libs;
     }

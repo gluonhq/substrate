@@ -100,8 +100,20 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     protected final boolean crossCompile;
 
     private final List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
-    private final List<String> defaultStaticJavaLibs = List.of("java", "nio", "zip", "net", "prefs", "jvm",
-            "fdlibm", "z", "dl", "j2pkcs11", "sunec", "jaas", "extnet");
+
+    /**
+     * Static Java libs required for all JDK major versions
+     */
+    private final List<String> defaultStaticJavaLibsBase = List.of("java", "nio", "zip", "net", "prefs", "jvm",
+            "z", "dl", "j2pkcs11", "jaas", "extnet");
+    /**
+     * Static Java libs required for JDK major == 11
+     */
+    private final List<String> defaultStaticJavaLibs11 = List.of("sunec");
+    /**
+     * Static Java libs required for JDK major < 21
+     */
+    private final List<String> defaultStaticJavaLibs20 = List.of("fdlibm");
 
     AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         this.projectConfiguration = configuration;
@@ -926,7 +938,15 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * linker when creating images for the specific target.
      */
     List<String> getStaticJavaLibs() {
-        return defaultStaticJavaLibs;
+        int major = projectConfiguration.getJavaVersion().getMajor();
+        List<String> libs = new ArrayList<>(defaultStaticJavaLibsBase);
+        if (major == 11) {
+            libs.addAll(defaultStaticJavaLibs11);
+        }
+        if (major < 21) {
+            libs.addAll(defaultStaticJavaLibs20);
+        }
+        return libs;
     }
 
     /**
@@ -950,7 +970,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     private List<String> getTargetSpecificJavaLinkLibraries() {
         return Stream.concat(getStaticJavaLibs().stream(), getOtherStaticLibs().stream())
-                .filter(lib -> projectConfiguration.usesJDK11() || !lib.contains("sunec"))
                 .map(this::getLinkLibraryOption)
                 .collect(Collectors.toList());
     }
