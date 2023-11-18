@@ -31,7 +31,7 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
-import com.gluonhq.substrate.util.JavaLib;
+import com.gluonhq.substrate.util.Lib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.windows.MSIBundler;
@@ -47,29 +47,15 @@ import java.util.stream.Collectors;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
-    private static final List<JavaLib> javaWindowsLibs = List.of(
-            JavaLib.of("advapi32"),
-            JavaLib.of("iphlpapi"),
-            JavaLib.of("secur32"),
-            JavaLib.of("userenv"),
-            JavaLib.of("version"),
-            JavaLib.of("ws2_32"),
-            JavaLib.of("winhttp"),
-            JavaLib.of("ncrypt"),
-            JavaLib.of("crypt32"),
-            JavaLib.from(20, "mswsock")
+    private static final List<Lib> javaWindowsLibs = List.of(
+            Lib.of("advapi32"), Lib.of("iphlpapi"), Lib.of("secur32"), Lib.of("userenv"),
+            Lib.of("version"), Lib.of("ws2_32"), Lib.of("winhttp"), Lib.of("ncrypt"),
+            Lib.of("crypt32"), Lib.from(20, "mswsock")
     );
-    private static final List<JavaLib> staticJavaLibs = List.of(
-            JavaLib.of("j2pkcs11"),
-            JavaLib.of("java"),
-            JavaLib.of("net"),
-            JavaLib.of("nio"),
-            JavaLib.of("prefs"),
-            JavaLib.upto(20, "fdlibm"),
-            JavaLib.upto(11, "sunec"),
-            JavaLib.of("zip"),
-            JavaLib.of("sunmscapi"),
-            JavaLib.from(21, "extnet")
+    private static final List<Lib> staticJavaLibs = List.of(
+            Lib.of("j2pkcs11"), Lib.of("java"), Lib.of("net"), Lib.of("nio"),
+            Lib.of("prefs"), Lib.upTo(20, "fdlibm"), Lib.upTo(11, "sunec"), Lib.of("zip"),
+            Lib.of("sunmscapi"), Lib.from(21, "extnet")
     );
     private static final List<String> staticJvmLibs = Arrays.asList(
             "jvm", "libchelper");

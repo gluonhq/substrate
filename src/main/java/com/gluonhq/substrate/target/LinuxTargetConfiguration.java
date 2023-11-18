@@ -31,7 +31,7 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
-import com.gluonhq.substrate.util.JavaLib;
+import com.gluonhq.substrate.util.Lib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
@@ -60,21 +60,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
 
-    private static final List<JavaLib> staticJavaLibs = List.of(
-            JavaLib.of("java"),
-            JavaLib.of("nio"),
-            JavaLib.of("zip"),
-            JavaLib.of("net"),
-            JavaLib.of("prefs"),
-            JavaLib.of("j2pkcs11"),
-            JavaLib.upto(11, "sunec"),
-            JavaLib.of("extnet"),
-            JavaLib.upto(20, "fdlibm"),
-            JavaLib.of("fontmanager"),
-            JavaLib.of("javajpeg"),
-            JavaLib.of("lcms"),
-            JavaLib.of("awt_headless"),
-            JavaLib.of("awt")
+    private static final List<Lib> staticJavaLibs = List.of(
+            Lib.of("java"), Lib.of("nio"), Lib.of("zip"), Lib.of("net"),
+            Lib.of("prefs"), Lib.of("j2pkcs11"), Lib.upTo(11, "sunec"), Lib.of("extnet"),
+            Lib.upTo(20, "fdlibm"), Lib.of("fontmanager"), Lib.of("javajpeg"), Lib.of("lcms"),
+            Lib.of("awt_headless"), Lib.of("awt")
     );
     private static final List<String> staticJvmLibs = Arrays.asList(
             "jvm", "libchelper"

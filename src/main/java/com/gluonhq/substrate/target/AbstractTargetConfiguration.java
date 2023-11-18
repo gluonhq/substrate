@@ -35,7 +35,7 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
-import com.gluonhq.substrate.util.JavaLib;
+import com.gluonhq.substrate.util.Lib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
@@ -101,20 +101,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     protected final boolean crossCompile;
 
     private final List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
-    private final List<JavaLib> defaultStaticJavaLibs = List.of(
-            JavaLib.of("java"),
-            JavaLib.of("nio"),
-            JavaLib.of("zip"),
-            JavaLib.of("net"),
-            JavaLib.of("prefs"),
-            JavaLib.of("jvm"),
-            JavaLib.upto(20, "fdlibm"),
-            JavaLib.of("z"),
-            JavaLib.of("dl"),
-            JavaLib.of("j2pkcs11"),
-            JavaLib.upto(11, "sunec"),
-            JavaLib.of("jaas"),
-            JavaLib.of("extnet")
+    private final List<Lib> defaultStaticJavaLibs = List.of(
+            Lib.of("java"), Lib.of("nio"), Lib.of("zip"), Lib.of("net"),
+            Lib.of("prefs"), Lib.of("jvm"), Lib.upTo(20, "fdlibm"), Lib.of("z"),
+            Lib.of("dl"), Lib.of("j2pkcs11"), Lib.upTo(11, "sunec"), Lib.of("jaas"),
+            Lib.of("extnet")
     );
 
     AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
@@ -957,14 +948,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     /**
      * Return the list of library names applicable to the used java version.
-     * @param libs List to validate based on {@link JavaLib#inRange(int)}.
+     * @param libs List to validate based on {@link Lib#inRange(int)}.
      * @return The list of library names applicable to the used java version.
      */
-    List<String> filterApplicableLibs(List<JavaLib> libs) {
+    final List<String> filterApplicableLibs(List<Lib> libs) {
         int major = projectConfiguration.getJavaVersion().getMajor();
         return libs.stream()
                 .filter(l -> l.inRange(major))
-                .map(JavaLib::getLibName)
+                .map(Lib::getLibName)
                 .collect(Collectors.toList());
     }
 

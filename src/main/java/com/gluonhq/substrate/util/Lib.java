@@ -30,7 +30,7 @@ package com.gluonhq.substrate.util;
 /**
  * This class represents a java library constrained to the optional lower and upper bounds.
  */
-public class JavaLib {
+public class Lib {
     /**
      * lower bound of the applicable version range, inclusive
      */
@@ -41,7 +41,7 @@ public class JavaLib {
     private final Integer upperBound;
     private final String libName;
 
-    private JavaLib(Integer lowerBound, Integer upperBound, String libName) {
+    private Lib(Integer lowerBound, Integer upperBound, String libName) {
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
         this.libName = libName;
@@ -59,19 +59,19 @@ public class JavaLib {
         return true;
     }
 
-    public static JavaLib of(String libName) {
-        return new JavaLib(null, null, libName);
+    public static Lib of(String libName) {
+        return new Lib(null, null, libName);
     }
 
-    public static JavaLib range(int lowerBound, int upperBound, String libName) {
-        return new JavaLib(lowerBound, upperBound, libName);
+    public static Lib range(int lowerBound, int upperBound, String libName) {
+        return new Lib(lowerBound, upperBound, libName);
     }
 
-    public static JavaLib from(int lowerBound, String libName) {
-        return new JavaLib(lowerBound, null, libName);
+    public static Lib from(int lowerBound, String libName) {
+        return new Lib(lowerBound, null, libName);
     }
 
-    public static JavaLib upto(int upperBound, String libName) {
-        return new JavaLib(null, upperBound, libName);
+    public static Lib upTo(int upperBound, String libName) {
+        return new Lib(null, upperBound, libName);
     }
 }

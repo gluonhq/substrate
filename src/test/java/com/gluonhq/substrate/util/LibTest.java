@@ -31,17 +31,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class JavaLibTest {
+class LibTest {
     @Test
     void testNoBound() {
-        JavaLib lib = JavaLib.of("");
+        Lib lib = Lib.of("");
         assertTrue(lib.inRange(0));
         assertTrue(lib.inRange(100));
     }
 
     @Test
     void testLowerBound() {
-        JavaLib lib = JavaLib.from(10, "");
+        Lib lib = Lib.from(10, "");
         assertFalse(lib.inRange(9));
         assertTrue(lib.inRange(10));
         assertTrue(lib.inRange(11));
@@ -49,7 +49,7 @@ class JavaLibTest {
 
     @Test
     void testUpperBound() {
-        JavaLib lib = JavaLib.upto(10, "");
+        Lib lib = Lib.upTo(10, "");
         assertTrue(lib.inRange(9));
         assertTrue(lib.inRange(10));
         assertFalse(lib.inRange(11));
@@ -57,7 +57,7 @@ class JavaLibTest {
 
     @Test
     void testRange() {
-        JavaLib lib = JavaLib.range(10, 12, "");
+        Lib lib = Lib.range(10, 12, "");
         assertFalse(lib.inRange(9));
         assertTrue(lib.inRange(10));
         assertTrue(lib.inRange(11));
