@@ -30,6 +30,7 @@ package com.gluonhq.substrate.target;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.JavaLib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.macos.CodeSigning;
@@ -56,21 +57,17 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
             "ApplicationServices", "OpenGL", "QuartzCore", "Security", "Accelerate"
     );
 
-    /**
-     * Static Java libs required for all JDK major versions
-     */
-    private static final List<String> staticJavaLibsBase = Arrays.asList(
-            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "extnet"
+    private static final List<JavaLib> staticJavaLibs = Arrays.asList(
+            JavaLib.of("java"),
+            JavaLib.of("nio"),
+            JavaLib.of("zip"),
+            JavaLib.of("net"),
+            JavaLib.of("prefs"),
+            JavaLib.of("j2pkcs11"),
+            JavaLib.upto(20, "fdlibm"),
+            JavaLib.upto(11, "sunec"),
+            JavaLib.of("extnet")
     );
-    /**
-     * Static Java libs required for JDK major == 11
-     */
-    private static final List<String> staticJavaLibs11 = List.of("sunec");
-    /**
-     * Static Java libs required for JDK major < 21
-     */
-    private static final List<String> staticJavaLibs20 = List.of("fdlibm");
-
     private static final List<String> staticJvmLibs = Arrays.asList(
             "jvm", "libchelper", "darwin"
     );
@@ -154,15 +151,7 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getStaticJavaLibs() {
-        int major = projectConfiguration.getJavaVersion().getMajor();
-        List<String> libs = new ArrayList<>(staticJavaLibsBase);
-        if (major == 11) {
-            libs.addAll(staticJavaLibs11);
-        }
-        if (major < 21) {
-            libs.addAll(staticJavaLibs20);
-        }
-        return libs;
+        return filterApplicableLibs(staticJavaLibs);
     }
 
     @Override

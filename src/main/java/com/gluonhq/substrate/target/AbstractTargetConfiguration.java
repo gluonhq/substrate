@@ -35,6 +35,7 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.JavaLib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
@@ -100,20 +101,21 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     protected final boolean crossCompile;
 
     private final List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
-
-    /**
-     * Static Java libs required for all JDK major versions
-     */
-    private final List<String> defaultStaticJavaLibsBase = List.of("java", "nio", "zip", "net", "prefs", "jvm",
-            "z", "dl", "j2pkcs11", "jaas", "extnet");
-    /**
-     * Static Java libs required for JDK major == 11
-     */
-    private final List<String> defaultStaticJavaLibs11 = List.of("sunec");
-    /**
-     * Static Java libs required for JDK major < 21
-     */
-    private final List<String> defaultStaticJavaLibs20 = List.of("fdlibm");
+    private final List<JavaLib> defaultStaticJavaLibs = List.of(
+            JavaLib.of("java"),
+            JavaLib.of("nio"),
+            JavaLib.of("zip"),
+            JavaLib.of("net"),
+            JavaLib.of("prefs"),
+            JavaLib.of("jvm"),
+            JavaLib.upto(20, "fdlibm"),
+            JavaLib.of("z"),
+            JavaLib.of("dl"),
+            JavaLib.of("j2pkcs11"),
+            JavaLib.upto(11, "sunec"),
+            JavaLib.of("jaas"),
+            JavaLib.of("extnet")
+    );
 
     AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         this.projectConfiguration = configuration;
@@ -938,15 +940,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * linker when creating images for the specific target.
      */
     List<String> getStaticJavaLibs() {
-        int major = projectConfiguration.getJavaVersion().getMajor();
-        List<String> libs = new ArrayList<>(defaultStaticJavaLibsBase);
-        if (major == 11) {
-            libs.addAll(defaultStaticJavaLibs11);
-        }
-        if (major < 21) {
-            libs.addAll(defaultStaticJavaLibs20);
-        }
-        return libs;
+        return filterApplicableLibs(defaultStaticJavaLibs);
     }
 
     /**
@@ -959,6 +953,19 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     List<String> getOtherStaticLibs() {
         return List.of();
+    }
+
+    /**
+     * Return the list of library names applicable to the used java version.
+     * @param libs List to validate based on {@link JavaLib#inRange(int)}.
+     * @return The list of library names applicable to the used java version.
+     */
+    List<String> filterApplicableLibs(List<JavaLib> libs) {
+        int major = projectConfiguration.getJavaVersion().getMajor();
+        return libs.stream()
+                .filter(l -> l.inRange(major))
+                .map(JavaLib::getLibName)
+                .collect(Collectors.toList());
     }
 
     /**

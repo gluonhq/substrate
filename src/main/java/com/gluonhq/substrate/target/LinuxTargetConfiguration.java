@@ -31,6 +31,7 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.JavaLib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
@@ -59,21 +60,22 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
 
-    /**
-     * Static Java libs required for all JDK major versions
-     */
-    private static final List<String> staticJavaLibsBase = List.of(
-            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "extnet",
-            "fontmanager", "javajpeg", "lcms", "awt_headless", "awt");
-    /**
-     * Static Java libs required for JDK major == 11
-     */
-    private static final List<String> staticJavaLibs11 = List.of("sunec");
-    /**
-     * Static Java libs required for JDK major < 21
-     */
-    private static final List<String> staticJavaLibs20 = List.of("fdlibm");
-
+    private static final List<JavaLib> staticJavaLibs = List.of(
+            JavaLib.of("java"),
+            JavaLib.of("nio"),
+            JavaLib.of("zip"),
+            JavaLib.of("net"),
+            JavaLib.of("prefs"),
+            JavaLib.of("j2pkcs11"),
+            JavaLib.upto(11, "sunec"),
+            JavaLib.of("extnet"),
+            JavaLib.upto(20, "fdlibm"),
+            JavaLib.of("fontmanager"),
+            JavaLib.of("javajpeg"),
+            JavaLib.of("lcms"),
+            JavaLib.of("awt_headless"),
+            JavaLib.of("awt")
+    );
     private static final List<String> staticJvmLibs = Arrays.asList(
             "jvm", "libchelper"
     );
@@ -246,15 +248,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             throw new RuntimeException ("No static java libs found, cannot continue");
         }
 
-        int major = projectConfiguration.getJavaVersion().getMajor();
-        List<String> libs = new ArrayList<>(staticJavaLibsBase);
-        if (major == 11) {
-            libs.addAll(staticJavaLibs11);
-        }
-        if (major < 21) {
-            libs.addAll(staticJavaLibs20);
-        }
-        return libs.stream()
+        return filterApplicableLibs(staticJavaLibs).stream()
                 .map(lib -> javaStaticLibPath.resolve("lib" + lib + ".a").toString())
                 .collect(Collectors.toList());
     }
