@@ -117,8 +117,9 @@ public class InternalProjectConfiguration {
 
         performHostChecks();
 
-        javaVersion = findGraalVMJavaVersion();
-        graalVersion = findGraalVersion();
+        String versionString = getJavaVersionString();
+        javaVersion = parseGraalVMJavaVersion(versionString);
+        graalVersion = parseGraalVersion(versionString);
         checkGraalVMJavaVersion();
         checkGraalVMVersion();
         checkGraalVMVendor();
@@ -126,17 +127,6 @@ public class InternalProjectConfiguration {
 
     public Path getGraalPath() {
         return Objects.requireNonNull(this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
-    }
-
-    private Version findGraalVersion() throws IOException {
-        ProcessRunner graalJava;
-        try {
-            graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
-            graalJava.runProcess("java-version");
-        } catch (InterruptedException e) {
-            throw new IOException("Couldn't determine GraalVM version, " + e.toString());
-        }
-        return parseGraalVersion(graalJava.getResponse());
     }
 
     static Version parseGraalVersion(String versionString) {
@@ -684,31 +674,30 @@ public class InternalProjectConfiguration {
     }
 
     /**
-     * Try to find the Java version that GraalVM bundles
-     * @return the Java version of the GraalVM's build
+     * Get the output of running 'java -version' on the GraalVM JDK
+     * @return The output of executing 'java -version' on the GraalVM JDK
      * @throws NullPointerException when the configuration is null
      * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
      * @throws IOException if the Java version can't be found
      */
-    private Version findGraalVMJavaVersion() throws IOException {
-        ProcessRunner graalJava = null;
+    private String getJavaVersionString() throws IOException {
         try {
-            graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
+            ProcessRunner graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
             if (graalJava.runProcess("check version") != 0) {
                 throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
             }
+            String response = graalJava.getResponse();
+            if (response == null || response.isEmpty()) {
+                throw new IOException("Couldn't determine GraalVM's Java version");
+            }
+            return response;
         } catch (InterruptedException e) {
             throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
         }
-        List<String> responses = graalJava.getResponses();
-        if (responses == null || responses.isEmpty()) {
-            throw new IOException("Couldn't determine GraalVM's Java version");
-        }
-        return parseGraalVMJavaVersion(responses.get(0));
     }
 
     static Version parseGraalVMJavaVersion(String versionString) {
-        String realVersion = versionString.replaceAll("-internal", "");
+        String realVersion = versionString.replace("-internal", "");
         String pattern = "version \"(\\d{1,2}(\\.\\d+){0,2})\"";
         Pattern r = Pattern.compile(pattern);
         Matcher m = r.matcher(realVersion);
