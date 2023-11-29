@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Lib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
@@ -59,11 +60,12 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
 
-    private static final List<String> staticJavaLibs = Arrays.asList(
-            "java", "nio", "zip", "net", "prefs", "j2pkcs11", "sunec", "extnet", "fdlibm",
-            "fontmanager", "javajpeg", "lcms", "awt_headless", "awt"
+    private static final List<Lib> staticJavaLibs = List.of(
+            Lib.of("java"), Lib.of("nio"), Lib.of("zip"), Lib.of("net"),
+            Lib.of("prefs"), Lib.of("j2pkcs11"), Lib.upTo(11, "sunec"), Lib.of("extnet"),
+            Lib.upTo(20, "fdlibm"), Lib.of("fontmanager"), Lib.of("javajpeg"), Lib.of("lcms"),
+            Lib.of("awt_headless"), Lib.of("awt")
     );
-
     private static final List<String> staticJvmLibs = Arrays.asList(
             "jvm", "libchelper"
     );
@@ -89,6 +91,13 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             "-lWTF", "-licuuc", "-licudata"
     );
 
+    private static final List<String> nativeImageArguments = List.of(
+            "--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jdk=ALL-UNNAMED" // required for the GluonFeature
+    );
+    private static final List<String> enabledFeatures = List.of(
+            "com.gluonhq.substrate.feature.GluonFeature"
+    );
+
     private String[] capFiles = {"AArch64LibCHelperDirectives.cap",
         "AMD64LibCHelperDirectives.cap", "BuiltinDirectives.cap",
         "JNIHeaderDirectives.cap", "LibFFIHeaderDirectives.cap",
@@ -108,7 +117,6 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     public LinuxTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
         super(paths, configuration);
         this.isAarch64 = projectConfiguration.getTargetTriplet().getArch().equals(Constants.ARCH_AARCH64);
-        ENABLED_FEATURES.add("com.gluonhq.substrate.feature.GluonFeature");
         sysroot = fileDeps.getSysrootPath().toString();
     }
 
@@ -229,7 +237,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         } catch (IOException ex) {
             throw new RuntimeException ("No static java libs found, cannot continue");
         }
-        return staticJavaLibs.stream()
+
+        return filterApplicableLibs(staticJavaLibs).stream()
                 .map(lib -> javaStaticLibPath.resolve("lib" + lib + ".a").toString())
                 .collect(Collectors.toList());
     }
@@ -256,6 +265,16 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());
         }
         return linkerLibraryPaths;
+    }
+
+    @Override
+    protected List<String> getNativeImageArguments() {
+        return nativeImageArguments;
+    }
+
+    @Override
+    public List<String> getEnabledFeatures() {
+        return enabledFeatures;
     }
 
     @Override

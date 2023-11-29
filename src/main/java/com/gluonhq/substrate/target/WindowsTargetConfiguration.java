@@ -31,6 +31,7 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Lib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.windows.MSIBundler;
@@ -43,14 +44,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
-    private static final List<String> javaWindowsLibs = Arrays.asList(
-            "advapi32", "iphlpapi", "secur32", "userenv", "version", "ws2_32", "winhttp", "ncrypt", "crypt32");
-    private static final List<String> staticJavaLibs = Arrays.asList(
-            "j2pkcs11", "java", "net", "nio", "prefs", "fdlibm", "sunec", "zip", "sunmscapi");
+    private static final List<Lib> javaWindowsLibs = List.of(
+            Lib.of("advapi32"), Lib.of("iphlpapi"), Lib.of("secur32"), Lib.of("userenv"),
+            Lib.of("version"), Lib.of("ws2_32"), Lib.of("winhttp"), Lib.of("ncrypt"),
+            Lib.of("crypt32"), Lib.from(20, "mswsock")
+    );
+    private static final List<Lib> staticJavaLibs = List.of(
+            Lib.of("j2pkcs11"), Lib.of("java"), Lib.of("net"), Lib.of("nio"),
+            Lib.of("prefs"), Lib.upTo(20, "fdlibm"), Lib.upTo(11, "sunec"), Lib.of("zip"),
+            Lib.of("sunmscapi"), Lib.from(21, "extnet")
+    );
     private static final List<String> staticJvmLibs = Arrays.asList(
             "jvm", "libchelper");
 
@@ -63,7 +69,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     private static final List<String> staticJavaFxSwLibs = List.of(
             "prism_sw");
 
-    public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
+    public WindowsTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
     }
 
@@ -138,13 +144,14 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     List<String> getStaticJavaLibs() {
-        return staticJavaLibs;
+        return filterApplicableLibs(staticJavaLibs);
     }
 
     @Override
     List<String> getOtherStaticLibs() {
-        return Stream.concat(staticJvmLibs.stream(), javaWindowsLibs.stream())
-                .collect(Collectors.toList());
+        List<String> libs = new ArrayList<>(staticJvmLibs);
+        libs.addAll(filterApplicableLibs(javaWindowsLibs));
+        return libs;
     }
 
     @Override
@@ -249,7 +256,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
         // Copy icon.ico to gvm/tmp/icon
         if (Files.exists(userAssets) && Files.isDirectory(userAssets) && Files.exists(userAssets.resolve("icon.ico"))) {
-            FileOps.copyFile(userAssets.resolve("icon.ico"), tmpIconDir.resolve("icon.ico")) ;
+            FileOps.copyFile(userAssets.resolve("icon.ico"), tmpIconDir.resolve("icon.ico"));
             Logger.logDebug("User provided icon.ico image used as application icon.");
         } else {
             Path windowsGenSrcPath = paths.getGenPath().resolve(sourceOS);
@@ -268,7 +275,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
         if (rc.runProcess("rc compile") == 0) {
             Path objPath = resPath.getParent().resolve("IconGroup.obj");
             ProcessRunner cvtres = new ProcessRunner("cvtres ", "/machine:x64", "-out:" + objPath, resPath.toString());
-            if (cvtres.runProcess("cvtres") == 0 ) {
+            if (cvtres.runProcess("cvtres") == 0) {
                 Logger.logDebug("IconGroup.obj created successfully");
                 FileOps.copyFile(objPath, gvmAppPath.resolve("IconGroup.obj"));
             }

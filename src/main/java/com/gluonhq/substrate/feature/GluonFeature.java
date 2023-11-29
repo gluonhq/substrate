@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Gluon
+ * Copyright (c) 2021, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@ package com.gluonhq.substrate.feature;
 
 import com.oracle.svm.core.jdk.NativeLibrarySupport;
 import com.oracle.svm.core.jdk.PlatformNativeLibrarySupport;
-import com.oracle.svm.hosted.FeatureImpl.BeforeAnalysisAccessImpl;
-import com.oracle.svm.hosted.c.NativeLibraries;
 import org.graalvm.nativeimage.hosted.Feature;
 
 

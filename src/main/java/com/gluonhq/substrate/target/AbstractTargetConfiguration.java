@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.Triplet;
 import com.gluonhq.substrate.util.FileDeps;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Lib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Strings;
@@ -74,8 +75,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json", "dat",
             "license", "frag", "vert", "obj", "mtl", "js");
-    protected static final List<String> ENABLED_FEATURES = 
-            new ArrayList<>(Arrays.asList("org.graalvm.home.HomeFinderFeature"));
+    /**
+     * Manual registration of the HomeFinderFeature required until GraalVM for JDK 21.
+     */
+    private static final String HOME_FINDER_FEATURE = "org.graalvm.home.HomeFinderFeature";
 
     private static final List<String> baseNativeImageArguments = Arrays.asList(
             "-Djdk.internal.lambda.eagerlyInitialize=false",
@@ -98,8 +101,12 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     protected final boolean crossCompile;
 
     private final List<String> defaultAdditionalSourceFiles = Collections.singletonList("launcher.c");
-    private final List<String> defaultStaticJavaLibs = List.of("java", "nio", "zip", "net", "prefs", "jvm",
-            "fdlibm", "z", "dl", "j2pkcs11", "sunec", "jaas", "extnet");
+    private final List<Lib> defaultStaticJavaLibs = List.of(
+            Lib.of("java"), Lib.of("nio"), Lib.of("zip"), Lib.of("net"),
+            Lib.of("prefs"), Lib.of("jvm"), Lib.upTo(20, "fdlibm"), Lib.of("z"),
+            Lib.of("dl"), Lib.of("j2pkcs11"), Lib.upTo(11, "sunec"), Lib.of("jaas"),
+            Lib.of("extnet")
+    );
 
     AbstractTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         this.projectConfiguration = configuration;
@@ -122,10 +129,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     public boolean compile() throws IOException, InterruptedException {
         String substrateClasspath = "";
         try {
-            substrateClasspath =  new File(AbstractTargetConfiguration.class.getProtectionDomain()
+            substrateClasspath = new File(AbstractTargetConfiguration.class.getProtectionDomain()
                     .getCodeSource().getLocation().toURI()).getPath();
         } catch (URISyntaxException ex) {
-            throw new IOException ("Can't locate Substrate.jar", ex);
+            throw new IOException("Can't locate Substrate.jar", ex);
         }
         String processedClasspath = validateCompileRequirements();
 
@@ -139,12 +146,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         baseNativeImageArguments.forEach(compileRunner::addArg);
 
+        compileRunner.addArgs(getNativeImageArguments());
+
         if (!projectConfiguration.isSharedLibrary() ||
                 !projectConfiguration.getTargetTriplet().equals(Triplet.fromCurrentOS())) {
             compileRunner.addArg("-H:+ExitAfterRelocatableImageWrite");
         }
 
-        compileRunner.addArgs(getEnabledFeatures());
+        compileRunner.addArgs(getEnabledFeaturesArgs());
 
         compileRunner.addArg(createTempDirectoryArg());
 
@@ -380,13 +389,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private String getJniPlatform() {
         Triplet target = projectConfiguration.getTargetTriplet();
-        boolean graalVM221 = false;
-        try {
-            Version graalVersion = projectConfiguration.getGraalVersion();
-            graalVM221 = ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() >0));
-        } catch (IOException ex) {
-            Logger.logFatal(ex, "Could not detect GraalVM version, stopping now.");
-        }
+        Version graalVersion = projectConfiguration.getGraalVersion();
+        boolean graalVM221 = ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() > 0));
         String os = target.getOs();
         String arch = target.getArch();
         switch (os) {
@@ -445,7 +449,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                     target.getOsArch2());
         }
         if (FileOps.isDirectoryEmpty(clibPath)) {
-            throw new IOException("No clibraries found for the required architecture in "+clibPath);
+            throw new IOException("No clibraries found for the required architecture in " + clibPath);
         }
         checkPlatformSpecificClibs(clibPath);
     }
@@ -492,14 +496,27 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 .toString();
     }
 
-    private List<String> getEnabledFeatures() {
-        return ENABLED_FEATURES.stream()
-                .map(feature -> "--features=" + feature)
-                .collect(Collectors.toList());
+    protected List<String> getNativeImageArguments() {
+        return List.of();
+    }
+
+    protected List<String> getEnabledFeatures() {
+        return List.of();
+    }
+
+    private List<String> getEnabledFeaturesArgs() {
+        List<String> args = new ArrayList<>();
+        if (projectConfiguration.getJavaVersion().getMajor() < 21) {
+            args.add("--features=" + HOME_FINDER_FEATURE);
+        }
+        for (String feature : getEnabledFeatures()) {
+            args.add("--features=" + feature);
+        }
+        return args;
     }
 
     private String createTempDirectoryArg() throws IOException {
-        Path  tmpPath = paths.getTmpPath();
+        Path tmpPath = paths.getTmpPath();
         FileOps.rmdir(tmpPath);
         String tmpDir = tmpPath.toFile().getAbsolutePath();
         return "-H:TempDirectory=" + tmpDir;
@@ -564,7 +581,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private Path createReflectionConfig(String suffix, ConfigResolver configResolver) throws IOException {
         Path gvmPath = paths.getGvmPath();
         Path reflectionPath = gvmPath.resolve(
-                Strings.substitute( Constants.REFLECTION_ARCH_FILE, Map.of("archOs", suffix)));
+                Strings.substitute(Constants.REFLECTION_ARCH_FILE, Map.of("archOs", suffix)));
         Files.deleteIfExists(reflectionPath);
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(reflectionPath.toFile())))) {
             bw.write("[\n");
@@ -677,10 +694,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         writeSingleEntry(bw, javaClass, exclude);
     }
 
-    private static void writeSingleEntry (BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
+    private static void writeSingleEntry(BufferedWriter bw, String javaClass, boolean exclude) throws IOException {
         bw.write("  {\n");
         bw.write("    \"name\" : \"" + javaClass + "\"");
-        if (! exclude) {
+        if (!exclude) {
             bw.write(",\n");
             bw.write("    \"allDeclaredConstructors\" : true,\n");
             bw.write("    \"allPublicConstructors\" : true,\n");
@@ -914,7 +931,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * linker when creating images for the specific target.
      */
     List<String> getStaticJavaLibs() {
-        return defaultStaticJavaLibs;
+        return filterApplicableLibs(defaultStaticJavaLibs);
     }
 
     /**
@@ -930,6 +947,19 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     }
 
     /**
+     * Return the list of library names applicable to the used java version.
+     * @param libs List to validate based on {@link Lib#inRange(int)}.
+     * @return The list of library names applicable to the used java version.
+     */
+    final List<String> filterApplicableLibs(List<Lib> libs) {
+        int major = projectConfiguration.getJavaVersion().getMajor();
+        return libs.stream()
+                .filter(l -> l.inRange(major))
+                .map(Lib::getLibName)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Return the arguments that need to be passed to the linker for including
      * the Java libraries in the final image.
      *
@@ -938,7 +968,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     private List<String> getTargetSpecificJavaLinkLibraries() {
         return Stream.concat(getStaticJavaLibs().stream(), getOtherStaticLibs().stream())
-                .filter(lib -> projectConfiguration.usesJDK11() || !lib.contains("sunec"))
                 .map(this::getLinkLibraryOption)
                 .collect(Collectors.toList());
     }

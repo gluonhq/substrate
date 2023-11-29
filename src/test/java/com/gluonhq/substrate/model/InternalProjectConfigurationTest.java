@@ -33,6 +33,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 
 import static org.gradle.internal.impldep.org.junit.Assert.assertEquals;
@@ -41,9 +43,11 @@ class InternalProjectConfigurationTest {
 
     @ParameterizedTest
     @MethodSource("versioningSchemeParameters")
-    void testIsOldGraalVMVersioningScheme(String version, boolean usesOldScheme) {
+    void testIsOldGraalVMVersioningScheme(String version, boolean usesOldScheme) throws IOException {
         Version javaVersion = new Version(version);
-        InternalProjectConfiguration config = new InternalProjectConfiguration(new ProjectConfiguration("", ""));
+        ProjectConfiguration publicConfig = new ProjectConfiguration("", "");
+        publicConfig.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
+        InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
         assertEquals(usesOldScheme, config.isOldGraalVMVersioningScheme(javaVersion));
     }
 
@@ -131,15 +135,22 @@ class InternalProjectConfigurationTest {
                         "Java(TM) SE Runtime Environment Oracle GraalVM 21.0.1+12.1 (build 21.0.1+12-jvmci-23.1-b19)\n" +
                         "Java HotSpot(TM) 64-Bit Server VM Oracle GraalVM 21.0.1+12.1 (build 21.0.1+12-jvmci-23.1-b19, mixed mode, sharing)"),
 
+                // ======== Oracle CE Builds ========
+
+                // graalvm-community-jdk-17.0.7+7.1
                 Arguments.of(new Version("17.0.7"), new Version("17.0.7"), "openjdk version \"17.0.7\" 2023-04-18\n" +
                         "OpenJDK Runtime Environment GraalVM CE 17.0.7+7.1 (build 17.0.7+7-jvmci-23.0-b12)\n" +
                         "OpenJDK 64-Bit Server VM GraalVM CE 17.0.7+7.1 (build 17.0.7+7-jvmci-23.0-b12, mixed mode, sharing)"),
 
+                // graalvm-community-jdk-21+35.1
                 Arguments.of(new Version("21"), new Version("21"), "openjdk version \"21\" 2023-09-19\n" +
                         "OpenJDK Runtime Environment GraalVM CE 21+35.1 (build 21+35-jvmci-23.1-b15)\n" +
-                        "OpenJDK 64-Bit Server VM GraalVM CE 21+35.1 (build 21+35-jvmci-23.1-b15, mixed mode, sharing)")
+                        "OpenJDK 64-Bit Server VM GraalVM CE 21+35.1 (build 21+35-jvmci-23.1-b15, mixed mode, sharing)"),
 
+                // graalvm-community-jdk-21.0.1+12.1
+                Arguments.of(new Version("21.0.1"), new Version("21.0.1"), "openjdk version \"21.0.1\" 2023-10-17\n" +
+                        "OpenJDK Runtime Environment GraalVM CE 21.0.1+12.1 (build 21.0.1+12-jvmci-23.1-b19)\n" +
+                        "OpenJDK 64-Bit Server VM GraalVM CE 21.0.1+12.1 (build 21.0.1+12-jvmci-23.1-b19, mixed mode, sharing)")
         );
     }
-
 }

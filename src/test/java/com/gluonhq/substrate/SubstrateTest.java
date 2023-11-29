@@ -45,78 +45,88 @@ class SubstrateTest {
     @Test
     void testTriplets() {
         Triplet triplet = new Triplet(Constants.Profile.LINUX);
-        assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
-        assertEquals(triplet.getVendor(), Constants.VENDOR_LINUX);
-        assertEquals(triplet.getOs(), Constants.OS_LINUX);
+        assertEquals(Constants.ARCH_AMD64, triplet.getArch());
+        assertEquals(Constants.VENDOR_LINUX, triplet.getVendor());
+        assertEquals(Constants.OS_LINUX, triplet.getOs());
 
         triplet = new Triplet(Constants.Profile.MACOS);
-        assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
-        assertEquals(triplet.getVendor(), Constants.VENDOR_APPLE);
-        assertEquals(triplet.getOs(), Constants.OS_DARWIN);
+        assertEquals(Constants.ARCH_AMD64, triplet.getArch());
+        assertEquals(Constants.VENDOR_APPLE, triplet.getVendor());
+        assertEquals(Constants.OS_DARWIN, triplet.getOs());
     }
 
     @Test
     void testWindowsTriplet() {
         Triplet triplet = new Triplet(Constants.Profile.WINDOWS);
-        assertEquals(triplet.getArch(), Constants.ARCH_AMD64);
-        assertEquals(triplet.getVendor(), Constants.VENDOR_MICROSOFT);
-        assertEquals(triplet.getOs(), Constants.OS_WINDOWS);
+        assertEquals(Constants.ARCH_AMD64, triplet.getArch());
+        assertEquals(Constants.VENDOR_MICROSOFT, triplet.getVendor());
+        assertEquals(Constants.OS_WINDOWS, triplet.getOs());
     }
 
     @Test
-    void testIOSTripletOnLinux() throws IOException {
+    void testIOSTripletOnLinux() {
         assumeTrue(Triplet.fromCurrentOS().getOs().indexOf("nux") > 0);
         Triplet iosTriplet = new Triplet(Constants.Profile.IOS);
         ProjectConfiguration config = new ProjectConfiguration("", "");
         config.setTarget(iosTriplet);
         config.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
+        Path userHome = Path.of(System.getProperty("user.home"));
 
         // when on linux, nativeCompile should throw an illegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> new SubstrateDispatcher(Path.of(System.getProperty("user.home")), config));
+        assertThrows(IllegalArgumentException.class, () -> new SubstrateDispatcher(userHome, config));
     }
 
     @Test
     void testAssertGraal() {
         ProjectConfiguration publicConfig = new ProjectConfiguration("", "");
-        InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
-        assertThrows(NullPointerException.class, config::getGraalVMJavaVersion);
+        assertThrows(NullPointerException.class, () -> new InternalProjectConfiguration(publicConfig));
     }
 
     @Test
-    void testMainClassName() {
+    void testMainClassName() throws IOException {
         assertThrows(NullPointerException.class, () -> new ProjectConfiguration(null, ""));
-        var config = new InternalProjectConfiguration(new ProjectConfiguration("a.b.Foo", "a.b-1.0.jar"));
+        ProjectConfiguration publicConfig = new ProjectConfiguration("a.b.Foo", "a.b-1.0.jar");
+        publicConfig.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
+        var config = new InternalProjectConfiguration(publicConfig);
         assertEquals("a.b.Foo", config.getMainClassName());
-        config = new InternalProjectConfiguration(new ProjectConfiguration("name/a.b.Foo", ""));
+        publicConfig = new ProjectConfiguration("name/a.b.Foo", "");
+        publicConfig.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
+        config = new InternalProjectConfiguration(publicConfig);
         assertEquals("a.b.Foo", config.getMainClassName());
     }
 
     @Test
-    void testClasspath() {
+    void testClasspath() throws IOException {
         assertThrows(NullPointerException.class, () -> new ProjectConfiguration("", null));
-        var config = new InternalProjectConfiguration(new ProjectConfiguration("", "a.b-1.0.jar"));
+        ProjectConfiguration publicConfig = new ProjectConfiguration("", "a.b-1.0.jar");
+        publicConfig.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
+        var config = new InternalProjectConfiguration(publicConfig);
         assertEquals("a.b-1.0.jar", config.getClasspath());
     }
 
     @Test
-    void testAssertSW() {
+    void testAssertSW() throws IOException {
         ProjectConfiguration publicConfig = new ProjectConfiguration("a.b.Foo", "");
+        publicConfig.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
         InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
         assertFalse(config.isUsePrismSW());
 
         publicConfig = new ProjectConfiguration("a.b.Foo", "");
+        publicConfig.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
         publicConfig.setUsePrismSW(true);
         config = new InternalProjectConfiguration(publicConfig);
         assertTrue(config.isUsePrismSW());
     }
 
     @Test
-    void testAssertUseJavaFX() {
+    void testAssertUseJavaFX() throws IOException {
         ProjectConfiguration publicConfig = new ProjectConfiguration("", "javafx-base-14-linux.jar");
+        publicConfig.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
         InternalProjectConfiguration config = new InternalProjectConfiguration(publicConfig);
         assertTrue(config.isUseJavaFX());
 
         publicConfig = new ProjectConfiguration("", "apache-commons.jar");
+        publicConfig.setGraalPath(Path.of(System.getenv("GRAALVM_HOME")));
         config = new InternalProjectConfiguration(publicConfig);
         assertFalse(config.isUseJavaFX());
     }

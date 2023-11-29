@@ -379,10 +379,6 @@ public class SubstrateDispatcher {
             System.out.println("Configuration: " + this.config);
         }
 
-        Version javaVersion = this.config.checkGraalVMJavaVersion();
-        this.config.checkGraalVMVersion(javaVersion);
-        this.config.checkGraalVMVendor();
-
         Triplet targetTriplet = config.getTargetTriplet();
 
         this.targetConfiguration = Objects.requireNonNull(getTargetConfiguration(targetTriplet),

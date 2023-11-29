@@ -66,7 +66,6 @@ public class InternalProjectConfiguration {
     private boolean useJavaFX = false;
     private boolean usePrismSW = false;
     private boolean enableCheckHash = true;
-    private boolean usesJDK11 = false;
     private boolean sharedLibrary = false;
     private boolean staticLibrary = false;
 
@@ -75,12 +74,14 @@ public class InternalProjectConfiguration {
     private List<String> releaseSymbolsList;
 
     private final ProjectConfiguration publicConfig;
+    private final Version javaVersion;
+    private final Version graalVersion;
 
     /**
      * Private projects configuration, which includes everything, including public settings
      * @param config public project configuration
      */
-    public InternalProjectConfiguration(ProjectConfiguration config) {
+    public InternalProjectConfiguration(ProjectConfiguration config) throws IOException {
 
         this.publicConfig = Objects.requireNonNull(config);
 
@@ -115,21 +116,17 @@ public class InternalProjectConfiguration {
         }
 
         performHostChecks();
+
+        String versionString = getJavaVersionString();
+        javaVersion = parseGraalVMJavaVersion(versionString);
+        graalVersion = parseGraalVersion(versionString);
+        checkGraalVMJavaVersion();
+        checkGraalVMVersion();
+        checkGraalVMVendor();
     }
 
     public Path getGraalPath() {
         return Objects.requireNonNull(this.publicConfig.getGraalPath(), "GraalVM Path is not defined");
-    }
-
-    public Version getGraalVersion() throws IOException {
-        ProcessRunner graalJava;
-        try {
-            graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
-            graalJava.runProcess("java-version");
-        } catch (InterruptedException e) {
-            throw new IOException("Couldn't determine GraalVM version, " + e.toString());
-        }
-        return parseGraalVersion(graalJava.getResponse());
     }
 
     static Version parseGraalVersion(String versionString) {
@@ -139,6 +136,23 @@ public class InternalProjectConfiguration {
         if (!m.find())
             throw new IllegalArgumentException("Couldn't determine GraalVM version from: " + versionString);
         return new Version(m.group(1));
+    }
+
+    /**
+     * Returns the Java version that GraalVM bundles
+     * @return the Java version of the GraalVM build
+     */
+    public Version getJavaVersion() {
+        return javaVersion;
+    }
+
+    /**
+     * Returns the GraalVM internal version.
+     * This version corresponds with the version used for the GraalVM maven artifacts.
+     * @return The GraalVM internal version.
+     */
+    public Version getGraalVersion() {
+        return graalVersion;
     }
 
     /**
@@ -470,16 +484,15 @@ public class InternalProjectConfiguration {
     }
 
     public boolean usesJDK11() {
-        return usesJDK11;
+        return javaVersion.getMajor() == 11;
     }
 
     /**
      * Check if the GraalVM provided by the configuration is supported
      * @throws IOException if the GraalVM version is older than the minimum supported version
      */
-    public void checkGraalVMVersion(Version javaVersion) throws IOException {
+    private void checkGraalVMVersion() throws IOException {
         if (isOldGraalVMVersioningScheme(javaVersion)) {
-            Version graalVersion = getGraalVersion();
             if (graalVersion.compareTo(new Version(Constants.GRAALVM_MIN_VERSION)) < 0) {
                 throw new IOException("Current GraalVM version (" + graalVersion + ") not supported.\n" +
                         "Please upgrade to " + Constants.GRAALVM_MIN_VERSION + " or higher");
@@ -503,21 +516,18 @@ public class InternalProjectConfiguration {
      * Check if the GraalVM's java provided by the configuration is supported
      * @throws IOException if the GraalVM's java version is older than the minimum supported version
      */
-    public Version checkGraalVMJavaVersion() throws IOException {
-        Version javaVersion = getGraalVMJavaVersion();
+    private void checkGraalVMJavaVersion() throws IOException {
         if (javaVersion.compareTo(new Version(Constants.GRAALVM_JAVA_MIN_VERSION)) < 0) {
             throw new IOException("Current GraalVM's java version (" + javaVersion + ") not supported.\n" +
                     "Please upgrade to " + Constants.GRAALVM_JAVA_MIN_VERSION + " or higher");
         }
-        usesJDK11 = javaVersion.getMajor() == 11;
-        return javaVersion;
     }
 
     /**
      * Check if Gluon is the vendor of the GraalVM build, or else logs a message.
      * @throws IOException if the GraalVM path or the GraalVM/release file don't exist
      */
-    public void checkGraalVMVendor() throws IOException {
+    private void checkGraalVMVendor() throws IOException {
         Path graalPath = getGraalPath();
         if (!Files.exists(graalPath)) {
             throw new IOException("Path provided for GraalVM doesn't exist: " + graalPath);
@@ -664,31 +674,30 @@ public class InternalProjectConfiguration {
     }
 
     /**
-     * Gets the Java version that GraalVM bundles
-     * @return the Java version of the GraalVM's build
+     * Get the output of running 'java -version' on the GraalVM JDK
+     * @return The output of executing 'java -version' on the GraalVM JDK
      * @throws NullPointerException when the configuration is null
      * @throws IllegalArgumentException when the configuration doesn't contain a property graalPath
      * @throws IOException if the Java version can't be found
      */
-    public Version getGraalVMJavaVersion() throws IOException {
-        ProcessRunner graalJava = null;
+    private String getJavaVersionString() throws IOException {
         try {
-            graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
+            ProcessRunner graalJava = new ProcessRunner(getGraalVMBinPath().resolve("java").toString(), "-version");
             if (graalJava.runProcess("check version") != 0) {
                 throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
             }
+            String response = graalJava.getResponse();
+            if (response == null || response.isEmpty()) {
+                throw new IOException("Couldn't determine GraalVM's Java version");
+            }
+            return response;
         } catch (InterruptedException e) {
             throw new IllegalArgumentException("$GRAALVM_HOME/bin/java -version process failed");
         }
-        List<String> responses = graalJava.getResponses();
-        if (responses == null || responses.isEmpty()) {
-            throw new IOException("Couldn't determine GraalVM's Java version");
-        }
-        return parseGraalVMJavaVersion(responses.get(0));
     }
 
     static Version parseGraalVMJavaVersion(String versionString) {
-        String realVersion = versionString.replaceAll("-internal", "");
+        String realVersion = versionString.replace("-internal", "");
         String pattern = "version \"(\\d{1,2}(\\.\\d+){0,2})\"";
         Pattern r = Pattern.compile(pattern);
         Matcher m = r.matcher(realVersion);
@@ -704,6 +713,8 @@ public class InternalProjectConfiguration {
                 "graalPath='" + publicConfig.getGraalPath() + '\'' +
                 ", javaStaticSdkVersion='" + getJavaStaticSdkVersion() + '\'' +
                 ", javafxStaticSdkVersion='" + getJavafxStaticSdkVersion() + '\'' +
+                ", javaVersion=" + javaVersion +
+                ", graalVersion=" + graalVersion +
                 ", useJNI=" + useJNI +
                 ", useJavaFX=" + useJavaFX +
                 ", usePrismSW=" + usePrismSW +
