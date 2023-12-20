@@ -285,6 +285,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     // During development if user changes the application icon, the same is not reflected immediately in Explorer.
     // To fix this, a cache clearance of the Windows explorer is required.
     private void clearExplorerCache() throws IOException, InterruptedException {
+        if (!executableOnPath("ie4uinit.exe")) return;
         ProcessRunner clearCache = new ProcessRunner("ie4uinit");
         clearCache.addArg(findCacheFlag());
         clearCache.runProcess("Clear Explorer cache");
@@ -309,6 +310,26 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
             Logger.logInfo("Unable to find Windows build version. Defaulting cache flag to '-show'.");
         }
         return flag;
+    }
+
+    /**
+     * Returns whether the passed executable is available on the PATH.
+     * For best result, the extension should be included in the executable, as "foo" will return true for "foo.bat".
+     * But running "foo" in a ProcessBuilder will look for "foo.exe" and fail to run.
+     *
+     * @param executable name of the executable to check
+     * @return true if the executable is available on the PATH.
+     */
+    private boolean executableOnPath(String executable) {
+        try {
+            ProcessRunner whereProcess = new ProcessRunner("cmd.exe", "/c", "where", "/q", executable);
+            whereProcess.showSevereMessage(false);
+            int exit = whereProcess.runProcess("find executable");
+            return exit == 0;
+        } catch (IOException | InterruptedException e) {
+            Logger.logInfo(String.format("Unable to validate if %s is available on the PATH, assuming it is not.", executable));
+            return false;
+        }
     }
 
     @Override
