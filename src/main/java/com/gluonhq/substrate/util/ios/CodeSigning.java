@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,6 +66,7 @@ public class CodeSigning {
 
     private static final String CODESIGN_ALLOCATE_ENV = "CODESIGN_ALLOCATE";
     private static final String EMBEDDED_PROVISIONING_PROFILE = "embedded.mobileprovision";
+    private static final String PRIVACY_MANIFEST_FILE = "PrivacyInfo.xcprivacy";
     private static final String ERRLINK = "Please check https://docs.gluonhq.com/ for more information.";
 
     private static final String KEYCHAIN_ERROR_MESSAGE = "errSecInternalComponent";
@@ -110,8 +111,16 @@ public class CodeSigning {
         Path provisioningProfilePath = mobileProvision.getProvisioningPath();
         Path embeddedPath = appPath.resolve(EMBEDDED_PROVISIONING_PROFILE);
         Files.copy(provisioningProfilePath, embeddedPath, REPLACE_EXISTING);
+
+        // entitlements
         Path entitlementsPath = getEntitlementsPath(bundleId, getProvisioningProfile().isTaskAllow());
         Logger.logDebug("Signing with entitlements path: " + entitlementsPath);
+
+        // privacy
+        Path privacyManifestPath = getPrivacyManifestPath();
+        Logger.logDebug("Privacy manifest path: " + privacyManifestPath);
+        Files.copy(privacyManifestPath, appPath.resolve(PRIVACY_MANIFEST_FILE), REPLACE_EXISTING);
+
         return sign(entitlementsPath, appPath);
     }
 
@@ -341,6 +350,18 @@ public class CodeSigning {
         Logger.logDebug("Entitlements.plist = " + dictionary.getEntrySet());
         dictionary.saveAsXML(tmpEntitlements);
         return tmpEntitlements;
+    }
+
+    private Path getPrivacyManifestPath() throws IOException {
+        Path privacyManifest = rootPath.resolve(PRIVACY_MANIFEST_FILE);
+
+        if (!Files.exists(privacyManifest)) {
+            Path tmpPrivacyManifest = tmpPath.resolve(PRIVACY_MANIFEST_FILE);
+            privacyManifest = FileOps.copyResource("/native/ios/PrivacyInfo.xcprivacy", tmpPrivacyManifest);
+            Logger.logInfo("Default iOS privacy manifest generated in " + tmpPrivacyManifest + ".\n" +
+                    "Consider copying it to " + rootPath + " before performing any modification");
+        }
+        return privacyManifest;
     }
 
     private List<Identity> getIdentity() {
