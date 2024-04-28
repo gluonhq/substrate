@@ -285,7 +285,10 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     // During development if user changes the application icon, the same is not reflected immediately in Explorer.
     // To fix this, a cache clearance of the Windows explorer is required.
     private void clearExplorerCache() throws IOException, InterruptedException {
-        if (!executableOnPath("ie4uinit.exe")) return;
+        if (!executableOnPath("ie4uinit.exe")) {
+            Logger.logInfo("The application icon cache could not be cleared. As a result, the icon may not have been updated properly.");
+            return;
+        }
         ProcessRunner clearCache = new ProcessRunner("ie4uinit");
         clearCache.addArg(findCacheFlag());
         clearCache.runProcess("Clear Explorer cache");
