@@ -1,7 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 33
+    namespace 'com.gluonhq.helloandroid'
+    compileSdkVersion 34
 
     compileOptions {
         sourceCompatibility 1.8
@@ -10,7 +11,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdkVersion 34
     }
 
     repositories {
