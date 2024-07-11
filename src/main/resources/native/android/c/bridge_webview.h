@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Gluon
+ * Copyright (c) 2021, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #define BRIDGE_WEBVIEW_H
 
 #include <stdio.h>
+#include <unistd.h>
 
 JavaVM* getWebViewGraalVM();
 
