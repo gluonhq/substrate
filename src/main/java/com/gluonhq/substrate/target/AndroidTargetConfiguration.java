@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private static final String ANDROID_TRIPLET = new Triplet(Constants.Profile.ANDROID).toString();
     private static final String ANDROID_MIN_SDK_VERSION = "21";
-    public static final String ANDROID_NDK_VERSION = "25.2.9519653";
+    public static final String ANDROID_NDK_VERSION = "26.3.11579264";
     private static final List<String> ANDROID_KEYSTORE_EXTENSIONS = List.of(".keystore", ".jks");
     private static final String WL_WHOLE_ARCHIVE = "-Wl,--whole-archive";
     private static final String WL_NO_WHOLE_ARCHIVE = "-Wl,--no-whole-archive";
@@ -519,7 +519,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Files.deleteIfExists(Path.of(androidProject.toString(), "app", "src", "main", "java", "com", "gluonhq", "helloandroid", "NativeWebView.java"));
         }
         androidProject.resolve("gradlew").toFile().setExecutable(true);
-        FileOps.replaceInFile(androidProject.resolve("app").resolve("build.gradle"),
+        Path buildPath = androidProject.resolve("app").resolve("build.gradle");
+        FileOps.replaceInFile(buildPath, "namespace 'com.gluonhq.helloandroid'", "namespace '" + getAndroidPackageName() + "'");
+        FileOps.replaceInFile(buildPath,
                 "// OTHER_ANDROID_DEPENDENCIES", String.join("\n        ", requiredDependencies()));
         return androidProject;
     }
@@ -546,7 +548,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
         if (!Files.exists(userManifest)) {
             // use default manifest
-            FileOps.replaceInFile(targetManifest, "package='com.gluonhq.helloandroid'", "package='" + getAndroidPackageName() + "'");
             String newAppLabel = Objects.requireNonNullElse(releaseConfiguration.getAppLabel(), projectConfiguration.getAppName());
             FileOps.replaceInFile(targetManifest, "A HelloGraal", newAppLabel);
             String newVersionCode = releaseConfiguration.getVersionCode();
