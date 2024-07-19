@@ -67,7 +67,7 @@ jobs:
         with:
           generate_release_notes: true
 
-  release-client-plugins:
+  release-gluonfx-plugins:
     runs-on: ubuntu-latest
     needs: [ release ]
     steps:
