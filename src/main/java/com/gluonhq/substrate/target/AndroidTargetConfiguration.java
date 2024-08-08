@@ -536,14 +536,13 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         Path sourcePath = paths.getSourcePath().resolve(targetOS);
 
         Path userBuild = sourcePath.resolve(Constants.BUILD_FILE);
-        Path targetBuild = getAndroidProjectMainPath().resolve(Constants.BUILD_FILE);
+        Path targetBuild = getAndroidProjectPath().resolve("app").resolve(Constants.BUILD_FILE);
         Path generatedBuild = paths.getGenPath().resolve(targetOS).resolve(Constants.BUILD_FILE);
 
         if (!Files.exists(userBuild)) {
             // use default build.gradle
-            Path buildPath = getAndroidProjectPath().resolve("app").resolve(Constants.BUILD_FILE);
-            FileOps.replaceInFile(buildPath, "namespace 'com.gluonhq.helloandroid'", "namespace '" + getAndroidPackageName() + "'");
-            FileOps.replaceInFile(buildPath,
+            FileOps.replaceInFile(targetBuild, "namespace 'com.gluonhq.helloandroid'", "namespace '" + getAndroidPackageName() + "'");
+            FileOps.replaceInFile(targetBuild,
                     "// OTHER_ANDROID_DEPENDENCIES", String.join("\n        ", requiredDependencies()));
             FileOps.copyFile(targetBuild, generatedBuild);
             Logger.logInfo("Default build.gradle file generated in " + generatedBuild + ".\n" +
