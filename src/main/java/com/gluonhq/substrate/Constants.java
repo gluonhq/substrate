@@ -153,6 +153,7 @@ public class Constants {
     public static final String PLIST_FILE = "Default-Info.plist";
     public static final String PARTIAL_PLIST_FILE = "Partial-Info.plist";
     public static final String MANIFEST_FILE = "AndroidManifest.xml";
+    public static final String BUILD_FILE = "build.gradle";
     public static final String ANDROID_RES_FOLDER = "res";
     public static final String ANDROID_KEYSTORE = "debug.keystore";
 
