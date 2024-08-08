@@ -142,7 +142,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     @Override
     public boolean packageApp() throws IOException, InterruptedException {
         prepareAndroidProject();
-        prepareAndroidManifest();
+        prepareAndroidFiles();
         prepareAndroidResources();
         copyAarLibraries();
         copyOtherDalvikClasses();
@@ -519,26 +519,38 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             Files.deleteIfExists(Path.of(androidProject.toString(), "app", "src", "main", "java", "com", "gluonhq", "helloandroid", "NativeWebView.java"));
         }
         androidProject.resolve("gradlew").toFile().setExecutable(true);
-        Path buildPath = androidProject.resolve("app").resolve("build.gradle");
-        FileOps.replaceInFile(buildPath, "namespace 'com.gluonhq.helloandroid'", "namespace '" + getAndroidPackageName() + "'");
-        FileOps.replaceInFile(buildPath,
-                "// OTHER_ANDROID_DEPENDENCIES", String.join("\n        ", requiredDependencies()));
-        return androidProject;
+       return androidProject;
     }
 
     /**
-     * If android manifest is present in src/android, it will be copied to
+     * If build.gradle or android manifest are present in src/android, they will be copied to
      * android project.
      *
-     * Else, default android manifest is adjusted and used in project
+     * Else, default build.gradle and android manifest are adjusted and used in project
      * configuration.
      *
-     * @return the path where android manifest is located
      * @throws IOException
      */
-    private Path prepareAndroidManifest() throws IOException {
+    private void prepareAndroidFiles() throws IOException {
         String targetOS = projectConfiguration.getTargetTriplet().getOs();
         Path sourcePath = paths.getSourcePath().resolve(targetOS);
+
+        Path userBuild = sourcePath.resolve(Constants.BUILD_FILE);
+        Path targetBuild = getAndroidProjectMainPath().resolve(Constants.BUILD_FILE);
+        Path generatedBuild = paths.getGenPath().resolve(targetOS).resolve(Constants.BUILD_FILE);
+
+        if (!Files.exists(userBuild)) {
+            // use default build.gradle
+            Path buildPath = getAndroidProjectPath().resolve("app").resolve(Constants.BUILD_FILE);
+            FileOps.replaceInFile(buildPath, "namespace 'com.gluonhq.helloandroid'", "namespace '" + getAndroidPackageName() + "'");
+            FileOps.replaceInFile(buildPath,
+                    "// OTHER_ANDROID_DEPENDENCIES", String.join("\n        ", requiredDependencies()));
+            FileOps.copyFile(targetBuild, generatedBuild);
+            Logger.logInfo("Default build.gradle file generated in " + generatedBuild + ".\n" +
+                    "Consider copying it to " + userBuild + " before performing any modification");
+        } else {
+            Files.copy(userBuild, targetBuild, StandardCopyOption.REPLACE_EXISTING);
+        }
 
         Path userManifest = sourcePath.resolve(Constants.MANIFEST_FILE);
         Path targetManifest = getAndroidProjectMainPath().resolve(Constants.MANIFEST_FILE);
@@ -580,7 +592,6 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
             }
             Files.copy(userManifest, targetManifest, StandardCopyOption.REPLACE_EXISTING);
         }
-        return targetManifest;
     }
 
     /**
