@@ -260,13 +260,11 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 // for now, we don't have media on AARCH64
                 if (!isAarch64) {
                     answer.addAll(linuxfxMedialibs);
+                    answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
                 }
             }
             if (projectConfiguration.hasWeb()) {
                 answer.addAll(linuxfxWeblibs);
-            }
-            if (!crossCompile) {
-                answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
             }
             answer.addAll(LinuxLinkerFlags.getLinkerFlags());
             if (usePrismSW || crossCompile) {
