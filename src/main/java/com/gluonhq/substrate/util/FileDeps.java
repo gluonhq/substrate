@@ -55,7 +55,7 @@ public final class FileDeps {
     private static final String JAVAFX_STATIC_URL = "https://download2.gluonhq.com/substrate/javafxstaticsdk/";
 
     private static final List<String> JAVA_FILES = Arrays.asList(
-            "libjava.a", "libnet.a", "libnio.a", "libzip.a", "libprefs.a"
+            "libvmone.a"
     );
 
     private static final List<String> JAVAFX_FILES = Arrays.asList(
@@ -64,7 +64,7 @@ public final class FileDeps {
     );
 
     private static final List<String> JAVAFX_STATIC_FILES = Arrays.asList(
-            "libglass.a", "libglass_monocle.a"
+            "libglass.a"
     );
 
     // https://developer.android.com/studio/index.html#command-line-tools-only
@@ -203,8 +203,8 @@ public final class FileDeps {
         }
 
         Path javaStaticLibs = configuration.getJavaStaticLibsPath();
-        Path defaultJavaStaticPath = configuration.getDefaultJavaStaticPath();
         boolean customJavaLocation = configuration.useCustomJavaStaticLibs();
+        boolean customJavaFXLocation = configuration.useCustomJavafxStaticLibs();
 
         boolean downloadJavaStatic = false;
         boolean downloadJavaFXStatic = false;
@@ -225,8 +225,7 @@ public final class FileDeps {
             if (JAVA_FILES.stream()
                     .map(s -> new File(path, s))
                     .anyMatch(f -> !f.exists())) {
-                Logger.logDebug("jar file not found");
-                System.err.println("jar not found");
+                Logger.logDebug("java files not found in " + path);
                 if (customJavaLocation) {
                     throw new IOException ("A location for the static sdk libs was supplied, but the java libs are missing "+javaStaticLibs);
                 }
@@ -234,7 +233,7 @@ public final class FileDeps {
             } else if (!customJavaLocation && configuration.isEnableCheckHash()) {
                 // when the directory for the libs is found, and it is not a user-supplied one, check for its validity
                 Logger.logDebug("Checking java static sdk hashes");
-                String md5File = getChecksumFileName(defaultJavaStaticPath, "javaStaticSdk", target);
+                String md5File = getChecksumFileName(javaStaticLibs, "javaStaticSdk", target);
                 Map<String, String> hashes = FileOps.getHashMap(md5File);
                 if (hashes == null) {
                     Logger.logDebug(md5File+" not found");
@@ -242,7 +241,7 @@ public final class FileDeps {
                 } else if (JAVA_FILES.stream()
                         .map(s -> new File(path, s))
                         .anyMatch(f -> !hashes.get(f.getName()).equals(FileOps.calculateCheckSum(f)))) {
-                    Logger.logDebug("jar file has invalid hashcode");
+                    Logger.logDebug("java file has invalid hashcode");
                     downloadJavaStatic = true;
                 }
             }
@@ -254,15 +253,19 @@ public final class FileDeps {
             Logger.logDebug("Processing JavaFXStatic dependencies at " + javafxStatic.toString());
 
             if (!Files.isDirectory(javafxStatic)) {
+                if (customJavaFXLocation) {
+                    throw new IOException ("A location for the static sdk JavaFX libs was supplied, but it doesn't exist: " + javafxStatic);
+                }
                 downloadJavaFXStatic = true;
             } else {
                 String path = javafxStatic.toString();
-                if (JAVAFX_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists()) ||
-                        (isLinuxAarch64 && JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists())) ||
-                        (!isLinuxAarch64 && JAVAFX_STATIC_FILES.stream().map(s -> new File(path, s)).noneMatch(File::exists))) {
+                if (JAVAFX_FILES.stream().map(s -> new File(path, s)).anyMatch(f -> !f.exists())) {
                     Logger.logDebug("JavaFX file not found");
+                    if (customJavaFXLocation) {
+                        throw new IOException ("A location for the static sdk JavaFX libs was supplied, but the JavaFX libs are missing from " + javafxStatic);
+                    }
                     downloadJavaFXStatic = true;
-                } else if (configuration.isEnableCheckHash()) {
+                } else if (!customJavaFXLocation && configuration.isEnableCheckHash()) {
                     Logger.logDebug("Checking javafx static sdk hashes");
                     String md5File = getChecksumFileName(javafxStatic.getParent(), "javafxStaticSdk",
                             javafxStatic.getParent().getParent().getFileName().toString());
