@@ -19,6 +19,10 @@
 ,
   {
     "name" : "java.lang.Boolean",
+    "fields" :  [
+      {"name":"TRUE"},
+      {"name":"FALSE"}
+    ],
     "methods" : [
       {"name":"booleanValue","parameterTypes":[] }
     ]
@@ -39,6 +43,11 @@
   {
     "name" : "java.lang.ClassNotFoundException",
     "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+  }
+,
+  {
+    "name":"java.lang.Enum",
+    "methods":[{"name":"toString","parameterTypes":[] }]
   }
 ,
   {
@@ -73,7 +82,10 @@
 ,
   {
     "name":"java.lang.Object",
-    "methods":[{"name":"getClass","parameterTypes":[] }]
+    "methods":[
+      {"name":"getClass","parameterTypes":[] },
+      {"name":"equals","parameterTypes":["java.lang.Object"] }
+    ]
   }
 ,
   {
@@ -145,10 +157,19 @@
   {
     "name" : "java.util.HashMap",
     "methods" : [
+      {"name":"<init>","parameterTypes":[] },
       {"name":"get","parameterTypes":["java.lang.Object"] },
       {"name":"containsKey","parameterTypes":["java.lang.Object"] },
       {"name":"keySet","parameterTypes":[] },
       {"name":"put","parameterTypes":["java.lang.Object","java.lang.Object"] }
+    ]
+  }
+,
+  {
+    "name" : "java.util.Collections",
+    "methods" : [
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"unmodifiableMap","parameterTypes":["java.util.Map"] }
     ]
   }
 ,
@@ -179,6 +200,7 @@
     "name" : "java.util.Map",
     "methods" : [
       {"name":"get","parameterTypes":["java.lang.Object"] },
+      {"name":"put","parameterTypes":["java.lang.Object","java.lang.Object"] },
       {"name":"containsKey","parameterTypes":["java.lang.Object"] },
       {"name":"keySet","parameterTypes":[] }
     ]

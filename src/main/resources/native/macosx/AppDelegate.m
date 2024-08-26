@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ extern void *run_main(int argc, const char* argv[]);
 
     // generate char** CLI arguments from NSProcessInfo
     NSArray *nsargs = [[NSProcessInfo processInfo] arguments];
-    unsigned count = [nsargs count];
+    unsigned int count = (unsigned int)[nsargs count];
     const char **args = (const char **)malloc((count + 1) * sizeof(char*));
     for (unsigned int i = 0; i < count; ++i) {
         args[i] = strdup([[nsargs objectAtIndex:i] UTF8String]);

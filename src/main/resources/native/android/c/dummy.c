@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Gluon
+ * Copyright (c) 2022, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,12 +27,7 @@
  */
 #include <stdlib.h>
 
-#ifdef GVM_17
-// dummy symbols only for JDK17
+// dummy symbols for JDK17+
 void Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0() {}
 void Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0() {}
 void Java_java_net_DatagramPacket_init() {}
-#else
-// dummy symbols only for JDK11
-void Java_java_net_PlainDatagramSocketImpl_send0() {}
-#endif

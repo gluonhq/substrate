@@ -49,7 +49,7 @@ import static com.gluonhq.substrate.target.AndroidTargetConfiguration.ANDROID_ND
 
 public final class FileDeps {
 
-    private static final String JAVA_STATIC_ZIP = "${staticjdk}-${target}-gvm-${version}.zip";
+    private static final String JAVA_STATIC_ZIP = "vmone-${target}-gvm-${version}.zip";
     private static final String JAVA_STATIC_URL = "https://download2.gluonhq.com/substrate/staticjdk/";
     private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static${variant}.zip";
     private static final String JAVAFX_STATIC_URL = "https://download2.gluonhq.com/substrate/javafxstaticsdk/";
@@ -215,37 +215,35 @@ public final class FileDeps {
         // Java Static
         Logger.logDebug("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
 
-        if ((configuration.isUseJNI()) && (!configuration.getHostTriplet().equals(configuration.getTargetTriplet()))) {
-            if (!Files.isDirectory(javaStaticLibs)) {
+        if (!Files.isDirectory(javaStaticLibs)) {
+            if (customJavaLocation) {
+                throw new IOException ("A location for the static sdk libs was supplied, but it doesn't exist: "+javaStaticLibs);
+            }
+            downloadJavaStatic = true;
+        } else {
+            String path = javaStaticLibs.toString();
+            if (JAVA_FILES.stream()
+                    .map(s -> new File(path, s))
+                    .anyMatch(f -> !f.exists())) {
+                Logger.logDebug("jar file not found");
+                System.err.println("jar not found");
                 if (customJavaLocation) {
-                    throw new IOException ("A location for the static sdk libs was supplied, but it doesn't exist: "+javaStaticLibs);
+                    throw new IOException ("A location for the static sdk libs was supplied, but the java libs are missing "+javaStaticLibs);
                 }
                 downloadJavaStatic = true;
-            } else {
-                String path = javaStaticLibs.toString();
-                if (JAVA_FILES.stream()
-                        .map(s -> new File(path, s))
-                        .anyMatch(f -> !f.exists())) {
-                    Logger.logDebug("jar file not found");
-                    System.err.println("jar not found");
-                    if (customJavaLocation) {
-                        throw new IOException ("A location for the static sdk libs was supplied, but the java libs are missing "+javaStaticLibs);
-                    }
+            } else if (!customJavaLocation && configuration.isEnableCheckHash()) {
+                // when the directory for the libs is found, and it is not a user-supplied one, check for its validity
+                Logger.logDebug("Checking java static sdk hashes");
+                String md5File = getChecksumFileName(defaultJavaStaticPath, "javaStaticSdk", target);
+                Map<String, String> hashes = FileOps.getHashMap(md5File);
+                if (hashes == null) {
+                    Logger.logDebug(md5File+" not found");
                     downloadJavaStatic = true;
-                } else if (!customJavaLocation && configuration.isEnableCheckHash()) {
-                    // when the directory for the libs is found, and it is not a user-supplied one, check for its validity
-                    Logger.logDebug("Checking java static sdk hashes");
-                    String md5File = getChecksumFileName(defaultJavaStaticPath, "javaStaticSdk", target);
-                    Map<String, String> hashes = FileOps.getHashMap(md5File);
-                    if (hashes == null) {
-                        Logger.logDebug(md5File+" not found");
-                        downloadJavaStatic = true;
-                    } else if (JAVA_FILES.stream()
-                            .map(s -> new File(path, s))
-                            .anyMatch(f -> !hashes.get(f.getName()).equals(FileOps.calculateCheckSum(f)))) {
-                        Logger.logDebug("jar file has invalid hashcode");
-                        downloadJavaStatic = true;
-                    }
+                } else if (JAVA_FILES.stream()
+                        .map(s -> new File(path, s))
+                        .anyMatch(f -> !hashes.get(f.getName()).equals(FileOps.calculateCheckSum(f)))) {
+                    Logger.logDebug("jar file has invalid hashcode");
+                    downloadJavaStatic = true;
                 }
             }
         }
@@ -359,7 +357,6 @@ public final class FileDeps {
     private void downloadJavaZip(String target) throws IOException {
         Logger.logInfo("Downloading Java Static Libs...");
         String javaZip = Strings.substitute(JAVA_STATIC_ZIP, Map.of(
-            "staticjdk", configuration.usesJDK11() ? Constants.DEFAULT_JAVASDK_PATH11 : Constants.DEFAULT_JAVASDK_PATH,
             "version", configuration.getJavaStaticSdkVersion(),
             "target", target));
         FileOps.downloadAndUnzip(JAVA_STATIC_URL + javaZip,
