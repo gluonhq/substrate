@@ -69,7 +69,7 @@ const char *origArgs[] = {
     "-Dmonocle.input.touchRadius=1",
     "-Dmonocle.input.traceEvents.verbose=false",
     "-Dprism.verbose=true",
-    "-Dprism.useFontConfig=true",
+    "-Dprism.useFontConfig=false",
     "-Xmx4g"};
 
 void registerMethodHandles(JNIEnv *aenv)
