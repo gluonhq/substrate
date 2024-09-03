@@ -218,7 +218,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        if (projectConfiguration.isSharedLibrary()) {
+        if (projectConfiguration.isSharedLibrary() || projectConfiguration.isStaticLibrary()) {
             return List.of();
         }
         return super.getAdditionalSourceFiles();

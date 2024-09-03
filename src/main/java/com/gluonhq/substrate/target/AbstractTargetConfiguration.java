@@ -197,7 +197,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path objectFile = getProjectObjectFile();
 
         if (projectConfiguration.isStaticLibrary()) {
-            return createStaticLib();
+            return true;
         }
         ProcessRunner linkRunner = new ProcessRunner(getLinker());
 
@@ -317,6 +317,14 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      */
     @Override
     public boolean createStaticLib() throws IOException, InterruptedException {
+        if (!compile()) {
+            Logger.logSevere("Error building a static library: error compiling the native image");
+            return false;
+        }
+        if (!link()) {
+            Logger.logSevere("Error building a static library: error linking the native image");
+            return false;
+        }
         ProcessRunner createStaticLibRunner = new ProcessRunner(getStaticLinker());
         createStaticLibRunner.addArg(getStaticLinkerArgs());
         Path dest = paths.getGvmPath().resolve("lib" + projectConfiguration.getAppName() + ".a");

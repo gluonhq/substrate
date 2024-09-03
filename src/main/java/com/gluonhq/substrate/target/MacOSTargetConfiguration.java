@@ -77,7 +77,7 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getAdditionalSourceFiles() {
-        if (projectConfiguration.isSharedLibrary()) {
+        if (projectConfiguration.isSharedLibrary() || projectConfiguration.isStaticLibrary()) {
             return List.of();
         }
         return Arrays.asList("AppDelegate.m", "launcher.c");
