@@ -325,8 +325,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             Logger.logSevere("Error building a static library: error linking the native image");
             return false;
         }
-        ProcessRunner createStaticLibRunner = new ProcessRunner(getStaticLinker());
-        createStaticLibRunner.addArg(getStaticLinkerArgs());
+        ProcessRunner createStaticLibRunner = new ProcessRunner(getStaticArchiver());
+        createStaticLibRunner.addArg(getStaticArchiverArgs());
         Path dest = paths.getGvmPath().resolve("lib" + projectConfiguration.getAppName() + ".a");
         createStaticLibRunner.addArg(dest.toString());
         createStaticLibRunner.addArg(getProjectObjectFile().toString());
@@ -335,7 +335,8 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         createStaticLibRunner.setLogToFile(true);
         int result = createStaticLibRunner.runProcess("archive");
         if (result == 0) {
-            // copy vmone lib to target, as it will be needed for linking
+            Logger.logInfo("Static library " + dest.getFileName() + " and static libraries " + JDK_LIBS + "\n" +
+                    "were successfully added to " + paths.getGvmPath() + ".");
             FileOps.copyDirectory(projectConfiguration.getJavaStaticLibsPath(), paths.getGvmPath());
         }
         return result == 0;
@@ -836,11 +837,11 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         return "gcc";
     }
 
-    String getStaticLinker() {
+    String getStaticArchiver() {
         return "ar";
     }
 
-    String getStaticLinkerArgs() {
+    String getStaticArchiverArgs() {
         return "rcs";
     }
 
