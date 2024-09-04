@@ -42,7 +42,7 @@ jobs:
       - name: Setup Gluon's GraalVM
         uses: gluonhq/setup-graalvm@master
         with:
-          jdk: 'java21'
+          jdk: 'java23'
           arch: ${{ matrix.ARCH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
