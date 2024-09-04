@@ -334,6 +334,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         createStaticLibRunner.setInfo(true);
         createStaticLibRunner.setLogToFile(true);
         int result = createStaticLibRunner.runProcess("archive");
+        if (result == 0) {
+            // copy vmone lib to target, as it will be needed for linking
+            FileOps.copyDirectory(projectConfiguration.getJavaStaticLibsPath(), paths.getGvmPath());
+        }
         return result == 0;
     }
 
