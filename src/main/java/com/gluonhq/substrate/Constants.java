@@ -28,6 +28,7 @@
 package com.gluonhq.substrate;
 
 import java.nio.file.Path;
+import java.util.Locale;
 
 public class Constants {
 
@@ -73,7 +74,34 @@ public class Constants {
         IOS_SIM,   // (x86_64-apple-ios)
         ANDROID, // (aarch64-linux-android);
         WEB // (x86_64-web-web)
-    };
+    }
+
+    public enum VMONE_TARGET {
+        X86_64_LINUX_LINUX("linux-x64"),
+        AARCH64_LINUX_LINUX("linux-aarch64"),
+        X86_64_APPLE_DARWIN("macos-x64"),
+        AARCH64_APPLE_DARWIN("macos-aarch64"),
+        X86_64_MICROSOFT_WINDOWS("windows-x64"),
+        AARCH64_MICROSOFT_WINDOWS("windows-aarch64"),
+        ARM64_APPLE_IOS("ios-macos-aarch64"),
+        X86_64_APPLE_IOS("ios-macos-x64"),
+        AARCH64_LINUX_ANDROID("android-linux-aarch64"),
+        X86_64_WEB_WEB("no-op");
+
+        private final String target;
+
+        VMONE_TARGET(String target) {
+            this.target = target;
+        }
+
+        public String getTarget() {
+            return target;
+        }
+
+        public static VMONE_TARGET fromTriplet(String triplet) {
+            return valueOf(triplet.toUpperCase(Locale.ROOT).replaceAll("-", "_"));
+        }
+    }
 
     /**
      * Supported hosts

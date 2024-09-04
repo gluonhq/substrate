@@ -48,9 +48,8 @@ import java.util.stream.Stream;
 import static com.gluonhq.substrate.target.AndroidTargetConfiguration.ANDROID_NDK_VERSION;
 
 public final class FileDeps {
-
-    private static final String JAVA_STATIC_ZIP = "vmone-${target}-gvm-${version}.zip";
-    private static final String JAVA_STATIC_URL = "https://download2.gluonhq.com/substrate/staticjdk/";
+    private static final String JAVA_STATIC_ZIP = "gvm-${version}/vmone-${target}.zip";
+    private static final String JAVA_STATIC_URL = "https://github.com/gluonhq/vmone/releases/download/";
     private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static${variant}.zip";
     private static final String JAVAFX_STATIC_URL = "https://download2.gluonhq.com/substrate/javafxstaticsdk/";
 
@@ -196,6 +195,7 @@ public final class FileDeps {
      */
     private boolean setupDependencies() throws IOException {
         String target = configuration.getTargetTriplet().getOsArch();
+        String vmoneTarget = Constants.VMONE_TARGET.fromTriplet(configuration.getTargetTriplet().toString()).getTarget();
         boolean isLinuxAarch64 = new Triplet(Constants.Profile.LINUX_AARCH64).equals(configuration.getTargetTriplet());
 
         if (!Files.isDirectory(Constants.USER_SUBSTRATE_PATH)) {
@@ -309,7 +309,7 @@ public final class FileDeps {
 
         try {
             if (downloadJavaStatic) {
-                downloadJavaZip(target);
+                downloadJavaZip(vmoneTarget);
             }
 
             if (downloadJavaFXStatic) {
