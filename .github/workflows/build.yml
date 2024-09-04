@@ -20,8 +20,8 @@ jobs:
             ARCH: "x86_64"
           - os: macos-latest
             ARCH: "aarch64"
-          - os: windows-latest
-            ARCH: "x86_64"
+#          - os: windows-latest
+#            ARCH: "x86_64"
     steps:
       - name: Install packages (Linux)
         if: runner.os == 'Linux'

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -254,7 +254,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
      * @throws InterruptedException
      */
     @Override
-    public String run() throws IOException, InterruptedException {
+    public List<String> run() throws IOException, InterruptedException {
         String appName = Objects.requireNonNull(getLinkOutputName(), "Application name can't be null");
         Path app = Path.of(getAppPath(appName));
         if (!Files.exists(app)) {
@@ -268,7 +268,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         runner.setInfo(true);
         runner.setLogToFile(true);
         if (runner.runProcess("run " + appName) == 0) {
-            return runner.getLastResponse();
+            return runner.getResponses();
         }
         return null;
     }
