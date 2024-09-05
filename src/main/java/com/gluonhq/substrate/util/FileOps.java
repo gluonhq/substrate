@@ -760,7 +760,10 @@ public class FileOps {
                     .uri(URI.create(link)).build();
             HttpResponse<Void> response = HttpClient.newHttpClient()
                     .send(request, HttpResponse.BodyHandlers.discarding());
-
+            if (response.statusCode() != 302) {
+                Logger.logSevere("download from link failed with status: " + response.statusCode() + ", and body: " + response.body());
+                throw new IOException("Error downloading link from " + link + ". Unexpected status code: " + response.statusCode());
+            }
             Optional<String> location = response.headers().firstValue("location");
             if (location.isPresent()) {
                 HttpRequest request2 = HttpRequest.newBuilder()
