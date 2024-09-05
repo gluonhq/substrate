@@ -165,7 +165,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     @Override
     List<String> getAdditionalSourceFiles() {
         List<String> answer = new ArrayList<>(iosAdditionalDummySourceFiles);
-        if (!projectConfiguration.isSharedLibrary() && !projectConfiguration.isStaticLibrary()) {
+        if (!projectConfiguration.isSharedLibrary()) {
             answer.addAll(iosAdditionalSourceFiles);
         }
         return answer;

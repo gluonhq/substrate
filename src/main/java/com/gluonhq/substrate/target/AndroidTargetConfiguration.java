@@ -331,7 +331,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getAdditionalSourceFiles() {
         List<String> answer = new ArrayList<>(androidAdditionalDummySourceFiles);
-        if (!projectConfiguration.isSharedLibrary() && !projectConfiguration.isStaticLibrary()) {
+        if (!projectConfiguration.isSharedLibrary()) {
             answer.addAll(androidAdditionalSourceFiles);
             if (projectConfiguration.hasWeb()) {
                 answer.addAll(androidAdditionalWebSourceFiles);

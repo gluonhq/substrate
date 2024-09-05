@@ -195,6 +195,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         String appName = projectConfiguration.getAppName();
         Path gvmPath = paths.getGvmPath();
         Path objectFile = getProjectObjectFile();
+        List<String> linkerLibraryPathFlags = getLinkerLibraryPathFlags();
 
         if (projectConfiguration.isStaticLibrary()) {
             return true;
@@ -218,7 +219,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 projectConfiguration.isUsePrismSW()));
 
         linkRunner.addArgs(getTargetSpecificLinkOutputFlags());
-        linkRunner.addArgs(getLinkerLibraryPathFlags());
+        linkRunner.addArgs(linkerLibraryPathFlags);
         linkRunner.addArgs(getNativeLibsLinkFlags());
         linkRunner.addArgs(projectConfiguration.getLinkerArgs());
         linkRunner.setInfo(true);
@@ -330,7 +331,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path dest = paths.getGvmPath().resolve("lib" + projectConfiguration.getAppName() + ".a");
         createStaticLibRunner.addArg(dest.toString());
         createStaticLibRunner.addArg(getProjectObjectFile().toString());
-        createStaticLibRunner.addArgs(getAdditionalObjectFiles());
         createStaticLibRunner.setInfo(true);
         createStaticLibRunner.setLogToFile(true);
         int result = createStaticLibRunner.runProcess("archive");
@@ -351,7 +351,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
         Path workDir = paths.getGvmPath().resolve(appName);
         Files.createDirectories(workDir);
 
-        if (getAdditionalSourceFiles().isEmpty()) {
+        if (projectConfiguration.isStaticLibrary() || getAdditionalSourceFiles().isEmpty()) {
             return true;
         }
 
