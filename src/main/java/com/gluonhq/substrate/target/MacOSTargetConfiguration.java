@@ -27,6 +27,7 @@
  */
 package com.gluonhq.substrate.target;
 
+import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
@@ -46,7 +47,8 @@ import java.util.stream.Collectors;
 
 public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
-    private static final String MIN_MACOS_VERSION = "11";
+    private static final String MIN_MACOS_VERSION_AMD64 = "11";
+    private static final String MIN_MACOS_VERSION_AARCH64 = "12";
 
     private static final List<String> javaDarwinLibs = Arrays.asList("pthread", "z", "dl", "stdc++");
     private static final List<String> javaDarwinFrameworks = Arrays.asList("Foundation", "AppKit");
@@ -65,9 +67,11 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
             "icui18n", "SqliteJava", "XSLTJava", "PAL", "WebCoreTestSupport",
             "WTF", "icuuc", "icudata"
     );
+    private final String minVersion;
 
     public MacOSTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
+        minVersion = Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch()) ? MIN_MACOS_VERSION_AMD64 : MIN_MACOS_VERSION_AARCH64;
     }
 
     @Override
@@ -93,14 +97,14 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     @Override
     List<String> getTargetSpecificCCompileFlags() {
-        return Arrays.asList("-mmacosx-version-min=" + MIN_MACOS_VERSION);
+        return Arrays.asList("-mmacosx-version-min=" + minVersion);
     }
 
     @Override
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(asListOfLibraryLinkFlags(javaDarwinLibs));
 
-        linkFlags.add("-mmacosx-version-min=" + MIN_MACOS_VERSION);
+        linkFlags.add("-mmacosx-version-min=" + minVersion);
         if (projectConfiguration.isSharedLibrary()) {
             linkFlags.addAll(Arrays.asList(
                     "-shared",
