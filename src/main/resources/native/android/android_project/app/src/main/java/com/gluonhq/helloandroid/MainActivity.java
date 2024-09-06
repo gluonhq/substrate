@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,7 +122,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             Log.v(TAG, "We will now launch Graal in a separate thread");
             final String[] launchArgs = {
                     "-Duser.home=" + getApplicationInfo().dataDir,
-                    "-Dandroid.tmpdir=" + getApplicationInfo().dataDir,
                     "-Djava.io.tmpdir=" + getApplicationInfo().dataDir,
                     "-Duser.timezone=" + TimeZone.getDefault().getID(),
                     "-DLaunch.URL=" + System.getProperty("Launch.URL", ""),

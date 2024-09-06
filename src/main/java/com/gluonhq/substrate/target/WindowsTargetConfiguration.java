@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
-import com.gluonhq.substrate.util.Lib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.windows.MSIBundler;
@@ -46,19 +45,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
-
-    private static final List<Lib> javaWindowsLibs = List.of(
-            Lib.of("advapi32"), Lib.of("iphlpapi"), Lib.of("secur32"), Lib.of("userenv"),
-            Lib.of("version"), Lib.of("ws2_32"), Lib.of("winhttp"), Lib.of("ncrypt"),
-            Lib.of("crypt32"), Lib.from(20, "mswsock")
-    );
-    private static final List<Lib> staticJavaLibs = List.of(
-            Lib.of("j2pkcs11"), Lib.of("java"), Lib.of("net"), Lib.of("nio"),
-            Lib.of("prefs"), Lib.upTo(20, "fdlibm"), Lib.upTo(11, "sunec"), Lib.of("zip"),
-            Lib.of("sunmscapi"), Lib.from(21, "extnet")
-    );
-    private static final List<String> staticJvmLibs = Arrays.asList(
-            "jvm", "libchelper");
 
     private static final List<String> javaFxWindowsLibs = List.of(
             "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",
@@ -140,18 +126,6 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     String getLinkOutputName() {
         String appName = projectConfiguration.getAppName();
         return appName + (projectConfiguration.isSharedLibrary() ? ".dll" : ".exe");
-    }
-
-    @Override
-    List<String> getStaticJavaLibs() {
-        return filterApplicableLibs(staticJavaLibs);
-    }
-
-    @Override
-    List<String> getOtherStaticLibs() {
-        List<String> libs = new ArrayList<>(staticJvmLibs);
-        libs.addAll(filterApplicableLibs(javaWindowsLibs));
-        return libs;
     }
 
     @Override
@@ -341,6 +315,12 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
             return List.of();
         }
         return super.getAdditionalSourceFiles();
+    }
+
+    @Override
+    public boolean createStaticLib() throws IOException, InterruptedException {
+        Logger.logSevere("Error: building a static image is not supported on Windows");
+        return false;
     }
 
     @Override

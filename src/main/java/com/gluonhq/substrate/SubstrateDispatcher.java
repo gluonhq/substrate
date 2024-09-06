@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -326,11 +326,11 @@ public class SubstrateDispatcher {
             if (expected != null) {
                 Logger.logInfo(logTitle("RUN TASK (with expected)"));
 
-                String response = dispatcher.targetConfiguration.run();
-                if (expected.equals(response)) {
+                List<String> responses = dispatcher.targetConfiguration.run();
+                if (responses.contains(expected)) {
                     Logger.logInfo("Run ended successfully, the output: " + expected + " matched the expected result.");
                 } else {
-                    Logger.logSevere("Run failed, expected output: " + expected + ", output: " + response);
+                    Logger.logSevere("Run failed, expected output: " + expected + ", output: " + responses);
                     System.exit(1);
                 }
             } else {

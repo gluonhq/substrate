@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 package com.gluonhq.substrate.target;
 
 import java.io.IOException;
+import java.util.List;
 
 public interface TargetConfiguration {
 
@@ -73,13 +74,13 @@ public interface TargetConfiguration {
     boolean install() throws IOException, InterruptedException;
 
     /**
-     * Runs the application, and if successful, returns the last line
+     * Runs the application, and if successful, returns the lines
      * printed out by the process
-     * @return A string (it can be empty) or null if the process failed
+     * @return A list with the logs of the process (it can be empty) or null if the process failed
      * @throws IOException
      * @throws InterruptedException
      */
-    String run() throws IOException, InterruptedException;
+    List<String> run() throws IOException, InterruptedException;
 
     /**
      * Runs the application, and if successful, returns true
