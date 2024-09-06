@@ -23,7 +23,7 @@
         <key>LSApplicationCategoryType</key>
         <string>$appCategory</string>
         <key>LSMinimumSystemVersion</key>
-        <string>10.11</string>
+        <string>$minimumSystemVersion</string>
         <key>CFBundleDevelopmentRegion</key>
         <string>English</string>
         <key>CFBundleAllowMixedLocalizations</key>
