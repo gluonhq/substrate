@@ -81,7 +81,6 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     private static final List<String> baseNativeImageArguments = Arrays.asList(
             "-Djdk.internal.lambda.eagerlyInitialize=false",
-            "-Ddebug.jdk.graal.jvmciConfigCheck=warn",
             "--no-server",
             "-H:+SharedLibrary",
             "-H:+AddAllCharsets",
@@ -190,16 +189,17 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
     @Override
     public boolean link() throws IOException, InterruptedException {
+        if (projectConfiguration.isStaticLibrary()) {
+            Logger.logSevere("Error: Don't call link to create a static lib");
+            return false;
+        }
+
         compileAdditionalSources();
 
         String appName = projectConfiguration.getAppName();
         Path gvmPath = paths.getGvmPath();
         Path objectFile = getProjectObjectFile();
-        List<String> linkerLibraryPathFlags = getLinkerLibraryPathFlags();
 
-        if (projectConfiguration.isStaticLibrary()) {
-            return true;
-        }
         ProcessRunner linkRunner = new ProcessRunner(getLinker());
 
         Path gvmAppPath = gvmPath.resolve(appName);
@@ -219,7 +219,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
                 projectConfiguration.isUsePrismSW()));
 
         linkRunner.addArgs(getTargetSpecificLinkOutputFlags());
-        linkRunner.addArgs(linkerLibraryPathFlags);
+        linkRunner.addArgs(getLinkerLibraryPathFlags());
         linkRunner.addArgs(getNativeLibsLinkFlags());
         linkRunner.addArgs(projectConfiguration.getLinkerArgs());
         linkRunner.setInfo(true);
@@ -322,10 +322,10 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             Logger.logSevere("Error building a static library: error compiling the native image");
             return false;
         }
-        if (!link()) {
-            Logger.logSevere("Error building a static library: error linking the native image");
-            return false;
-        }
+
+        // make sure static Java/JavaFX libraries are available
+        getLinkerLibraryPaths();
+
         ProcessRunner createStaticLibRunner = new ProcessRunner(getStaticArchiver());
         createStaticLibRunner.addArg(getStaticArchiverArgs());
         Path dest = paths.getGvmPath().resolve("lib" + projectConfiguration.getAppName() + ".a");
