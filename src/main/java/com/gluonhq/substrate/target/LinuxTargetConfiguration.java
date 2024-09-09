@@ -113,6 +113,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     public boolean compile() throws IOException, InterruptedException {
         if (isAarch64) {
             projectConfiguration.setUsePrismSW(true); // for now, when compiling for AArch64, we should not assume hw rendering
+            Logger.logSevere("Error: building a native image is not supported on Linux AArch64 with this version yet.\nPlease use GluonFX plugins up until 1.0.23");
+            return false;
         }
         return super.compile();
     }
