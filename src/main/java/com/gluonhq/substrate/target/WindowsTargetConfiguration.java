@@ -207,7 +207,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     public boolean compile() throws IOException, InterruptedException {
-        Logger.logSevere("Building a native image is not yet supported on Windows with this version.\nPlease use GluonFX plugin version 1.0.23 instead.");
+        Logger.logSevere("Error: Building a native image is not yet supported on Windows with this version.\nPlease use GluonFX plugin version 1.0.23 instead.");
         return false;
     }
 
