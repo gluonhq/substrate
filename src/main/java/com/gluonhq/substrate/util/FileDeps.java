@@ -49,7 +49,7 @@ import static com.gluonhq.substrate.target.AndroidTargetConfiguration.ANDROID_ND
 
 public final class FileDeps {
     private static final String JAVA_STATIC_ZIP = "gvm-${version}/vmone-${target}.zip";
-    private static final String JAVA_STATIC_URL = "https://github.com/gluonhq/vmone/releases/download/";
+    private static final String JAVA_STATIC_URL = "https://github.com/ctoabidmaqbool/vmone-fork/releases/download/";
     private static final String JAVAFX_STATIC_ZIP = "openjfx-${version}-${target}-static${variant}.zip";
     private static final String JAVAFX_STATIC_URL = "https://download2.gluonhq.com/substrate/javafxstaticsdk/";
 

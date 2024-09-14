@@ -134,7 +134,7 @@ public class Constants {
     public static final String PROFILE_LINUX_AARCH64 = "linux-aarch64";
     public static final String PROFILE_WEB = "web";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION = "24-2";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION = "24-3";
     public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "24-ea+7.1";
     public static final String DEFAULT_JAVAFX_JS_SDK_VERSION  = "18-internal+0-2021-09-02-165800";
     public static final String DEFAULT_SYSROOT_VERSION  = "20210424";
