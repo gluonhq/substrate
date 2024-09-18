@@ -3,8 +3,8 @@ import java.time.Duration
 plugins {
     id 'java'
     id 'signing'
-    id 'io.codearte.nexus-staging' version '0.21.1'
-    id 'de.marcphilipp.nexus-publish' version '0.4.0'
+    id 'maven-publish'
+    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
 }
 
 group = "com.gluonhq"
@@ -105,16 +105,13 @@ signing {
 
 nexusPublishing {
     repositories {
-        sonatype()
+        sonatype {
+            username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
+            password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
+        }
     }
-    // credentials are shared from staging plugin
-    clientTimeout = Duration.ofMinutes(5)
-    connectTimeout = Duration.ofMinutes(5)
-}
-
-nexusStaging {
-    username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
-    password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
-    numberOfRetries = 30
-    delayBetweenRetriesInMillis = 10000
+    transitionCheckOptions {
+        maxRetries = 100
+        delayBetween = Duration.ofSeconds(10)
+    }
 }
