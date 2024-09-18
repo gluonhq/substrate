@@ -206,6 +206,12 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    public boolean compile() throws IOException, InterruptedException {
+        Logger.logSevere("Error: Building a native image is not yet supported on Windows with this version.\nPlease use GluonFX plugin version 1.0.23 instead.");
+        return false;
+    }
+
+    @Override
     public boolean link() throws IOException, InterruptedException {
         createIconResource();
         if (super.link()) {
@@ -319,7 +325,7 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
     @Override
     public boolean createStaticLib() throws IOException, InterruptedException {
-        Logger.logSevere("Error: building a static image is not supported on Windows");
+        Logger.logSevere("Error: building a static image is not supported on Windows yet");
         return false;
     }
 
