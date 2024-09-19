@@ -46,12 +46,19 @@ import java.util.stream.Collectors;
 
 public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
 
+    private static final List<String> javaWindowsLibs = List.of(
+            "advapi32", "iphlpapi", "secur32", "userenv",
+            "version", "ws2_32", "winhttp", "ncrypt",
+            "crypt32", "mswsock",
+            "shlwapi", "comctl32"
+    );
+
     private static final List<String> javaFxWindowsLibs = List.of(
             "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",
             "uiautomationcore", "urlmon", "winmm");
     private static final List<String> staticJavaFxLibs = List.of(
-            "glass", "javafx_font", "javafx_iio",
-            "prism_common", "prism_d3d");
+            "javafx_font", "javafx_iio",
+            "prism_common");
     private static final List<String> staticJavaFxSwLibs = List.of(
             "prism_sw");
 
@@ -126,6 +133,11 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
     String getLinkOutputName() {
         String appName = projectConfiguration.getAppName();
         return appName + (projectConfiguration.isSharedLibrary() ? ".dll" : ".exe");
+    }
+
+    @Override
+    List<String> getOtherStaticLibs() {
+        return javaWindowsLibs;
     }
 
     @Override
