@@ -206,7 +206,7 @@ public class CodeSigning {
     private List<MobileProvision> retrieveValidMobileProvisions() {
         final LocalDate now = LocalDate.now();
         if (mobileProvisions == null) {
-            mobileProvisions = retrieveAllMobileProvisions();
+            mobileProvisions = getProvisioningProfiles();
         }
         return mobileProvisions.stream()
                 .filter(provision -> {
@@ -216,8 +216,17 @@ public class CodeSigning {
                 .collect(Collectors.toList());
     }
 
-    public static List<MobileProvision> retrieveAllMobileProvisions() {
-        Path provisionPath = Paths.get(System.getProperty("user.home"), "Library", "MobileDevice", "Provisioning Profiles");
+    public static List<MobileProvision> getProvisioningProfiles() {
+        // Starting Xcode 16+:
+        Path provisionPath = Paths.get(System.getProperty("user.home"), "Library", "Developer", "Xcode", "UserData", "Provisioning Profiles");
+        List<MobileProvision> provisions = new ArrayList<>(retrieveAllMobileProvisionsFromPath(provisionPath));
+        // Before Xcode 16:
+        provisionPath = Paths.get(System.getProperty("user.home"), "Library", "MobileDevice", "Provisioning Profiles");
+        provisions.addAll(retrieveAllMobileProvisionsFromPath(provisionPath));
+        return provisions;
+    }
+
+    private static List<MobileProvision> retrieveAllMobileProvisionsFromPath(Path provisionPath) {
         if (!Files.exists(provisionPath) || !Files.isDirectory(provisionPath)) {
             Logger.logSevere("Invalid provisioning profiles folder at " + provisionPath.toString());
             return Collections.emptyList();
