@@ -144,7 +144,7 @@ public class CodeSigning {
                     if (providedMobileProvision == null
                             || providedMobileProvision.equals(mobileProvision.getName())) {
                         this.identity = identity;
-                        Logger.logDebug("Got provisioning profile: " + mobileProvision.getName());
+                        Logger.logDebug("Got provisioning profile: " + mobileProvision.getName() + " from " + mobileProvision.getProvisioningPath());
                         return mobileProvision;
                     }
                 }
