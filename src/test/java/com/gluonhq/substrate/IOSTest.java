@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ class IOSTest {
     @Test
     void testProvisioning() {
         assumeTrue(!isCI());
-        List<MobileProvision> provisions = CodeSigning.retrieveAllMobileProvisions();
+        List<MobileProvision> provisions = CodeSigning.getProvisioningProfiles();
         assertNotNull(provisions);
         assertFalse(provisions.isEmpty());
     }
