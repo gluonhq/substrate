@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -377,7 +377,8 @@ public class CodeSigning {
                     .findFirst()
                     .orElse(null);
         }
-        Logger.logDebug("Provisioning profile: " + (provisionProfile != null ? provisionProfile.getName() : null));
+        Logger.logDebug("Got provisioning profile: " + (provisionProfile != null ?
+                provisionProfile.getName() + " from " + provisionProfile.getProvisioningPath() : null));
         return provisionProfile;
     }
 
@@ -393,18 +394,27 @@ public class CodeSigning {
     private List<ProvisionProfile> retrieveValidProvisionProfiles() {
         final LocalDate now = LocalDate.now();
         if (provisionProfiles == null) {
-            provisionProfiles = retrieveAllProvisionProfiles().stream()
+            provisionProfiles = getProvisioningProfiles();
+        }
+        return provisionProfiles.stream()
                     .filter(provision -> {
                         LocalDate expirationDate = provision.getExpirationDate();
                         return expirationDate != null && !expirationDate.isBefore(now);
                     })
                     .collect(Collectors.toList());
-        }
-        return provisionProfiles;
     }
 
-    private static List<ProvisionProfile> retrieveAllProvisionProfiles() {
-        Path provisionPath = Paths.get(System.getProperty("user.home"), "Library", "MobileDevice", "Provisioning Profiles");
+    private static List<ProvisionProfile> getProvisioningProfiles() {
+        // Starting Xcode 16+:
+        Path provisionPath = Paths.get(System.getProperty("user.home"), "Library", "Developer", "Xcode", "UserData", "Provisioning Profiles");
+        List<ProvisionProfile> provisions = new ArrayList<>(retrieveAllProvisionProfilesFromPath(provisionPath));
+        // Before Xcode 16:
+        provisionPath = Paths.get(System.getProperty("user.home"), "Library", "MobileDevice", "Provisioning Profiles");
+        provisions.addAll(retrieveAllProvisionProfilesFromPath(provisionPath));
+        return provisions;
+    }
+
+    private static List<ProvisionProfile> retrieveAllProvisionProfilesFromPath(Path provisionPath) {
         if (!Files.exists(provisionPath) || !Files.isDirectory(provisionPath)) {
             Logger.logSevere("Invalid provisioning profiles folder at " + provisionPath.toString());
             return Collections.emptyList();
