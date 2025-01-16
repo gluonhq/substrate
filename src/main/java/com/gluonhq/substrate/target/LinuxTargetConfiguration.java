@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2025, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -406,22 +406,7 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
 
     @Override
     Predicate<Path> getTargetSpecificNativeLibsFilter() {
-        return this::checkFileArchitecture;
-    }
-
-    private boolean checkFileArchitecture(Path path) {
-        try {
-            ProcessRunner pr = new ProcessRunner("objdump", "-f", path.toFile().getAbsolutePath());
-            pr.showSevereMessage(false);
-            int op = pr.runProcess("objdump");
-            if (op == 0) {
-                return true;
-            }
-        } catch (IOException | InterruptedException e) {
-            Logger.logSevere("Unrecoverable error checking file " + path + ": " + e);
-        }
-        Logger.logDebug("Ignore file " + path + " since objdump failed on it");
-        return false;
+        return FileOps::checkFileArchitecture;
     }
 
     @Override

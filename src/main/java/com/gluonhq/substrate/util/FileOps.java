@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2025, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -781,6 +781,28 @@ public class FileOps {
         } catch (Exception e) {
             throw new IOException(e);
         }
+    }
+
+    /**
+     * Checks if a file matches the architecture, on Unix systems.
+     * This can be used to identify if native libraries present in the classpath should be
+     * added or not to the native image.
+     * @param path Path of the file
+     * @return True if the file matches the current architecture
+     */
+    public static boolean checkFileArchitecture(Path path) {
+        try {
+            ProcessRunner pr = new ProcessRunner("objdump", "-f", path.toFile().getAbsolutePath());
+            pr.showSevereMessage(false);
+            int op = pr.runProcess("objdump");
+            if (op == 0) {
+                return true;
+            }
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Unrecoverable error checking file " + path + ": " + e);
+        }
+        Logger.logDebug("Ignore file " + path + " since objdump failed on it");
+        return false;
     }
 
     /**

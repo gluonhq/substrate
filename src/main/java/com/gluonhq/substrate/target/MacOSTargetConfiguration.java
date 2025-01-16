@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2025, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
@@ -143,6 +144,11 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
         return libs.stream()
                 .map(s -> "-Wl,-force_load," + libPath.resolve(s))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return FileOps::checkFileArchitecture;
     }
 
     @Override
