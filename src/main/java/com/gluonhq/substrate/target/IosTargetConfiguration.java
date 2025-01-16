@@ -329,6 +329,10 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         return appPath.toString() + "/" + appName;
     }
 
+    private String getTargetArch() {
+        return projectConfiguration.getTargetTriplet().getArch();
+    }
+
     private String getSysroot() {
         return isSimulator() ? XcodeUtils.SDKS.IPHONESIMULATOR.getSDKPath() :
                 XcodeUtils.SDKS.IPHONEOS.getSDKPath();

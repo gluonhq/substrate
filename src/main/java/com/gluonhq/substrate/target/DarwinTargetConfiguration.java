@@ -58,10 +58,6 @@ abstract class DarwinTargetConfiguration extends PosixTargetConfiguration {
         return this::checkFileArchitecture;
     }
 
-    String getTargetArch() {
-        return projectConfiguration.getTargetTriplet().getArch();
-    }
-
     private boolean checkFileArchitecture(Path path) {
         try {
             ProcessRunner pr = new ProcessRunner("lipo", "-info", path.toFile().getAbsolutePath());
