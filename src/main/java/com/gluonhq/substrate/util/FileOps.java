@@ -535,29 +535,42 @@ public class FileOps {
         if (!Files.exists(target)) {
             Files.createDirectories(target);
         }
-        ZipFile zf = new ZipFile(sourceJar.toFile());
-        List<? extends ZipEntry> entries = zf.stream()
-                .filter(ze -> extensions.stream().anyMatch(ext -> ze.getName().endsWith(ext)))
-                .collect(Collectors.toList());
-        if (entries.isEmpty()) {
-            return;
+
+        List<String> uniqueObjectFileNames = new ArrayList<>();
+        try (Stream<Path> list = Files.list(target)) {
+            uniqueObjectFileNames.addAll(list
+                    .map(p -> p.getFileName().toString())
+                    .collect(Collectors.toList()));
+        } catch (Exception ex) {
+            Logger.logSevere("Error listing files from " + target + ": " + ex.getMessage());
         }
 
-        List<String> uniqueObjectFileNames = Files.list(target)
-                .map(p -> p.getFileName().toString())
-                .collect(Collectors.toList());
+        try (ZipFile zf = new ZipFile(sourceJar.toFile())) {
+            List<? extends ZipEntry> entries = zf.stream()
+                    .filter(ze -> extensions.stream().anyMatch(ext -> ze.getName().endsWith(ext)))
+                    .collect(Collectors.toList());
+            if (entries.isEmpty()) {
+                return;
+            }
 
-        for (ZipEntry ze : entries) {
-            String uniqueName = new File(ze.getName()).getName();
-            if (!uniqueObjectFileNames.contains(uniqueName)) {
-                Path filePath = FileOps.copyStream(zf.getInputStream(ze), target.resolve(uniqueName));
-                if (filter == null || filter.test(filePath)) {
-                    uniqueObjectFileNames.add(uniqueName);
+            for (ZipEntry ze : entries) {
+                String uniqueName = new File(ze.getName()).getName();
+                if (!uniqueObjectFileNames.contains(uniqueName)) {
+                    Logger.logDebug("Testing file " + ze.getName());
+                    Path filePath = FileOps.copyStream(zf.getInputStream(ze), target.resolve(uniqueName));
+                    if (filter == null || filter.test(filePath)) {
+                        Logger.logDebug("File copied, it passes the filter: " + uniqueName);
+                        uniqueObjectFileNames.add(uniqueName);
+                    } else {
+                        Logger.logDebug("File not copied, doesn't pass filter: " + uniqueName);
+                        Files.delete(filePath);
+                    }
                 } else {
-                    Logger.logDebug("File not copied, doesn't pass filter: " + uniqueName);
-                    Files.delete(filePath);
+                    Logger.logDebug("File " + ze.getName() + " not tested, a file with the same name already exists");
                 }
             }
+        } catch (Exception ex) {
+            Logger.logSevere("Error extracting files from zip: " + ex.getMessage());
         }
     }
 
@@ -781,28 +794,6 @@ public class FileOps {
         } catch (Exception e) {
             throw new IOException(e);
         }
-    }
-
-    /**
-     * Checks if a file matches the architecture, on Unix systems.
-     * This can be used to identify if native libraries present in the classpath should be
-     * added or not to the native image.
-     * @param path Path of the file
-     * @return True if the file matches the current architecture
-     */
-    public static boolean checkFileArchitecture(Path path) {
-        try {
-            ProcessRunner pr = new ProcessRunner("objdump", "-f", path.toFile().getAbsolutePath());
-            pr.showSevereMessage(false);
-            int op = pr.runProcess("objdump");
-            if (op == 0) {
-                return true;
-            }
-        } catch (IOException | InterruptedException e) {
-            Logger.logSevere("Unrecoverable error checking file " + path + ": " + e);
-        }
-        Logger.logDebug("Ignore file " + path + " since objdump failed on it");
-        return false;
     }
 
     /**

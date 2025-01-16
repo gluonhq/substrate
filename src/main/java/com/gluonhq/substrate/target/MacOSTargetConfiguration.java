@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -144,11 +144,6 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
         return libs.stream()
                 .map(s -> "-Wl,-force_load," + libPath.resolve(s))
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    Predicate<Path> getTargetSpecificNativeLibsFilter() {
-        return FileOps::checkFileArchitecture;
     }
 
     @Override
