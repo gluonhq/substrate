@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2025, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -270,7 +270,7 @@ public class CodeSigning {
     private boolean verifyCodesign(Path target) throws IOException, InterruptedException {
         Logger.logDebug("Validating codesign...");
         ProcessRunner runner = new ProcessRunner("codesign", "--verify", "-vvvv", target.toAbsolutePath().toString());
-        if (runner.runTimedProcess("verify", 5)) {
+        if (runner.runTimedProcess("verify", 30)) {
             return runner.getResponses().stream()
                     .anyMatch(line -> line.contains(CODESIGN_OK_1) ||
                             line.contains(CODESIGN_OK_2) || line.contains(CODESIGN_OK_3));
