@@ -721,6 +721,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
 
         List<String> jars = new ClassPath(classPath).filter(s -> s.endsWith(".jar") && !s.contains("javafx-"));
         for (String jar : jars) {
+            Logger.logDebug("Extracting native libs from jar: " + jar);
             FileOps.extractFilesFromJar("." + getStaticLibraryFileExtension(), Path.of(jar),
                     libPath, getTargetSpecificNativeLibsFilter());
         }
