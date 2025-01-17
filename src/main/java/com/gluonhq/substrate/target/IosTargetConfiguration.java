@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Gluon
+ * Copyright (c) 2019, 2025, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -154,11 +154,6 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             }
         }
         return flags;
-    }
-
-    @Override
-    Predicate<Path> getTargetSpecificNativeLibsFilter() {
-        return this::lipoMatch;
     }
 
     @Override
@@ -396,21 +391,6 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             throw new IOException("Codesign failed verifying the app " + app + ". Make sure you call link and package first.");
         }
         return app;
-    }
-
-    private boolean lipoMatch(Path path) {
-        try {
-            String lp = lipoInfo(path);
-            if (lp == null) return false;
-            return lp.indexOf(getTargetArch()) > 0;
-        } catch (IOException | InterruptedException e) {
-            Logger.logSevere("Error processing lipo for " + path);
-        }
-        return false;
-    }
-
-    private String lipoInfo(Path path) throws IOException, InterruptedException {
-        return ProcessRunner.runProcessForSingleOutput("lipo", "lipo", "-info", path.toFile().getAbsolutePath());
     }
 
     /*
