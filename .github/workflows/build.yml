@@ -2,7 +2,7 @@ name: Substrate Build
 on:
   push:
     branches:
-      - master
+      - '*'
   pull_request:
     branches:
       - master
@@ -14,14 +14,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest] # windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
             ARCH: "x86_64"
           - os: macos-latest
             ARCH: "aarch64"
-#          - os: windows-latest
-#            ARCH: "x86_64"
+          - os: windows-latest
+            ARCH: "x86_64"
     steps:
       - name: Install packages (Linux)
         if: runner.os == 'Linux'
@@ -83,16 +83,16 @@ jobs:
       - name: Build project
         run: ./gradlew -i build -x test
 
-      - name: Deploy Snapshot
-        if: runner.os == 'Linux' && github.ref == 'refs/heads/master'
-        run: ./gradlew publish -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD
-        env:
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      # - name: Deploy Snapshot
+      #   if: runner.os == 'Linux' && github.ref == 'refs/heads/master'
+      #   run: ./gradlew publish -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD
+      #   env:
+      #     SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      #     SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
 
-      - name: Draft release
-        if: runner.os == 'Linux' && github.ref == 'refs/heads/master'
-        # Drafts your next Release notes as Pull Requests are merged into "master"
-        uses: release-drafter/release-drafter@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Draft release
+      #   if: runner.os == 'Linux' && github.ref == 'refs/heads/master'
+      #   # Drafts your next Release notes as Pull Requests are merged into "master"
+      #   uses: release-drafter/release-drafter@v5
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
