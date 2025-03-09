@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Gluon
+ * Copyright (c) 2020, 2025, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,10 +29,12 @@ package com.gluonhq.substrate.target;
 
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
+import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.function.Predicate;
 
 abstract class DarwinTargetConfiguration extends PosixTargetConfiguration {
 
@@ -50,4 +52,25 @@ abstract class DarwinTargetConfiguration extends PosixTargetConfiguration {
         ProcessRunner process = new ProcessRunner("install_name_tool", "-id", "@rpath/" + libName, libName);
         return process.runProcess("install name", lib.getParent().toFile()) == 0;
     }
+
+    @Override
+    Predicate<Path> getTargetSpecificNativeLibsFilter() {
+        return this::checkFileArchitecture;
+    }
+
+    private boolean checkFileArchitecture(Path path) {
+        try {
+            ProcessRunner pr = new ProcessRunner("lipo", "-info", path.toFile().getAbsolutePath());
+            pr.showSevereMessage(false);
+            int op = pr.runProcess("lipo");
+            if (op == 0) {
+                return true;
+            }
+        } catch (IOException | InterruptedException e) {
+            Logger.logSevere("Unrecoverable error checking file " + path + ": " + e);
+        }
+        Logger.logDebug("Ignore file " + path + " since lipo failed on it");
+        return false;
+    }
+
 }
