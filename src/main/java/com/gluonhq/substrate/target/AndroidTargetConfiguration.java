@@ -97,7 +97,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final String capLocation = ANDROID_NATIVE_FOLDER + "cap/";
 
     public AndroidTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) throws IOException {
-        super(paths,configuration);
+        super(paths, configuration);
 
         this.sdk = fileDeps.getAndroidSDKPath().toString();
         this.ndk = fileDeps.getAndroidNDKPath().toString();
@@ -152,17 +152,17 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         fileDeps.checkAndroidPackages(sdk);
         // create apk for installing on device
         ProcessRunner assembleRunner = new ProcessRunner(
-                            getAndroidProjectPath().resolve("gradlew").toString(),
-                            "-p", getAndroidProjectPath().toString(),
-                            "assemble" + configuration);
+                getAndroidProjectPath().resolve("gradlew").toString(),
+                "-p", getAndroidProjectPath().toString(),
+                "assemble" + configuration);
         assembleRunner.addToEnv("ANDROID_HOME", sdk);
         if (assembleRunner.runProcess("package-task") != 0) {
             return false;
         }
         Path generatedApk = getAndroidProjectPath().resolve("app").resolve("build")
-                            .resolve("outputs").resolve("apk").resolve(configuration.toLowerCase(Locale.ROOT))
-                            .resolve("app-"+configuration.toLowerCase(Locale.ROOT)+".apk");
-        Path targetApk = paths.getGvmPath().resolve(projectConfiguration.getAppName()+".apk");
+                .resolve("outputs").resolve("apk").resolve(configuration.toLowerCase(Locale.ROOT))
+                .resolve("app-" + configuration.toLowerCase(Locale.ROOT) + ".apk");
+        Path targetApk = paths.getGvmPath().resolve(projectConfiguration.getAppName() + ".apk");
         if (Files.exists(generatedApk)) {
             FileOps.copyFile(generatedApk, targetApk);
         }
@@ -178,8 +178,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
         Path generatedAAB = getAndroidProjectPath().resolve("app").resolve("build")
                 .resolve("outputs").resolve("bundle").resolve(configuration.toLowerCase(Locale.ROOT))
-                .resolve("app-"+configuration.toLowerCase(Locale.ROOT)+".aab");
-        Path targetAAB = paths.getGvmPath().resolve(projectConfiguration.getAppName()+".aab");
+                .resolve("app-" + configuration.toLowerCase(Locale.ROOT) + ".aab");
+        Path targetAAB = paths.getGvmPath().resolve(projectConfiguration.getAppName() + ".aab");
         if (Files.exists(generatedAAB)) {
             FileOps.copyFile(generatedAAB, targetAAB);
         }
@@ -190,9 +190,9 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     public boolean install() throws IOException, InterruptedException {
         String configuration = generateSigningConfiguration();
         ProcessRunner installDebug = new ProcessRunner(
-                            getAndroidProjectPath().resolve("gradlew").toString(),
-                            "-p", getAndroidProjectPath().toString(),
-                            "install" + configuration);
+                getAndroidProjectPath().resolve("gradlew").toString(),
+                "-p", getAndroidProjectPath().toString(),
+                "install" + configuration);
         installDebug.addToEnv("ANDROID_HOME", sdk);
         installDebug.addToEnv("JAVA_HOME", projectConfiguration.getGraalPath().toString());
         return installDebug.runProcess("install-task") == 0;
@@ -247,7 +247,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     @Override
     List<String> getTargetSpecificObjectFiles() throws IOException {
         if (projectConfiguration.isUseLLVM()) {
-            return FileOps.findFile(paths.getGvmPath(), "llvm.o").map( objectFile ->
+            return FileOps.findFile(paths.getGvmPath(), "llvm.o").map(objectFile ->
                     Collections.singletonList(objectFile.toAbsolutePath().toString())
             ).orElseThrow();
         }
@@ -351,7 +351,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         }
         List<String> files = new ArrayList<>();
         for (String fileName : getAdditionalSourceFiles()) {
-            Path resource = FileOps.copyResource(getAdditionalSourceFileLocation()  + fileName, workDir.resolve(fileName));
+            Path resource = FileOps.copyResource(getAdditionalSourceFileLocation() + fileName, workDir.resolve(fileName));
             if ("launcher.c".equals(fileName)) {
                 FileOps.replaceInFile(resource, "// USER_RUNTIME_ARGS", runtimeArgs);
             }
@@ -494,7 +494,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
      * @return Path of the Android project
      * @throws IOException
      */
-    private Path prepareAndroidProject() throws IOException {
+    private Path prepareAndroidProject() throws IOException, InterruptedException {
         Path androidProject = getAndroidProjectPath();
         if (Files.exists(androidProject)) {
             FileOps.deleteDirectory(androidProject);
@@ -503,8 +503,20 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (!projectConfiguration.hasWeb()) {
             Files.deleteIfExists(Path.of(androidProject.toString(), "app", "src", "main", "java", "com", "gluonhq", "helloandroid", "NativeWebView.java"));
         }
-        androidProject.resolve("gradlew").toFile().setExecutable(true);
-       return androidProject;
+        Path gradlewPath = androidProject.resolve("gradlew");
+        gradlewPath.toFile().setExecutable(true);
+
+        // Run 'dos2unix' on the gradlew file
+        ProcessBuilder processBuilder = new ProcessBuilder("dos2unix", gradlewPath.toString());
+        processBuilder.redirectErrorStream(true);
+        Process process = processBuilder.start();
+        int exitCode = process.waitFor();
+
+        if (exitCode != 0) {
+            throw new IOException("Failed to run dos2unix on gradlew. Exit code: " + exitCode);
+        }
+
+        return androidProject;
     }
 
     /**
