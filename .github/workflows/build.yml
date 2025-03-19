@@ -42,11 +42,12 @@ jobs:
         run: sudo xcrun simctl shutdown all && sudo xcrun simctl erase all
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Java 11
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: 11
 
       - name: Grant execute permission for gradlew
