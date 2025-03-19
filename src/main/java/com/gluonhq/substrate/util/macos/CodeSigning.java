@@ -377,8 +377,7 @@ public class CodeSigning {
                     .findFirst()
                     .orElse(null);
         }
-        Logger.logDebug("Got provisioning profile: " + (provisionProfile != null ?
-                provisionProfile.getName() + " from " + provisionProfile.getProvisioningPath() : null));
+        Logger.logDebug("Provisioning profile: " + (provisionProfile != null ? provisionProfile.getName() : null));
         return provisionProfile;
     }
 

@@ -28,7 +28,6 @@
 package com.gluonhq.substrate;
 
 import java.nio.file.Path;
-import java.util.Locale;
 
 public class Constants {
 
@@ -74,34 +73,7 @@ public class Constants {
         IOS_SIM,   // (x86_64-apple-ios)
         ANDROID, // (aarch64-linux-android);
         WEB // (x86_64-web-web)
-    }
-
-    public enum VMONE_TARGET {
-        X86_64_LINUX_LINUX("linux-x64"),
-        AARCH64_LINUX_LINUX("linux-aarch64"),
-        X86_64_APPLE_DARWIN("macos-x64"),
-        AARCH64_APPLE_DARWIN("macos-aarch64"),
-        X86_64_MICROSOFT_WINDOWS("windows-x64"),
-        AARCH64_MICROSOFT_WINDOWS("windows-aarch64"),
-        ARM64_APPLE_IOS("ios-macos-aarch64"),
-        X86_64_APPLE_IOS("ios-macos-x64"),
-        AARCH64_LINUX_ANDROID("android-linux-aarch64"),
-        X86_64_WEB_WEB("no-op");
-
-        private final String target;
-
-        VMONE_TARGET(String target) {
-            this.target = target;
-        }
-
-        public String getTarget() {
-            return target;
-        }
-
-        public static VMONE_TARGET fromTriplet(String triplet) {
-            return valueOf(triplet.toUpperCase(Locale.ROOT).replaceAll("-", "_"));
-        }
-    }
+    };
 
     /**
      * Supported hosts
@@ -134,16 +106,20 @@ public class Constants {
     public static final String PROFILE_LINUX_AARCH64 = "linux-aarch64";
     public static final String PROFILE_WEB = "web";
 
-    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION = "24-2.1";
-    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "24-ea+7.1";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION = "18-ea+prep18-9";
+    public static final String DEFAULT_JAVA_STATIC_SDK_VERSION11 = "11-ea+10";
+    public static final String DEFAULT_JAVAFX_STATIC_SDK_VERSION  = "21-ea+11.2";
     public static final String DEFAULT_JAVAFX_JS_SDK_VERSION  = "18-internal+0-2021-09-02-165800";
     public static final String DEFAULT_SYSROOT_VERSION  = "20210424";
+    public static final String DEFAULT_CLIBS_VERSION  = "27";
+    public static final String DEFAULT_JAVASDK_PATH = "staticjdk";
+    public static final String DEFAULT_JAVASDK_PATH11 = "labs-staticjdk";
 
     /**
      * Supported GraalVM versions
      */
-    public static final String GRAALVM_MIN_VERSION = "23";
-    public static final String GRAALVM_JAVA_MIN_VERSION = "21.0";
+    public static final String GRAALVM_MIN_VERSION = "22.1";
+    public static final String GRAALVM_JAVA_MIN_VERSION = "11.0";
 
     /**
      * Paths
@@ -215,6 +191,7 @@ public class Constants {
     public static final String RESOURCE_ARCH_FILE = "resourceconfig-${archOs}.json";
 
     public static final String JNI_JAVA_FILE = "jniconfig-java.json";
+    public static final String JNI_JAVA_FILE11 = "jniconfig-java11.json";
     public static final String JNI_JAVAFXSW_FILE = "jniconfig-javafxsw.json";
     public static final String JNI_ARCH_FILE = "jniconfig-${archOs}.json";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -163,7 +163,9 @@ public class InternalProjectConfiguration {
      */
     public String getJavaStaticSdkVersion() {
         return Optional.ofNullable(publicConfig.getJavaStaticSdkVersion())
-                .orElse(Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
+                .orElse(usesJDK11() ?
+                        Constants.DEFAULT_JAVA_STATIC_SDK_VERSION11 :
+                        Constants.DEFAULT_JAVA_STATIC_SDK_VERSION);
     }
 
     /**
@@ -209,11 +211,12 @@ public class InternalProjectConfiguration {
         return Constants.USER_SUBSTRATE_PATH
                 .resolve("javaStaticSdk")
                 .resolve(getJavaStaticSdkVersion())
-                .resolve(getTargetTriplet().getOsArch());
+                .resolve(getTargetTriplet().getOsArch())
+                .resolve(usesJDK11() ? Constants.DEFAULT_JAVASDK_PATH11 : Constants.DEFAULT_JAVASDK_PATH);
     }
 
     private Path getDefaultJavaStaticLibsPath() {
-        return getDefaultJavaStaticPath().resolve("lib");
+        return getDefaultJavaStaticPath().resolve("lib").resolve("static");
     }
 
     /**

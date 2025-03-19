@@ -28,6 +28,11 @@ JNIEXPORT jobject JNICALL JVM_AreNestMates(JNIEnv *env) {
     return NULL;
 }
 
+JNIEXPORT jobject JNICALL JVM_ArrayCopy(JNIEnv *env) {
+    (*env)->FatalError(env, "JVM_ArrayCopy called:  Unimplemented");
+    return NULL;
+}
+
 JNIEXPORT jobject JNICALL JVM_AssertionStatusDirectives(JNIEnv *env) {
     (*env)->FatalError(env, "JVM_AssertionStatusDirectives called:  Unimplemented");
     return NULL;
