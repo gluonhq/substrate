@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,9 +52,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -659,11 +656,7 @@ public class FileOps {
                 ", md5 = " + md5name);
 
         // 1. Download zip from urlZip into zipPath
-        if (sourceUrl.contains("github.com")) {
-            FileOps.downloadFromGitHub(sourceUrl, zipPath);
-        } else {
-            FileOps.downloadFile(new URL(sourceUrl), zipPath);
-        }
+        FileOps.downloadFile(new URL(sourceUrl), zipPath);
 
         // 2. Set path where zip should be extracted
         Path zipDir = destPath.resolve(dirName);
@@ -746,44 +739,6 @@ public class FileOps {
     }
 
     /**
-     * Downloads a file from a given URL with redirection
-     * @param link the URL of the file to be downloaded
-     * @param filePath the path where the file will be saved
-     * @throws IOException exception thrown if the process fails
-     */
-    public static void downloadFromGitHub(String link, Path filePath) throws IOException {
-        try {
-            Files.createDirectories(filePath.getParent());
-
-            Logger.logDebug("download from link: " + link);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(link)).build();
-            HttpResponse<Void> response = HttpClient.newHttpClient()
-                    .send(request, HttpResponse.BodyHandlers.discarding());
-            if (response.statusCode() != 302) {
-                Logger.logSevere("download from link failed with status: " + response.statusCode() + ", and body: " + response.body());
-                throw new IOException("Error downloading link from " + link + ". Unexpected status code: " + response.statusCode());
-            }
-            Optional<String> location = response.headers().firstValue("location");
-            if (location.isPresent()) {
-                HttpRequest request2 = HttpRequest.newBuilder()
-                        .uri(URI.create(location.get())).GET().build();
-                HttpResponse<Path> response2 = HttpClient.newHttpClient()
-                        .send(request2, HttpResponse.BodyHandlers.ofFile(filePath));
-                if (response2.statusCode() != 200 || !Files.exists(filePath)) {
-                    Logger.logSevere("download from location failed with status: " + response2.statusCode() + ", and body: " + response2.body());
-                } else {
-                    Logger.logDebug("download from location succeeded");
-                }
-            } else {
-                Logger.logSevere("download from link failed with status: " + response.statusCode() + ", and headers: " + response.headers());
-            }
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-    }
-
-    /**
      * Prints the progress of a file download
      */
     private static final class ProgressDownloader {
@@ -817,7 +772,7 @@ public class FileOps {
             return (double) sizeInBytes / (1024 * 1024);
         }
 
-        private int contentLength(URL url) {
+        private int contentLength( URL url ) {
             HttpURLConnection connection;
             int contentLength = -1;
 

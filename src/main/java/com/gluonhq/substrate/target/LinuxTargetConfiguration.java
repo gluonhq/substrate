@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2023, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ import com.gluonhq.substrate.Constants;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.util.FileOps;
+import com.gluonhq.substrate.util.Lib;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.Version;
@@ -58,6 +59,16 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     private static final Version LINKER_MINIMAL_VERSION = new Version(2, 26);
 
     private static final List<String> linuxLibs = Arrays.asList("z", "dl", "stdc++", "pthread");
+
+    private static final List<Lib> staticJavaLibs = List.of(
+            Lib.of("java"), Lib.of("nio"), Lib.of("zip"), Lib.of("net"),
+            Lib.of("prefs"), Lib.of("j2pkcs11"), Lib.upTo(11, "sunec"), Lib.of("extnet"),
+            Lib.upTo(20, "fdlibm"), Lib.of("fontmanager"), Lib.of("javajpeg"), Lib.of("lcms"),
+            Lib.of("awt_headless"), Lib.of("awt")
+    );
+    private static final List<String> staticJvmLibs = Arrays.asList(
+            "jvm", "libchelper"
+    );
 
     private static final List<String> linuxfxlibs = List.of(
             "-lprism_es2", "-lglass", "-lglassgtk3", "-ljavafx_font",
@@ -211,8 +222,30 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     }
 
     @Override
+    protected List<Path> getStaticJDKLibPaths() throws IOException {
+        if (crossCompile) {
+            return Arrays.asList(fileDeps.getJavaSDKLibsPath());
+        }
+        return super.getStaticJDKLibPaths();
+    }
+
+    @Override
+    List<String> getStaticJavaLibs() {
+        Path javaStaticLibPath;
+        try {
+            javaStaticLibPath = getStaticJDKLibPaths().get(0);
+        } catch (IOException ex) {
+            throw new RuntimeException ("No static java libs found, cannot continue");
+        }
+
+        return filterApplicableLibs(staticJavaLibs).stream()
+                .map(lib -> javaStaticLibPath.resolve("lib" + lib + ".a").toString())
+                .collect(Collectors.toList());
+    }
+
+    @Override
     List<String> getOtherStaticLibs() {
-        return Stream.concat(getStaticJavaLibs().stream().map(lib -> ":lib" + lib + ".a"), linuxLibs.stream())
+        return Stream.concat(staticJvmLibs.stream().map(lib -> ":lib" + lib + ".a"), linuxLibs.stream())
                 .collect(Collectors.toList());
     }
 
@@ -222,6 +255,16 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
             return List.of();
         }
         return super.getAdditionalSourceFiles();
+    }
+
+    @Override
+    protected List<Path> getLinkerLibraryPaths() throws IOException {
+        List<Path> linkerLibraryPaths = new ArrayList<>();
+        linkerLibraryPaths.add(getCLibPath());
+        if (projectConfiguration.isUseJavaFX()) {
+            linkerLibraryPaths.add(fileDeps.getJavaFXSDKLibsPath());
+        }
+        return linkerLibraryPaths;
     }
 
     @Override
@@ -260,11 +303,13 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
                 // for now, we don't have media on AARCH64
                 if (!isAarch64) {
                     answer.addAll(linuxfxMedialibs);
-                    answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
                 }
             }
             if (projectConfiguration.hasWeb()) {
                 answer.addAll(linuxfxWeblibs);
+            }
+            if (!crossCompile) {
+                answer.addAll(LinuxLinkerFlags.getMediaLinkerFlags());
             }
             answer.addAll(LinuxLinkerFlags.getLinkerFlags());
             if (usePrismSW || crossCompile) {
@@ -316,6 +361,9 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
         if (crossCompile) {
             flags.add("--sysroot");
             flags.add(sysroot);
+        }
+        if (!projectConfiguration.usesJDK11()) {
+            flags.add("-DGVM_17");
         }
         return flags;
     }

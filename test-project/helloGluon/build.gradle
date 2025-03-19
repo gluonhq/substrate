@@ -1,5 +1,5 @@
 plugins {
-    id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
 }
 
 repositories {
@@ -9,7 +9,7 @@ repositories {
     }
 }
 
-def attachVersion = "4.0.21"
+def attachVersion = "4.0.13"
 def target = System.getProperty("substrate.target")
 def classifier = "ios" == target ? target : "desktop"
 
@@ -20,7 +20,7 @@ configurations {
 dependencies {
     substrate "com.gluonhq:substrate:$substrateVersion"
 
-    implementation "com.gluonhq:charm-glisten:6.2.3"
+    implementation "com.gluonhq:charm-glisten:6.0.6"
     implementation ("com.gluonhq.attach:display:$attachVersion:$classifier") {
         exclude group:"org.openjfx"
     }
@@ -45,7 +45,7 @@ dependencies {
 }
 
 javafx {
-    version = "24-ea+5"
+    version = "17.0.0.1"
     modules = [ "javafx.controls" ]
 }
 

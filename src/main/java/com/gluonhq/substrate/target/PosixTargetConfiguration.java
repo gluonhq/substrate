@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,12 @@ abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
 
     PosixTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
+    }
+
+    @Override
+    void checkPlatformSpecificClibs(Path clibPath) throws IOException {
+        Path libjvmPath = clibPath.resolve("libjvm.a");
+        if (!Files.exists(libjvmPath)) throw new IOException("Missing library libjvm.a not in linkpath "+clibPath);
     }
 
     @Override
