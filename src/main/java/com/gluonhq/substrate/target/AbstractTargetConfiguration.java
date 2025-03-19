@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private static final List<String> RESOURCES_BY_EXTENSION = Arrays.asList(
             "png", "jpg", "jpeg", "gif", "bmp", "ttf", "raw",
             "xml", "fxml", "css", "gls", "json", "dat",
-            "license", "frag", "vert", "obj", "mtl", "js", "zip");
+            "license", "frag", "vert", "obj", "mtl", "js");
     /**
      * Manual registration of the HomeFinderFeature required until GraalVM for JDK 21.
      */
