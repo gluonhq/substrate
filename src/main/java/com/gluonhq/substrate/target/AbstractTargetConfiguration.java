@@ -405,7 +405,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
     private String getJniPlatform() {
         Triplet target = projectConfiguration.getTargetTriplet();
         Version graalVersion = projectConfiguration.getGraalVersion();
-        boolean graalVM221or23 = graalVersion.getMajor() > 22 || (graalVersion.getMajor() > 21 && graalVersion.getMinor() > 0);
+        boolean graalVM221 = ((graalVersion.getMajor() > 21) && (graalVersion.getMinor() > 0));
         String os = target.getOs();
         String arch = target.getArch();
         switch (os) {
@@ -429,7 +429,7 @@ public abstract class AbstractTargetConfiguration implements TargetConfiguration
             case Constants.OS_DARWIN:
                 switch (arch) {
                     case Constants.ARCH_AMD64:
-                        return graalVM221or23 ? "MACOS_AMD64" : "DARWIN_AMD64";
+                        return graalVM221 ? "MACOS_AMD64" : "DARWIN_AMD64";
                     case Constants.ARCH_AARCH64:
                         return "MACOS_AARCH64";
                     default:
