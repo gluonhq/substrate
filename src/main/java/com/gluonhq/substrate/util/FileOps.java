@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Gluon
+ * Copyright (c) 2019, 2024, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -535,42 +535,29 @@ public class FileOps {
         if (!Files.exists(target)) {
             Files.createDirectories(target);
         }
-
-        List<String> uniqueObjectFileNames = new ArrayList<>();
-        try (Stream<Path> list = Files.list(target)) {
-            uniqueObjectFileNames.addAll(list
-                    .map(p -> p.getFileName().toString())
-                    .collect(Collectors.toList()));
-        } catch (Exception ex) {
-            Logger.logSevere("Error listing files from " + target + ": " + ex.getMessage());
+        ZipFile zf = new ZipFile(sourceJar.toFile());
+        List<? extends ZipEntry> entries = zf.stream()
+                .filter(ze -> extensions.stream().anyMatch(ext -> ze.getName().endsWith(ext)))
+                .collect(Collectors.toList());
+        if (entries.isEmpty()) {
+            return;
         }
 
-        try (ZipFile zf = new ZipFile(sourceJar.toFile())) {
-            List<? extends ZipEntry> entries = zf.stream()
-                    .filter(ze -> extensions.stream().anyMatch(ext -> ze.getName().endsWith(ext)))
-                    .collect(Collectors.toList());
-            if (entries.isEmpty()) {
-                return;
-            }
+        List<String> uniqueObjectFileNames = Files.list(target)
+                .map(p -> p.getFileName().toString())
+                .collect(Collectors.toList());
 
-            for (ZipEntry ze : entries) {
-                String uniqueName = new File(ze.getName()).getName();
-                if (!uniqueObjectFileNames.contains(uniqueName)) {
-                    Logger.logDebug("Testing file " + ze.getName());
-                    Path filePath = FileOps.copyStream(zf.getInputStream(ze), target.resolve(uniqueName));
-                    if (filter == null || filter.test(filePath)) {
-                        Logger.logDebug("File copied, it passes the filter: " + uniqueName);
-                        uniqueObjectFileNames.add(uniqueName);
-                    } else {
-                        Logger.logDebug("File not copied, doesn't pass filter: " + uniqueName);
-                        Files.delete(filePath);
-                    }
+        for (ZipEntry ze : entries) {
+            String uniqueName = new File(ze.getName()).getName();
+            if (!uniqueObjectFileNames.contains(uniqueName)) {
+                Path filePath = FileOps.copyStream(zf.getInputStream(ze), target.resolve(uniqueName));
+                if (filter == null || filter.test(filePath)) {
+                    uniqueObjectFileNames.add(uniqueName);
                 } else {
-                    Logger.logDebug("File " + ze.getName() + " not tested, a file with the same name already exists");
+                    Logger.logDebug("File not copied, doesn't pass filter: " + uniqueName);
+                    Files.delete(filePath);
                 }
             }
-        } catch (Exception ex) {
-            Logger.logSevere("Error extracting files from zip: " + ex.getMessage());
         }
     }
 
