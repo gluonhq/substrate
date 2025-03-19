@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,6 @@ import com.gluonhq.substrate.model.ClassPath;
 import com.gluonhq.substrate.model.InternalProjectConfiguration;
 import com.gluonhq.substrate.model.ProcessPaths;
 import com.gluonhq.substrate.model.ReleaseConfiguration;
-import com.gluonhq.substrate.target.MacOSTargetConfiguration;
 import com.gluonhq.substrate.util.FileOps;
 import com.gluonhq.substrate.util.Logger;
 import com.gluonhq.substrate.util.ProcessRunner;
@@ -94,8 +93,6 @@ public class InfoPlist {
         String appName = projectConfiguration.getAppName();
         String executableName = getExecutableName(appName, sourceOS);
         String bundleIdName = getBundleId(getPlistPath(paths, sourceOS), projectConfiguration.getAppId());
-        String minVersion = Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch()) ?
-                MacOSTargetConfiguration.MIN_MACOS_AMD64_VERSION : MacOSTargetConfiguration.MIN_MACOS_AARCH64_VERSION;
         ReleaseConfiguration releaseConfiguration = projectConfiguration.getReleaseConfiguration();
         String bundleName = Objects.requireNonNullElse(releaseConfiguration.getBundleName(), appName);
         String bundleVersion = releaseConfiguration.getBundleVersion();
@@ -165,7 +162,6 @@ public class InfoPlist {
                 dict.put("CFBundleVersion", bundleVersion);
                 dict.put("CFBundleShortVersionString", bundleShortVersion);
                 dict.put("LSApplicationCategoryType", appCategory);
-                dict.put("LSMinimumSystemVersion", minVersion);
                 dict.saveAsXML(plist);
             } else {
                 boolean modified = false;

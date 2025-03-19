@@ -47,8 +47,8 @@ import java.util.stream.Collectors;
 
 public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
-    public static final String MIN_MACOS_AMD64_VERSION = "11";
-    public static final String MIN_MACOS_AARCH64_VERSION = "12";
+    private static final String MIN_MACOS_VERSION_AMD64 = "11";
+    private static final String MIN_MACOS_VERSION_AARCH64 = "12";
 
     private static final List<String> javaDarwinLibs = Arrays.asList("pthread", "z", "dl", "stdc++");
     private static final List<String> javaDarwinFrameworks = Arrays.asList("Foundation", "AppKit");
@@ -71,7 +71,7 @@ public class MacOSTargetConfiguration extends DarwinTargetConfiguration {
 
     public MacOSTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration) {
         super(paths, configuration);
-        minVersion = Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch()) ? MIN_MACOS_AMD64_VERSION : MIN_MACOS_AARCH64_VERSION;
+        minVersion = Constants.ARCH_AMD64.equals(projectConfiguration.getTargetTriplet().getArch()) ? MIN_MACOS_VERSION_AMD64 : MIN_MACOS_VERSION_AARCH64;
     }
 
     @Override
