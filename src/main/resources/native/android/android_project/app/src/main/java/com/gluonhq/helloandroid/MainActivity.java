@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Gluon
+ * Copyright (c) 2019, 2025, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -316,6 +316,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     replaceText();
                     boolean result = super.commitText(text, newCursorPosition);
                     processText(text.toString());
+                    return result;
+                }
+
+                @Override
+                public boolean finishComposingText() {
+                    boolean result = super.finishComposingText();
+                    Editable content = getEditable();
+                    if (content != null) {
+                        content.clear();
+                    }
                     return result;
                 }
 
