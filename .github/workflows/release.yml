@@ -38,7 +38,7 @@ jobs:
       - name: Deploy to Sonatype Nexus
         id: deploy
         run: |
-          ./gradlew publish closeAndReleaseRepository --info -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD -Psigning.keyId=$GPG_KEYNAME -Psigning.password=$GPG_PASSPHRASE -Psigning.secretKeyRingFile=$HOME/.gnupg/secring.gpg
+          ./gradlew publish closeAndReleaseSonatypeStagingRepository --info -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD -Psigning.keyId=$GPG_KEYNAME -Psigning.password=$GPG_PASSPHRASE -Psigning.secretKeyRingFile=$HOME/.gnupg/secring.gpg
           echo ::set-output name=exit_code::$?
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
