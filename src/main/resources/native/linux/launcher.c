@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2021, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -116,6 +116,11 @@ fprintf(stderr, "NOT IMPLEMENTED\n");
 void getLibGLEShandle() {
 fprintf(stderr, "NOT IMPLEMENTED\n");
 }
+
+#ifndef GVM_17
+// dummy symbols only for JDK11
+void Java_java_net_PlainDatagramSocketImpl_send0() {}
+#endif
 
 #endif // AARCH64
 

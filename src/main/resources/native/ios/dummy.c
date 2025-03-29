@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Gluon
+ * Copyright (c) 2022, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 
 typedef struct {
 #ifdef GVM_IOS_SIM
@@ -94,14 +93,12 @@ void determineCPUFeatures(CPUFeatures* features)
 #endif
 }
 
-// dummy symbols for JDK21+
-int checkCPUFeatures(uint8_t *buildtimeFeaturesPtr) {
-   return 0;
-}
-void checkCPUFeaturesOrExit(uint8_t *buildtimeFeaturesPtr, const char *errorMessage) {}
-void fprintfSD() {}
-
-// dummy symbols for JDK17+
+#ifdef GVM_17
+// dummy symbols only for JDK17
 void Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0() {}
 void Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0() {}
 void Java_java_net_DatagramPacket_init() {}
+#else
+// dummy symbols only for JDK11
+void Java_java_net_PlainDatagramSocketImpl_send0() {}
+#endif
