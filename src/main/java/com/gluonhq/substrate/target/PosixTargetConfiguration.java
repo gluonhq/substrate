@@ -42,6 +42,11 @@ abstract class PosixTargetConfiguration extends AbstractTargetConfiguration {
     }
 
     @Override
+    protected Path getCLibPath() {
+        return super.getCLibPath().resolve("glibc");
+    }
+
+    @Override
     void checkPlatformSpecificClibs(Path clibPath) throws IOException {
         Path libjvmPath = clibPath.resolve("libjvm.a");
         if (!Files.exists(libjvmPath)) throw new IOException("Missing library libjvm.a not in linkpath "+clibPath);
