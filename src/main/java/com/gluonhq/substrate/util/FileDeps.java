@@ -216,38 +216,38 @@ public final class FileDeps {
         Logger.logDebug("Processing JavaStatic dependencies at " + javaStaticLibs.toString());
 
         if ((configuration.isUseJNI()) && (!configuration.getHostTriplet().equals(configuration.getTargetTriplet()))) {
-        if (!Files.isDirectory(javaStaticLibs)) {
-            if (customJavaLocation) {
-                throw new IOException ("A location for the static sdk libs was supplied, but it doesn't exist: "+javaStaticLibs);
-            }
-            downloadJavaStatic = true;
-        } else {
-            String path = javaStaticLibs.toString();
-            if (JAVA_FILES.stream()
-                    .map(s -> new File(path, s))
-                    .anyMatch(f -> !f.exists())) {
-                    Logger.logDebug("jar file not found");
-                    System.err.println("jar not found");
+            if (!Files.isDirectory(javaStaticLibs)) {
                 if (customJavaLocation) {
-                    throw new IOException ("A location for the static sdk libs was supplied, but the java libs are missing "+javaStaticLibs);
+                    throw new IOException ("A location for the static sdk libs was supplied, but it doesn't exist: "+javaStaticLibs);
                 }
                 downloadJavaStatic = true;
-            } else if (!customJavaLocation && configuration.isEnableCheckHash()) {
-                // when the directory for the libs is found, and it is not a user-supplied one, check for its validity
-                Logger.logDebug("Checking java static sdk hashes");
-                    String md5File = getChecksumFileName(defaultJavaStaticPath, "javaStaticSdk", target);
-                Map<String, String> hashes = FileOps.getHashMap(md5File);
-                if (hashes == null) {
-                    Logger.logDebug(md5File+" not found");
-                    downloadJavaStatic = true;
-                } else if (JAVA_FILES.stream()
+            } else {
+                String path = javaStaticLibs.toString();
+                if (JAVA_FILES.stream()
                         .map(s -> new File(path, s))
-                        .anyMatch(f -> !hashes.get(f.getName()).equals(FileOps.calculateCheckSum(f)))) {
-                        Logger.logDebug("jar file has invalid hashcode");
+                        .anyMatch(f -> !f.exists())) {
+                    Logger.logDebug("jar file not found");
+                    System.err.println("jar not found");
+                    if (customJavaLocation) {
+                        throw new IOException ("A location for the static sdk libs was supplied, but the java libs are missing "+javaStaticLibs);
+                    }
                     downloadJavaStatic = true;
+                } else if (!customJavaLocation && configuration.isEnableCheckHash()) {
+                    // when the directory for the libs is found, and it is not a user-supplied one, check for its validity
+                    Logger.logDebug("Checking java static sdk hashes");
+                    String md5File = getChecksumFileName(defaultJavaStaticPath, "javaStaticSdk", target);
+                    Map<String, String> hashes = FileOps.getHashMap(md5File);
+                    if (hashes == null) {
+                        Logger.logDebug(md5File+" not found");
+                        downloadJavaStatic = true;
+                    } else if (JAVA_FILES.stream()
+                            .map(s -> new File(path, s))
+                            .anyMatch(f -> !hashes.get(f.getName()).equals(FileOps.calculateCheckSum(f)))) {
+                        Logger.logDebug("jar file has invalid hashcode");
+                        downloadJavaStatic = true;
+                    }
                 }
             }
-        }
         }
 
         // JavaFX Static

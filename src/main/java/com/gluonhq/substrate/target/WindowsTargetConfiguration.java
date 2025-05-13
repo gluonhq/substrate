@@ -64,8 +64,8 @@ public class WindowsTargetConfiguration extends AbstractTargetConfiguration {
             "comdlg32", "dwmapi", "gdi32", "imm32", "shell32",
             "uiautomationcore", "urlmon", "winmm");
     private static final List<String> staticJavaFxLibs = List.of(
-            "javafx_font", "javafx_iio",
-            "prism_common");
+            "glass", "javafx_font", "javafx_iio",
+            "prism_common", "prism_d3d");
     private static final List<String> staticJavaFxSwLibs = List.of(
             "prism_sw");
 
