@@ -106,6 +106,8 @@ signing {
 nexusPublishing {
     repositories {
         sonatype {
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
             username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : ''
             password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : ''
         }
