@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2025, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ public final class FileDeps {
 
     private static final String ANDROID_KEY = "24333f8a63b6825ea9c5514f83c2829b004d1fee";
     private static final String[] ANDROID_SDK_PACKAGES = {
-            "platforms;android-34", "build-tools;34.0.0", "platform-tools",
+            "platforms;android-35", "build-tools;35.0.0", "platform-tools",
             "extras;android;m2repository", "extras;google;m2repository", "ndk;" + ANDROID_NDK_VERSION
     };
 
