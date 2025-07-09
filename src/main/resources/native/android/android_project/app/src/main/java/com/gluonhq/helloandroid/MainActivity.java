@@ -58,6 +58,10 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
 import java.util.TimeZone;
 import javafx.scene.input.KeyCode;
 
@@ -95,6 +99,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         mViewGroup.addView(mView);
         setContentView(mViewGroup);
         instance = this;
+
+        // Apply edge-to-edge display
+        ViewCompat.setOnApplyWindowInsetsListener(mView, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         Log.v(TAG, "onCreate done");
