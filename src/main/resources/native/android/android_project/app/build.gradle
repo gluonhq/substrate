@@ -18,14 +18,16 @@ android {
         mavenCentral()
         google()
         maven {
+            url "https://central.sonatype.com/repository/maven-snapshots/"
+        }
+        maven {
             url "https://oss.sonatype.org/content/repositories/snapshots/"
         }
         mavenLocal()
     }
 
     dependencies {
-        implementation 'com.android.support:support-v4:28.0.0'
-        annotationProcessor 'com.android.support:support-annotations:28.0.0'
+        implementation 'androidx.activity:activity:1.10.1'
         // OTHER_ANDROID_DEPENDENCIES
         api fileTree(dir: '../libs', include: '*.aar')
         api fileTree(dir: '../libs', include: '*.jar')
