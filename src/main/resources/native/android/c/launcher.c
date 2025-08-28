@@ -66,7 +66,7 @@ const char *origArgs[] = {
     "-Dcom.sun.javafx.gestures.rotate=true",
     "-Dcom.sun.javafx.gestures.scroll=true",
     "-Djavafx.verbose=false",
-    "-Dmonocle.input.touchRadius=1",
+    "-Dmonocle.input.touchRadius=2",
     "-Dmonocle.input.traceEvents.verbose=false",
     "-Dprism.verbose=true",
     "-Xmx4g"};
