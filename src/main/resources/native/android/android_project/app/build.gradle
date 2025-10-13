@@ -10,8 +10,8 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        compileSdk 35
-        targetSdkVersion 35
+        compileSdk 36
+        targetSdkVersion 36
     }
 
     repositories {
@@ -27,7 +27,8 @@ android {
     }
 
     dependencies {
-        implementation 'androidx.activity:activity:1.10.1'
+        implementation 'androidx.activity:activity:1.11.0'
+        implementation 'androidx.core:core:1.17.0'
         // OTHER_ANDROID_DEPENDENCIES
         api fileTree(dir: '../libs', include: '*.aar')
         api fileTree(dir: '../libs', include: '*.jar')
