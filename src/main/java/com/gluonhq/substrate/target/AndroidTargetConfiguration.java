@@ -509,7 +509,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
      * @return Path of the Android project
      * @throws IOException
      */
-    private Path prepareAndroidProject() throws IOException {
+    private Path prepareAndroidProject() throws IOException, InterruptedException {
         Path androidProject = getAndroidProjectPath();
         if (Files.exists(androidProject)) {
             FileOps.deleteDirectory(androidProject);
@@ -518,7 +518,19 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
         if (!projectConfiguration.hasWeb()) {
             Files.deleteIfExists(Path.of(androidProject.toString(), "app", "src", "main", "java", "com", "gluonhq", "helloandroid", "NativeWebView.java"));
         }
-        androidProject.resolve("gradlew").toFile().setExecutable(true);
+        Path gradlewPath = androidProject.resolve("gradlew");
+        gradlewPath.toFile().setExecutable(true);
+
+        // Run 'dos2unix' on the gradlew file
+        ProcessBuilder processBuilder = new ProcessBuilder("dos2unix", gradlewPath.toString());
+        processBuilder.redirectErrorStream(true);
+        Process process = processBuilder.start();
+        int exitCode = process.waitFor();
+
+        if (exitCode != 0) {
+            throw new IOException("Failed to run dos2unix on gradlew. Exit code: " + exitCode);
+        }
+
        return androidProject;
     }
 
