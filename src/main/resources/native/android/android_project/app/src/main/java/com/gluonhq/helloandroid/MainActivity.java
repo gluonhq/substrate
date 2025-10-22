@@ -98,14 +98,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         setContentView(mViewGroup);
         instance = this;
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // <= 34
-            // Enable edge-to-edge display, extending the app to the full extension of the screen.
-            // The system bars are now on top of the application, and necessary padding should be
-            // applied to the top (AppBar) and bottom, to avoid overlaps.
-            // The DisplayService in Attach can be used to track the insets of the system bars
-            // and the StatusBarService can be used to set a dark or light appearance of the status bar
-            WindowCompat.enableEdgeToEdge(getWindow());
-        } // else, >= 35 has edge-to-edge enabled by default
+        // Enable edge-to-edge display, extending the app to the full extension of the screen.
+        // The system bars are now on top of the application, and necessary padding should be
+        // applied to the top (AppBar) and bottom, to avoid overlaps.
+        // The DisplayService in Attach can be used to track the insets of the system bars
+        // and the StatusBarService can be used to set a dark or light appearance of the status bar
+        WindowCompat.enableEdgeToEdge(getWindow());
 
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         Log.v(TAG, "onCreate done");
