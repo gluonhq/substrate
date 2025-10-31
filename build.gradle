@@ -9,7 +9,9 @@ plugins {
 
 group = "com.gluonhq"
 
-sourceCompatibility = JavaVersion.VERSION_11
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+}
 
 repositories {
     mavenCentral()
