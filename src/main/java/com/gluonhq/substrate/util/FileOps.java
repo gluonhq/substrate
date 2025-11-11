@@ -609,6 +609,9 @@ public class FileOps {
             ZipEntry zipEntry;
             while ((zipEntry = zis.getNextEntry()) != null) {
                 Path destPath = targetDir.resolve(zipEntry.getName());
+                if (!destPath.normalize().startsWith(targetDir.normalize())) {
+                    throw new RuntimeException("Bad zip entry");
+                }
                 if (zipEntry.isDirectory()) {
                     if (!Files.exists(destPath)) {
                         Files.createDirectories(destPath);
