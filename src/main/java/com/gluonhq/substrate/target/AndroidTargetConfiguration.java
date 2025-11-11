@@ -66,7 +66,7 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
 
     private static final String ANDROID_TRIPLET = new Triplet(Constants.Profile.ANDROID).toString();
     private static final String ANDROID_MIN_SDK_VERSION = "21";
-    public static final String ANDROID_NDK_VERSION = "26.3.11579264";
+    public static final String ANDROID_NDK_VERSION = "28.2.13676358";
     private static final List<String> ANDROID_KEYSTORE_EXTENSIONS = List.of(".keystore", ".jks");
     private static final String WL_WHOLE_ARCHIVE = "-Wl,--whole-archive";
     private static final String WL_NO_WHOLE_ARCHIVE = "-Wl,--no-whole-archive";

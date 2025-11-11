@@ -32,6 +32,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -40,8 +41,6 @@ import android.text.InputType;
 import android.text.Selection;
 import android.util.DisplayMetrics;
 import android.util.Log;
-
-import android.view.inputmethod.InputConnection;
 
 import android.view.KeyEvent;
 import android.view.KeyCharacterMap;
@@ -55,8 +54,11 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
+
+import androidx.core.view.WindowCompat;
 
 import java.util.TimeZone;
 import javafx.scene.input.KeyCode;
@@ -95,6 +97,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         mViewGroup.addView(mView);
         setContentView(mViewGroup);
         instance = this;
+
+        // Enable edge-to-edge display, extending the app to the full extension of the screen.
+        // The system bars are now on top of the application, and necessary padding should be
+        // applied to the top (AppBar) and bottom, to avoid overlaps.
+        // The DisplayService in Attach can be used to track the insets of the system bars
+        // and the StatusBarService can be used to set a dark or light appearance of the status bar
+        WindowCompat.enableEdgeToEdge(getWindow());
 
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         Log.v(TAG, "onCreate done");
