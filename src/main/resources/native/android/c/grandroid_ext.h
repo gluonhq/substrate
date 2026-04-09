@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Gluon
+ * Copyright (c) 2020, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,9 +58,13 @@ jobject substrateGetActivity();
 #ifdef SUBSTRATE
 void __attribute__((weak)) attach_setActivityResult(jint requestCode, jint resultCode, jobject intent) {}
 void __attribute__((weak)) attach_setLifecycleEvent(const char *event) {}
+void __attribute__((weak)) attach_setComposingText(const char *id, const char *text) {}
+void __attribute__((weak)) attach_setActiveNodeId(const char *id) {}
 #else
 void attach_setActivityResult(jint requestCode, jint resultCode, jobject intent);
 void attach_setLifecycleEvent(const char *event);
+void attach_setComposingText(const char *id, const char *text);
+void attach_setActiveNodeId(const char *id);
 #endif
 
 #define ATTACH_GRAAL() \

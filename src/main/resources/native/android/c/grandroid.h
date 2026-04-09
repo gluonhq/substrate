@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Gluon
+ * Copyright (c) 2020, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
 
 extern jmethodID activity_showIME;
 extern jmethodID activity_hideIME;
+extern jmethodID activity_setActiveNodeId;
 
 extern ANativeWindow *window;
 extern jfloat density;
