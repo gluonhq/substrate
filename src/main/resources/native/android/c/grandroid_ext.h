@@ -59,7 +59,6 @@ jobject substrateGetActivity();
 void __attribute__((weak)) attach_setActivityResult(jint requestCode, jint resultCode, jobject intent) {}
 void __attribute__((weak)) attach_setLifecycleEvent(const char *event) {}
 void __attribute__((weak)) attach_setComposingText(const char *id, const char *text) {}
-void __attribute__((weak)) attach_setActiveNodeId(const char *id) {}
 #else
 void attach_setActivityResult(jint requestCode, jint resultCode, jobject intent);
 void attach_setLifecycleEvent(const char *event);
