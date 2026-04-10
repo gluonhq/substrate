@@ -84,53 +84,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     /** The id of the JavaFX Node that currently has focus. Set from Attach via keyboard.c. */
     private static String currentActiveNodeId = "default";
 
-    /**
-     * Called from keyboard.c (via AndroidKeyboardService.setActiveNodeId) to
-     * store which JavaFX text control is currently focused, so composing text
-     * can be tagged with the correct id.
-     */
-    static void setActiveNodeId(String id) {
-        currentActiveNodeId = (id != null) ? id : "default";
-        Log.v(TAG, "setActiveNodeId: " + currentActiveNodeId);
-    }
-
-    /**
-     * Called from keyboard.c (via AndroidKeyboardService.setKeyboardType) to
-     * update the Android InputType. Triggers a restartInput so the change takes
-     * effect immediately if the keyboard is already visible.
-     */
-    static void setKeyboardType(int keyboardTypeValue) {
-        currentInputType = mapKeyboardTypeToInputType(keyboardTypeValue);
-        Log.v(TAG, "setKeyboardType: keyboardTypeValue=" + keyboardTypeValue + " -> inputType=" + currentInputType);
-        if (imm != null && mView != null) {
-            instance.runOnUiThread(() -> imm.restartInput(mView));
-        }
-    }
-
-    private static int mapKeyboardTypeToInputType(int keyboardTypeValue) {
-        switch (keyboardTypeValue) {
-            case 3:  // URL
-                return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI;
-            case 4:  // NUMBER_PAD
-                return InputType.TYPE_CLASS_NUMBER;
-            case 5:  // PHONE_PAD
-                return InputType.TYPE_CLASS_PHONE;
-            case 6:  // NAME_PHONE_PAD
-                return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PERSON_NAME;
-            case 7:  // EMAIL
-                return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
-            case 8:  // DECIMAL_PAD
-                return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
-            case 0:  // DEFAULT
-            case 1:  // ASCII
-            case 2:  // NUMBERS_AND_PUNCTUATION
-            case 9:  // TWITTER
-            case 10: // WEB_SEARCH
-            default:
-                return InputType.TYPE_CLASS_TEXT;
-        }
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -274,6 +227,53 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         });
     }
 
+    /**
+     * External call that passes the JavaFX text control that is currently active, so composing text
+     * can be tagged with the correct id.
+     */
+    static void setActiveNodeId(String id) {
+        Log.d(TAG, "setActiveNodeId: " + currentActiveNodeId);
+        currentActiveNodeId = (id != null) ? id : "default";
+    }
+
+    /**
+     * External call that sets the Android InputType keyboard. Triggers a restartInput so the change takes
+     * effect immediately if the keyboard is already visible.
+     */
+    static void setKeyboardType(int keyboardTypeValue) {
+        currentInputType = mapKeyboardTypeToInputType(keyboardTypeValue);
+        Log.d(TAG, "setKeyboardType: keyboardTypeValue=" + keyboardTypeValue + " -> inputType=" + currentInputType);
+        if (imm != null && mView != null) {
+            instance.runOnUiThread(() -> {
+                imm.restartInput(mView);
+            });
+        }
+    }
+
+    private static int mapKeyboardTypeToInputType(int keyboardTypeValue) {
+        switch (keyboardTypeValue) {
+            case 3:  // URL
+                return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI;
+            case 4:  // NUMBER_PAD
+            case 11:  // ASCII_NUMBER_PAD
+                return InputType.TYPE_CLASS_NUMBER;
+            case 5:  // PHONE_PAD
+                return InputType.TYPE_CLASS_PHONE;
+            case 6:  // NAME_PHONE_PAD
+                return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PERSON_NAME;
+            case 7:  // EMAIL
+                return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
+            case 8:  // DECIMAL_PAD
+                return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
+            case 0:  // DEFAULT
+            case 1:  // ASCII
+            case 2:  // NUMBERS_AND_PUNCTUATION
+            case 9:  // TWITTER
+            case 10: // WEB_SEARCH
+            default:
+                return InputType.TYPE_CLASS_TEXT;
+        }
+    }
 
     private native void startGraalApp(String[] launchArgs);
     private native long surfaceReady(Surface surface, float density);
@@ -281,42 +281,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeSurfaceRedrawNeeded();
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
     private native void nativeDispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
+
     /**
-     * Forwards the current simulated TextField text to the Graal/JavaFX layer
-     * via attach_adapter.c → attach_setComposingText (weak symbol) → keyboard.c
-     * strong override → AndroidKeyboardService.notifyComposingText().
-     * Is a no-op if the Attach Keyboard service is not linked.
+     * Forwards the final composed text to the JavaFX layer via attach_adapter.c,
+     * without the internals of the BasicInputConnection (like deleting chars and typing
+     * them all over again while composing the resulting text).
+     * <p>Note that listeners attached to the JavaFX text input control {@code textProperty()} will still
+     * catch all those internals, so this is a convenient method to export to the JavaFX layer
+     * only the final composed text instead</p>
      *
-     * @param id   the JavaFX Node id of the focused text control
+     * @param id   the JavaFX Node id of the active text control
      * @param text the full text content for that control
      */
     private native void nativeNotifyComposingText(String id, String text);
-    /**
-     * Sends the active node id to the Graal/JavaFX layer so that
-     * attach_setActiveNodeId (weak symbol) → keyboard.c strong override
-     * → AndroidKeyboardService can route it appropriately.
-     */
-    private native void nativeSetActiveNodeId(String id);
-    /**
-     * Atomically replaces composing text in the focused JavaFX text control.
-     * Deletes {@code deleteCount} characters that were previously inserted by the IME,
-     * then inserts {@code text} at the current cursor position — all as a single
-     * operation, so JavaFX text-property listeners fire only once.
-     *
-     * Tracks a per-id mirror of each TextField's content. The active node id
-     * determines which entry in the map is updated.
-     */
-    private final HashMap<String, String> simulatedTexts = new HashMap<>();
 
-    private void nativeReplaceText(int deleteCount, String text) {
-        String id = currentActiveNodeId;
-        String current = simulatedTexts.getOrDefault(id, "");
-        int safeDelete = Math.min(deleteCount, current.length());
-        String updated = current.substring(0, current.length() - safeDelete) + text;
-        simulatedTexts.put(id, updated);
-        System.out.println("nativeReplaceText [" + id + "]: TextField would show: '" + updated + "'");
-        nativeNotifyComposingText(id, updated);
-    }
     private native void nativeDispatchLifecycleEvent(String event);
     private native void nativeDispatchActivityResult(int requestCode, int resultCode, Intent intent);
     private native void nativeNotifyMenu(int x, int y, int xAbs, int yAbs, boolean isKeyboardTrigger);
@@ -329,8 +307,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         private final KeyEvent ENTER_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER);
         private final KeyEvent ENTER_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER);
 
-        /** Tracks the text most recently sent to JavaFX by the IME composing session. */
         private String currentComposingText = "";
+        
+        /**
+         * Map of currently composed text per Text Input control (identifyed by its id).
+         */
+        private final HashMap<String, String> composedTexts = new HashMap<>();
 
         public InternalSurfaceView(Context context) {
             super(context);
@@ -395,16 +377,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         @Override
         public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
             Log.d(TAG, "onCreateInputConnection");
-            // Use the keyboard type set by KeyboardService.setKeyboardType(), defaulting to plain text.
+            // Use the keyboard type set from the JavaFX layer. The types that include TYPE_CLASS_TEXT have 
+            // predictive text features, and a custom BasicInputConnection implementation is needed.
             outAttrs.inputType = currentInputType;
             // Remove top textfield editor on landscape
             outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
             // A new IME session is starting (keyboard shown, field focused, etc.).
-            // Reset the composing mirror and the simulated text for the active node,
-            // so they stay in sync with the actual TextField,
-            // which may have been cleared or changed from the JavaFX side.
+            // Reset the composing text and the simulated text for the active node
             currentComposingText = "";
-            simulatedTexts.put(currentActiveNodeId, "");
+            composedTexts.putIfAbsent(currentActiveNodeId, "");
 
             return new BaseInputConnection(this, true) {
 
@@ -413,12 +394,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     int deleteCount = currentComposingText.length();
                     currentComposingText = text.toString();
                     boolean result = super.setComposingText(text, newCursorPosition);
-                    Log.d(TAG, "$$$ setCompositionText: " + text + ", result: " + result);
-                    // Old path: send individual key events (backspaces + typed text).
+                    // Send individual key events (backspaces + typed text).
                     resetText(deleteCount);
                     processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), text.toString(), -1, 0));
-                    // Atomic simulation: one call shows the final TextField text.
-                    nativeReplaceText(deleteCount, text.toString());
+                    // Update composed text with one call
+                    updateComposedText(deleteCount, text.toString());
                     return result;
                 }
 
@@ -427,20 +407,19 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     int deleteCount = currentComposingText.length();
                     currentComposingText = "";
                     boolean result = super.commitText(text, newCursorPosition);
-                    Log.d(TAG, "$$$ commitText: " + text + ", result: " + result);
                     if (ENTER_STRING.equals(text.toString())) {
-                        // Old path: clear composing region, then fire Enter.
+                        // Clear composing region, then fire Enter.
                         resetText(deleteCount);
-                        // Simulation: composing text is gone before the Enter key.
-                        nativeReplaceText(deleteCount, "");
+                        // Composed text is gone before the Enter key.
+                        updateComposedText(deleteCount, "");
                         processAndroidKeyEvent(ENTER_DOWN_EVENT);
                         processAndroidKeyEvent(ENTER_UP_EVENT);
                     } else {
-                        // Old path: backspaces to erase composing text, then insert committed word.
+                        // backspaces to erase composing text, then insert committed word.
                         resetText(deleteCount);
                         processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), text.toString(), -1, 0));
-                        // Simulation: committed word replaces the composing region atomically.
-                        nativeReplaceText(deleteCount, text.toString());
+                        // committed word replaces the composing region at once.
+                        updateComposedText(deleteCount, text.toString());
                     }
                     return result;
                 }
@@ -451,7 +430,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     boolean result = super.finishComposingText();
                     Editable content = getEditable();
                     if (content != null) {
-                        Log.d(TAG, "$$$ finishComposingText: clear");
                         content.clear();
                     }
                     return result;
@@ -462,16 +440,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     // Explicit user deletion (e.g. hardware backspace).
                     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
                     int length = beforeLength - afterLength;
-                    // Old path: individual backspace key events.
+                    // individual backspace key events.
                     resetText(length);
-                    // Keep simulation in sync with the explicit deletion.
-                    nativeReplaceText(length, "");
+                    // sync with the explicit deletion at once.
+                    updateComposedText(length, "");
                     return result;
                 }
 
                 private void resetText(int length) {
                     for (int i = 0; i < length; i++) {
-                        Log.d(TAG, "$$$ resetText: " + (i + 1) + "/" + length);
                         processAndroidKeyEvent(BACK_DOWN_EVENT);
                         processAndroidKeyEvent(BACK_UP_EVENT);
                     }
@@ -490,15 +467,21 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 // let Android OS handle volume events
                 consume = false;
             }
-            // Keep the simulation in sync for direct backspace key presses.
-            // Note: resetText() calls processAndroidKeyEvent() directly and bypasses
-            // dispatchKeyEvent, so this branch is only reached for real user key presses.
-            if (event.getAction() == KeyEvent.ACTION_DOWN &&
-                    event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
-                nativeReplaceText(1, "");
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
+                // sync after direct backspace key presses.
+                updateComposedText(1, "");
             }
             processAndroidKeyEvent(event);
             return consume;
+        }
+
+        private void updateComposedText(int deleteCount, String text) {
+            String id = currentActiveNodeId;
+            String current = composedTexts.getOrDefault(id, "");
+            String updated = current.substring(0, current.length() - Math.min(deleteCount, current.length())) + text;
+            composedTexts.put(id, updated);
+            Log.d(TAG, "updateComposedText [" + id + "]: TextInputControl shows: '" + updated + "'");
+            nativeNotifyComposingText(id, updated);
         }
 
         private final Handler handler = new Handler();

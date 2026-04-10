@@ -64,7 +64,6 @@ void __attribute__((weak)) attach_setActiveNodeId(const char *id) {}
 void attach_setActivityResult(jint requestCode, jint resultCode, jobject intent);
 void attach_setLifecycleEvent(const char *event);
 void attach_setComposingText(const char *id, const char *text);
-void attach_setActiveNodeId(const char *id);
 #endif
 
 #define ATTACH_GRAAL() \

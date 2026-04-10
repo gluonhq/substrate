@@ -36,7 +36,14 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatch
     (*env)->ReleaseStringUTFChars(env, event, chars);
 }
 
-// Composing text (IME predictive text → KeyboardService.textProperty)
+// Intent
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchActivityResult(JNIEnv *env, jobject activity, jint requestCode, jint resultCode, jobject intent)
+{
+    LOGE(stderr, "Dispatching activity result from native Dalvik layer: %d %d", requestCode, resultCode);
+    attach_setActivityResult(requestCode, resultCode, intent);
+}
+
+// keyboard: Composing text (IME predictive text for node with id)
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeNotifyComposingText(JNIEnv *env, jobject activity, jstring id, jstring text)
 {
     const char *idChars = (*env)->GetStringUTFChars(env, id, NULL);
@@ -45,20 +52,4 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeNotifyCo
     attach_setComposingText(idChars, textChars);
     (*env)->ReleaseStringUTFChars(env, text, textChars);
     (*env)->ReleaseStringUTFChars(env, id, idChars);
-}
-
-// Active node id (JavaFX focused text control → Dalvik)
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetActiveNodeId(JNIEnv *env, jobject activity, jstring id)
-{
-    const char *idChars = (*env)->GetStringUTFChars(env, id, NULL);
-    LOGE(stderr, "Dispatching active node id from native Dalvik layer: %s", idChars);
-    attach_setActiveNodeId(idChars);
-    (*env)->ReleaseStringUTFChars(env, id, idChars);
-}
-
-// Intent
-JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatchActivityResult(JNIEnv *env, jobject activity, jint requestCode, jint resultCode, jobject intent)
-{
-    LOGE(stderr, "Dispatching activity result from native Dalvik layer: %d %d", requestCode, resultCode);
-    attach_setActivityResult(requestCode, resultCode, intent);
 }
