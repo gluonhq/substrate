@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Gluon
+ * Copyright (c) 2019, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -372,8 +372,6 @@ public class CodeSigning {
             provisionProfile = identities.stream()
                     .map(id -> findProvisionProfile(id, bundleId))
                     .filter(Objects::nonNull)
-                    .filter(profile -> providedProvisionProfile == null
-                            || providedProvisionProfile.equals(profile.getName()))
                     .findFirst()
                     .orElse(null);
         }
@@ -386,6 +384,7 @@ public class CodeSigning {
         return retrieveValidProvisionProfiles().stream()
                 .filter(provision -> filterByIdentifier(provision, bundleId))
                 .filter(provision -> filterByCertificate(provision, identity))
+                .filter(this::filterByProvidedProvision)
                 .findFirst()
                 .orElse(null);
     }
@@ -448,5 +447,16 @@ public class CodeSigning {
                     Logger.logDebug("App identifiers match, but there are not fingerprint matches");
                     return false;
                 });
+    }
+
+    private boolean filterByProvidedProvision(ProvisionProfile provision) {
+        if (providedProvisionProfile == null) {
+            return true;
+        }
+        boolean match = providedProvisionProfile.equals(provision.getName());
+        Logger.logDebug("Provision profile " + provision.getName() +
+                (match ? " matches the provided one" : " doesn't match the provided one"));
+        return match;
+
     }
 }
