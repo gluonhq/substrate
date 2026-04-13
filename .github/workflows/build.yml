@@ -14,9 +14,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-22.04, macos-latest, windows-latest]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             ARCH: "x86_64"
           - os: macos-latest
             ARCH: "aarch64"
