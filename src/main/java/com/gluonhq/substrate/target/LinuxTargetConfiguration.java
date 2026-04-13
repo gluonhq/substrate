@@ -92,7 +92,8 @@ public class LinuxTargetConfiguration extends PosixTargetConfiguration {
     );
 
     private static final List<String> nativeImageArguments = List.of(
-            "--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jdk=ALL-UNNAMED" // required for the GluonFeature
+            "--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jdk=ALL-UNNAMED", // required for the GluonFeature
+            "-XX:-UseContainerSupport" // Add container support
     );
     private static final List<String> enabledFeatures = List.of(
             "com.gluonhq.substrate.feature.GluonFeature"
