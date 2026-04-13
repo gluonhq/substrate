@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Gluon
+ * Copyright (c) 2020, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ jclass permissionActivityClass;
 jobject activity;
 jmethodID activity_showIME;
 jmethodID activity_hideIME;
+jmethodID activity_setActiveNodeId;
 
 JavaVM *androidVM;
 JNIEnv *androidEnv;
@@ -77,6 +78,7 @@ void registerMethodHandles(JNIEnv *aenv)
     permissionActivityClass = (*aenv)->NewGlobalRef(aenv, (*aenv)->FindClass(aenv, "com/gluonhq/helloandroid/PermissionRequestActivity"));
     activity_showIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "showIME", "()V");
     activity_hideIME = (*aenv)->GetStaticMethodID(aenv, activityClass, "hideIME", "()V");
+    activity_setActiveNodeId = (*aenv)->GetStaticMethodID(aenv, activityClass, "setActiveNodeId", "(Ljava/lang/String;)V");
     registerJavaFXMethodHandles(aenv);
 }
 

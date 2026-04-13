@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Gluon
+ * Copyright (c) 2020, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,4 +41,15 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeDispatch
 {
     LOGE(stderr, "Dispatching activity result from native Dalvik layer: %d %d", requestCode, resultCode);
     attach_setActivityResult(requestCode, resultCode, intent);
+}
+
+// keyboard: Composing text (IME predictive text for node with id)
+JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeNotifyComposingText(JNIEnv *env, jobject activity, jstring id, jstring text)
+{
+    const char *idChars = (*env)->GetStringUTFChars(env, id, NULL);
+    const char *textChars = (*env)->GetStringUTFChars(env, text, NULL);
+    LOGE(stderr, "Dispatching composing text from native Dalvik layer: id=%s, text=%s", idChars, textChars);
+    attach_setComposingText(idChars, textChars);
+    (*env)->ReleaseStringUTFChars(env, text, textChars);
+    (*env)->ReleaseStringUTFChars(env, id, idChars);
 }
