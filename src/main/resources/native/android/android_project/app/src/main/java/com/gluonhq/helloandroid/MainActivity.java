@@ -228,8 +228,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     }
 
     /**
-     * External call that passes the JavaFX text control that is currently active, so composing text
-     * can be tagged with the correct id.
+     * External call that passes the id of the JavaFX text control that is currently active,
+     * so the map of composedTexts can keep track of the current content of each editor per id.
      */
     static void setActiveNodeId(String id) {
         Log.d(TAG, "setActiveNodeId: " + currentActiveNodeId);

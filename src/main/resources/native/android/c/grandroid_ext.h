@@ -58,11 +58,9 @@ jobject substrateGetActivity();
 #ifdef SUBSTRATE
 void __attribute__((weak)) attach_setActivityResult(jint requestCode, jint resultCode, jobject intent) {}
 void __attribute__((weak)) attach_setLifecycleEvent(const char *event) {}
-void __attribute__((weak)) attach_setComposingText(const char *id, const char *text) {}
 #else
 void attach_setActivityResult(jint requestCode, jint resultCode, jobject intent);
 void attach_setLifecycleEvent(const char *event);
-void attach_setComposingText(const char *id, const char *text);
 #endif
 
 #define ATTACH_GRAAL() \
