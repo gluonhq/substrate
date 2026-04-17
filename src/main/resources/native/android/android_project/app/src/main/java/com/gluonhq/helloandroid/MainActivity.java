@@ -239,9 +239,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     /**
      * External call that sets the Android InputType keyboard. Triggers a
      * {@code restartInput} so the change takes effect immediately if the
-     * keyboard is already visible. Idempotent: if the requested type already
-     * equals the current one, no {@code restartInput} is performed, avoiding
-     * an unnecessary {@link #onCreateInputConnection(EditorInfo)} round trip.
+     * keyboard is already visible.
      */
     static void setKeyboardType(int keyboardTypeValue) {
         int newInputType = mapKeyboardTypeToInputType(keyboardTypeValue);
