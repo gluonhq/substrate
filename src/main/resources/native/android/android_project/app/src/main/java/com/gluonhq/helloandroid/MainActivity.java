@@ -32,12 +32,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.InputType;
+import android.text.Selection;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -282,18 +282,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
     private native void nativeDispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
 
-    /**
-     * Forwards the final composed text to the JavaFX layer via attach_adapter.c,
-     * without the internals of the BasicInputConnection (like deleting chars and typing
-     * them all over again while composing the resulting text).
-     * <p>Note that listeners attached to the JavaFX text input control {@code textProperty()} will still
-     * catch all those internals, so this is a convenient method to export to the JavaFX layer
-     * only the final composed text instead</p>
-     *
-     * @param id   the JavaFX Node id of the active text control
-     * @param text the full text content for that control
-     */
-    private native void nativeNotifyComposingText(String id, String text);
 
     private native void nativeDispatchLifecycleEvent(String event);
     private native void nativeDispatchActivityResult(int requestCode, int resultCode, Intent intent);
@@ -307,12 +295,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         private final KeyEvent ENTER_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER);
         private final KeyEvent ENTER_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER);
 
-        private String currentComposingText = "";
-        
         /**
          * Map of currently composed text per Text Input control (identifyed by its id).
+         * It is used to restart the IME {@link Editable} across keyboard switches / focus
+         * changes. The map is only accurate as long as the JavaFX control is not modified
+         * outside of the IME.</p>
          */
         private final HashMap<String, String> composedTexts = new HashMap<>();
+
+        private BaseInputConnection inputConnection;
 
         public InternalSurfaceView(Context context) {
             super(context);
@@ -382,83 +373,92 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             outAttrs.inputType = currentInputType;
             // Remove top textfield editor on landscape
             outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
-            // A new IME session is starting (keyboard shown, field focused, etc.).
-            // Reset the composing text and the simulated text for the active node
-            currentComposingText = "";
             composedTexts.putIfAbsent(currentActiveNodeId, "");
+            final String initialText = composedTexts.get(currentActiveNodeId);
+            outAttrs.initialSelStart = initialText.length();
+            outAttrs.initialSelEnd = initialText.length();
 
-            return new BaseInputConnection(this, true) {
+            // for every override that follows, we take the content before and after
+            // calling super, and we sync the native editor with the JavaFX control
+            inputConnection = new BaseInputConnection(this, true) {
 
                 @Override
                 public boolean setComposingText(CharSequence text, int newCursorPosition) {
-                    int deleteCount = currentComposingText.length();
-                    currentComposingText = text.toString();
+                    Editable content = getEditable();
+                    String before = content.toString();
                     boolean result = super.setComposingText(text, newCursorPosition);
-                    // Send individual key events (backspaces + typed text).
-                    resetText(deleteCount);
-                    processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), text.toString(), -1, 0));
-                    // Update composed text with one call
-                    updateComposedText(deleteCount, text.toString());
+                    syncEditor(before, content.toString());
                     return result;
                 }
 
                 @Override
                 public boolean commitText(CharSequence text, int newCursorPosition) {
-                    int deleteCount = currentComposingText.length();
-                    currentComposingText = "";
+                    Editable content = getEditable();
+                    String before = content.toString();
+                    boolean isEnter = ENTER_STRING.equals(text == null ? "" : text.toString());
                     boolean result = super.commitText(text, newCursorPosition);
-                    if (ENTER_STRING.equals(text.toString())) {
-                        // Clear composing region, then fire Enter.
-                        resetText(deleteCount);
-                        // Composed text is gone before the Enter key.
-                        updateComposedText(deleteCount, "");
+                    if (isEnter) {
+                        // strip '\n' and fire Enter as a key event.
+                        int last = content.length() - 1;
+                        if (last >= 0 && content.charAt(last) == '\n') {
+                            content.delete(last, last + 1);
+                        }
+                        syncEditor(before, content.toString());
                         processAndroidKeyEvent(ENTER_DOWN_EVENT);
                         processAndroidKeyEvent(ENTER_UP_EVENT);
-                    } else {
-                        // backspaces to erase composing text, then insert committed word.
-                        resetText(deleteCount);
-                        processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), text.toString(), -1, 0));
-                        // committed word replaces the composing region at once.
-                        updateComposedText(deleteCount, text.toString());
+                        return result;
                     }
-                    return result;
-                }
-
-                @Override
-                public boolean finishComposingText() {
-                    currentComposingText = "";
-                    boolean result = super.finishComposingText();
-                    Editable content = getEditable();
-                    if (content != null) {
-                        content.clear();
-                    }
+                    syncEditor(before, content.toString());
                     return result;
                 }
 
                 @Override
                 public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-                    // Explicit user deletion (e.g. hardware backspace).
+                    Editable content = getEditable();
+                    String before = content.toString();
                     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
-                    int length = beforeLength - afterLength;
-                    // individual backspace key events.
-                    resetText(length);
-                    // sync with the explicit deletion at once.
-                    updateComposedText(length, "");
+                    syncEditor(before, content.toString());
                     return result;
                 }
-
-                private void resetText(int length) {
-                    for (int i = 0; i < length; i++) {
-                        processAndroidKeyEvent(BACK_DOWN_EVENT);
-                        processAndroidKeyEvent(BACK_UP_EVENT);
-                    }
-                }
             };
+
+            // Set cached text and place the cursor at its end.
+            Editable editable = inputConnection.getEditable();
+            if (editable != null) {
+                editable.replace(0, editable.length(), initialText);
+                Selection.setSelection(editable, initialText.length());
+            }
+            Log.d(TAG, "onCreateInputConnection Editable set with '" + initialText + "'");
+            return inputConnection;
+        }
+
+        /**
+         * Send the key events (backspaces + typed characters) needed to transform the editor
+         * from {@code before} to {@code after}.
+         * Also update the per-node cache for future IME sessions.
+         */
+        private void syncEditor(String before, String after) {
+            if (before.equals(after)) {
+                return;
+            }
+            int common = 0;
+            int min = Math.min(before.length(), after.length());
+            while (common < min && before.charAt(common) == after.charAt(common)) {
+                common++;
+            }
+            for (int i = before.length() - common; i > 0; i--) {
+                processAndroidKeyEvent(BACK_DOWN_EVENT);
+                processAndroidKeyEvent(BACK_UP_EVENT);
+            }
+            if (common < after.length()) {
+                processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), after.substring(common), -1, 0));
+            }
+            composedTexts.put(currentActiveNodeId, after);
         }
 
         @Override
         public boolean dispatchKeyEvent(final KeyEvent event) {
-            Log.v(TAG, "Activity, process get key event, action = "+event);
+            Log.v(TAG, "Activity, process get key event, action = " + event);
             boolean consume = true;
             if (event.getAction() == KeyEvent.ACTION_DOWN &&
                     (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP ||
@@ -467,21 +467,17 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 // let Android OS handle volume events
                 consume = false;
             }
-            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DEL
+                    && inputConnection != null) {
                 // sync after direct backspace key presses.
-                updateComposedText(1, "");
+                Editable content = inputConnection.getEditable();
+                if (content != null && content.length() > 0) {
+                    content.delete(content.length() - 1, content.length());
+                    composedTexts.put(currentActiveNodeId, content.toString());
+                }
             }
             processAndroidKeyEvent(event);
             return consume;
-        }
-
-        private void updateComposedText(int deleteCount, String text) {
-            String id = currentActiveNodeId;
-            String current = composedTexts.getOrDefault(id, "");
-            String updated = current.substring(0, current.length() - Math.min(deleteCount, current.length())) + text;
-            composedTexts.put(id, updated);
-            Log.d(TAG, "updateComposedText [" + id + "]: TextInputControl shows: '" + updated + "'");
-            nativeNotifyComposingText(id, updated);
         }
 
         private final Handler handler = new Handler();
