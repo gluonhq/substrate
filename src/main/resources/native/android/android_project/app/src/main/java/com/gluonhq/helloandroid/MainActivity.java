@@ -37,7 +37,6 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.InputType;
-import android.text.Selection;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -59,7 +58,6 @@ import android.widget.FrameLayout;
 
 import androidx.core.view.WindowCompat;
 
-import java.util.HashMap;
 import java.util.TimeZone;
 import javafx.scene.input.KeyCode;
 
@@ -82,7 +80,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private static int currentInputType = InputType.TYPE_CLASS_TEXT;
 
     /** The id of the JavaFX Node that currently has focus. Set from Attach via keyboard.c. */
-    private static String currentActiveNodeId = "default";
+    private static volatile String currentActiveNodeId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -209,6 +207,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             @Override
             public void run() {
                 mView.requestFocus();
+                // Every time the keyboard shows up, force a new InputConnection so the IME internal state is reset
+                imm.restartInput(mView);
                 boolean answer = imm.showSoftInput(mView, 0);
                 Log.v(TAG, "Done calling notify_showIME, answer = " + answer);
             }
@@ -220,6 +220,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         instance.runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                currentActiveNodeId = "";
                 mView.requestFocus();
                 boolean answer = imm.hideSoftInputFromWindow(mView.getWindowToken(), 0);
                 Log.v(TAG, "Done Calling notify_hideIME, answer = " + answer);
@@ -229,11 +230,21 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     /**
      * External call that passes the id of the JavaFX text control that is currently active,
-     * so the map of composedTexts can keep track of the current content of each editor per id.
      */
     static void setActiveNodeId(String id) {
-        Log.d(TAG, "setActiveNodeId: " + currentActiveNodeId);
-        currentActiveNodeId = (id != null) ? id : "default";
+        final String newId = (id != null) ? id : "";
+        final String oldId = currentActiveNodeId;
+        currentActiveNodeId = newId;
+        Log.d(TAG, "setActiveNodeId: " + oldId + " -> " + newId);
+
+        // If the IME is already connected with an old node id, force reconnection.
+        if (instance != null && imm != null && mView != null && !oldId.equals(newId)) {
+            instance.runOnUiThread(() -> {
+                if (imm.isActive(mView)) {
+                    imm.restartInput(mView);
+                }
+            });
+        }
     }
 
     /**
@@ -269,6 +280,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
             case 8:  // DECIMAL_PAD
                 return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
+            case 12: // TEXT_NO_SUGGESTIONS, disabling autocorrect/suggestions
+                return InputType.TYPE_CLASS_TEXT
+                        | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                        | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
             case 0:  // DEFAULT
             case 1:  // ASCII
             case 2:  // NUMBERS_AND_PUNCTUATION
@@ -299,15 +314,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         private final KeyEvent ENTER_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER);
         private final KeyEvent ENTER_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER);
 
-        /**
-         * Map of currently composed text per Text Input control (identifyed by its id).
-         * It is used to restart the IME {@link Editable} across keyboard switches / focus
-         * changes. The map is only accurate as long as the JavaFX control is not modified
-         * outside of the IME.</p>
-         */
-        private final HashMap<String, String> composedTexts = new HashMap<>();
-
         private BaseInputConnection inputConnection;
+        private String inputConnectionNodeId = "";
 
         public InternalSurfaceView(Context context) {
             super(context);
@@ -377,10 +385,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             outAttrs.inputType = currentInputType;
             // Remove top textfield editor on landscape
             outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
-            composedTexts.putIfAbsent(currentActiveNodeId, "");
-            final String initialText = composedTexts.get(currentActiveNodeId);
-            outAttrs.initialSelStart = initialText.length();
-            outAttrs.initialSelEnd = initialText.length();
+
+            // While the actual text is in the JavaFX editor, after the keyboard shows up, the IME session starts empty,
+            // without the existing text. Predictive operations start from what's typed next.
+            final String connectionNodeId = currentActiveNodeId;
+            inputConnectionNodeId = connectionNodeId;
+            outAttrs.initialSelStart = 0;
+            outAttrs.initialSelEnd = 0;
 
             // for every override that follows, we take the content before and after
             // calling super, and we sync the native editor with the JavaFX control
@@ -391,7 +402,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     Editable content = getEditable();
                     String before = content.toString();
                     boolean result = super.setComposingText(text, newCursorPosition);
-                    syncEditor(before, content.toString());
+                    syncEditor(before, content.toString(), connectionNodeId);
                     return result;
                 }
 
@@ -407,12 +418,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                         if (last >= 0 && content.charAt(last) == '\n') {
                             content.delete(last, last + 1);
                         }
-                        syncEditor(before, content.toString());
+                        syncEditor(before, content.toString(), connectionNodeId);
                         processAndroidKeyEvent(ENTER_DOWN_EVENT);
                         processAndroidKeyEvent(ENTER_UP_EVENT);
                         return result;
                     }
-                    syncEditor(before, content.toString());
+                    syncEditor(before, content.toString(), connectionNodeId);
                     return result;
                 }
 
@@ -421,18 +432,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                     Editable content = getEditable();
                     String before = content.toString();
                     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
-                    syncEditor(before, content.toString());
+                    syncEditor(before, content.toString(), connectionNodeId);
                     return result;
                 }
             };
-
-            // Set cached text and place the cursor at its end.
-            Editable editable = inputConnection.getEditable();
-            if (editable != null) {
-                editable.replace(0, editable.length(), initialText);
-                Selection.setSelection(editable, initialText.length());
-            }
-            Log.d(TAG, "onCreateInputConnection Editable set with '" + initialText + "'");
+            Log.d(TAG, "onCreateInputConnection Editable started empty for node '" + connectionNodeId + "'");
             return inputConnection;
         }
 
@@ -441,7 +445,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
          * from {@code before} to {@code after}.
          * Also update the per-node cache for future IME sessions.
          */
-        private void syncEditor(String before, String after) {
+        private void syncEditor(String before, String after, String nodeId) {
             if (before.equals(after)) {
                 return;
             }
@@ -457,7 +461,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             if (common < after.length()) {
                 processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), after.substring(common), -1, 0));
             }
-            composedTexts.put(currentActiveNodeId, after);
         }
 
         @Override
@@ -477,7 +480,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 Editable content = inputConnection.getEditable();
                 if (content != null && content.length() > 0) {
                     content.delete(content.length() - 1, content.length());
-                    composedTexts.put(currentActiveNodeId, content.toString());
                 }
             }
             processAndroidKeyEvent(event);
