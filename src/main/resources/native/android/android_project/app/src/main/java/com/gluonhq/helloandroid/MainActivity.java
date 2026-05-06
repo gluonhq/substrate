@@ -37,7 +37,6 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.InputType;
-import android.text.Selection;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -59,7 +58,6 @@ import android.widget.FrameLayout;
 
 import androidx.core.view.WindowCompat;
 
-import java.util.HashMap;
 import java.util.TimeZone;
 import javafx.scene.input.KeyCode;
 
@@ -232,7 +230,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     /**
      * External call that passes the id of the JavaFX text control that is currently active,
-     * so the map of composedTexts can keep track of the current content of each editor per id.
      */
     static void setActiveNodeId(String id) {
         final String newId = (id != null) ? id : "";
@@ -316,14 +313,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         private final String ENTER_STRING = new String(new byte[] {10});
         private final KeyEvent ENTER_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER);
         private final KeyEvent ENTER_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER);
-
-        /**
-         * Map of currently composed text per Text Input control (identifyed by its id).
-         * It is used to restart the IME {@link Editable} across keyboard switches / focus
-         * changes. The map is only accurate as long as the JavaFX control is not modified
-         * outside of the IME.</p>
-         */
-        private final HashMap<String, String> composedTexts = new HashMap<>();
 
         private BaseInputConnection inputConnection;
         private String inputConnectionNodeId = "";
@@ -472,9 +461,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             if (common < after.length()) {
                 processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), after.substring(common), -1, 0));
             }
-            if (!nodeId.isEmpty()) {
-                composedTexts.put(nodeId, after);
-            }
         }
 
         @Override
@@ -494,9 +480,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 Editable content = inputConnection.getEditable();
                 if (content != null && content.length() > 0) {
                     content.delete(content.length() - 1, content.length());
-                    if (!inputConnectionNodeId.isEmpty()) {
-                        composedTexts.put(inputConnectionNodeId, content.toString());
-                    }
                 }
             }
             processAndroidKeyEvent(event);
