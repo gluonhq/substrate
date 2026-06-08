@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Gluon
+ * Copyright (c) 2020, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <EGL/egl.h>
+#include <stdatomic.h>
 #include "grandroid.h"
 
 static atomic_int egl_surface_valid = ATOMIC_VAR_INIT(0);
@@ -73,7 +75,7 @@ void registerJavaFXMethodHandles(JNIEnv *aenv) {}
 
 EGLBoolean __wrap_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     if (!atomic_load_explicit(&egl_surface_valid, memory_order_acquire)) {
-        struct timespec ts = {0, 16000000L};  // yield ~1 frame
+        struct timespec ts = {0, 16000000L};
         nanosleep(&ts, NULL);
         return EGL_FALSE;
     }
@@ -85,11 +87,11 @@ JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurfa
     LOGE(stderr, "nativeSetSurface called, env at %p and size %ld, surface at %p\n", env, sizeof(JNIEnv), surface);
     if (surface != NULL) {
         window = ANativeWindow_fromSurface(env, surface);
-        atomic_store_explicit(&egl_surface_valid, 1, memory_order_release)
         androidJfx_setNativeWindow(window);
+        atomic_store_explicit(&egl_surface_valid, 1, memory_order_release);
         LOGE(stderr, "native setSurface Ready, native window at %p\n", window);
     } else {
-        atomic_store_explicit(&egl_surface_valid, 0, memory_order_release)
+        atomic_store_explicit(&egl_surface_valid, 0, memory_order_release);
         androidJfx_setNativeWindow(NULL);
         LOGE(stderr, "native setSurface was null");
     }

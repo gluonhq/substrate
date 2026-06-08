@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Gluon
+ * Copyright (c) 2019, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,8 +88,8 @@ public class AndroidTargetConfiguration extends PosixTargetConfiguration {
     private final List<String> cFlags = new ArrayList<>(Arrays.asList("-target", ANDROID_TRIPLET, "-I.", "-fPIC"));
     private final List<String> linkFlags = Arrays.asList("-target",
             ANDROID_TRIPLET + ANDROID_MIN_SDK_VERSION, "-fPIC",
-            "-Wl,--rosegment,--gc-sections,-z,noexecstack", "-shared",
-            "-landroid", "-llog", "-lffi", "-llibchelper", "-static-libstdc++", "-Wl,--wrap=eglSwapBuffers");
+            "-Wl,--rosegment,--gc-sections,-z,noexecstack", "-Wl,--wrap=eglSwapBuffers", "-shared",
+            "-landroid", "-llog", "-lffi", "-llibchelper", "-static-libstdc++");
     private final List<String> javafxLinkFlags = new ArrayList<>(Arrays.asList(WL_WHOLE_ARCHIVE,
             "-lprism_es2_monocle", "-lglass_monocle", "-ljavafx_font_freetype", "-ljavafx_iio", WL_NO_WHOLE_ARCHIVE,
             "-lGLESv2", "-lEGL", "-lfreetype"));
