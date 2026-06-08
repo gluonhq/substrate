@@ -29,6 +29,10 @@
 #include <string.h>
 #include "grandroid.h"
 
+static atomic_int egl_surface_valid = ATOMIC_VAR_INIT(0);
+
+extern EGLBoolean __real_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface);
+
 #ifdef JAVAFX_WEB
 jclass nativeWebViewClass;
 jobject nativeWebViewObj;
@@ -67,14 +71,25 @@ void registerJavaFXMethodHandles(JNIEnv *aenv)
 void registerJavaFXMethodHandles(JNIEnv *aenv) {}
 #endif
 
+EGLBoolean __wrap_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
+    if (!atomic_load_explicit(&egl_surface_valid, memory_order_acquire)) {
+        struct timespec ts = {0, 16000000L};  // yield ~1 frame
+        nanosleep(&ts, NULL);
+        return EGL_FALSE;
+    }
+    return __real_eglSwapBuffers(dpy, surface);
+}
+
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurface(JNIEnv *env, jobject activity, jobject surface)
 {
     LOGE(stderr, "nativeSetSurface called, env at %p and size %ld, surface at %p\n", env, sizeof(JNIEnv), surface);
     if (surface != NULL) {
         window = ANativeWindow_fromSurface(env, surface);
+        atomic_store_explicit(&egl_surface_valid, 1, memory_order_release)
         androidJfx_setNativeWindow(window);
         LOGE(stderr, "native setSurface Ready, native window at %p\n", window);
     } else {
+        atomic_store_explicit(&egl_surface_valid, 0, memory_order_release)
         androidJfx_setNativeWindow(NULL);
         LOGE(stderr, "native setSurface was null");
     }
