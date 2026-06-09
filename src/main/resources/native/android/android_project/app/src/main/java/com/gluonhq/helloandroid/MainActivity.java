@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Gluon
+ * Copyright (c) 2019, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,13 +32,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.InputType;
-import android.text.Selection;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -77,6 +75,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     boolean graalStarted = false;
 
     private static InputMethodManager imm;
+
+    /** Android InputType to use the next time the IME connects. Defaults to plain text. */
+    private static int currentInputType = InputType.TYPE_CLASS_TEXT;
+
+    /** The id of the JavaFX Node that currently has focus. Set from Attach via keyboard.c. */
+    private static volatile String currentActiveNodeId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -203,6 +207,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
             @Override
             public void run() {
                 mView.requestFocus();
+                // Every time the keyboard shows up, force a new InputConnection so the IME internal state is reset
+                imm.restartInput(mView);
                 boolean answer = imm.showSoftInput(mView, 0);
                 Log.v(TAG, "Done calling notify_showIME, answer = " + answer);
             }
@@ -214,6 +220,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         instance.runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                currentActiveNodeId = "";
                 mView.requestFocus();
                 boolean answer = imm.hideSoftInputFromWindow(mView.getWindowToken(), 0);
                 Log.v(TAG, "Done Calling notify_hideIME, answer = " + answer);
@@ -221,6 +228,71 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         });
     }
 
+    /**
+     * External call that passes the id of the JavaFX text control that is currently active,
+     */
+    static void setActiveNodeId(String id) {
+        final String newId = (id != null) ? id : "";
+        final String oldId = currentActiveNodeId;
+        currentActiveNodeId = newId;
+        Log.d(TAG, "setActiveNodeId: " + oldId + " -> " + newId);
+
+        // If the IME is already connected with an old node id, force reconnection.
+        if (instance != null && imm != null && mView != null && !oldId.equals(newId)) {
+            instance.runOnUiThread(() -> {
+                if (imm.isActive(mView)) {
+                    imm.restartInput(mView);
+                }
+            });
+        }
+    }
+
+    /**
+     * External call that sets the Android InputType keyboard. Triggers a
+     * {@code restartInput} so the change takes effect immediately if the
+     * keyboard is already visible.
+     */
+    static void setKeyboardType(int keyboardTypeValue) {
+        int newInputType = mapKeyboardTypeToInputType(keyboardTypeValue);
+        if (newInputType == currentInputType) {
+            Log.d(TAG, "setKeyboardType: unchanged inputType=" + newInputType);
+            return;
+        }
+        currentInputType = newInputType;
+        Log.d(TAG, "setKeyboardType: keyboardTypeValue=" + keyboardTypeValue + " -> inputType=" + newInputType);
+        if (imm != null && mView != null) {
+            instance.runOnUiThread(() -> imm.restartInput(mView));
+        }
+    }
+
+    private static int mapKeyboardTypeToInputType(int keyboardTypeValue) {
+        switch (keyboardTypeValue) {
+            case 3:  // URL
+                return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI;
+            case 4:  // NUMBER_PAD
+            case 11:  // ASCII_NUMBER_PAD
+                return InputType.TYPE_CLASS_NUMBER;
+            case 5:  // PHONE_PAD
+                return InputType.TYPE_CLASS_PHONE;
+            case 6:  // NAME_PHONE_PAD
+                return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PERSON_NAME;
+            case 7:  // EMAIL
+                return InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
+            case 8:  // DECIMAL_PAD
+                return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
+            case 12: // TEXT_NO_SUGGESTIONS, disabling autocorrect/suggestions
+                return InputType.TYPE_CLASS_TEXT
+                        | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                        | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
+            case 0:  // DEFAULT
+            case 1:  // ASCII
+            case 2:  // NUMBERS_AND_PUNCTUATION
+            case 9:  // TWITTER
+            case 10: // WEB_SEARCH
+            default:
+                return InputType.TYPE_CLASS_TEXT;
+        }
+    }
 
     private native void startGraalApp(String[] launchArgs);
     private native long surfaceReady(Surface surface, float density);
@@ -228,6 +300,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private native void nativeSurfaceRedrawNeeded();
     private native void nativeGotTouchEvent(int pcount, int[] actions, int[] ids, int[] touchXs, int[] touchYs);
     private native void nativeDispatchKeyEvent(int type, int key, char[] chars, int charCount, int modifiers);
+
+
     private native void nativeDispatchLifecycleEvent(String event);
     private native void nativeDispatchActivityResult(int requestCode, int resultCode, Intent intent);
     private native void nativeNotifyMenu(int x, int y, int xAbs, int yAbs, boolean isKeyboardTrigger);
@@ -239,6 +313,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         private final String ENTER_STRING = new String(new byte[] {10});
         private final KeyEvent ENTER_DOWN_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER);
         private final KeyEvent ENTER_UP_EVENT = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER);
+
+        private BaseInputConnection inputConnection;
+        private String inputConnectionNodeId = "";
 
         public InternalSurfaceView(Context context) {
             super(context);
@@ -303,100 +380,92 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         @Override
         public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
             Log.d(TAG, "onCreateInputConnection");
-            // Allows predictive text
-            outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
+            // Use the keyboard type set from the JavaFX layer. The types that include TYPE_CLASS_TEXT have 
+            // predictive text features, and a custom BasicInputConnection implementation is needed.
+            outAttrs.inputType = currentInputType;
             // Remove top textfield editor on landscape
             outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
 
-            return new BaseInputConnection(this, true) {
+            // While the actual text is in the JavaFX editor, after the keyboard shows up, the IME session starts empty,
+            // without the existing text. Predictive operations start from what's typed next.
+            final String connectionNodeId = currentActiveNodeId;
+            inputConnectionNodeId = connectionNodeId;
+            outAttrs.initialSelStart = 0;
+            outAttrs.initialSelEnd = 0;
+
+            // for every override that follows, we take the content before and after
+            // calling super, and we sync the native editor with the JavaFX control
+            inputConnection = new BaseInputConnection(this, true) {
 
                 @Override
                 public boolean setComposingText(CharSequence text, int newCursorPosition) {
-                    // remove old text
-                    replaceText();
+                    Editable content = getEditable();
+                    String before = content.toString();
                     boolean result = super.setComposingText(text, newCursorPosition);
-                    processText(text.toString());
+                    syncEditor(before, content.toString(), connectionNodeId);
                     return result;
                 }
 
                 @Override
                 public boolean commitText(CharSequence text, int newCursorPosition) {
-                    // remove old text
-                    replaceText();
-                    boolean result = super.commitText(text, newCursorPosition);
-                    processText(text.toString());
-                    return result;
-                }
-
-                @Override
-                public boolean finishComposingText() {
-                    boolean result = super.finishComposingText();
                     Editable content = getEditable();
-                    if (content != null) {
-                        content.clear();
+                    String before = content.toString();
+                    boolean isEnter = ENTER_STRING.equals(text == null ? "" : text.toString());
+                    boolean result = super.commitText(text, newCursorPosition);
+                    if (isEnter) {
+                        // strip '\n' and fire Enter as a key event.
+                        int last = content.length() - 1;
+                        if (last >= 0 && content.charAt(last) == '\n') {
+                            content.delete(last, last + 1);
+                        }
+                        syncEditor(before, content.toString(), connectionNodeId);
+                        processAndroidKeyEvent(ENTER_DOWN_EVENT);
+                        processAndroidKeyEvent(ENTER_UP_EVENT);
+                        return result;
                     }
+                    syncEditor(before, content.toString(), connectionNodeId);
                     return result;
                 }
 
                 @Override
                 public boolean deleteSurroundingText(int beforeLength, int afterLength) {
+                    Editable content = getEditable();
+                    String before = content.toString();
                     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
-                    resetText(beforeLength - afterLength);
+                    syncEditor(before, content.toString(), connectionNodeId);
                     return result;
                 }
-
-                private void processText(String text) {
-                    if (ENTER_STRING.equals(text)) {
-                        // send enter
-                        processAndroidKeyEvent(ENTER_DOWN_EVENT);
-                        processAndroidKeyEvent(ENTER_UP_EVENT);
-                    } else {
-                        // send action_multiple with new text
-                        processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), text, -1, 0));
-                    }
-                }
-
-                private void replaceText() {
-                    Editable content = getEditable();
-                    if (content == null) {
-                        return;
-                    }
-
-                    int a = getComposingSpanStart(content);
-                    int b = getComposingSpanEnd(content);
-                    if (b < a) {
-                        int tmp = a;
-                        a = b;
-                        b = tmp;
-                    }
-
-                    if (a == -1 || b == -1) {
-                        a = Selection.getSelectionStart(content);
-                        b = Selection.getSelectionEnd(content);
-                        if (a < 0) a = 0;
-                        if (b < 0) b = 0;
-                        if (b < a) {
-                            int tmp = a;
-                            a = b;
-                            b = tmp;
-                        }
-                    }
-                    resetText(b - a);
-                }
-
-                private void resetText(int length) {
-                    // clear the old text
-                    for (int i = 0; i < length; i++) {
-                        processAndroidKeyEvent(BACK_DOWN_EVENT);
-                        processAndroidKeyEvent(BACK_UP_EVENT);
-                    }
-                }
             };
+            Log.d(TAG, "onCreateInputConnection Editable started empty for node '" + connectionNodeId + "'");
+            return inputConnection;
+        }
+
+        /**
+         * Send the key events (backspaces + typed characters) needed to transform the editor
+         * from {@code before} to {@code after}.
+         * Also update the per-node cache for future IME sessions.
+         */
+        private void syncEditor(String before, String after, String nodeId) {
+            if (before.equals(after)) {
+                return;
+            }
+            int common = 0;
+            int min = Math.min(before.length(), after.length());
+            while (common < min && before.charAt(common) == after.charAt(common)) {
+                common++;
+            }
+            for (int i = before.length() - common; i > 0; i--) {
+                processAndroidKeyEvent(BACK_DOWN_EVENT);
+                processAndroidKeyEvent(BACK_UP_EVENT);
+            }
+            if (common < after.length()) {
+                processAndroidKeyEvent(new KeyEvent(SystemClock.uptimeMillis(), after.substring(common), -1, 0));
+            }
         }
 
         @Override
         public boolean dispatchKeyEvent(final KeyEvent event) {
-            Log.v(TAG, "Activity, process get key event, action = "+event);
+            Log.v(TAG, "Activity, process get key event, action = " + event);
             boolean consume = true;
             if (event.getAction() == KeyEvent.ACTION_DOWN &&
                     (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP ||
@@ -405,7 +474,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 // let Android OS handle volume events
                 consume = false;
             }
-            processAndroidKeyEvent (event);
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DEL
+                    && inputConnection != null) {
+                // sync after direct backspace key presses.
+                Editable content = inputConnection.getEditable();
+                if (content != null && content.length() > 0) {
+                    content.delete(content.length() - 1, content.length());
+                }
+            }
+            processAndroidKeyEvent(event);
             return consume;
         }
 

@@ -6,7 +6,7 @@
     <application android:label='A HelloGraal' android:icon="@mipmap/ic_launcher">
         <activity android:name='com.gluonhq.helloandroid.MainActivity'
                   android:exported="true"
-                  android:configChanges="orientation|keyboardHidden">
+                  android:configChanges="orientation|screenSize|screenLayout|keyboardHidden">
              <intent-filter>
                 <category android:name='android.intent.category.LAUNCHER'/>
                 <action android:name='android.intent.action.MAIN'/>

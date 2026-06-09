@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Gluon
+ * Copyright (c) 2019, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -141,12 +141,9 @@ public class CodeSigning {
             for (Identity identity : identities) {
                 mobileProvision = findMobileProvision(identity, bundleId, bundleId);
                 if (mobileProvision != null) {
-                    if (providedMobileProvision == null
-                            || providedMobileProvision.equals(mobileProvision.getName())) {
-                        this.identity = identity;
-                        Logger.logDebug("Got provisioning profile: " + mobileProvision.getName());
-                        return mobileProvision;
-                    }
+                    this.identity = identity;
+                    Logger.logDebug("Got provisioning profile: " + mobileProvision.getName());
+                    return mobileProvision;
                 }
             }
             Logger.logInfo("Warning, getProvisioningProfile is failing");
@@ -159,6 +156,7 @@ public class CodeSigning {
         return retrieveValidMobileProvisions().stream()
                 .filter(provision -> filterByIdentifier(provision, bundleId))
                 .filter(provision -> filterByCertificate(provision, identity))
+                .filter(this::filterByProvidedProvision)
                 .findFirst()
                 .orElseGet(() -> tryModifiedBundleId(identity, bundleId, initialBundleId));
     }
@@ -180,6 +178,17 @@ public class CodeSigning {
                     Logger.logDebug("App identifiers match, but there are not fingerprint matches");
                     return false;
                 });
+    }
+
+    private boolean filterByProvidedProvision(MobileProvision provision) {
+        if (providedMobileProvision == null) {
+            return true;
+        }
+        boolean match = providedMobileProvision.equals(provision.getName());
+        Logger.logDebug("Provision profile " + provision.getName() +
+                (match ? " matches the provided one" : " doesn't match the provided one"));
+        return match;
+
     }
 
     private MobileProvision tryModifiedBundleId(Identity identity, String bundleId, String initialBundleId) {
