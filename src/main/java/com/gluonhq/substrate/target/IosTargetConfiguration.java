@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Gluon
+ * Copyright (c) 2019, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class IosTargetConfiguration extends DarwinTargetConfiguration {
@@ -68,7 +67,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             "OpenGLES", "CoreText", "QuartzCore", "ImageIO",
             "CoreBluetooth", "CoreImage", "CoreLocation", "CoreMedia", "CoreMotion", "CoreVideo",
             "Accelerate", "AVFoundation", "AudioToolbox", "MediaPlayer", "UserNotifications",
-            "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit"
+            "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit", "AuthenticationServices"
     );
 
     private static final String[] capFiles = {"AArch64LibCHelperDirectives.cap",
