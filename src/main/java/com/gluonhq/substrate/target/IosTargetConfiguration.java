@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Gluon
+ * Copyright (c) 2019, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class IosTargetConfiguration extends DarwinTargetConfiguration {
@@ -68,7 +67,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             "OpenGLES", "CoreText", "QuartzCore", "ImageIO",
             "CoreBluetooth", "CoreImage", "CoreLocation", "CoreMedia", "CoreMotion", "CoreVideo",
             "Accelerate", "AVFoundation", "AudioToolbox", "MediaPlayer", "UserNotifications",
-            "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit"
+            "ARKit", "AVKit", "SceneKit", "StoreKit", "ModelIO", "WebKit", "AuthenticationServices"
     );
 
     private static final String[] capFiles = {"AArch64LibCHelperDirectives.cap",
@@ -99,7 +98,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
                 "-arch", getTargetArch(),
-                "-mios-version-min=11.0",
+                "-mios-version-min=12.0",
                 "-isysroot", getSysroot()));
         if (projectConfiguration.isSharedLibrary()) {
             linkFlags.addAll(Arrays.asList(
@@ -127,7 +126,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     List<String> getTargetSpecificCCompileFlags() {
         List<String> flags = new ArrayList<>(Arrays.asList("-xobjective-c",
                 "-arch", getTargetArch(),
-                "-mios-version-min=11.0",
+                "-mios-version-min=12.0",
                 "-I" + projectConfiguration.getGraalPath().resolve("include").toString(),
                 "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
                 "-isysroot", getSysroot()));
