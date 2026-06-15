@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Gluon
+ * Copyright (c) 2020, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,14 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <EGL/egl.h>
+#include <stdatomic.h>
 #include "grandroid.h"
+
+static atomic_int egl_surface_valid = ATOMIC_VAR_INIT(0);
+
+extern EGLBoolean __real_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface);
+extern EGLSurface __real_eglCreateWindowSurface(EGLDisplay dpy, EGLConfig config, EGLNativeWindowType win, const EGLint *attrib_list);
 
 #ifdef JAVAFX_WEB
 jclass nativeWebViewClass;
@@ -67,14 +74,36 @@ void registerJavaFXMethodHandles(JNIEnv *aenv)
 void registerJavaFXMethodHandles(JNIEnv *aenv) {}
 #endif
 
+// Avoid calling eglSwapBuffers when the surface is not valid (app is in the background and the native window has been
+// released), to prevent libEGL from spamming EGL_BAD_SURFACE errors.
+EGLBoolean __wrap_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
+    if (!atomic_load_explicit(&egl_surface_valid, memory_order_acquire)) {
+        struct timespec ts = {0, 16000000L};
+        nanosleep(&ts, NULL);
+        return EGL_FALSE;
+    }
+    return __real_eglSwapBuffers(dpy, surface);
+}
+
+// Avoid calling eglCreateWindowSurface with a stale/NULL window when the app is in the background and the native
+// window has been released, to prevent libEGL from spamming EGL_BAD_NATIVE_WINDOW errors.
+EGLSurface __wrap_eglCreateWindowSurface(EGLDisplay dpy, EGLConfig config, EGLNativeWindowType win, const EGLint *attrib_list) {
+    if (!atomic_load_explicit(&egl_surface_valid, memory_order_acquire) || win == NULL) {
+        return EGL_NO_SURFACE;
+    }
+    return __real_eglCreateWindowSurface(dpy, config, win, attrib_list);
+}
+
 JNIEXPORT void JNICALL Java_com_gluonhq_helloandroid_MainActivity_nativeSetSurface(JNIEnv *env, jobject activity, jobject surface)
 {
     LOGE(stderr, "nativeSetSurface called, env at %p and size %ld, surface at %p\n", env, sizeof(JNIEnv), surface);
     if (surface != NULL) {
         window = ANativeWindow_fromSurface(env, surface);
         androidJfx_setNativeWindow(window);
+        atomic_store_explicit(&egl_surface_valid, 1, memory_order_release);
         LOGE(stderr, "native setSurface Ready, native window at %p\n", window);
     } else {
+        atomic_store_explicit(&egl_surface_valid, 0, memory_order_release);
         androidJfx_setNativeWindow(NULL);
         LOGE(stderr, "native setSurface was null");
     }
@@ -86,6 +115,7 @@ JNIEXPORT jlong JNICALL Java_com_gluonhq_helloandroid_MainActivity_surfaceReady(
     window = ANativeWindow_fromSurface(env, surface);
     androidJfx_setNativeWindow(window);
     androidJfx_setDensity(mydensity);
+    atomic_store_explicit(&egl_surface_valid, 1, memory_order_release);
     LOGE(stderr, "SurfaceReady, native window at %p\n", window);
     density = mydensity;
     return (jlong)window;
