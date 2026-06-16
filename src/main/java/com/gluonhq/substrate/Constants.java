@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Gluon
+ * Copyright (c) 2019, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -114,6 +114,8 @@ public class Constants {
     public static final String DEFAULT_CLIBS_VERSION  = "27";
     public static final String DEFAULT_JAVASDK_PATH = "staticjdk";
     public static final String DEFAULT_JAVASDK_PATH11 = "labs-staticjdk";
+
+    public static final String DEFAULT_IOS_MIN_OS_VERSION = "12.0";
 
     /**
      * Supported GraalVM versions
