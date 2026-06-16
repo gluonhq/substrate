@@ -98,7 +98,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
         List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
                 "-arch", getTargetArch(),
-                "-mios-version-min=12.0",
+                "-mios-version-min=" + Constants.DEFAULT_IOS_MIN_OS_VERSION,
                 "-isysroot", getSysroot()));
         if (projectConfiguration.isSharedLibrary()) {
             linkFlags.addAll(Arrays.asList(
@@ -126,7 +126,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     List<String> getTargetSpecificCCompileFlags() {
         List<String> flags = new ArrayList<>(Arrays.asList("-xobjective-c",
                 "-arch", getTargetArch(),
-                "-mios-version-min=12.0",
+                "-mios-version-min=" + Constants.DEFAULT_IOS_MIN_OS_VERSION,
                 "-I" + projectConfiguration.getGraalPath().resolve("include").toString(),
                 "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
                 "-isysroot", getSysroot()));
