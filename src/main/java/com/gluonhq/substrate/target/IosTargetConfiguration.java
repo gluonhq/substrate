@@ -126,7 +126,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     List<String> getTargetSpecificCCompileFlags() {
         List<String> flags = new ArrayList<>(Arrays.asList("-xobjective-c",
                 "-arch", getTargetArch(),
-                "-mios-version-min=" +  Constants.DEFAULT_IOS_MIN_OS_VERSION,
+                "-mios-version-min=" + Constants.DEFAULT_IOS_MIN_OS_VERSION,
                 "-I" + projectConfiguration.getGraalPath().resolve("include").toString(),
                 "-I" + projectConfiguration.getGraalPath().resolve("include").resolve("darwin").toString(),
                 "-isysroot", getSysroot()));

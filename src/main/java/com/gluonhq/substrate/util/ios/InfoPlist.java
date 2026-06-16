@@ -340,7 +340,7 @@ public class InfoPlist {
 
     private String getMinimumOSVersion(Path plist) {
         if (plist == null || !Files.exists(plist)) {
-            Logger.logDebug("Could not get MinimumOSVersion from unexistent " + plist);
+            Logger.logDebug("Could not get MinimumOSVersion from non existent " + plist);
             return Constants.DEFAULT_IOS_MIN_OS_VERSION;
         }
         try {
@@ -365,7 +365,7 @@ public class InfoPlist {
                 return Constants.DEFAULT_IOS_MIN_OS_VERSION;
             }
             Logger.logDebug("Using MinimumOSVersion: " + value);
-            return version.toString();
+            return value;
         } catch (NumberFormatException ex) {
             Logger.logSevere("Invalid MinimumOSVersion value '" + value + "'. Using default: " + Constants.DEFAULT_IOS_MIN_OS_VERSION);
         }
