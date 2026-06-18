@@ -21,9 +21,7 @@ and it will link the result with the required libraries and configuration
 into a native executable.
 
 There are a number of [samples](https://github.com/gluonhq/gluon-samples)
-available that show you how to get started
-with Gluon Substrate. We recommend using your favourite IDE to run those
-samples.
+available that show you how to get started with Gluon Substrate. We recommend using your favourite IDE to run those samples.
 
 ## Compilation
 
