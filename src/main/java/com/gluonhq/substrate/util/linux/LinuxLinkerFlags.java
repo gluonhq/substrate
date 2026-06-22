@@ -150,7 +150,7 @@ public class LinuxLinkerFlags {
         }
 
         String pkgName = pkgInfo.pkgName;
-        ProcessRunner process = new ProcessRunner("/usr/bin/pkg-config", "--libs", pkgName);
+        ProcessRunner process = new ProcessRunner("pkg-config", "--libs", pkgName);
         if (process.runProcess("Get config for " + pkgName) != 0) {
             missingPackages.add(pkgInfo.installName + " (for pkgConfig " + pkgName + ")");
             return List.of();
