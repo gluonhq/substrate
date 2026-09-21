@@ -18,6 +18,25 @@
         <string>LaunchScreen</string>
         <key>UIMainStoryboardFile</key>
         <string>MainScreen</string>
+        <key>UIApplicationSceneManifest</key>
+        <dict>
+                <key>UIApplicationSupportsMultipleScenes</key>
+                <false/>
+                <key>UISceneConfigurations</key>
+                <dict>
+                        <key>UIWindowSceneSessionRoleApplication</key>
+                        <array>
+                                <dict>
+                                        <key>UISceneConfigurationName</key>
+                                        <string>Default Configuration</string>
+                                        <key>UISceneDelegateClassName</key>
+                                        <string>SceneDelegate</string>
+                                        <key>UISceneStoryboardFile</key>
+                                        <string>MainScreen</string>
+                                </dict>
+                        </array>
+                </dict>
+        </dict>
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>LSRequiresIPhoneOS</key>
@@ -46,7 +65,7 @@
                 <integer>2</integer>
         </array>
         <key>MinimumOSVersion</key>
-        <string>12.0</string>
+        <string>12.2</string>
         <key>UIRequiresFullScreen</key>
         <string>YES</string>
 </dict>

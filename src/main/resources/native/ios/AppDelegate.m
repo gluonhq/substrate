@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Gluon
+ * Copyright (c) 2019, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,6 +49,14 @@ static __inline__ void gvmlog(NSString* format, ...)
 
 @property (strong, nonatomic) UIWindow *window;
 
+
+@end
+
+API_AVAILABLE(ios(13.0))
+@interface SceneDelegate : UIResponder <UIWindowSceneDelegate>
+
+/* The window that UIKit builds from MainScreen.storyboard, needed while there is no scene support */
+@property (strong, nonatomic) UIWindow *window;
 
 @end
 
@@ -129,8 +137,29 @@ int main(int argc, char * argv[]) {
     startGVM(userHome, userTimeZone, userLaunchKey);
 }
 
+/* Needed as long as there is no scene support */
+- (void)windowDidBecomeVisible:(NSNotification *)notification API_AVAILABLE(ios(13.0)) {
+    UIWindow *window = (UIWindow *)notification.object;
+    if (![window isKindOfClass:[UIWindow class]] || window.windowScene != nil) {
+        return;
+    }
+    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if ([scene isKindOfClass:[UIWindowScene class]]) {
+            gvmlog(@"[UIAPP] attaching window scene to %@", [window class]);
+            window.windowScene = (UIWindowScene *)scene;
+            return;
+        }
+    }
+}
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     gvmlog(@"UIApplication launched!");
+    if (@available(iOS 13.0, *)) {
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(windowDidBecomeVisible:)
+                                                     name:UIWindowDidBecomeVisibleNotification
+                                                   object:nil];
+    }
     [self performSelectorInBackground:@selector(startVM:) withObject:launchOptions];
     gvmlog(@"UIApplication started GVM in a separate thread");
     return YES;
@@ -164,6 +193,9 @@ int main(int argc, char * argv[]) {
 
 @end
 
+API_AVAILABLE(ios(13.0))
+@implementation SceneDelegate
+@end
 
 int startGVM(const char* userHome, const char* userTimeZone, const char* userLaunchKey) {
     gvmlog(@"Starting GVM for ios");
