@@ -115,7 +115,7 @@ public class Constants {
     public static final String DEFAULT_JAVASDK_PATH = "staticjdk";
     public static final String DEFAULT_JAVASDK_PATH11 = "labs-staticjdk";
 
-    public static final String DEFAULT_IOS_MIN_OS_VERSION = "12.0";
+    public static final String DEFAULT_IOS_MIN_OS_VERSION = "12.2";
 
     /**
      * Supported GraalVM versions
