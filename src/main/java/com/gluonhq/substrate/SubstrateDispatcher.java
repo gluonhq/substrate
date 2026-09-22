@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Gluon
+ * Copyright (c) 2019, 2026, Gluon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -484,13 +484,16 @@ public class SubstrateDispatcher {
     /**
      * This method runs the native image application, that was created after {@link #nativeLink()}
      * was called and ended successfully.
-     * @throws IOException
+     * @throws IOException when the application could not be run
      * @throws IllegalArgumentException when the supplied configuration contains illegal combinations
      */
     public void nativeRun() throws IOException, InterruptedException {
         Logger.logInfo(logTitle("RUN TASK"));
-        targetConfiguration.runUntilEnd();
+        boolean runningSucceeded = targetConfiguration.runUntilEnd();
         printMessage("run");
+        if (!runningSucceeded) {
+            throw new IOException("Running the application failed");
+        }
     }
 
     /**
