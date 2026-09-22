@@ -60,7 +60,7 @@ class IOSTest {
     private Deploy getDeploy() {
         if (deploy == null) {
             try {
-                deploy = new Deploy(Files.createTempDirectory("substrate-tests").resolve("ios/check"));
+                deploy = new Deploy();
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -72,7 +72,7 @@ class IOSTest {
     void notForTravis() {
         if (!isCI()) {
             assumeTrue(isLocalMacOS());
-            assumeTrue(getDeploy().getIosDeployPath() != null);
+            assumeTrue(getDeploy().getDevicectlPath() != null);
 //            String[] devices = deploy.connectedDevices();
 //            assumeTrue((devices != null && devices.length > 0));
         } else {
@@ -81,9 +81,9 @@ class IOSTest {
     }
 
     @Test
-    void iosDeployTest() {
+    void devicectlTest() {
         assumeTrue(!isCI());
-        assertNotNull(getDeploy().getIosDeployPath());
+        assertNotNull(getDeploy().getDevicectlPath());
     }
 
     @Test
