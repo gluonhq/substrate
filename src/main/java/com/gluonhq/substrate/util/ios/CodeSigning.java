@@ -253,6 +253,17 @@ public class CodeSigning {
         return Collections.emptyList();
     }
 
+    /**
+     * Signs a nested code item (e.g. an embedded .framework) with the resolved signing identity
+     * and no entitlements. Nested code must be signed before the enclosing app bundle.
+     *
+     * @param frameworkPath the path to the .framework to sign
+     */
+    public boolean signFramework(Path frameworkPath) throws IOException, InterruptedException {
+        assertValidIdentity();
+        return sign(null, frameworkPath);
+    }
+
     private boolean sign(Path entitlementsPath, Path appPath) throws IOException, InterruptedException {
         if (identity == null) {
             getProvisioningProfile();

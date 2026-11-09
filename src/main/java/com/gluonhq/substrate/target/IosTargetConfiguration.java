@@ -36,6 +36,7 @@ import com.gluonhq.substrate.util.ProcessRunner;
 import com.gluonhq.substrate.util.XcodeUtils;
 import com.gluonhq.substrate.util.ios.CodeSigning;
 import com.gluonhq.substrate.util.ios.Deploy;
+import com.gluonhq.substrate.util.ios.Frameworks;
 import com.gluonhq.substrate.util.ios.InfoPlist;
 import com.gluonhq.substrate.util.ios.Simulator;
 
@@ -76,6 +77,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
             "LLVMDirectives.cap", "PosixDirectives.cap"};
     private static final String capLocation= "/native/ios/cap/";
 
+    private Frameworks frameworks;
+
     public IosTargetConfiguration(ProcessPaths paths, InternalProjectConfiguration configuration ) {
         super(paths, configuration);
 
@@ -94,7 +97,7 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
     }
 
     @Override
-    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) {
+    List<String> getTargetSpecificLinkFlags(boolean useJavaFX, boolean usePrismSW) throws IOException, InterruptedException {
         List<String> linkFlags = new ArrayList<>(Arrays.asList("-w", "-fPIC",
                 "-arch", getTargetArch(),
                 "-mios-version-min=" + Constants.DEFAULT_IOS_MIN_OS_VERSION,
@@ -118,6 +121,8 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         linkFlags.addAll(iosFrameworks.stream()
                 .map(f -> "-Wl,-framework," + f)
                 .collect(Collectors.toList()));
+        // Third-party iOS frameworks
+        linkFlags.addAll(getFrameworks().getLinkFlags(isSimulator()));
         return linkFlags;
     }
 
@@ -233,8 +238,17 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
         Logger.logInfo("Building .app bundle at: " + appPath);
         createInfoPlist(paths);
 
+        // Embed any third-party dynamic frameworks into <App>.app/Frameworks so they can be loaded at runtime.
+        List<Path> embeddedFrameworks = getFrameworks().embedFrameworks(appPath, isSimulator());
+
         if (!isSimulator() && !projectConfiguration.getReleaseConfiguration().isSkipSigning()) {
             CodeSigning codeSigning = new CodeSigning(paths, projectConfiguration);
+            // Nested frameworks must be signed before the enclosing app bundle.
+            for (Path framework : embeddedFrameworks) {
+                if (!codeSigning.signFramework(framework)) {
+                    throw new RuntimeException("Error signing the framework " + framework.getFileName());
+                }
+            }
             if (!codeSigning.signApp()) {
                 throw new RuntimeException("Error signing the app");
             }
@@ -352,6 +366,13 @@ public class IosTargetConfiguration extends DarwinTargetConfiguration {
 
     private String getTargetArch() {
         return projectConfiguration.getTargetTriplet().getArch();
+    }
+
+    private Frameworks getFrameworks() {
+        if (frameworks == null) {
+            frameworks = new Frameworks(projectConfiguration.getClasspath());
+        }
+        return frameworks;
     }
 
     private String getSysroot() {
